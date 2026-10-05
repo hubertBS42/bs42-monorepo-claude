@@ -3,7 +3,9 @@
   "compilerOptions": {
     "paths": {
       "@/*": ["./*"],
-      "@workspace/ui/*": ["../../packages/ui/src/*"]
+      "@workspace/ui/*": ["../../packages/ui/src/*"],
+      "@workspace/tables": ["../../packages/tables/src/index.ts"],
+      "@workspace/tables/*": ["../../packages/tables/src/*"]
     },
     "plugins": [
       {
@@ -18,7 +20,8 @@
     "**/*.tsx",
     "**/*.mts",
     ".next/types/**/*.ts",
-    ".next/dev/types/**/*.ts"
+    ".next/dev/types/**/*.ts",
+    "../../packages/ui/src/hooks/use-mobile.ts"
   ],
   "exclude": ["node_modules"]
 }
