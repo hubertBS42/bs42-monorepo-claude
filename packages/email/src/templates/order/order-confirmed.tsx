@@ -1,0 +1,43 @@
+import { Section, Text } from "react-email"
+import { OrderLayout } from "./components/order-layout.js"
+
+interface OrderConfirmedProps {
+  customerName: string
+  reference: string
+  note?: string | null
+}
+
+export const OrderConfirmed = ({
+  customerName,
+  reference,
+  note,
+}: OrderConfirmedProps) => {
+  return (
+    <OrderLayout
+      preview={`Your order ${reference} has been confirmed`}
+      heading="Order Confirmed"
+    >
+      <Text className="mt-0 text-sm leading-relaxed text-[#71717a]">
+        Hi {customerName},
+      </Text>
+      <Text className="mt-0 text-sm leading-relaxed text-[#71717a]">
+        Great news! Your order{" "}
+        <strong className="text-[#18181b]">{reference}</strong> has been
+        confirmed and payment has been received. We are now preparing your
+        order.
+      </Text>
+
+      {note && (
+        <Section className="rounded-md bg-gray-50 p-4">
+          <Text className="m-0 text-sm text-gray-500">Note: {note}</Text>
+        </Section>
+      )}
+
+      <Text className="mt-6 text-sm text-gray-500">
+        We will notify you when your order is on its way.
+      </Text>
+    </OrderLayout>
+  )
+}
+
+export default OrderConfirmed

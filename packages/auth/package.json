@@ -1,0 +1,43 @@
+{
+  "name": "@workspace/auth",
+  "version": "0.0.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "lint": "eslint",
+    "format": "prettier --write \"**/*.{ts,tsx}\"",
+    "typecheck": "tsc --noEmit",
+    "auth:generate": "pnpm exec auth generate --config src/schema-config.ts --output ../database/prisma/schema.prisma --adapter prisma --dialect postgresql --yes"
+  },
+  "dependencies": {
+    "@better-auth/prisma-adapter": "^1.7.6",
+    "@workspace/db": "workspace:*",
+    "@workspace/email": "workspace:*",
+    "@workspace/utils": "workspace:*",
+    "better-auth": "^1.7.6",
+    "server-only": "^0.0.1",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/react": "19.3.0",
+    "@workspace/eslint-config": "workspace:*",
+    "@workspace/typescript-config": "workspace:*",
+    "auth": "1.7.6",
+    "eslint": "^9",
+    "typescript": "^5"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0"
+  },
+  "exports": {
+    "./store": "./src/store.ts",
+    "./console": "./src/console.ts",
+    "./console-bootstrap": "./src/console-bootstrap.ts",
+    "./system-permissions": "./src/system-permissions.ts",
+    "./organization-permissions": "./src/organization-permissions.ts",
+    "./store-client": "./src/store-client.ts",
+    "./console-client": "./src/console-client.ts",
+    "./format-error": "./src/format-error.ts"
+  }
+}

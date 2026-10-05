@@ -1,0 +1,79 @@
+import { createAccessControl } from "better-auth/plugins/access"
+import {
+  defaultStatements,
+  adminAc,
+  userAc,
+} from "better-auth/plugins/admin/access"
+
+const statement = {
+  ...defaultStatements,
+  organization: ["create", "update", "delete", "switch"],
+  brand: ["create", "update", "delete"],
+  category: ["create", "update", "delete"],
+  product: ["create", "update", "delete"],
+} as const
+
+export const systemAccessController = createAccessControl(statement)
+
+export const systemRoles = {
+  user: systemAccessController.newRole({
+    ...userAc.statements,
+  }),
+  admin: systemAccessController.newRole({
+    user: ["list", "get"],
+    session: ["list", "revoke"],
+    brand: ["create", "update", "delete"],
+    category: ["create", "update", "delete"],
+    product: ["create", "update", "delete"],
+  }),
+  superAdmin: systemAccessController.newRole({
+    ...adminAc.statements,
+    organization: ["create", "update", "delete", "switch"],
+    brand: ["create", "update", "delete"],
+    category: ["create", "update", "delete"],
+    product: ["create", "update", "delete"],
+  }),
+}
+
+export const consoleAdminRoles = ["admin", "superAdmin"] as const
+
+export type SystemRole = keyof typeof systemRoles
+
+export function hasSystemRole(
+  role: string | null | undefined,
+  allowedRoles: readonly string[]
+) {
+  if (!role) {
+    return false
+  }
+
+  const assignedRoles = role
+    .split(",")
+    .map((assignedRole) => assignedRole.trim())
+  return allowedRoles.some((allowedRole) => assignedRoles.includes(allowedRole))
+}
+
+export function hasSystemPermission(
+  role: string | null | undefined,
+  permissions: Parameters<(typeof systemRoles)["admin"]["authorize"]>[0]
+) {
+  if (!role) {
+    return false
+  }
+
+  return role
+    .split(",")
+    .map((assignedRole) => assignedRole.trim())
+    .some(
+      (assignedRole) =>
+        Object.hasOwn(systemRoles, assignedRole) &&
+        systemRoles[assignedRole as keyof typeof systemRoles].authorize(
+          permissions
+        ).success
+    )
+}
+
+export const SYSTEM_ROLE_NAMES = Object.keys(systemRoles) as [
+  SystemRole,
+  ...Array<SystemRole>,
+]
