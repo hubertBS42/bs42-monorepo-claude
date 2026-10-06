@@ -38,22 +38,27 @@ model Address {
 }
 
 model User {
-  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  email         String    @unique
-  name          String?
-  emailVerified Boolean   @default(false)
-  image         String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  addresses     Address[]
-  sessions      Session[]
-  accounts      Account[]
+  id                 String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name               String?
+  phone              String?
+  dob                DateTime? @db.Date
+  email              String    @unique
+  emailVerified      Boolean   @default(false)
+  getMarketingEmails Boolean   @default(true)
+  getSecurityEmails  Boolean   @default(true)
+  getOrderEmails     Boolean   @default(true)
+  image              String?
+  role               String    @default("user")
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 
-  role       String    @default("user")
   banned     Boolean?  @default(false)
   banReason  String?
   banExpires DateTime?
 
+  addresses   Address[]
+  sessions    Session[]
+  accounts    Account[]
   members     Member[]
   invitations Invitation[]
 
@@ -86,8 +91,7 @@ model Session {
   userId    String   @db.Uuid
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  impersonatedBy String?
-
+  impersonatedBy       String?
   activeOrganizationId String?
 
   @@unique([token])
@@ -132,11 +136,12 @@ model Organization {
   name           String
   slug           String
   logo           String?
-  createdAt      DateTime
-  metadata       String?
   shippingPolicy String?
   returnsPolicy  String?
   status         OrganizationStatus @default(ACTIVE)
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  metadata       String?
   members        Member[]
   invitations    Invitation[]
 
@@ -153,6 +158,7 @@ model Member {
   role           String       @default("member")
   createdAt      DateTime     @default(now())
 
+  @@unique([organizationId, userId])
   @@index([organizationId])
   @@index([userId])
   @@map("member")
@@ -161,16 +167,17 @@ model Member {
 model Invitation {
   id             String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   organizationId String       @db.Uuid
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   email          String
-  role           String?
+  role           String
   status         String       @default("pending")
   expiresAt      DateTime
   createdAt      DateTime     @default(now())
   inviterId      String       @db.Uuid
-  user           User         @relation(fields: [inviterId], references: [id], onDelete: Cascade)
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  inviter        User         @relation(fields: [inviterId], references: [id], onDelete: Cascade)
 
   @@index([organizationId])
   @@index([email])
+  @@index([inviterId])
   @@map("invitation")
 }

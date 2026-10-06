@@ -7,7 +7,7 @@ import { Metadata } from "next"
 import { Toaster } from "@workspace/ui/components/toast"
 import { APP_DESCRIPTION, APP_NAME } from "@/constants"
 import { TooltipProvider } from "@workspace/ui/components/tooltip"
-const inter = Inter({ subsets: ["latin"], variable: "--font-sans" })
+const inter = Inter({subsets:['latin'],variable:'--font-sans'})
 
 export const metadata: Metadata = {
   title: {

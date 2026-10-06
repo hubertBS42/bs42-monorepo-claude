@@ -22,9 +22,9 @@ export default async function SetupPage() {
       <div className="relative grid w-full max-w-5xl overflow-hidden rounded-2xl border bg-background shadow-xl lg:grid-cols-[0.9fr_1.1fr]">
         <div className="hidden flex-col justify-between bg-primary p-10 text-primary-foreground lg:flex">
           <div>
-            <div className="mb-10 flex items-center gap-3">
+            {/* <div className="mb-10 flex items-center gap-3">
               <img src="/images/logo.png" alt="BS42.NET logo" className="h-14 w-auto max-w-25 object-contain" />
-            </div>
+            </div> */}
 
             <div className="mb-4 text-xs font-semibold tracking-[0.2em] text-primary-foreground/70 uppercase">Welcome</div>
             <h1 className="max-w-sm text-2xl leading-tight font-semibold tracking-tight">Set up your platform.</h1>

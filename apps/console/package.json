@@ -18,6 +18,7 @@
     "@workspace/auth": "workspace:*",
     "@workspace/db": "workspace:*",
     "@workspace/forms": "workspace:*",
+    "@workspace/storage": "workspace:*",
     "@workspace/tables": "workspace:*",
     "@workspace/ui": "workspace:*",
     "@workspace/utils": "workspace:*",

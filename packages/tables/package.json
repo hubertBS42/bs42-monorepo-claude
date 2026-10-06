@@ -1,0 +1,33 @@
+{
+  "name": "@workspace/tables",
+  "version": "0.0.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "lint": "eslint",
+    "format": "prettier --write \"**/*.{ts,tsx}\"",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@tanstack/react-table": "^8.21.3",
+    "@workspace/ui": "workspace:*",
+    "date-fns": "^4.4.0",
+    "lucide-react": "^1.47.0",
+    "react-day-picker": "^10.0.1"
+  },
+  "peerDependencies": {
+    "next": "^16.3.6",
+    "react": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "19.3.0",
+    "@workspace/eslint-config": "workspace:*",
+    "@workspace/typescript-config": "workspace:*",
+    "eslint": "^9",
+    "typescript": "^5"
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./*": "./src/*.tsx"
+  }
+}

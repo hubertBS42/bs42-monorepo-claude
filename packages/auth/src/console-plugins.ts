@@ -9,7 +9,7 @@ import {
   organizationAccessController,
   organizationRoles,
 } from "./organization-permissions"
-// import { InviteMemberEmail, sendEmail } from "@workspace/email"
+import { InviteMemberEmail, sendEmail } from "@workspace/email"
 import {
   APP_NAME,
   APP_URL,
@@ -33,21 +33,21 @@ export const consolePlugins = [
     invitationExpiresIn: INVITATION_EXPIRATION,
     allowUserToCreateOrganization: (user) =>
       hasSystemRole(user.role, ["superAdmin"]),
-    //   async sendInvitationEmail(data) {
-    //     const inviteLink = `${APP_URL}/accept-invitation/${data.id}`
+    async sendInvitationEmail(data) {
+      const inviteLink = `${APP_URL}/accept-invitation/${data.id}`
 
-    //     await sendEmail({
-    //       to: data.email,
-    //       subject: `You've been invited to join ${data.organization.name} on ${APP_NAME}`,
-    //       reactTemplate: InviteMemberEmail({
-    //         inviterName: data.inviter.user.name,
-    //         name: data.email,
-    //         storeName: data.organization.name,
-    //         role: data.role,
-    //         url: inviteLink,
-    //       }),
-    //     })
-    //   },
+      await sendEmail({
+        to: data.email,
+        subject: `You've been invited to join ${data.organization.name} on ${APP_NAME}`,
+        reactTemplate: InviteMemberEmail({
+          inviterName: data.inviter.user.name,
+          name: data.email,
+          storeName: data.organization.name,
+          role: data.role,
+          url: inviteLink,
+        }),
+      })
+    },
     organizationHooks: {
       beforeDeleteOrganization: async ({ organization }) => {
         if (organization.slug === PLATFORM_ORGANIZATION_SLUG) {
