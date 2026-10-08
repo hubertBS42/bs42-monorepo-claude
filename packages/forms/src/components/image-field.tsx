@@ -168,7 +168,6 @@ const ImageField = <T extends FieldValues>({
       render={({ field, fieldState }) => {
         const imageUrls = toImageUrls(field.value)
         const isBusy = isUploading || removingIndex !== null
-        const canAddImage = !disabled && !isBusy && imageUrls.length < imageLimit
         const describedBy = [description ? descriptionId : undefined, fieldState.invalid || operationError ? errorId : undefined].filter(Boolean).join(" ") || undefined
 
         const updateValue = (urls: string[]) => {
@@ -318,8 +317,8 @@ const ImageField = <T extends FieldValues>({
                 </Attachment>
               )}
 
-              {canAddImage && (
-                <Attachment orientation={orientation} state="idle" className={cn(orientation === "horizontal" ? "w-full" : "w-32")}>
+              {!isBusy && imageUrls.length < imageLimit && (
+                <Attachment orientation={orientation} state="idle" className={cn(orientation === "horizontal" ? "w-full" : "w-32", disabled && "opacity-50")}>
                   <AttachmentMedia>
                     <ImageIcon className="text-muted-foreground" />
                   </AttachmentMedia>

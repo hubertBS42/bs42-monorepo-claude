@@ -19,6 +19,7 @@ export const systemRoles = {
   admin: systemAccessController.newRole({
     user: ["list", "get"],
     session: ["list", "revoke"],
+    organization: ["create", "update"],
     brand: ["create", "update", "delete"],
     category: ["create", "update", "delete"],
     product: ["create", "update", "delete"],

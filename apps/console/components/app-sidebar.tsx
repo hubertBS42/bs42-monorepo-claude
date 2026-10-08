@@ -4,25 +4,11 @@ import * as React from "react"
 
 import { Nav } from "@/components/nav"
 import { NavUser } from "@/components/nav-user"
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarHeader,
-} from "@workspace/ui/components/sidebar"
+import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader } from "@workspace/ui/components/sidebar"
 
 import { StoreSwitcher } from "./store-switcher"
 
-export function AppSidebar({
-  user,
-  ...props
-}: React.ComponentProps<typeof Sidebar> & {
-  user: {
-    name: string
-    email: string
-    image: string | null
-  }
-}) {
+export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar variant="inset" {...props}>
       <SidebarHeader>
@@ -32,7 +18,7 @@ export function AppSidebar({
         <Nav />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={user} />
+        <NavUser />
       </SidebarFooter>
     </Sidebar>
   )

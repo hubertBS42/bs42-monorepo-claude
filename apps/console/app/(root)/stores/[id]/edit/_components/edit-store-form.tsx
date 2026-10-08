@@ -132,21 +132,9 @@ export default function EditStoreForm({ store }: { store: Store }) {
                     />
                     <TextInputField control={form.control} label="Name" name="name" disabled={form.formState.isSubmitting} autoFocus />
 
-                    <RichTextField
-                      control={form.control}
-                      label="Shipping Policy"
-                      name="shippingPolicy"
-                      placeholder="Write something..."
-                      disabled={form.formState.isSubmitting}
-                    />
+                    <RichTextField control={form.control} label="Shipping Policy" name="shippingPolicy" placeholder="Write something..." disabled={form.formState.isSubmitting} />
 
-                    <RichTextField
-                      control={form.control}
-                      label="Returns Policy"
-                      name="returnsPolicy"
-                      placeholder="Write something..."
-                      disabled={form.formState.isSubmitting}
-                    />
+                    <RichTextField control={form.control} label="Returns Policy" name="returnsPolicy" placeholder="Write something..." disabled={form.formState.isSubmitting} />
                   </FieldGroup>
                 </CardContent>
               </Card>
@@ -175,12 +163,7 @@ export default function EditStoreForm({ store }: { store: Store }) {
               </Card>
             </div>
           </div>
-          <ResourceFormFooter
-            backTo="/stores"
-            isPending={form.formState.isSubmitting}
-            isDirty={form.formState.isDirty}
-            handleDiscard={handleDiscard}
-          />
+          <ResourceFormFooter backTo="/stores" isPending={form.formState.isSubmitting} isDirty={form.formState.isDirty} handleDiscard={handleDiscard} />
         </div>
       </div>
     </form>

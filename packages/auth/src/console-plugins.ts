@@ -1,5 +1,5 @@
 import { admin, organization } from "better-auth/plugins"
-import { consoleAdminRoles, hasSystemRole, systemAccessController, systemRoles } from "./system-permissions"
+import { consoleAdminRoles, hasSystemPermission, hasSystemRole, systemAccessController, systemRoles } from "./system-permissions"
 import { organizationAccessController, organizationRoles } from "./organization-permissions"
 import { InviteMemberEmail, sendEmail } from "@workspace/email"
 import { APP_URL } from "./constants"
@@ -19,7 +19,7 @@ export const consolePlugins = [
     ac: organizationAccessController,
     roles: organizationRoles,
     invitationExpiresIn: INVITATION_EXPIRATION_SECONDS,
-    allowUserToCreateOrganization: (user) => hasSystemRole(user.role, ["superAdmin"]),
+    allowUserToCreateOrganization: (user) => hasSystemPermission(user.role, { organization: ["create"] }),
     async sendInvitationEmail(data) {
       const settings = await readAppSettings()
       const appName = resolveConsoleName(settings)

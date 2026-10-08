@@ -1,11 +1,9 @@
 "use client"
-import { Store } from "@/types"
-import { consoleAuthClient } from "@workspace/auth/console-client"
-import { Skeleton } from "@workspace/ui/components/skeleton"
+
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { useEffect, useState, useTransition } from "react"
+import { consoleAuthClient } from "@workspace/auth/console-client"
 import type { OrgRole } from "@workspace/auth/organization-permissions"
-import { toast } from "@workspace/ui/components/toast"
 import { PLATFORM_ORGANIZATION_SLUG } from "@workspace/contracts"
 import {
   AlertDialog,
@@ -19,53 +17,52 @@ import {
   AlertDialogTrigger,
 } from "@workspace/ui/components/alert-dialog"
 import { Button } from "@workspace/ui/components/button"
+import { Skeleton } from "@workspace/ui/components/skeleton"
 import { Spinner } from "@workspace/ui/components/spinner"
+import { toast } from "@workspace/ui/components/toast"
+import type { Store } from "@/types"
 
-export default function DeleteStore({ store }: { store: Store }) {
-  const [isPending, startTransition] = useTransition()
-  const [isOpen, setIsOpen] = useState(false)
-  const router = useRouter()
-  const [role, setRole] = useState<OrgRole | null>(null)
-  const [isRoleLoading, setIsRoleLoading] = useState(true)
+/**
+ * The current user's role in the given store, or null when they aren't a member.
+ * The result is keyed by organization id, so changing the id counts as loading
+ * again and a stale role is never used for the wrong store.
+ */
+function useMemberRole(organizationId: string) {
+  const [result, setResult] = useState<{ organizationId: string; role: OrgRole | null } | null>(null)
 
   useEffect(() => {
     let isCurrent = true
 
-    void consoleAuthClient.organization
-      .getActiveMemberRole({
-        query: { organizationId: store.id },
-      })
+    const fail = (message: string) => {
+      if (!isCurrent) return
+      toast.add({ title: "Unable to check store permissions", description: message, type: "error" })
+      setResult({ organizationId, role: null })
+    }
+
+    consoleAuthClient.organization
+      .getActiveMemberRole({ query: { organizationId } })
       .then(({ data, error }) => {
-        if (!isCurrent) return
-
-        if (error) {
-          toast.add({
-            title: "Unable to check store permissions",
-            description: error.message,
-            type: "error",
-          })
-        } else if (data) {
-          setRole(data.role as OrgRole)
-        }
-        setIsRoleLoading(false)
+        if (error) return fail(error.message ?? "An unexpected error occurred.")
+        if (isCurrent) setResult({ organizationId, role: (data?.role as OrgRole | undefined) ?? null })
       })
-      .catch((error: unknown) => {
-        if (!isCurrent) return
-
-        toast.add({
-          title: "Unable to check store permissions",
-          description: error instanceof Error ? error.message : "An unexpected error occurred.",
-          type: "error",
-        })
-        setIsRoleLoading(false)
-      })
+      .catch((error: unknown) => fail(error instanceof Error ? error.message : "An unexpected error occurred."))
 
     return () => {
       isCurrent = false
     }
-  }, [store.id])
+  }, [organizationId])
 
-  if (isRoleLoading) return <Skeleton className="h-9 rounded-md" />
+  const current = result?.organizationId === organizationId ? result : null
+  return { role: current?.role ?? null, isLoading: current === null }
+}
+
+export default function DeleteStore({ store }: { store: Store }) {
+  const router = useRouter()
+  const [isOpen, setIsOpen] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const { role, isLoading } = useMemberRole(store.id)
+
+  if (isLoading) return <Skeleton className="h-9 rounded-md" />
 
   const isPlatformOrganization = store.slug === PLATFORM_ORGANIZATION_SLUG
   const canDelete =
@@ -73,78 +70,72 @@ export default function DeleteStore({ store }: { store: Store }) {
     role !== null &&
     consoleAuthClient.organization.checkRolePermission({
       role,
-      permissions: {
-        organization: ["delete"],
-      },
+      permissions: { organization: ["delete"] },
     })
 
-  const handleDelete = () => {
-    startTransition(async () => {
-      await consoleAuthClient.organization.delete(
-        {
-          organizationId: store.id,
-        },
-        {
-          onSuccess: () => {
-            startTransition(() => {
-              setIsOpen(false)
-              toast.add({
-                title: "Store deleted",
-                description: "Store has been deleted.",
-                type: "success",
-              })
+  // Shown as text because a disabled button never shows its title tooltip, and screen readers skip it
+  const disabledReason = isPlatformOrganization
+    ? "The platform organization cannot be deleted."
+    : role === null
+      ? "You must be a member of this store to delete it."
+      : !canDelete
+        ? "Your role in this store cannot delete it."
+        : null
 
-              router.push("/stores")
-            })
-          },
-          onError: (ctx) => {
-            startTransition(() => {
-              setIsOpen(false)
-              toast.add({
-                title: "Error",
-                description: ctx.error.message,
-                type: "error",
-              })
-            })
-          },
-        }
-      )
-    })
+  const handleDelete = async () => {
+    setIsDeleting(true)
+
+    try {
+      const { error } = await consoleAuthClient.organization.delete({ organizationId: store.id })
+      if (error) throw new Error(error.message ?? "Unable to delete the store.")
+
+      setIsOpen(false)
+      toast.add({ title: "Store deleted", description: "Store has been deleted.", type: "success" })
+      router.push("/stores")
+    } catch (error) {
+      // The dialog stays open so the user can retry or cancel on purpose
+      toast.add({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Unable to delete the store.",
+        type: "error",
+      })
+    } finally {
+      setIsDeleting(false)
+    }
   }
 
   return (
-    <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
-      <AlertDialogTrigger
-        render={
-          <Button
-            type="button"
-            className="w-full"
-            variant={"destructive"}
-            disabled={!canDelete}
-            title={isPlatformOrganization ? "The platform organization cannot be deleted" : role === null ? "You must be a member of this store to delete it" : undefined}
-          >
-            Delete Store
-          </Button>
-        }
-      />
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-          <AlertDialogDescription>{`This action cannot be undone. ${store.name} and all related data will be permanently deleted.`}</AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel disabled={isPending}>Cancel</AlertDialogCancel>
-          <AlertDialogAction
-            onClick={(e) => {
-              e.preventDefault()
-              handleDelete()
-            }}
-            disabled={isPending}
-          >
-            {isPending ? <Spinner /> : "Continue"}
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+    <div className="grid gap-2">
+      <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
+        <AlertDialogTrigger
+          render={
+            <Button type="button" className="w-full" variant="destructive" disabled={!canDelete}>
+              Delete Store
+            </Button>
+          }
+        />
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>{`This action cannot be undone. ${store.name} and all related data will be permanently deleted.`}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              onClick={(event) => {
+                event.preventDefault()
+                void handleDelete()
+              }}
+              disabled={isDeleting}
+            >
+              {isDeleting ? <Spinner /> : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {disabledReason && <p className="text-xs text-muted-foreground">{disabledReason}</p>}
+    </div>
   )
 }

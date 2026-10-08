@@ -13,13 +13,7 @@ export default async function RootLayout({
 
   return (
     <SidebarProvider>
-      <AppSidebar
-        user={{
-          name: session.user.name,
-          email: session.user.email,
-          image: session.user.image ?? null,
-        }}
-      />
+      <AppSidebar />
       <SidebarInset>
         <AppHeader />
         <div className="flex flex-1 flex-col">
