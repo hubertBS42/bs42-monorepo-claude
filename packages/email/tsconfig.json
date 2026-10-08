@@ -2,6 +2,8 @@
   "extends": "@workspace/typescript-config/react-library.json",
   "include": ["src/**/*"],
   "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
     "outDir": "./dist",
     "rootDir": ".",
     "declaration": true,

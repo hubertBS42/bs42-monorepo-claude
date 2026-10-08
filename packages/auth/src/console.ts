@@ -3,13 +3,9 @@ import "server-only"
 import { betterAuth } from "better-auth"
 import { authURLs, sharedAuthOptions } from "./shared"
 import { consolePlugins } from "./console-plugins"
-import { APP_NAME, RESET_PASSWORD_TOKEN_EXPIRATION } from "./constants"
-import {
-  ResetPasswordEmail,
-  sendEmail,
-  PasswordUpdatedEmail,
-  SetPasswordEmail,
-} from "@workspace/email"
+import { RESET_PASSWORD_TOKEN_EXPIRATION_SECONDS } from "@workspace/contracts"
+import { ResetPasswordEmail, sendEmail, PasswordUpdatedEmail, SetPasswordEmail } from "@workspace/email"
+import { readAppSettings, resolveConsoleName } from "@workspace/db"
 
 export const consoleAuth = betterAuth({
   ...sharedAuthOptions,
@@ -18,9 +14,11 @@ export const consoleAuth = betterAuth({
   emailAndPassword: {
     enabled: true,
     disableSignUp: true,
-    resetPasswordTokenExpiresIn: RESET_PASSWORD_TOKEN_EXPIRATION,
+    resetPasswordTokenExpiresIn: RESET_PASSWORD_TOKEN_EXPIRATION_SECONDS,
     revokeSessionsOnPasswordReset: true,
     sendResetPassword: async ({ user, url }) => {
+      const settings = await readAppSettings()
+      const appName = resolveConsoleName(settings)
       const resetUrl = new URL(url)
       const callbackURL = resetUrl.searchParams.get("callbackURL")
 
@@ -38,25 +36,32 @@ export const consoleAuth = betterAuth({
       if (action === "set") {
         await sendEmail({
           to: user.email,
-          subject: `You've been invited to ${APP_NAME} — set your password`,
+          fromName: appName,
+          subject: `You've been invited to ${appName} — set your password`,
           reactTemplate: SetPasswordEmail({
             name: user.name,
             url,
+            appName,
+            logoUrl: settings.logoUrl,
           }),
         })
       } else {
         await sendEmail({
           to: user.email,
-          subject: `Reset your ${APP_NAME} password`,
-          reactTemplate: ResetPasswordEmail({ name: user.name, url }),
+          fromName: appName,
+          subject: `Reset your ${appName} password`,
+          reactTemplate: ResetPasswordEmail({ name: user.name, url, appName, logoUrl: settings.logoUrl }),
         })
       }
     },
     onPasswordReset: async ({ user }) => {
+      const settings = await readAppSettings()
+      const appName = resolveConsoleName(settings)
       await sendEmail({
         to: user.email,
+        fromName: appName,
         subject: "Your password has been updated!",
-        reactTemplate: PasswordUpdatedEmail({ name: user.name }),
+        reactTemplate: PasswordUpdatedEmail({ name: user.name, appName, logoUrl: settings.logoUrl }),
       })
     },
   },

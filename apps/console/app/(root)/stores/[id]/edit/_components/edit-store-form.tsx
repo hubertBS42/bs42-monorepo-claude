@@ -1,0 +1,188 @@
+"use client"
+import ResourceFormHeader from "@/components/shared-form-header"
+import { updateStoreFormSchema } from "@/lib/schemas/store.schemas"
+import { deleteImages, uploadImages } from "@/lib/storage"
+import { Store, StoreStatus } from "@/types"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { consoleAuthClient } from "@workspace/auth/console-client"
+import { ImageField, SelectField, TextInputField } from "@workspace/forms"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@workspace/ui/components/card"
+import { FieldGroup } from "@workspace/ui/components/field"
+import { toast } from "@workspace/ui/components/toast"
+import { useRouter } from "next/navigation"
+import { SubmitHandler, useForm } from "react-hook-form"
+import z from "zod"
+import { STORE_STATUS_OPTIONS } from "@/constants"
+import ResourceFormFooter from "@/components/shared-form-footer"
+import DeleteStore from "./delete-store"
+import RichTextField from "@workspace/forms/components/rich-text-editor/rich-text-field"
+
+export default function EditStoreForm({ store }: { store: Store }) {
+  const router = useRouter()
+
+  const form = useForm<z.infer<typeof updateStoreFormSchema>>({
+    resolver: zodResolver(updateStoreFormSchema),
+    defaultValues: {
+      id: store.id,
+      name: store.name,
+      logo: store.logo ?? "",
+      returnsPolicy: store.returnsPolicy,
+      shippingPolicy: store.shippingPolicy,
+      status: store.status as StoreStatus,
+    },
+  })
+
+  const onSubmit: SubmitHandler<z.infer<typeof updateStoreFormSchema>> = async (data) => {
+    form.clearErrors("root")
+    const { error: updateStoreErr } = await consoleAuthClient.organization.update({
+      data: {
+        name: data.name,
+        logo: data.logo?.trim() ? data.logo : null,
+        returnsPolicy: data.returnsPolicy ?? "",
+        shippingPolicy: data.shippingPolicy ?? "",
+        status: data.status,
+      },
+      organizationId: store.id,
+    })
+
+    if (updateStoreErr) {
+      toast.add({
+        title: "Operation failed",
+        description: updateStoreErr.message,
+        type: "error",
+      })
+
+      return
+    }
+
+    // The previous logo is only removed once the update has been saved
+    if (store.logo && data.logo !== store.logo) {
+      await deleteImages([store.logo]).catch(() => undefined)
+    }
+
+    toast.add({
+      title: "Operation succeeded",
+      description: "Store updated successfully.",
+      type: "success",
+    })
+    router.push("/stores")
+  }
+
+  const handleAddLogo = async (data: FileList) => {
+    const formData = new FormData()
+    Array.from(data).forEach((file) => formData.append("files", file))
+    return uploadImages(formData)
+  }
+
+  const handleRemoveLogo = async (url: string) => {
+    // The saved logo is deleted on submit, so discarding needs no restore
+    if (url === store.logo) return
+    await deleteImages([url])
+  }
+
+  const handleDiscard = async () => {
+    const image = form.getValues("logo")
+    try {
+      if (image?.trim() && image !== store.logo) await deleteImages([image])
+      router.push("/stores")
+    } catch (error) {
+      toast.add({
+        title: "Unable to discard store",
+        description: error instanceof Error ? error.message : "The uploaded logo could not be removed. Please try again.",
+        type: "error",
+      })
+    }
+  }
+
+  return (
+    <form onSubmit={form.handleSubmit(onSubmit)}>
+      <div className="grid gap-y-6">
+        <ResourceFormHeader
+          heading="Edit Store"
+          description="Update store's details and status."
+          backTo="/stores"
+          isPending={form.formState.isSubmitting}
+          isDirty={form.formState.isDirty}
+          handleDiscard={handleDiscard}
+        />
+
+        <div className="grid gap-8">
+          <div className="grid items-start gap-4 lg:grid-cols-3">
+            {/* Left column */}
+            <div className="lg:col-span-2">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Store Details</CardTitle>
+                  <CardDescription>Configure the basic information and settings for this store.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <FieldGroup>
+                    <ImageField
+                      control={form.control}
+                      name="logo"
+                      sizeLimit={100}
+                      maxImages={1}
+                      onAdd={handleAddLogo}
+                      onRemove={handleRemoveLogo}
+                      clearErrors={form.clearErrors}
+                      label="Logo"
+                      disabled={form.formState.isSubmitting}
+                      className="max-w-35"
+                      defaultValues={store.logo}
+                    />
+                    <TextInputField control={form.control} label="Name" name="name" disabled={form.formState.isSubmitting} autoFocus />
+
+                    <RichTextField
+                      control={form.control}
+                      label="Shipping Policy"
+                      name="shippingPolicy"
+                      placeholder="Write something..."
+                      disabled={form.formState.isSubmitting}
+                    />
+
+                    <RichTextField
+                      control={form.control}
+                      label="Returns Policy"
+                      name="returnsPolicy"
+                      placeholder="Write something..."
+                      disabled={form.formState.isSubmitting}
+                    />
+                  </FieldGroup>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Right column */}
+            <div className="grid gap-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Status</CardTitle>
+                  <CardDescription>Set the status for this store.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <SelectField control={form.control} name="status" disabled={form.formState.isSubmitting} options={STORE_STATUS_OPTIONS} />
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Danger Zone</CardTitle>
+                  <CardDescription>Permanently delete this organization and all associated data.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <DeleteStore store={store} />
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+          <ResourceFormFooter
+            backTo="/stores"
+            isPending={form.formState.isSubmitting}
+            isDirty={form.formState.isDirty}
+            handleDiscard={handleDiscard}
+          />
+        </div>
+      </div>
+    </form>
+  )
+}

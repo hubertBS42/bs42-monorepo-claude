@@ -10,7 +10,7 @@ import { useRouter } from "next/navigation"
 import { SubmitHandler, useForm } from "react-hook-form"
 import * as z from "zod"
 import { consoleAuthClient } from "@workspace/auth/console-client"
-import { PLATFORM_ORGANIZATION_SLUG } from "@/constants"
+import { PLATFORM_ORGANIZATION_SLUG } from "@workspace/contracts"
 import { signInFormSchema } from "@/lib/schemas/auth.schemas"
 
 function getSafeCallbackURL(callbackURL: string) {
@@ -46,10 +46,7 @@ export function LoginForm({ callbackURL, setupComplete = false }: { callbackURL:
         // The ban check runs after the password is verified, so showing it
         // doesn't reveal whether an account exists
         form.setError("root", {
-          message:
-            result.error.code === "BANNED_USER"
-              ? "Your account has been suspended. Please contact an administrator."
-              : "Invalid email or password. Please try again.",
+          message: result.error.code === "BANNED_USER" ? "Your account has been suspended. Please contact an administrator." : "Invalid email or password. Please try again.",
         })
         return
       }
@@ -116,22 +113,12 @@ export function LoginForm({ callbackURL, setupComplete = false }: { callbackURL:
     <Card>
       <CardHeader>
         <CardTitle>Login to your account</CardTitle>
-        <CardDescription>
-          {setupComplete ? "Your administrator account is ready. Sign in to continue." : "Enter your email below to login to your account"}
-        </CardDescription>
+        <CardDescription>{setupComplete ? "Your administrator account is ready. Sign in to continue." : "Enter your email below to login to your account"}</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={form.handleSubmit(onSubmit)} id="sign-in-form">
           <FieldGroup>
-            <TextInputField
-              control={form.control}
-              name="email"
-              label="Email"
-              type="email"
-              placeholder="m@example.com"
-              autoComplete="email"
-              autoFocus
-            />
+            <TextInputField control={form.control} name="email" label="Email" type="email" placeholder="m@example.com" autoComplete="email" autoFocus />
 
             <PasswordField
               control={form.control}

@@ -1,7 +1,7 @@
 "use server"
 
 import { consoleBootstrapAuth } from "@workspace/auth/console-bootstrap"
-import { PLATFORM_ORGANIZATION_SLUG } from "@/constants"
+import { PLATFORM_ORGANIZATION_SLUG } from "@workspace/contracts"
 import { prisma } from "@workspace/db"
 import { Pool, type PoolClient } from "pg"
 import { setupFormSchema } from "../schemas/bootstrap.schemas"

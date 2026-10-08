@@ -45,15 +45,7 @@ function getBlobName(value: string): string {
     throw new StorageValidationError("The storage URL is malformed.")
   }
 
-  if (
-    url.protocol !== "https:" ||
-    url.hostname !== `${client.accountName}.blob.core.windows.net` ||
-    url.port ||
-    url.username ||
-    url.password ||
-    url.search ||
-    url.hash
-  ) {
+  if (url.protocol !== "https:" || url.hostname !== `${client.accountName}.blob.core.windows.net` || url.port || url.username || url.password || url.search || url.hash) {
     throw new StorageValidationError("The URL does not belong to the configured storage account.")
   }
 
@@ -128,4 +120,14 @@ export async function restoreFiles(urls: readonly string[]): Promise<void> {
   const blobNames = urls.map(getBlobName)
 
   await Promise.all(blobNames.map((name) => client.getBlockBlobClient(name).undelete()))
+}
+
+export function isManagedFileUrl(value: string): boolean {
+  try {
+    getBlobName(value)
+    return true
+  } catch (error) {
+    if (error instanceof StorageValidationError) return false
+    throw error
+  }
 }

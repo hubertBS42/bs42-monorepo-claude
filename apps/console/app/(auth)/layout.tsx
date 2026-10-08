@@ -4,6 +4,7 @@ import { hasConsoleAccess } from "@/lib/auth-guard"
 import { ReactNode } from "react"
 import { headers } from "next/headers"
 import { redirect } from "next/navigation"
+import { getAppSettings } from "@/lib/app-settings"
 
 export default async function AuthLayout({
   children,
@@ -18,12 +19,16 @@ export default async function AuthLayout({
     redirect((await hasConsoleAccess(session.user)) ? "/" : "/no-stores")
   }
 
+  const settings = await getAppSettings()
+
   return (
     <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
       <div className="w-full max-w-sm">
-        <div className="mb-6 flex justify-center">
-          <img src="/images/logo.png" alt="BS42.NET logo" className="h-12 w-auto max-w-32 object-contain" />
-        </div>
+        {settings.logoUrl && (
+          <div className="mb-6 flex justify-center">
+            <img src={settings.logoUrl} alt={settings.consoleName ?? ""} className="h-12 w-auto max-w-32 object-contain" />
+          </div>
+        )}
         {children}
       </div>
     </div>

@@ -2,14 +2,7 @@
 
 import * as React from "react"
 import { ImageIcon, X } from "lucide-react"
-import {
-  Controller,
-  type Control,
-  type FieldPathValue,
-  type FieldValues,
-  type Path,
-  type UseFormClearErrors,
-} from "react-hook-form"
+import { Controller, type Control, type FieldPathValue, type FieldValues, type Path, type UseFormClearErrors } from "react-hook-form"
 
 import {
   Attachment,
@@ -22,16 +15,10 @@ import {
   AttachmentTitle,
   AttachmentTrigger,
 } from "@workspace/ui/components/attachment"
-import {
-  Field,
-  FieldDescription,
-  FieldError,
-  FieldLabel,
-} from "@workspace/ui/components/field"
+import { Field, FieldDescription, FieldError, FieldLabel } from "@workspace/ui/components/field"
 import { Spinner } from "@workspace/ui/components/spinner"
 import { Input } from "@workspace/ui/components/input"
-
-import { truncateTitle } from "../utils/truncate-title"
+import { cn } from "@workspace/ui/lib/utils"
 
 interface ImageFieldProps<T extends FieldValues> {
   control: Control<T>
@@ -41,9 +28,18 @@ interface ImageFieldProps<T extends FieldValues> {
   className?: string
   disabled?: boolean
   maxImages?: number
+  /** Maximum size of each image, in KB */
   sizeLimit?: number
+  /** Same syntax as the HTML accept attribute, e.g. "image/png" or "image/png,image/webp". Enforced on selection, not only in the picker. */
   accept?: string
+  /** Require width and height to be equal */
+  square?: boolean
+  /** Minimum width and height, in pixels */
+  minDimension?: number
+  /** Maximum width and height, in pixels */
+  maxDimension?: number
   defaultValues?: string | string[] | null
+  orientation?: "vertical" | "horizontal"
   clearErrors?: UseFormClearErrors<T>
   onAdd: (images: FileList) => Promise<string[]>
   onRemove: (url: string) => Promise<void>
@@ -66,9 +62,7 @@ function getImageTitle(url: string, index: number): string {
 
   try {
     const parsedUrl = new URL(url)
-    const fileName = decodeURIComponent(
-      parsedUrl.pathname.split("/").filter(Boolean).at(-1) ?? ""
-    )
+    const fileName = decodeURIComponent(parsedUrl.pathname.split("/").filter(Boolean).at(-1) ?? "")
     if (fileName) return fileName
   } catch {
     const fileName = url.split(/[?#]/, 1)[0]?.split("/").filter(Boolean).at(-1)
@@ -76,6 +70,57 @@ function getImageTitle(url: string, index: number): string {
   }
 
   return `Image ${index + 1}`
+}
+
+/** Checks a file against an HTML-style accept string (MIME types, wildcards such as image/*, and extensions). */
+function matchesAccept(file: File, accept: string): boolean {
+  const rules = accept
+    .split(",")
+    .map((rule) => rule.trim().toLowerCase())
+    .filter(Boolean)
+  if (rules.length === 0) return true
+
+  const type = file.type.toLowerCase()
+  const name = file.name.toLowerCase()
+
+  return rules.some((rule) => {
+    if (rule.startsWith(".")) return name.endsWith(rule)
+    if (rule.endsWith("/*")) return type.startsWith(rule.slice(0, -1))
+    return type === rule
+  })
+}
+
+function readImageSize(file: File): Promise<{ width: number; height: number }> {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file)
+    const image = new Image()
+
+    image.onload = () => {
+      URL.revokeObjectURL(url)
+      resolve({ width: image.naturalWidth, height: image.naturalHeight })
+    }
+    image.onerror = () => {
+      URL.revokeObjectURL(url)
+      reject(new Error(`${file.name} could not be read as an image.`))
+    }
+    image.src = url
+  })
+}
+
+async function assertDimensions(files: File[], { square, minDimension, maxDimension }: { square?: boolean; minDimension?: number; maxDimension?: number }) {
+  for (const file of files) {
+    const { width, height } = await readImageSize(file)
+
+    if (square && width !== height) {
+      throw new Error(`${file.name} must be square (it is ${width}×${height}px).`)
+    }
+    if (minDimension && (width < minDimension || height < minDimension)) {
+      throw new Error(`${file.name} must be at least ${minDimension}×${minDimension}px (it is ${width}×${height}px).`)
+    }
+    if (maxDimension && (width > maxDimension || height > maxDimension)) {
+      throw new Error(`${file.name} must be at most ${maxDimension}×${maxDimension}px (it is ${width}×${height}px).`)
+    }
+  }
 }
 
 const ImageField = <T extends FieldValues>({
@@ -88,7 +133,11 @@ const ImageField = <T extends FieldValues>({
   maxImages = 1,
   sizeLimit = 1000,
   accept = "image/*",
+  square,
+  minDimension,
+  maxDimension,
   defaultValues,
+  orientation = "vertical",
   clearErrors,
   onAdd,
   onRemove,
@@ -101,12 +150,8 @@ const ImageField = <T extends FieldValues>({
   const errorId = `${inputId}-error`
   const [isUploading, setIsUploading] = React.useState(false)
   const [removingIndex, setRemovingIndex] = React.useState<number | null>(null)
-  const [operationError, setOperationError] = React.useState<string | null>(
-    null
-  )
-  const [uploadedImageTitles, setUploadedImageTitles] = React.useState<
-    Record<string, string>
-  >({})
+  const [operationError, setOperationError] = React.useState<string | null>(null)
+  const [uploadedImageTitles, setUploadedImageTitles] = React.useState<Record<string, string>>({})
   const imageLimit = Math.max(1, Math.floor(maxImages))
   const initialUrls = toImageUrls(defaultValues)
   const initialValue = imageLimit === 1 ? (initialUrls[0] ?? "") : initialUrls
@@ -123,23 +168,14 @@ const ImageField = <T extends FieldValues>({
       render={({ field, fieldState }) => {
         const imageUrls = toImageUrls(field.value)
         const isBusy = isUploading || removingIndex !== null
-        const canAddImage =
-          !disabled && !isBusy && imageUrls.length < imageLimit
-        const describedBy =
-          [
-            description ? descriptionId : undefined,
-            fieldState.invalid || operationError ? errorId : undefined,
-          ]
-            .filter(Boolean)
-            .join(" ") || undefined
+        const canAddImage = !disabled && !isBusy && imageUrls.length < imageLimit
+        const describedBy = [description ? descriptionId : undefined, fieldState.invalid || operationError ? errorId : undefined].filter(Boolean).join(" ") || undefined
 
         const updateValue = (urls: string[]) => {
           field.onChange(imageLimit === 1 ? (urls[0] ?? "") : urls)
         }
 
-        const handleFileChange = async (
-          event: React.ChangeEvent<HTMLInputElement>
-        ) => {
+        const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
           const files = event.currentTarget.files
           if (!files?.length) return
 
@@ -151,14 +187,20 @@ const ImageField = <T extends FieldValues>({
               throw new Error("Choose image files only.")
             }
 
+            if (selectedFiles.some((file) => !matchesAccept(file, accept))) {
+              throw new Error(accept === "image/*" ? "Choose image files only." : `Unsupported file type. Accepted: ${accept}.`)
+            }
+
             if (selectedFiles.some((file) => file.size > sizeLimit * 1024)) {
               throw new Error(`Each image must be ${sizeLimit} KB or smaller.`)
             }
 
             if (selectedFiles.length > availableSlots) {
-              throw new Error(
-                `You can add up to ${imageLimit} image${imageLimit === 1 ? "" : "s"}.`
-              )
+              throw new Error(`You can add up to ${imageLimit} image${imageLimit === 1 ? "" : "s"}.`)
+            }
+
+            if (square || minDimension || maxDimension) {
+              await assertDimensions(selectedFiles, { square, minDimension, maxDimension })
             }
 
             setOperationError(null)
@@ -166,30 +208,17 @@ const ImageField = <T extends FieldValues>({
             setIsUploading(true)
             const uploadedUrls = await onAdd(files)
 
-            if (
-              !Array.isArray(uploadedUrls) ||
-              uploadedUrls.length !== selectedFiles.length ||
-              uploadedUrls.some((url) => typeof url !== "string" || !url)
-            ) {
-              throw new Error(
-                "The upload did not return a URL for every selected image."
-              )
+            if (!Array.isArray(uploadedUrls) || uploadedUrls.length !== selectedFiles.length || uploadedUrls.some((url) => typeof url !== "string" || !url)) {
+              throw new Error("The upload did not return a URL for every selected image.")
             }
 
             updateValue([...imageUrls, ...uploadedUrls])
             setUploadedImageTitles((currentTitles) => ({
               ...currentTitles,
-              ...Object.fromEntries(
-                uploadedUrls.map((url, index) => [
-                  url,
-                  selectedFiles[index]?.name ?? getImageTitle(url, index),
-                ])
-              ),
+              ...Object.fromEntries(uploadedUrls.map((url, index) => [url, selectedFiles[index]?.name ?? getImageTitle(url, index)])),
             }))
           } catch (error) {
-            setOperationError(
-              getErrorMessage(error, "Unable to upload the selected images.")
-            )
+            setOperationError(getErrorMessage(error, "Unable to upload the selected images."))
           } finally {
             setIsUploading(false)
             clearInput()
@@ -207,11 +236,7 @@ const ImageField = <T extends FieldValues>({
           try {
             await onRemove(url)
             updateValue(imageUrls.filter((_, itemIndex) => itemIndex !== index))
-            if (
-              !imageUrls.some(
-                (image, itemIndex) => image === url && itemIndex !== index
-              )
-            ) {
+            if (!imageUrls.some((image, itemIndex) => image === url && itemIndex !== index)) {
               setUploadedImageTitles((currentTitles) => {
                 const nextTitles = { ...currentTitles }
                 delete nextTitles[url]
@@ -219,20 +244,14 @@ const ImageField = <T extends FieldValues>({
               })
             }
           } catch (error) {
-            setOperationError(
-              getErrorMessage(error, "Unable to remove this image.")
-            )
+            setOperationError(getErrorMessage(error, "Unable to remove this image."))
           } finally {
             setRemovingIndex(null)
           }
         }
 
         return (
-          <Field
-            className="grid gap-1"
-            data-disabled={disabled}
-            data-invalid={fieldState.invalid || Boolean(operationError)}
-          >
+          <Field className="grid gap-1" data-disabled={disabled} data-invalid={fieldState.invalid || Boolean(operationError)}>
             {label && (
               <FieldLabel id={labelId} htmlFor={inputId}>
                 {label}
@@ -257,21 +276,16 @@ const ImageField = <T extends FieldValues>({
               onChange={handleFileChange}
             />
 
-            <AttachmentGroup
-              aria-labelledby={label ? labelId : undefined}
-              aria-describedby={describedBy}
-              className={className}
-            >
+            <AttachmentGroup aria-labelledby={label ? labelId : undefined} aria-describedby={describedBy} className={cn("m-0 w-full p-0", className)}>
               {imageUrls.map((url, index) => {
-                const imageTitle =
-                  uploadedImageTitles[url] ?? getImageTitle(url, index)
+                const imageTitle = uploadedImageTitles[url] ?? getImageTitle(url, index)
 
                 return (
                   <Attachment
                     key={`${url}-${index}`}
-                    orientation="vertical"
+                    orientation={orientation}
                     state={removingIndex === index ? "processing" : "done"}
-                    className="w-32"
+                    className={cn(orientation === "horizontal" ? "w-full" : "w-32")}
                   >
                     <AttachmentMedia variant="image">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -279,20 +293,12 @@ const ImageField = <T extends FieldValues>({
                     </AttachmentMedia>
                     <AttachmentContent>
                       <AttachmentTitle title={imageTitle}>
-                        {truncateTitle(imageTitle)}
+                        <span className="block max-w-[24ch] truncate">{imageTitle}</span>
                       </AttachmentTitle>
-                      <AttachmentDescription>
-                        {removingIndex === index ? "Removing..." : "Uploaded"}
-                      </AttachmentDescription>
+                      <AttachmentDescription>{removingIndex === index ? "Removing..." : "Uploaded"}</AttachmentDescription>
                     </AttachmentContent>
                     <AttachmentActions>
-                      <AttachmentAction
-                        type="button"
-                        aria-label={`Remove ${imageTitle}`}
-                        title={`Remove ${imageTitle}`}
-                        disabled={isBusy || disabled}
-                        onClick={() => void handleRemove(index)}
-                      >
+                      <AttachmentAction type="button" aria-label={`Remove ${imageTitle}`} title={`Remove ${imageTitle}`} disabled={isBusy || disabled} onClick={() => void handleRemove(index)}>
                         {removingIndex === index ? <Spinner /> : <X />}
                       </AttachmentAction>
                     </AttachmentActions>
@@ -301,45 +307,27 @@ const ImageField = <T extends FieldValues>({
               })}
 
               {isUploading && (
-                <Attachment
-                  orientation="vertical"
-                  state="uploading"
-                  className="w-32"
-                  aria-live="polite"
-                >
+                <Attachment orientation={orientation} state="uploading" className={cn(orientation === "horizontal" ? "w-full" : "w-32")} aria-live="polite">
                   <AttachmentMedia>
                     <Spinner />
                   </AttachmentMedia>
                   <AttachmentContent>
                     <AttachmentTitle>Uploading images</AttachmentTitle>
-                    <AttachmentDescription>
-                      Please wait...
-                    </AttachmentDescription>
+                    <AttachmentDescription>Please wait...</AttachmentDescription>
                   </AttachmentContent>
                 </Attachment>
               )}
 
               {canAddImage && (
-                <Attachment
-                  orientation="vertical"
-                  state="idle"
-                  className="w-32"
-                >
+                <Attachment orientation={orientation} state="idle" className={cn(orientation === "horizontal" ? "w-full" : "w-32")}>
                   <AttachmentMedia>
                     <ImageIcon className="text-muted-foreground" />
                   </AttachmentMedia>
                   <AttachmentContent>
                     <AttachmentTitle>Add image</AttachmentTitle>
-                    <AttachmentDescription>
-                      {`Up to ${sizeLimit} KB`}
-                    </AttachmentDescription>
+                    <AttachmentDescription>{`Up to ${sizeLimit} KB`}</AttachmentDescription>
                   </AttachmentContent>
-                  <AttachmentTrigger
-                    aria-label={`Add ${label ?? "image"}`}
-                    aria-describedby={describedBy}
-                    disabled={disabled || isBusy}
-                    onClick={() => inputRef.current?.click()}
-                  />
+                  <AttachmentTrigger aria-label={`Add ${label ?? "image"}`} aria-describedby={describedBy} disabled={disabled || isBusy} onClick={() => inputRef.current?.click()} />
                 </Attachment>
               )}
 
@@ -350,16 +338,8 @@ const ImageField = <T extends FieldValues>({
               )}
             </AttachmentGroup>
 
-            {description && (
-              <FieldDescription id={descriptionId}>
-                {description}
-              </FieldDescription>
-            )}
-            {(fieldState.invalid || operationError) && (
-              <FieldError id={errorId}>
-                {operationError ?? fieldState.error?.message}
-              </FieldError>
-            )}
+            {description && <FieldDescription id={descriptionId}>{description}</FieldDescription>}
+            {(fieldState.invalid || operationError) && <FieldError id={errorId}>{operationError ?? fieldState.error?.message}</FieldError>}
           </Field>
         )
       }}

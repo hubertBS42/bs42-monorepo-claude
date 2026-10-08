@@ -1,10 +1,8 @@
 import "server-only"
 
 import { prisma } from "@workspace/db"
-import { parsePositiveIntegerEnv } from "@workspace/utils/env"
 import { prismaAdapter } from "better-auth/adapters/prisma"
-
-const sessionCacheExpiration = parsePositiveIntegerEnv(process.env.SESSION_CACHE_EXPIRATION, "SESSION_CACHE_EXPIRATION", 300)
+import { SESSION_CACHE_EXPIRATION_SECONDS } from "@workspace/contracts"
 
 const secret = process.env.BETTER_AUTH_SECRET
 
@@ -31,7 +29,7 @@ export const sharedAuthOptions = {
   session: {
     cookieCache: {
       enabled: true,
-      maxAge: sessionCacheExpiration,
+      maxAge: SESSION_CACHE_EXPIRATION_SECONDS,
     },
   },
   advanced: {

@@ -17,7 +17,6 @@ export interface NavSubItem {
   title: string
   url: string
   icon?: LucideIcon
-  context?: ("global" | "store")[]
   items?: NavSubItem[]
 }
 

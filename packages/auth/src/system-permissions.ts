@@ -1,9 +1,5 @@
 import { createAccessControl } from "better-auth/plugins/access"
-import {
-  defaultStatements,
-  adminAc,
-  userAc,
-} from "better-auth/plugins/admin/access"
+import { defaultStatements, adminAc, userAc } from "better-auth/plugins/admin/access"
 
 const statement = {
   ...defaultStatements,
@@ -11,6 +7,7 @@ const statement = {
   brand: ["create", "update", "delete"],
   category: ["create", "update", "delete"],
   product: ["create", "update", "delete"],
+  appSettings: ["update"],
 } as const
 
 export const systemAccessController = createAccessControl(statement)
@@ -32,6 +29,7 @@ export const systemRoles = {
     brand: ["create", "update", "delete"],
     category: ["create", "update", "delete"],
     product: ["create", "update", "delete"],
+    appSettings: ["update"],
   }),
 }
 
@@ -39,24 +37,16 @@ export const consoleAdminRoles = ["admin", "superAdmin"] as const
 
 export type SystemRole = keyof typeof systemRoles
 
-export function hasSystemRole(
-  role: string | null | undefined,
-  allowedRoles: readonly string[]
-) {
+export function hasSystemRole(role: string | null | undefined, allowedRoles: readonly string[]) {
   if (!role) {
     return false
   }
 
-  const assignedRoles = role
-    .split(",")
-    .map((assignedRole) => assignedRole.trim())
+  const assignedRoles = role.split(",").map((assignedRole) => assignedRole.trim())
   return allowedRoles.some((allowedRole) => assignedRoles.includes(allowedRole))
 }
 
-export function hasSystemPermission(
-  role: string | null | undefined,
-  permissions: Parameters<(typeof systemRoles)["admin"]["authorize"]>[0]
-) {
+export function hasSystemPermission(role: string | null | undefined, permissions: Parameters<(typeof systemRoles)["admin"]["authorize"]>[0]) {
   if (!role) {
     return false
   }
@@ -64,16 +54,7 @@ export function hasSystemPermission(
   return role
     .split(",")
     .map((assignedRole) => assignedRole.trim())
-    .some(
-      (assignedRole) =>
-        Object.hasOwn(systemRoles, assignedRole) &&
-        systemRoles[assignedRole as keyof typeof systemRoles].authorize(
-          permissions
-        ).success
-    )
+    .some((assignedRole) => Object.hasOwn(systemRoles, assignedRole) && systemRoles[assignedRole as keyof typeof systemRoles].authorize(permissions).success)
 }
 
-export const SYSTEM_ROLE_NAMES = Object.keys(systemRoles) as [
-  SystemRole,
-  ...Array<SystemRole>,
-]
+export const SYSTEM_ROLE_NAMES = Object.keys(systemRoles) as [SystemRole, ...Array<SystemRole>]

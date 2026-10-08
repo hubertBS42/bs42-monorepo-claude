@@ -10,19 +10,19 @@
   },
   "dependencies": {
     "@hookform/resolvers": "^5.9.1",
+    "@tiptap/extension-table": "^3.31.4",
+    "@tiptap/extension-text-align": "^3.31.4",
+    "@tiptap/extensions": "^3.31.4",
+    "@tiptap/pm": "^3.31.4",
+    "@tiptap/react": "^3.31.4",
+    "@tiptap/starter-kit": "^3.31.4",
     "@workspace/contracts": "workspace:*",
     "@workspace/ui": "workspace:*",
     "lucide-react": "^1.47.0",
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "react-hook-form": "^7.16.0",
-    "react-phone-number-input": "^3.4.18",
-    "@tiptap/extension-heading": "^3.31.4",
-    "@tiptap/extension-text-align": "^3.31.4",
-    "@tiptap/extensions": "^3.31.4",
-    "@tiptap/pm": "^3.31.4",
-    "@tiptap/react": "^3.31.4",
-    "@tiptap/starter-kit": "^3.31.4"
+    "react-phone-number-input": "^3.4.18"
   },
   "devDependencies": {
     "@types/react": "19.3.0",

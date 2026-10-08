@@ -3,13 +3,7 @@ import "server-only"
 import nodemailer, { type Transporter } from "nodemailer"
 import { render } from "react-email"
 import type { ReactElement } from "react"
-import {
-  APP_NAME,
-  SITE_MAILER_EMAIL,
-  SITE_MAILER_HOST,
-  SITE_MAILER_PASSWORD,
-  SITE_MAILER_PORT,
-} from "./constants.js"
+import { SITE_MAILER_EMAIL, SITE_MAILER_HOST, SITE_MAILER_PASSWORD, SITE_MAILER_PORT } from "./constants.js"
 
 export class EmailConfigurationError extends Error {
   constructor(message: string) {
@@ -33,15 +27,11 @@ function getTransporter() {
   const password = SITE_MAILER_PASSWORD
 
   if (!host || !from || !password) {
-    throw new EmailConfigurationError(
-      "SITE_MAILER_HOST, SITE_MAILER_EMAIL, and SITE_MAILER_PASSWORD must be configured before sending email"
-    )
+    throw new EmailConfigurationError("SITE_MAILER_HOST, SITE_MAILER_EMAIL, and SITE_MAILER_PASSWORD must be configured before sending email")
   }
 
   if (!Number.isInteger(SITE_MAILER_PORT) || SITE_MAILER_PORT > 65535) {
-    throw new EmailConfigurationError(
-      "SITE_MAILER_PORT must be an integer between 1 and 65535"
-    )
+    throw new EmailConfigurationError("SITE_MAILER_PORT must be an integer between 1 and 65535")
   }
 
   transporter ??= nodemailer.createTransport({
@@ -58,17 +48,10 @@ function getTransporter() {
   return { transporter, from }
 }
 
-export async function sendEmail({
-  to,
-  subject,
-  reactTemplate,
-}: {
-  to: string
-  subject: string
-  reactTemplate: ReactElement
-}): Promise<{ messageId: string }> {
+export async function sendEmail({ to, subject, reactTemplate, fromName }: { to: string; subject: string; reactTemplate: ReactElement; fromName?: string }): Promise<{ messageId: string }> {
   const recipient = to.trim()
   const emailSubject = subject.trim()
+  const senderName = fromName?.trim()
 
   if (!recipient) {
     throw new TypeError("Email recipient must not be empty")
@@ -76,17 +59,17 @@ export async function sendEmail({
   if (!emailSubject || /[\r\n]/.test(emailSubject)) {
     throw new TypeError("Email subject must be non-empty and single-line")
   }
+  if (senderName && /[\r\n]/.test(senderName)) {
+    throw new TypeError("Email sender name must be single-line")
+  }
 
   const { transporter: mailer, from } = getTransporter()
 
   try {
-    const [html, text] = await Promise.all([
-      render(reactTemplate),
-      render(reactTemplate, { plainText: true }),
-    ])
+    const [html, text] = await Promise.all([render(reactTemplate), render(reactTemplate, { plainText: true })])
 
     const info = await mailer.sendMail({
-      from: { name: APP_NAME, address: from },
+      from: senderName ? { name: senderName, address: from } : from,
       to: recipient,
       subject: emailSubject,
       html,
@@ -95,8 +78,6 @@ export async function sendEmail({
 
     return { messageId: info.messageId }
   } catch (cause) {
-    throw new EmailDeliveryError("Failed to render or send email", {
-      cause,
-    })
+    throw new EmailDeliveryError("Failed to render or send email", { cause })
   }
 }

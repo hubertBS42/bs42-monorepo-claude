@@ -2,14 +2,7 @@
 
 import * as React from "react"
 import { FileText, Upload, X } from "lucide-react"
-import {
-  Controller,
-  type Control,
-  type FieldPathValue,
-  type FieldValues,
-  type Path,
-  type UseFormClearErrors,
-} from "react-hook-form"
+import { Controller, type Control, type FieldPathValue, type FieldValues, type Path, type UseFormClearErrors } from "react-hook-form"
 import type { DocumentItem } from "@workspace/contracts"
 
 import {
@@ -23,15 +16,9 @@ import {
   AttachmentTitle,
   AttachmentTrigger,
 } from "@workspace/ui/components/attachment"
-import {
-  Field,
-  FieldDescription,
-  FieldError,
-  FieldLabel,
-} from "@workspace/ui/components/field"
+import { Field, FieldDescription, FieldError, FieldLabel } from "@workspace/ui/components/field"
 import { Input } from "@workspace/ui/components/input"
 
-import { truncateTitle } from "../utils/truncate-title"
 import { Spinner } from "@workspace/ui/components/spinner"
 
 interface DocumentFieldProps<T extends FieldValues> {
@@ -52,15 +39,7 @@ interface DocumentFieldProps<T extends FieldValues> {
 
 function getDocuments(value: unknown): DocumentItem[] {
   if (Array.isArray(value)) {
-    return value.filter(
-      (item): item is DocumentItem =>
-        typeof item === "object" &&
-        item !== null &&
-        "name" in item &&
-        typeof item.name === "string" &&
-        "url" in item &&
-        typeof item.url === "string"
-    )
+    return value.filter((item): item is DocumentItem => typeof item === "object" && item !== null && "name" in item && typeof item.name === "string" && "url" in item && typeof item.url === "string")
   }
   return []
 }
@@ -110,12 +89,8 @@ const DocumentField = <T extends FieldValues>({
   const errorId = `${inputId}-error`
   const [isUploading, setIsUploading] = React.useState(false)
   const [removingIndex, setRemovingIndex] = React.useState<number | null>(null)
-  const [operationError, setOperationError] = React.useState<string | null>(
-    null
-  )
-  const fileLimit = Number.isFinite(maxFiles)
-    ? Math.max(1, Math.floor(maxFiles))
-    : 1
+  const [operationError, setOperationError] = React.useState<string | null>(null)
+  const fileLimit = Number.isFinite(maxFiles) ? Math.max(1, Math.floor(maxFiles)) : 1
   const initialValue = defaultValues ?? []
 
   const clearInput = () => {
@@ -131,17 +106,9 @@ const DocumentField = <T extends FieldValues>({
         const documents = getDocuments(field.value)
         const isBusy = isUploading || removingIndex !== null
         const canAddFile = !disabled && !isBusy && documents.length < fileLimit
-        const describedBy =
-          [
-            description ? descriptionId : undefined,
-            fieldState.invalid || operationError ? errorId : undefined,
-          ]
-            .filter(Boolean)
-            .join(" ") || undefined
+        const describedBy = [description ? descriptionId : undefined, fieldState.invalid || operationError ? errorId : undefined].filter(Boolean).join(" ") || undefined
 
-        const handleFileChange = async (
-          event: React.ChangeEvent<HTMLInputElement>
-        ) => {
+        const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
           const selectedFiles = event.currentTarget.files
           if (!selectedFiles?.length) return
 
@@ -149,26 +116,18 @@ const DocumentField = <T extends FieldValues>({
           const availableSlots = fileLimit - documents.length
 
           try {
-            const invalidFile = selected.find(
-              (file) => !isAcceptedFile(file, accept)
-            )
+            const invalidFile = selected.find((file) => !isAcceptedFile(file, accept))
             if (invalidFile) {
-              throw new Error(
-                `${invalidFile.name} is not an accepted file type.`
-              )
+              throw new Error(`${invalidFile.name} is not an accepted file type.`)
             }
 
-            const oversizedFile = selected.find(
-              (file) => file.size > sizeLimit * 1024
-            )
+            const oversizedFile = selected.find((file) => file.size > sizeLimit * 1024)
             if (oversizedFile) {
               throw new Error(`Each file must be ${sizeLimit} KB or smaller.`)
             }
 
             if (selected.length > availableSlots) {
-              throw new Error(
-                `You can attach up to ${fileLimit} file${fileLimit === 1 ? "" : "s"}.`
-              )
+              throw new Error(`You can attach up to ${fileLimit} file${fileLimit === 1 ? "" : "s"}.`)
             }
 
             setOperationError(null)
@@ -179,24 +138,14 @@ const DocumentField = <T extends FieldValues>({
             if (
               !Array.isArray(uploadedDocuments) ||
               uploadedDocuments.length !== selected.length ||
-              uploadedDocuments.some(
-                (document) =>
-                  typeof document?.name !== "string" ||
-                  !document.name ||
-                  typeof document.url !== "string" ||
-                  !document.url
-              )
+              uploadedDocuments.some((document) => typeof document?.name !== "string" || !document.name || typeof document.url !== "string" || !document.url)
             ) {
-              throw new Error(
-                "The upload did not return a name and URL for every selected file."
-              )
+              throw new Error("The upload did not return a name and URL for every selected file.")
             }
 
             field.onChange([...documents, ...uploadedDocuments])
           } catch (error) {
-            setOperationError(
-              getErrorMessage(error, "Unable to upload the selected files.")
-            )
+            setOperationError(getErrorMessage(error, "Unable to upload the selected files."))
           } finally {
             setIsUploading(false)
             clearInput()
@@ -213,25 +162,17 @@ const DocumentField = <T extends FieldValues>({
 
           try {
             await onRemove(document.url)
-            const remainingDocuments = documents.filter(
-              (_, fileIndex) => fileIndex !== index
-            )
+            const remainingDocuments = documents.filter((_, fileIndex) => fileIndex !== index)
             field.onChange(remainingDocuments)
           } catch (error) {
-            setOperationError(
-              getErrorMessage(error, "Unable to remove this file.")
-            )
+            setOperationError(getErrorMessage(error, "Unable to remove this file."))
           } finally {
             setRemovingIndex(null)
           }
         }
 
         return (
-          <Field
-            className="grid gap-y-1"
-            data-disabled={disabled}
-            data-invalid={fieldState.invalid || Boolean(operationError)}
-          >
+          <Field className="grid gap-y-1" data-disabled={disabled} data-invalid={fieldState.invalid || Boolean(operationError)}>
             {label && (
               <FieldLabel id={labelId} htmlFor={inputId}>
                 {label}
@@ -256,42 +197,23 @@ const DocumentField = <T extends FieldValues>({
               onChange={handleFileChange}
             />
 
-            <AttachmentGroup
-              aria-labelledby={label ? labelId : undefined}
-              aria-describedby={describedBy}
-              className={className}
-            >
+            <AttachmentGroup aria-labelledby={label ? labelId : undefined} aria-describedby={describedBy} className={className}>
               {documents.map((document, index) => {
                 const fileName = document.name
 
                 return (
-                  <Attachment
-                    key={`${document.url}-${index}`}
-                    state={removingIndex === index ? "processing" : "done"}
-                  >
-                    <AttachmentMedia>
-                      {removingIndex === index ? <Spinner /> : <FileText />}
-                    </AttachmentMedia>
+                  <Attachment key={`${document.url}-${index}`} state={removingIndex === index ? "processing" : "done"}>
+                    <AttachmentMedia>{removingIndex === index ? <Spinner /> : <FileText />}</AttachmentMedia>
                     <AttachmentContent>
                       <AttachmentTitle title={fileName}>
-                        <a href={document.url} target="_blank" rel="noreferrer">
-                          {truncateTitle(fileName)}
+                        <a href={document.url} target="_blank" rel="noreferrer" className="block max-w-[24ch] truncate">
+                          {fileName}
                         </a>
                       </AttachmentTitle>
-                      <AttachmentDescription>
-                        {removingIndex === index
-                          ? "Removing..."
-                          : "Uploaded file"}
-                      </AttachmentDescription>
+                      <AttachmentDescription>{removingIndex === index ? "Removing..." : "Uploaded file"}</AttachmentDescription>
                     </AttachmentContent>
                     <AttachmentActions>
-                      <AttachmentAction
-                        type="button"
-                        aria-label={`Remove ${fileName}`}
-                        title={`Remove ${fileName}`}
-                        disabled={isBusy || disabled}
-                        onClick={() => void handleRemove(index)}
-                      >
+                      <AttachmentAction type="button" aria-label={`Remove ${fileName}`} title={`Remove ${fileName}`} disabled={isBusy || disabled} onClick={() => void handleRemove(index)}>
                         <X />
                       </AttachmentAction>
                     </AttachmentActions>
@@ -306,9 +228,7 @@ const DocumentField = <T extends FieldValues>({
                   </AttachmentMedia>
                   <AttachmentContent>
                     <AttachmentTitle>Uploading files</AttachmentTitle>
-                    <AttachmentDescription>
-                      Please wait...
-                    </AttachmentDescription>
+                    <AttachmentDescription>Please wait...</AttachmentDescription>
                   </AttachmentContent>
                 </Attachment>
               )}
@@ -320,30 +240,15 @@ const DocumentField = <T extends FieldValues>({
                   </AttachmentMedia>
                   <AttachmentContent>
                     <AttachmentTitle>Add file</AttachmentTitle>
-                    <AttachmentDescription>
-                      Up to {sizeLimit} KB
-                    </AttachmentDescription>
+                    <AttachmentDescription>Up to {sizeLimit} KB</AttachmentDescription>
                   </AttachmentContent>
-                  <AttachmentTrigger
-                    aria-label={`Add ${label ?? "file"}`}
-                    aria-describedby={describedBy}
-                    disabled={disabled || isBusy}
-                    onClick={() => inputRef.current?.click()}
-                  />
+                  <AttachmentTrigger aria-label={`Add ${label ?? "file"}`} aria-describedby={describedBy} disabled={disabled || isBusy} onClick={() => inputRef.current?.click()} />
                 </Attachment>
               )}
             </AttachmentGroup>
 
-            {description && (
-              <FieldDescription id={descriptionId}>
-                {description}
-              </FieldDescription>
-            )}
-            {(fieldState.invalid || operationError) && (
-              <FieldError id={errorId}>
-                {operationError ?? fieldState.error?.message}
-              </FieldError>
-            )}
+            {description && <FieldDescription id={descriptionId}>{description}</FieldDescription>}
+            {(fieldState.invalid || operationError) && <FieldError id={errorId}>{operationError ?? fieldState.error?.message}</FieldError>}
           </Field>
         )
       }}

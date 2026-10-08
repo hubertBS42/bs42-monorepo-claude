@@ -1,19 +1,13 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
-import {
-  EditorContent,
-  useEditor,
-  type Editor,
-  type JSONContent,
-} from "@tiptap/react"
-import StarterKit from "@tiptap/starter-kit"
-import TextAlign from "@tiptap/extension-text-align"
+import { EditorContent, useEditor, type Editor, type JSONContent } from "@tiptap/react"
 import { Placeholder } from "@tiptap/extensions"
-import Heading from "@tiptap/extension-heading"
-
 import { cn } from "@workspace/ui/lib/utils"
 import MenuBar from "./menu-bar"
+import StarterKit from "@tiptap/starter-kit"
+import TextAlign from "@tiptap/extension-text-align"
+import { TableKit } from "@tiptap/extension-table"
 
 interface RichTextEditorProps {
   onChange: (data: string | null) => void
@@ -38,9 +32,7 @@ function parseContent(value: string | null | undefined): JSONContent {
     // handing TipTap a bare string, which it cannot render as a document.
     return {
       type: "doc",
-      content: [
-        { type: "paragraph", content: [{ type: "text", text: value }] },
-      ],
+      content: [{ type: "paragraph", content: [{ type: "text", text: value }] }],
     }
   }
 }
@@ -69,9 +61,7 @@ const RichTextEditor = ({
       Placeholder.configure({
         placeholder,
       }),
-      Heading.configure({
-        levels: [1, 2, 3],
-      }),
+      TableKit.configure({ table: { resizable: true } }),
     ],
     editorProps: {
       attributes: {
@@ -80,8 +70,7 @@ const RichTextEditor = ({
         "aria-multiline": "true",
         ...(ariaInvalid ? { "aria-invalid": "true" } : {}),
         ...(ariaDescribedBy ? { "aria-describedby": ariaDescribedBy } : {}),
-        class:
-          "min-h-[300px] p-4 focus:outline-none prose prose-sm sm:prose lg:prose-lg xl:prose-xl dark:prose-invert !w-full !max-w-none",
+        class: "min-h-[300px] p-4 focus:outline-none !w-full !max-w-none",
       },
     },
     editable: !disabled,

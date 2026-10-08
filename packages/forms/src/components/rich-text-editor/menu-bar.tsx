@@ -3,22 +3,24 @@ import {
   AlignCenter,
   AlignLeft,
   AlignRight,
+  BetweenHorizontalEnd,
+  BetweenVerticalEnd,
   Bold,
+  Columns3,
   Heading1Icon,
   Heading2Icon,
   Heading3Icon,
   Italic,
   ListIcon,
   ListOrdered,
+  Rows3,
   Strikethrough,
+  Table,
+  Trash2,
+  UnderlineIcon,
 } from "lucide-react"
 
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@workspace/ui/components/tooltip"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@workspace/ui/components/tooltip"
 import { Toggle } from "@workspace/ui/components/toggle"
 
 interface Props {
@@ -33,24 +35,12 @@ interface MenuButtonProps {
   children: React.ReactNode
 }
 
-function MenuButton({
-  label,
-  pressed,
-  disabled,
-  onClick,
-  children,
-}: MenuButtonProps) {
+function MenuButton({ label, pressed, disabled, onClick, children }: MenuButtonProps) {
   return (
     <Tooltip>
       <TooltipTrigger
         render={
-          <Toggle
-            size="sm"
-            disabled={disabled}
-            aria-label={label}
-            pressed={pressed}
-            onPressedChange={onClick}
-          >
+          <Toggle size="sm" disabled={disabled} aria-label={label} pressed={pressed} onPressedChange={onClick}>
             {children}
           </Toggle>
         }
@@ -67,66 +57,43 @@ const MenuBar = ({ editor }: Props) => {
     <div className="flex flex-wrap items-center gap-1 rounded-t-lg border border-x-0 border-t-0 border-input bg-card p-2">
       <TooltipProvider>
         <div className="flex flex-wrap gap-x-1">
-          <MenuButton
-            label="Bold"
-            pressed={editor.isActive("bold")}
-            onClick={() => editor.chain().focus().toggleBold().run()}
-          >
+          <MenuButton label="Bold" pressed={editor.isActive("bold")} onClick={() => editor.chain().focus().toggleBold().run()}>
             <Bold />
           </MenuButton>
-          <MenuButton
-            label="Italic"
-            pressed={editor.isActive("italic")}
-            onClick={() => editor.chain().focus().toggleItalic().run()}
-          >
+          <MenuButton label="Italic" pressed={editor.isActive("italic")} onClick={() => editor.chain().focus().toggleItalic().run()}>
             <Italic />
           </MenuButton>
-          <MenuButton
-            label="Strikethrough"
-            pressed={editor.isActive("strike")}
-            onClick={() => editor.chain().focus().toggleStrike().run()}
-          >
+          <MenuButton label="Underline" pressed={editor.isActive("underline")} onClick={() => editor.chain().focus().toggleUnderline().run()}>
+            <UnderlineIcon />
+          </MenuButton>
+          <MenuButton label="Strikethrough" pressed={editor.isActive("strike")} onClick={() => editor.chain().focus().toggleStrike().run()}>
             <Strikethrough />
           </MenuButton>
           <MenuButton
             label="Heading 1"
             pressed={editor.isActive("heading", { level: 1 })}
-            onClick={() =>
-              editor.chain().focus().toggleHeading({ level: 1 }).run()
-            }
+            onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
           >
             <Heading1Icon />
           </MenuButton>
           <MenuButton
             label="Heading 2"
             pressed={editor.isActive("heading", { level: 2 })}
-            onClick={() =>
-              editor.chain().focus().toggleHeading({ level: 2 }).run()
-            }
+            onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
           >
             <Heading2Icon />
           </MenuButton>
           <MenuButton
             label="Heading 3"
             pressed={editor.isActive("heading", { level: 3 })}
-            onClick={() =>
-              editor.chain().focus().toggleHeading({ level: 3 }).run()
-            }
+            onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
           >
             <Heading3Icon />
           </MenuButton>
-          <MenuButton
-            label="Bullet list"
-            pressed={editor.isActive("bulletList")}
-            onClick={() => editor.chain().focus().toggleBulletList().run()}
-          >
+          <MenuButton label="Bullet list" pressed={editor.isActive("bulletList")} onClick={() => editor.chain().focus().toggleBulletList().run()}>
             <ListIcon />
           </MenuButton>
-          <MenuButton
-            label="Ordered list"
-            pressed={editor.isActive("orderedList")}
-            onClick={() => editor.chain().focus().toggleOrderedList().run()}
-          >
+          <MenuButton label="Ordered list" pressed={editor.isActive("orderedList")} onClick={() => editor.chain().focus().toggleOrderedList().run()}>
             <ListOrdered />
           </MenuButton>
         </div>
@@ -155,6 +122,58 @@ const MenuBar = ({ editor }: Props) => {
           >
             <AlignRight />
           </MenuButton>
+        </div>
+        <div className="mx-2 h-6 w-px bg-border" />
+
+        <div className="flex flex-wrap gap-x-1">
+          <MenuButton
+            label="Insert table"
+            pressed={editor.isActive("table")}
+            disabled={editor.isActive("table")}
+            onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()}
+          >
+            <Table />
+          </MenuButton>
+
+          {editor.isActive("table") && (
+            <>
+              <MenuButton
+                label="Add row below"
+                pressed={false}
+                disabled={!editor.can().addRowAfter()}
+                onClick={() => editor.chain().focus().addRowAfter().run()}
+              >
+                <BetweenHorizontalEnd />
+              </MenuButton>
+              <MenuButton
+                label="Add column right"
+                pressed={false}
+                disabled={!editor.can().addColumnAfter()}
+                onClick={() => editor.chain().focus().addColumnAfter().run()}
+              >
+                <BetweenVerticalEnd />
+              </MenuButton>
+              <MenuButton
+                label="Delete row"
+                pressed={false}
+                disabled={!editor.can().deleteRow()}
+                onClick={() => editor.chain().focus().deleteRow().run()}
+              >
+                <Rows3 />
+              </MenuButton>
+              <MenuButton
+                label="Delete column"
+                pressed={false}
+                disabled={!editor.can().deleteColumn()}
+                onClick={() => editor.chain().focus().deleteColumn().run()}
+              >
+                <Columns3 />
+              </MenuButton>
+              <MenuButton label="Delete table" pressed={false} onClick={() => editor.chain().focus().deleteTable().run()}>
+                <Trash2 />
+              </MenuButton>
+            </>
+          )}
         </div>
       </TooltipProvider>
     </div>

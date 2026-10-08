@@ -2,7 +2,7 @@
 
 import { headers } from "next/headers"
 import { OrgRole } from "@workspace/auth/organization-permissions"
-import { PLATFORM_ORGANIZATION_SLUG } from "@/constants"
+import { PLATFORM_ORGANIZATION_SLUG } from "@workspace/contracts"
 import { formatError } from "@workspace/auth/format-error"
 import { consoleAdminRoles, hasSystemRole } from "@workspace/auth/system-permissions"
 import { prisma } from "@workspace/db"
@@ -185,8 +185,7 @@ export async function signUpInvitedUserAction({
       where: { id: invitationId },
       select: { email: true, status: true, expiresAt: true },
     })
-    if (!invitation || invitation.status !== "pending" || (invitation.expiresAt && invitation.expiresAt < new Date()))
-      return { success: false, error: "This invitation is no longer valid" }
+    if (!invitation || invitation.status !== "pending" || (invitation.expiresAt && invitation.expiresAt < new Date())) return { success: false, error: "This invitation is no longer valid" }
 
     const existing = await prisma.user.findUnique({
       where: { email: invitation.email.toLowerCase() },

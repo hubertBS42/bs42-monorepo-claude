@@ -1,43 +1,27 @@
-import { NavItem } from "@/types"
+import { useMemo } from "react"
 import { consoleAuthClient } from "@workspace/auth/console-client"
-import { routePermissions } from "@/lib/access-control"
 import { hasSystemRole } from "@workspace/auth/system-permissions"
-import { PLATFORM_ORGANIZATION_SLUG } from "@/constants"
+import { PLATFORM_ORGANIZATION_SLUG } from "@workspace/contracts"
+import { navConfig } from "@/lib/nav-config"
+import { canAccess, type RouteContext } from "@/lib/route-access"
+import type { NavItem } from "@/types"
 
-const getNavItems = (role: string | null | undefined, isGlobalWorkspace: boolean): Record<string, NavItem[]> => {
-  const currentContext = isGlobalWorkspace ? "global" : "store"
-
-  return (
-    Object.entries(routePermissions)
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      .filter(([_, permission]) => {
-        if (!permission.nav) return false
-        const hasRole = hasSystemRole(role, permission.role)
-        const hasContext = permission.context.includes(currentContext)
-        return hasRole && hasContext
-      })
-      .map(([url, permission]) => {
-        const filteredSubItems = permission.nav?.items?.filter(
-          (item) => !item.context || item.context.includes(currentContext)
-        )
-
-        return {
-          url,
-          ...permission.nav!,
-          items: filteredSubItems?.length ? filteredSubItems : undefined,
-        }
-      })
-      .sort((a, b) => a.order - b.order)
-      .reduce(
-        (acc, item) => {
-          if (!acc[item.group]) acc[item.group] = []
-          acc[item.group]?.push(item)
-          return acc
-        },
-        {} as Record<string, NavItem[]>
-      )
-  )
-}
+// The same canAccess the proxy uses, so the menu never shows a link the proxy would block
+const getNavItems = (role: string | null | undefined, context: RouteContext): Record<string, NavItem[]> =>
+  navConfig
+    .filter((item) => canAccess(item.url, role, context))
+    .map((item) => {
+      const items = item.items?.filter((subItem) => canAccess(subItem.url, role, context))
+      return { ...item, items: items?.length ? items : undefined }
+    })
+    .sort((a, b) => a.order - b.order)
+    .reduce(
+      (groups, item) => {
+        ;(groups[item.group] ??= []).push(item)
+        return groups
+      },
+      {} as Record<string, NavItem[]>
+    )
 
 interface UseNavItemsReturn {
   navItems: Record<string, NavItem[]>
@@ -51,34 +35,13 @@ export const useNavItems = (): UseNavItemsReturn => {
   const { data: activeOrganization, isPending: isActiveOrganizationLoading } = consoleAuthClient.useActiveOrganization()
 
   const isLoading = isSessionLoading || isActiveOrganizationLoading
+  const isReady = !isLoading && !!session && !!activeOrganization
 
-  if (isLoading) {
-    return {
-      navItems: {},
-      isGlobalWorkspace: false,
-      isAdmin: false,
-      isLoading: true,
-    }
-  }
+  const role = session?.user.role
+  const isGlobalWorkspace = isReady && activeOrganization.slug === PLATFORM_ORGANIZATION_SLUG
+  const isAdmin = isReady && hasSystemRole(role, ["admin", "superAdmin"])
 
-  if (!session || !activeOrganization) {
-    return {
-      navItems: {},
-      isGlobalWorkspace: false,
-      isAdmin: false,
-      isLoading: false,
-    }
-  }
+  const navItems = useMemo(() => (isReady ? getNavItems(role, isGlobalWorkspace ? "global" : "store") : {}), [isReady, role, isGlobalWorkspace])
 
-  const role = session.user.role
-  const isGlobalWorkspace = activeOrganization.slug === PLATFORM_ORGANIZATION_SLUG
-  const isAdmin = hasSystemRole(role, ["admin", "superAdmin"])
-  const navItems = getNavItems(role, isGlobalWorkspace)
-
-  return {
-    navItems,
-    isGlobalWorkspace,
-    isAdmin,
-    isLoading: false,
-  }
+  return { navItems, isGlobalWorkspace, isAdmin, isLoading }
 }

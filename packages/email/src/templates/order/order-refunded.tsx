@@ -7,25 +7,17 @@ interface OrderRefundedProps {
   reference: string
   refundReason: string
   totalPrice: number
+  appName: string
+  /** Absolute https URL of the uploaded logo. When missing, the app name is shown as text instead. */
+  logoUrl?: string | null
 }
 
-export const OrderRefunded = ({
-  customerName,
-  reference,
-  refundReason,
-  totalPrice,
-}: OrderRefundedProps) => {
+export const OrderRefunded = ({ customerName, reference, refundReason, totalPrice, appName, logoUrl }: OrderRefundedProps) => {
   return (
-    <OrderLayout
-      preview={`Your order ${reference} has been refunded`}
-      heading="Order Refunded"
-    >
+    <OrderLayout preview={`Your order ${reference} has been refunded`} heading="Order Refunded" appName={appName} logoUrl={logoUrl}>
+      <Text className="mt-0 text-sm leading-relaxed text-[#71717a]">Hi {customerName},</Text>
       <Text className="mt-0 text-sm leading-relaxed text-[#71717a]">
-        Hi {customerName},
-      </Text>
-      <Text className="mt-0 text-sm leading-relaxed text-[#71717a]">
-        Your order <strong className="text-[#18181b]">{reference}</strong> has
-        been refunded.
+        Your order <strong className="text-[#18181b]">{reference}</strong> has been refunded.
       </Text>
 
       <Section className="rounded-md bg-gray-50 p-4">
@@ -33,13 +25,9 @@ export const OrderRefunded = ({
         <Text className="m-0 text-sm text-gray-500">{refundReason}</Text>
       </Section>
 
-      <Text className="mt-4 text-sm text-gray-500">
-        A refund of {formatCurrencyGhs(totalPrice)} has been processed.
-      </Text>
+      <Text className="mt-4 text-sm text-gray-500">A refund of {formatCurrencyGhs(totalPrice)} has been processed.</Text>
 
-      <Text className="text-sm text-gray-500">
-        If you have any questions, please contact us.
-      </Text>
+      <Text className="text-sm text-gray-500">If you have any questions, please contact us.</Text>
     </OrderLayout>
   )
 }

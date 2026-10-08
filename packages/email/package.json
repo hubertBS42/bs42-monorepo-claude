@@ -16,6 +16,7 @@
     "react-email": "6.0.5",
     "nodemailer": "8.0.7",
     "@workspace/utils": "workspace:*",
+    "@workspace/contracts": "workspace:*",
     "server-only": "^0.0.1"
   },
   "devDependencies": {

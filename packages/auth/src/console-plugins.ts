@@ -1,24 +1,12 @@
 import { admin, organization } from "better-auth/plugins"
-import {
-  consoleAdminRoles,
-  hasSystemRole,
-  systemAccessController,
-  systemRoles,
-} from "./system-permissions"
-import {
-  organizationAccessController,
-  organizationRoles,
-} from "./organization-permissions"
+import { consoleAdminRoles, hasSystemRole, systemAccessController, systemRoles } from "./system-permissions"
+import { organizationAccessController, organizationRoles } from "./organization-permissions"
 import { InviteMemberEmail, sendEmail } from "@workspace/email"
-import {
-  APP_NAME,
-  APP_URL,
-  INVITATION_EXPIRATION,
-  PLATFORM_ORGANIZATION_SLUG,
-} from "./constants"
-import { prisma } from "@workspace/db"
+import { APP_URL } from "./constants"
+import { prisma, readAppSettings, resolveConsoleName } from "@workspace/db"
 import { nextCookies } from "better-auth/next-js"
 import { APIError } from "better-auth/api"
+import { PLATFORM_ORGANIZATION_SLUG, INVITATION_EXPIRATION_SECONDS } from "@workspace/contracts"
 
 export const consolePlugins = [
   admin({
@@ -30,21 +18,25 @@ export const consolePlugins = [
   organization({
     ac: organizationAccessController,
     roles: organizationRoles,
-    invitationExpiresIn: INVITATION_EXPIRATION,
-    allowUserToCreateOrganization: (user) =>
-      hasSystemRole(user.role, ["superAdmin"]),
+    invitationExpiresIn: INVITATION_EXPIRATION_SECONDS,
+    allowUserToCreateOrganization: (user) => hasSystemRole(user.role, ["superAdmin"]),
     async sendInvitationEmail(data) {
+      const settings = await readAppSettings()
+      const appName = resolveConsoleName(settings)
       const inviteLink = `${APP_URL}/accept-invitation/${data.id}`
 
       await sendEmail({
         to: data.email,
-        subject: `You've been invited to join ${data.organization.name} on ${APP_NAME}`,
+        fromName: appName,
+        subject: `You've been invited to join ${data.organization.name} on ${appName}`,
         reactTemplate: InviteMemberEmail({
           inviterName: data.inviter.user.name,
           name: data.email,
           storeName: data.organization.name,
           role: data.role,
           url: inviteLink,
+          appName,
+          logoUrl: settings.logoUrl,
         }),
       })
     },
@@ -64,10 +56,7 @@ export const consolePlugins = [
           select: { role: true },
         })
 
-        if (
-          hasSystemRole(creator?.role, ["admin"]) &&
-          !hasSystemRole(creator?.role, ["superAdmin"])
-        ) {
+        if (hasSystemRole(creator?.role, ["admin"]) && !hasSystemRole(creator?.role, ["superAdmin"])) {
           // Downgrade creator from owner to admin
           await prisma.member.updateMany({
             where: {
@@ -81,10 +70,7 @@ export const consolePlugins = [
         // Fetch all other system admins
         const systemAdmins = await prisma.user.findMany({
           where: {
-            OR: [
-              { role: { contains: "admin" } },
-              { role: { contains: "Admin" } },
-            ],
+            OR: [{ role: { contains: "admin" } }, { role: { contains: "Admin" } }],
             id: { not: user.id },
           },
           select: { id: true, role: true },
@@ -93,15 +79,11 @@ export const consolePlugins = [
         // Add all other system admins as members of the new org
         await prisma.member.createMany({
           data: systemAdmins
-            .filter((systemAdmin) =>
-              hasSystemRole(systemAdmin.role, ["admin", "superAdmin"])
-            )
+            .filter((systemAdmin) => hasSystemRole(systemAdmin.role, ["admin", "superAdmin"]))
             .map((systemAdmin) => ({
               userId: systemAdmin.id,
               organizationId: organization.id,
-              role: hasSystemRole(systemAdmin.role, ["superAdmin"])
-                ? "owner"
-                : "admin",
+              role: hasSystemRole(systemAdmin.role, ["superAdmin"]) ? "owner" : "admin",
             })),
           skipDuplicates: true,
         })

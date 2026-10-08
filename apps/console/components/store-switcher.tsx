@@ -18,7 +18,7 @@ import { Skeleton } from "@workspace/ui/components/skeleton"
 import { useStoreSwitcher } from "@/hooks/use-store-switcher"
 import { consoleAuthClient } from "@workspace/auth/console-client"
 import { consoleAdminRoles, hasSystemRole } from "@workspace/auth/system-permissions"
-import { PLATFORM_ORGANIZATION_SLUG } from "@/constants"
+import { PLATFORM_ORGANIZATION_SLUG } from "@workspace/contracts"
 import { getNameInitials } from "@workspace/utils/name"
 import { Avatar, AvatarFallback, AvatarImage } from "@workspace/ui/components/avatar"
 import Link from "next/link"
@@ -129,12 +129,7 @@ export function StoreSwitcher() {
             )}
 
             {clientStores.map((store) => (
-              <DropdownMenuCheckboxItem
-                key={store.id}
-                className="gap-2 px-1 py-1.5 text-sm"
-                onClick={() => void switchStore({ storeId: store.id })}
-                checked={store.id === activeStore?.id}
-              >
+              <DropdownMenuCheckboxItem key={store.id} className="gap-2 px-1 py-1.5 text-sm" onClick={() => void switchStore({ storeId: store.id })} checked={store.id === activeStore?.id}>
                 <Avatar className="h-8 w-8 rounded-lg">
                   <AvatarImage src={store.logo || ""} alt={store.name} />
                   <AvatarFallback className="rounded-lg">{getNameInitials(store.name)}</AvatarFallback>

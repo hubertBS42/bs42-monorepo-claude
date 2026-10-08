@@ -10,6 +10,8 @@ export interface BaseOrderEmail {
   to: string
   customerName: string
   reference: string
+  appName: string
+  logoUrl?: string | null
 }
 
 export interface OrderConfirmationEmail extends BaseOrderEmail {
@@ -37,6 +39,7 @@ export interface OrderConfirmationEmail extends BaseOrderEmail {
 export async function sendOrderConfirmationEmail(data: OrderConfirmationEmail) {
   return sendEmail({
     to: data.to,
+    fromName: data.appName,
     subject: `Order Confirmation — ${data.reference}`,
     reactTemplate: OrderConfirmation({
       customerName: data.customerName,
@@ -53,79 +56,86 @@ export async function sendOrderConfirmationEmail(data: OrderConfirmationEmail) {
       shippingMethod: data.shippingMethod,
       shippingAddress: data.shippingAddress,
       paymentMethod: data.paymentMethod,
+      appName: data.appName,
+      logoUrl: data.logoUrl,
     }),
   })
 }
 
-export async function sendOrderConfirmedEmail(
-  data: BaseOrderEmail & { note?: string | null }
-) {
+export async function sendOrderConfirmedEmail(data: BaseOrderEmail & { note?: string | null }) {
   return sendEmail({
     to: data.to,
+    fromName: data.appName,
     subject: `Order Confirmed — ${data.reference}`,
     reactTemplate: OrderConfirmed({
       customerName: data.customerName,
       reference: data.reference,
       note: data.note,
+      appName: data.appName,
+      logoUrl: data.logoUrl,
     }),
   })
 }
 
-export async function sendOrderShippedEmail(
-  data: BaseOrderEmail & { shippingAddress: string; note?: string | null }
-) {
+export async function sendOrderShippedEmail(data: BaseOrderEmail & { shippingAddress: string; note?: string | null }) {
   return sendEmail({
     to: data.to,
+    fromName: data.appName,
     subject: `Your Order is On Its Way — ${data.reference}`,
     reactTemplate: OrderShipped({
       customerName: data.customerName,
       reference: data.reference,
       shippingAddress: data.shippingAddress,
       note: data.note,
+      appName: data.appName,
+      logoUrl: data.logoUrl,
     }),
   })
 }
 
-export async function sendOrderDeliveredEmail(
-  data: BaseOrderEmail & { note?: string | null }
-) {
+export async function sendOrderDeliveredEmail(data: BaseOrderEmail & { note?: string | null }) {
   return sendEmail({
     to: data.to,
+    fromName: data.appName,
     subject: `Order Delivered — ${data.reference}`,
     reactTemplate: OrderDelivered({
       customerName: data.customerName,
       reference: data.reference,
       note: data.note,
+      appName: data.appName,
+      logoUrl: data.logoUrl,
     }),
   })
 }
 
-export async function sendOrderCancelledEmail(
-  data: BaseOrderEmail & { cancellationReason: string; totalPrice: number }
-) {
+export async function sendOrderCancelledEmail(data: BaseOrderEmail & { cancellationReason: string; totalPrice: number }) {
   return sendEmail({
     to: data.to,
+    fromName: data.appName,
     subject: `Order Cancelled — ${data.reference}`,
     reactTemplate: OrderCancelled({
       customerName: data.customerName,
       reference: data.reference,
       cancellationReason: data.cancellationReason,
       totalPrice: data.totalPrice,
+      appName: data.appName,
+      logoUrl: data.logoUrl,
     }),
   })
 }
 
-export async function sendOrderRefundedEmail(
-  data: BaseOrderEmail & { refundReason: string; totalPrice: number }
-) {
+export async function sendOrderRefundedEmail(data: BaseOrderEmail & { refundReason: string; totalPrice: number }) {
   return sendEmail({
     to: data.to,
+    fromName: data.appName,
     subject: `Order Refunded — ${data.reference}`,
     reactTemplate: OrderRefunded({
       customerName: data.customerName,
       reference: data.reference,
       refundReason: data.refundReason,
       totalPrice: data.totalPrice,
+      appName: data.appName,
+      logoUrl: data.logoUrl,
     }),
   })
 }
