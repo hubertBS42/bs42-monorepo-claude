@@ -4,6 +4,7 @@ import { getStores, MAX_STORES_PAGE_SIZE, STORE_SORT_FIELDS } from "@/lib/data/s
 import AddButton from "@/components/add-button"
 import type { StoresParams } from "@/types"
 import { getOrderParam, getPositiveIntegerParam, getSortParam, getStringParam } from "@workspace/utils/search-params"
+import { requireConsoleAdmin } from "@/lib/auth-guard"
 
 export const metadata: Metadata = {
   title: "Manage Stores",
@@ -16,6 +17,7 @@ type StoresPageProps = {
 }
 
 export default async function StoresPage({ searchParams }: StoresPageProps) {
+  await requireConsoleAdmin()
   const params = await searchParams
 
   const storesParams: StoresParams = {

@@ -1,6 +1,6 @@
-import { prisma } from "@workspace/db"
+import { requireConsoleAccess } from "@/lib/auth-guard"
 
 export default async function DashboardPage() {
-  const user = await prisma.user.findFirst()
-  return <div>{user?.name ?? "No user added yet"}</div>
+  await requireConsoleAccess()
+  return <div>Welcome to the Dashboard</div>
 }

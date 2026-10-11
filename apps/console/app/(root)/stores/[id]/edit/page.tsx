@@ -2,7 +2,7 @@ import { Metadata } from "next"
 import EditStoreForm from "./_components/edit-store-form"
 import { getStoreById } from "@/lib/data/stores.data"
 import { notFound } from "next/navigation"
-import { requireOrganizationPermission } from "@/lib/auth-guard"
+import { requireOrganizationPermission, requireSystemPermission } from "@/lib/auth-guard"
 import z from "zod"
 
 export const metadata: Metadata = {
@@ -15,6 +15,8 @@ type Props = {
 export default async function EditStorePage({ params }: Props) {
   const { id } = await params
   if (!z.uuid().safeParse(id).success) notFound()
+  // System admins only, and only for stores they are a member of with update rights
+  await requireSystemPermission({ organization: ["update"] })
   await requireOrganizationPermission(id, { organization: ["update"] })
   const response = await getStoreById(id)
 

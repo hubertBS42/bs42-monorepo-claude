@@ -71,6 +71,9 @@ A "store" is a Better Auth organization. One special organization, slug `PLATFOR
   - Every nav URL needs a matching entry (or parent prefix) in `routeAccess`.
   - Unlisted paths are allowed through, so they rely on page-level guards.
 - **Page/action guards**: `apps/console/lib/auth-guard.ts` provides `requireConsoleAccess`, `requireConsoleAdmin`, `requireSystemPermission` and `requireOrganizationPermission` for server components and actions.
+  - Every page calls its own guard as its first statement; layouts do not guard (they aren't re-run on client navigation). A new page without a guard is open to any signed-in user, including storefront customers who share the auth cookie.
+  - Global admin pages: `requireSystemPermission(...)` (or `requireConsoleAdmin()` when no permission exists yet). Store workspace pages: `requireOrganizationPermission(activeStoreId, ...)`. Pages for all console users (dashboard, `/account/*`): `requireConsoleAccess()`.
+  - The `user` system role has no permissions, so `requireSystemPermission` can't express "store staff"; use store membership for that.
 
 ### Database client extensions
 `@workspace/db` exports a Prisma 7 client (driver adapter `@prisma/adapter-pg`, generated into `packages/database/generated/prisma`) wrapped in `$extends` query hooks:
