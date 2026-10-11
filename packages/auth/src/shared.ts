@@ -3,6 +3,7 @@ import "server-only"
 import { prisma } from "@workspace/db"
 import { prismaAdapter } from "better-auth/adapters/prisma"
 import { SESSION_CACHE_EXPIRATION_SECONDS } from "@workspace/contracts"
+import { authURLs } from "./constants"
 
 const secret = process.env.BETTER_AUTH_SECRET
 
@@ -10,11 +11,7 @@ if (!secret || secret.length < 32) {
   throw new Error("BETTER_AUTH_SECRET must be set and at least 32 characters")
 }
 
-const storeBaseURL = process.env.STORE_AUTH_URL ?? (process.env.NODE_ENV === "production" ? "https://bs42.net" : "http://localhost:3001")
-
-const consoleBaseURL = process.env.CONSOLE_AUTH_URL ?? (process.env.NODE_ENV === "production" ? "https://console.bs42.net" : "http://localhost:3000")
-
-const trustedOrigins = [new URL(storeBaseURL).origin, new URL(consoleBaseURL).origin]
+const trustedOrigins = [new URL(authURLs.store).origin, new URL(authURLs.console).origin]
 
 const cookieDomain = process.env.AUTH_COOKIE_DOMAIN
 
@@ -69,7 +66,4 @@ export const sharedAuthOptions = {
   },
 }
 
-export const authURLs = {
-  store: storeBaseURL,
-  console: consoleBaseURL,
-}
+export { authURLs }

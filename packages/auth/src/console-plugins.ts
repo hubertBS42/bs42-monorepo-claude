@@ -2,7 +2,7 @@ import { admin, organization } from "better-auth/plugins"
 import { consoleAdminRoles, hasSystemPermission, hasSystemRole, systemAccessController, systemRoles } from "./system-permissions"
 import { organizationAccessController, organizationRoles } from "./organization-permissions"
 import { InviteMemberEmail, sendEmail } from "@workspace/email"
-import { APP_URL } from "./constants"
+import { authURLs } from "./constants"
 import { prisma, readAppSettings, resolveConsoleName } from "@workspace/db"
 import { nextCookies } from "better-auth/next-js"
 import { APIError } from "better-auth/api"
@@ -23,7 +23,7 @@ export const consolePlugins = [
     async sendInvitationEmail(data) {
       const settings = await readAppSettings()
       const appName = resolveConsoleName(settings)
-      const inviteLink = `${APP_URL}/accept-invitation/${data.id}`
+      const inviteLink = new URL(`/accept-invitation/${encodeURIComponent(data.id)}`, authURLs.console).toString()
 
       await sendEmail({
         to: data.email,

@@ -86,17 +86,25 @@ const NumberInputField = <T extends FieldValues>({
     [clampValue, roundToPrecision, step]
   )
 
+  // Typed values are kept as-is while editing. Rounding and clamping wait until blur,
+  // otherwise min={10} would turn the "5" of "50" into 10 before the user could finish.
   const handleValueChange = React.useCallback(
     (value: number | "", onChange: (value: number | "") => void) => {
-      if (value === "") {
-        onChange("")
-        onValueChange?.("")
-        return
-      }
+      onChange(value)
+      onValueChange?.(value)
+    },
+    [onValueChange]
+  )
+
+  const handleBlur = React.useCallback(
+    (value: unknown, onChange: (value: number | "") => void) => {
+      if (typeof value !== "number" || Number.isNaN(value)) return
 
       const nextValue = normalizeValue(value)
-      onChange(nextValue)
-      onValueChange?.(nextValue)
+      if (nextValue !== value) {
+        onChange(nextValue)
+        onValueChange?.(nextValue)
+      }
     },
     [normalizeValue, onValueChange]
   )
@@ -165,7 +173,10 @@ const NumberInputField = <T extends FieldValues>({
 
                   handleValueChange(parsedValue, field.onChange)
                 }}
-                onBlur={field.onBlur}
+                onBlur={() => {
+                  handleBlur(field.value, field.onChange)
+                  field.onBlur()
+                }}
               />
 
               <InputGroupAddon
