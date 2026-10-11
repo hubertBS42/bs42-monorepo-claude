@@ -1,7 +1,6 @@
 import { AppHeader } from "@/components/app-header"
 import { AppSidebar } from "@/components/app-sidebar"
 import { SidebarInset, SidebarProvider } from "@workspace/ui/components/sidebar"
-import { requireConsoleAccess } from "@/lib/auth-guard"
 import { ReactNode } from "react"
 
 export default async function RootLayout({
@@ -9,7 +8,6 @@ export default async function RootLayout({
 }: Readonly<{
   children: ReactNode
 }>) {
-  const session = await requireConsoleAccess()
 
   return (
     <SidebarProvider>

@@ -23,7 +23,7 @@
     "@types/react": "19.3.0",
     "@workspace/eslint-config": "workspace:*",
     "@workspace/typescript-config": "workspace:*",
-    "eslint": "^9",
+    "eslint": "^10",
     "typescript": "^5"
   },
   "exports": {

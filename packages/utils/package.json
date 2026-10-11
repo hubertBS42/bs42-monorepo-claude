@@ -12,13 +12,16 @@
   },
   "scripts": {
     "typecheck": "tsc --project tsconfig.json --noEmit",
-    "test": "node --test tests/*.test.mjs"
+    "test": "node --test tests/*.test.mjs",
+    "lint": "eslint"
   },
   "dependencies": {
     "@workspace/contracts": "workspace:*"
   },
   "devDependencies": {
     "@workspace/typescript-config": "workspace:*",
-    "typescript": "^5"
+    "typescript": "^5",
+    "@workspace/eslint-config": "workspace:*",
+    "eslint": "^10"
   }
 }

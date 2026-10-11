@@ -24,6 +24,8 @@ pnpm typecheck
 pnpm format       # prettier --write
 ```
 
+Lint uses the shared flat configs in `packages/eslint-config` (`base`, `react-internal`, `next-js`) with typescript-eslint. `eslint-plugin-only-warn` turns every rule into a warning, so `pnpm lint` exits 0 even with findings; read the output.
+
 Scope to one package with `--filter`, e.g. `pnpm --filter console dev`, `pnpm --filter @workspace/db db:migrate`.
 
 Database (`packages/database`, reads `DATABASE_URL` from `packages/database/.env`):

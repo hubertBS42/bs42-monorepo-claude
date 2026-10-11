@@ -30,6 +30,9 @@ export function useStoreSwitcher(): UseStoreSwitcherReturn {
         throw new Error(result.error.message)
       }
 
+      // A full page load on purpose: the active store changes the shared (root) layout
+      // (sidebar, nav, store switcher), which a client-side push would not re-render.
+      // eslint-disable-next-line @next/next/no-location-assign-relative-destination
       window.location.href = "/"
     } catch (error) {
       console.error("Failed to switch console organization:", error)

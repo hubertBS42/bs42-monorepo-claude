@@ -287,7 +287,6 @@ const ImageField = <T extends FieldValues>({
                     className={cn(orientation === "horizontal" ? "w-full" : "w-32")}
                   >
                     <AttachmentMedia variant="image">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={url} alt={imageTitle} />
                     </AttachmentMedia>
                     <AttachmentContent>

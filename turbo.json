@@ -13,7 +13,9 @@
     "SITE_MAILER_EMAIL",
     "SITE_MAILER_PASSWORD",
     "SITE_MAILER_PORT",
-    "NODE_ENV"
+    "NODE_ENV",
+    "AZURE_STORAGE_ACCOUNT_NAME",
+    "AZURE_STORAGE_CONTAINER_NAME"
   ],
   "tasks": {
     "build": {

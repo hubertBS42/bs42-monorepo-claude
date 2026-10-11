@@ -94,7 +94,7 @@ export async function uploadFiles(files: readonly File[]): Promise<string[]> {
     )
     const cleanupErrors = cleanup.flatMap((result) => (result.status === "rejected" ? [result.reason] : []))
     if (cleanupErrors.length > 0) {
-      throw new AggregateError([error, ...cleanupErrors], "Upload failed and some uploaded blobs could not be cleaned up.")
+      throw new AggregateError([error, ...cleanupErrors], "Upload failed and some uploaded blobs could not be cleaned up.", { cause: error })
     }
     throw error
   }

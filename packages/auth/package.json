@@ -25,7 +25,7 @@
     "@workspace/eslint-config": "workspace:*",
     "@workspace/typescript-config": "workspace:*",
     "auth": "1.7.6",
-    "eslint": "^9",
+    "eslint": "^10",
     "typescript": "^5"
   },
   "peerDependencies": {

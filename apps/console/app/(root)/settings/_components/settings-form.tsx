@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useRouter } from "next/navigation"
-import { useRef } from "react"
+import { useState } from "react"
 import { SubmitHandler, useForm } from "react-hook-form"
 import z from "zod"
 import type { AppSettingsData } from "@workspace/contracts"
@@ -37,10 +37,10 @@ export default function SettingsForm({ settings }: { settings: AppSettingsData }
 
   // Files the live site uses right now. They are never deleted from the browser:
   // the server removes them after a successful save that replaces them.
-  const saved = useRef({ logoUrl: defaultValues.logoUrl, faviconUrl: defaultValues.faviconUrl })
+  const [saved, setSaved] = useState({ logoUrl: defaultValues.logoUrl, faviconUrl: defaultValues.faviconUrl })
 
   // Files uploaded during this visit that no saved settings reference yet
-  const unsaved = useRef<string[]>([])
+  const [unsaved, setUnsaved] = useState<string[]>([])
 
   const isPending = form.formState.isSubmitting
 
@@ -48,22 +48,22 @@ export default function SettingsForm({ settings }: { settings: AppSettingsData }
     const formData = new FormData()
     Array.from(files).forEach((file) => formData.append("files", file))
     const urls = await uploadImages(formData)
-    unsaved.current.push(...urls)
+    setUnsaved((current) => [...current, ...urls])
     return urls
   }
 
   const handleRemove = async (url: string) => {
     // Removing the saved logo in the form must not delete it while the site still shows it
-    if (Object.values(saved.current).includes(url)) return
+    if (Object.values(saved).includes(url)) return
 
     await deleteImages([url])
-    unsaved.current = unsaved.current.filter((item) => item !== url)
+    setUnsaved((current) => current.filter((item) => item !== url))
   }
 
   const handleDiscard = async () => {
     try {
-      if (unsaved.current.length > 0) await deleteImages(unsaved.current)
-      unsaved.current = []
+      if (unsaved.length > 0) await deleteImages(unsaved)
+      setUnsaved([])
       router.push("/")
     } catch (error) {
       toast.add({
@@ -84,8 +84,8 @@ export default function SettingsForm({ settings }: { settings: AppSettingsData }
       return
     }
 
-    saved.current = { logoUrl: data.logoUrl, faviconUrl: data.faviconUrl }
-    unsaved.current = []
+    setSaved({ logoUrl: data.logoUrl, faviconUrl: data.faviconUrl })
+    setUnsaved([])
     form.reset(data)
     toast.add({ title: "Settings saved", type: "success" })
     router.refresh()

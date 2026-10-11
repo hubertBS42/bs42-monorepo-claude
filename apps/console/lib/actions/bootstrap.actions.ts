@@ -15,7 +15,6 @@ export type SetupActionResult =
 const lockKey = 0x42533432
 
 declare global {
-  // eslint-disable-next-line no-var
   var __setupLockPool: Pool | undefined
 }
 

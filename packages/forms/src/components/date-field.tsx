@@ -7,7 +7,6 @@ import {
   type Control,
   type FieldValues,
   type Path,
-  useWatch,
 } from "react-hook-form"
 
 import { Button } from "@workspace/ui/components/button"
@@ -67,13 +66,6 @@ const DateField = <T extends FieldValues>({
   const errorId = `${inputId}-error`
   const [open, setOpen] = React.useState(false)
   const [month, setMonth] = React.useState(() => new Date())
-  const watchedValue = useWatch({ control, name })
-
-  React.useEffect(() => {
-    if (isValidDate(watchedValue)) {
-      setMonth(watchedValue)
-    }
-  }, [watchedValue])
 
   return (
     <Controller
@@ -111,6 +103,8 @@ const DateField = <T extends FieldValues>({
               <Popover
                 open={open}
                 onOpenChange={(nextOpen) => {
+                  // Open on the selected date's month, or today's when nothing is selected
+                  if (nextOpen) setMonth(selectedDate ?? new Date())
                   setOpen(nextOpen)
                   if (!nextOpen) field.onBlur()
                 }}

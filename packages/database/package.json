@@ -6,12 +6,15 @@
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint"
   },
   "devDependencies": {
     "@types/node": "^20",
     "@workspace/typescript-config": "workspace:*",
-    "prisma": "^7.10.0"
+    "prisma": "^7.10.0",
+    "@workspace/eslint-config": "workspace:*",
+    "eslint": "^10"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.10.0",

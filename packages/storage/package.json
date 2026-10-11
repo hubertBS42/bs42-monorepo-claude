@@ -11,7 +11,8 @@
   },
   "scripts": {
     "build": "tsc",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint"
   },
   "dependencies": {
     "@azure/identity": "4.13.1",
@@ -19,7 +20,9 @@
   },
   "devDependencies": {
     "@workspace/typescript-config": "workspace:*",
-    "@types/node": "^25.6.0"
+    "@types/node": "^25.6.0",
+    "@workspace/eslint-config": "workspace:*",
+    "eslint": "^10"
   },
   "license": "ISC"
 }
