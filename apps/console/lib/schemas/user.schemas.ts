@@ -83,8 +83,6 @@ export const editStoreUserFormSchema = editAdminFormSchema.extend({
     .min(1, "Assign the user to at least one store"),
 })
 
-export const editUserFormSchema = z.discriminatedUnion("systemRole", [editAdminFormSchema, editStoreUserFormSchema])
-
 // Schema for adding user address
 export const addAddressFormSchema = z.object({
   name: z.string().min(1, "You must provide a full name.").min(3, "Full name must be at least 3 characters."),
