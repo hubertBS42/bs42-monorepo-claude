@@ -62,6 +62,10 @@ A "store" is a Better Auth organization. One special organization, slug `PLATFOR
 ### Two permission layers
 - System roles (`user`, `admin`, `superAdmin`) on `User.role`, defined in `system-permissions.ts`. Role strings can be comma-separated; always check with `hasSystemRole` / `hasSystemPermission`, never `===`.
 - Organization roles (`owner`, `admin`, `member`) on `Member.role`, defined in `organization-permissions.ts`.
+- **SuperAdmins**:
+  - Only superAdmins can manage superAdmins: console actions check `canManageUserWithRole`, and a consoleAuth `hooks.before` blocks Better Auth's admin write endpoints.
+  - User loaders in `lib/data/users.data.ts` hide superAdmins from everyone else.
+  - The role is never set at creation. It changes only through `promoteToSuperAdminAction` / `demoteToAdminAction`, which update the role and every store membership (owner ↔ admin) in one transaction.
 
 ### Console access control
 - **Workspace context**: the session's `activeOrganizationId` puts the console in either the "global" workspace (the platform org is active) or the "store" workspace (any other org).
@@ -87,9 +91,15 @@ A "store" is a Better Auth organization. One special organization, slug `PLATFOR
 - Server actions live in `lib/actions/*.actions.ts` (`"use server"`), validate input with zod schemas from `lib/schemas/*.schemas.ts`, and return `ActionResponse` from `@workspace/contracts`. Data loaders live in `lib/data/`.
 - Uploads go through `app/api/storage/{images,documents,files}/route.ts` → `lib/storage-api.ts` (per-route `UploadPolicy`) → `@workspace/storage` (Azure Blob via `DefaultAzureCredential`; `AZURE_STORAGE_ACCOUNT_NAME`, optional `AZURE_STORAGE_CONTAINER_NAME`).
 - Form fields come from `@workspace/forms` (react-hook-form wrappers), data tables from `@workspace/tables` (TanStack Table), and primitives from `@workspace/ui`.
+- Table rows link to their page with `DataTable`'s `getRowHref`, which makes the main cell a real link.
+- Dates rendered in client components use `formatDate` from `@workspace/utils/date`. It formats in one fixed zone so the server render and hydration match.
+- A form inside a dialog must call `e.stopPropagation()` before `handleSubmit`. React bubbles events through portals, so otherwise submitting the dialog also submits the page form around it.
+- Never include `Session` rows in data passed to client components: each row holds its token.
 
 ### UI components
 Add shadcn components from the repo root with `pnpm dlx shadcn@latest add <component> -c apps/console`. They land in `packages/ui/src/components` and are imported as `@workspace/ui/components/<name>`.
+
+The primitives are built on Base UI, not Radix. Use `render={<Button />}` instead of `asChild`, and give menu items `onClick`: `onSelect` type-checks but never fires.
 
 ### Email
 `@workspace/email` holds React Email templates (auth flows, member invites, order lifecycle) sent via Nodemailer (`SITE_MAILER_*` env vars). The sender name and logo come from app settings.
