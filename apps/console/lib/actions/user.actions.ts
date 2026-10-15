@@ -2,7 +2,7 @@
 import { randomBytes } from "node:crypto"
 import { headers } from "next/headers"
 import { consoleAuth } from "@workspace/auth/console"
-import { canManageUserWithRole, hasSystemPermission, storeRoleForSystemAdmin } from "@workspace/auth/system-permissions"
+import { canManageUserWithRole, hasSystemPermission, hasSystemRole, storeRoleForSystemAdmin } from "@workspace/auth/system-permissions"
 import { formatError } from "@workspace/auth/format-error"
 import { prisma } from "@workspace/db"
 import { addStoreMemberAction, removeStoreMemberAction, updateStoreMemberRoleAction } from "./member.actions"
@@ -116,6 +116,9 @@ async function updateOrgMemberships({
   stores: NonNullable<z.infer<typeof updateUserActionSchema>["stores"]>
   removedMembers: NonNullable<z.infer<typeof updateUserActionSchema>["removedMembers"]>
 }): Promise<string[]> {
+  // Removals run first, so a store that is removed and re-added in one request can't collide with itself
+  const removals = await Promise.all(removedMembers.map(({ memberId, storeId }) => removeStoreMemberAction({ memberId, storeId })))
+
   const results = await Promise.all([
     // Add new memberships
     ...stores.filter((store) => store.isNew).map(({ storeRole, storeId }) => addStoreMemberAction({ userId, storeId, role: storeRole })),
@@ -132,12 +135,9 @@ async function updateOrgMemberships({
         if (existingMembership.role === storeRole) return { success: true }
         return updateStoreMemberRoleAction({ memberId: memberId!, role: storeRole, storeId })
       }),
-
-    // Remove deleted memberships
-    ...removedMembers.map(({ memberId, storeId }) => removeStoreMemberAction({ memberId, storeId })),
   ])
 
-  return results.flatMap((result) => (result.success ? [] : [result.error]))
+  return [...removals, ...results].flatMap((result) => (result.success ? [] : [result.error]))
 }
 
 export async function updateUserAction(input: z.input<typeof updateUserActionSchema>): Promise<ActionResponse> {
@@ -146,7 +146,7 @@ export async function updateUserAction(input: z.input<typeof updateUserActionSch
     if (!parsed.success) return invalidInput(parsed.error)
     const { id, name, email, image, phone, dob, getMarketingEmails, getSecurityEmails, getOrderEmails, stores, removedMembers } = parsed.data
 
-    const auth = await getSessionWithPermission({ user: ["update", "set-email"] })
+    const auth = await getSessionWithPermission({ user: email ? ["update", "set-email"] : ["update"] })
     if ("error" in auth) return { success: false, error: auth.error }
     const { session, headersObj } = auth
 
@@ -156,7 +156,8 @@ export async function updateUserAction(input: z.input<typeof updateUserActionSch
     await consoleAuth.api.adminUpdateUser({
       body: {
         userId: id,
-        data: { name, email, image, phone, dob, getMarketingEmails, getSecurityEmails, getOrderEmails },
+        // Cleared fields arrive as "". They must be null, not undefined: Better Auth skips undefined, so the old value would stay.
+        data: { name, ...(email && { email }), image: image || null, phone: phone || null, dob, getMarketingEmails, getSecurityEmails, getOrderEmails },
       },
       headers: headersObj,
     })
@@ -201,7 +202,7 @@ export async function banUserAction(input: z.input<typeof banUserFormSchema>): P
       body: {
         userId: data.userId,
         banExpiresIn,
-        banReason: data.banReason ?? undefined,
+        banReason: data.banReason?.trim() || undefined,
       },
       headers: headersObj,
     })
@@ -255,6 +256,73 @@ export async function deleteUserAction(userId: string): Promise<ActionResponse> 
       headers: headersObj,
     })
     return { success: true }
+  } catch (error) {
+    return { success: false, error: formatError(error) }
+  }
+}
+
+// Moves a system admin between admin and superAdmin. The role and the store memberships change in one transaction
+// so the invariant holds: superAdmins are owners of every store, admins are admins of every store.
+// Prisma is used instead of Better Auth's setRole so both writes commit or neither does.
+async function changeSystemAdminRole(userId: string, change: "promote" | "demote"): Promise<ActionResponse> {
+  const parsed = userIdSchema.safeParse(userId)
+  if (!parsed.success) return invalidInput(parsed.error)
+
+  const auth = await getSessionWithPermission({ user: ["set-role"] })
+  if ("error" in auth) return { success: false, error: auth.error }
+  const { session } = auth
+
+  if (session.user.id === userId) return { success: false, error: "You can't change your own role" }
+
+  const newRole = change === "promote" ? "superAdmin" : "admin"
+
+  // Serializable so two superAdmins demoting each other at the same time can't both succeed
+  return prisma.$transaction(
+    async (tx): Promise<ActionResponse> => {
+      const target = await tx.user.findUnique({ where: { id: userId }, select: { role: true, banned: true } })
+      if (!target) return { success: false, error: "User not found" }
+
+      if (change === "promote") {
+        // Store staff become admins first, so promotion is always a deliberate second step
+        if (hasSystemRole(target.role, ["superAdmin"])) return { success: false, error: "User is already a super admin" }
+        if (!hasSystemRole(target.role, ["admin"])) return { success: false, error: "Only admins can be promoted to super admin" }
+        if (target.banned) return { success: false, error: "Banned users can't be promoted" }
+      } else {
+        if (!hasSystemRole(target.role, ["superAdmin"])) return { success: false, error: "User isn't a super admin" }
+        const otherSuperAdmins = await tx.user.count({ where: { id: { not: userId }, role: { contains: "superAdmin" } } })
+        if (otherSuperAdmins === 0) return { success: false, error: "The last super admin can't be demoted" }
+      }
+
+      await tx.user.update({ where: { id: userId }, data: { role: newRole } })
+
+      const storeRole = storeRoleForSystemAdmin(newRole)
+      await tx.member.updateMany({ where: { userId }, data: { role: storeRole } })
+
+      // Covers stores the user was somehow missing from
+      const stores = await tx.organization.findMany({ select: { id: true } })
+      await tx.member.createMany({
+        data: stores.map((store) => ({ userId, organizationId: store.id, role: storeRole })),
+        skipDuplicates: true,
+      })
+
+      return { success: true }
+    },
+    { isolationLevel: "Serializable" }
+  )
+}
+
+// SuperAdmin-only (set-role). The target's cached session keeps its old role for up to SESSION_CACHE_EXPIRATION_SECONDS.
+export async function promoteToSuperAdminAction(userId: string): Promise<ActionResponse> {
+  try {
+    return await changeSystemAdminRole(userId, "promote")
+  } catch (error) {
+    return { success: false, error: formatError(error) }
+  }
+}
+
+export async function demoteToAdminAction(userId: string): Promise<ActionResponse> {
+  try {
+    return await changeSystemAdminRole(userId, "demote")
   } catch (error) {
     return { success: false, error: formatError(error) }
   }

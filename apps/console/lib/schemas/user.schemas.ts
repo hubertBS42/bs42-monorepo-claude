@@ -23,7 +23,7 @@ export const requiredPhoneSchema = z
 export const changePasswordFormSchema = z
   .object({
     currentPassword: z.string().min(1, "You need to provide the current password."),
-    password: z.string().min(6, "Password must be at least 6 characters."),
+    password: z.string().min(8, "Password must be at least 8 characters.").max(128, "Password must be no more than 128 characters."),
     confirmPassword: z.string(),
   })
   .refine((data) => data.password === data.confirmPassword, {
@@ -70,14 +70,17 @@ export const editAdminFormSchema = baseUserFormSchema.extend({
 })
 
 export const editStoreUserFormSchema = editAdminFormSchema.extend({
-  stores: z.array(
-    z.object({
-      memberId: z.string().optional(),
-      storeId: z.string().min(1, "Store is required"),
-      storeRole: z.enum(ORG_ROLE_NAMES),
-      isNew: z.boolean(),
-    })
-  ),
+  // Store users can only reach the console through a store membership
+  stores: z
+    .array(
+      z.object({
+        memberId: z.string().optional(),
+        storeId: z.string().min(1, "Store is required"),
+        storeRole: z.enum(ORG_ROLE_NAMES),
+        isNew: z.boolean(),
+      })
+    )
+    .min(1, "Assign the user to at least one store"),
 })
 
 export const editUserFormSchema = z.discriminatedUnion("systemRole", [editAdminFormSchema, editStoreUserFormSchema])
@@ -135,6 +138,8 @@ export const createUserActionSchema = baseUserFormSchema.extend({
 
 export const updateUserActionSchema = baseUserFormSchema.extend({
   id: z.uuid("Invalid user ID"),
+  // Left out when the form doesn't allow changing it; changing it needs the set-email permission
+  email: z.email("Please enter a valid email address").optional(),
   stores: z
     .array(
       z.object({

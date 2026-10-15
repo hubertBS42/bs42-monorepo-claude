@@ -1,6 +1,6 @@
 import "server-only"
 
-import type { UsersData, UsersParams } from "@/types"
+import type { UsersData, UsersParams, UserDetails } from "@/types"
 import { formatError } from "@workspace/auth/format-error"
 import { prisma } from "@workspace/db"
 import type { DataResponse } from "@workspace/contracts"
@@ -66,6 +66,37 @@ export const getUsers = async (filters: UsersParams = {}): Promise<DataResponse<
         totalPages: Math.ceil(total / pageSize),
       },
     }
+  } catch (error) {
+    return { success: false, error: formatError(error) }
+  }
+}
+
+export async function getUserById(userId: string): Promise<DataResponse<UserDetails>> {
+  try {
+    const session = await getSession()
+    if (!session) return { success: false, error: "Unauthorized" }
+    if (!hasSystemPermission(session.user.role, { user: ["get"] })) return { success: false, error: "Forbidden" }
+
+    // Same rule as getUsers: superAdmins are invisible to everyone else, so they get a 404
+    const isSuperAdmin = hasSystemRole(session.user.role, ["superAdmin"])
+
+    // Sessions are deliberately not loaded: this goes to client components, and a session row holds its token
+    const user = await prisma.user.findFirst({
+      where: {
+        id: userId,
+        ...(!isSuperAdmin && { NOT: { role: { contains: "superAdmin" } } }),
+      },
+      include: {
+        addresses: { orderBy: { createdAt: "desc" } },
+        members: {
+          include: { organization: true },
+        },
+      },
+    })
+
+    if (!user) return { success: false, error: "User not found", code: "NOT_FOUND" }
+
+    return { success: true, data: user }
   } catch (error) {
     return { success: false, error: formatError(error) }
   }
