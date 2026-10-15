@@ -5,6 +5,7 @@ import type { UsersParams } from "@/types"
 import { getOrderParam, getPositiveIntegerParam, getSortParam, getStringParam } from "@workspace/utils/search-params"
 import { requireSystemPermission } from "@/lib/auth-guard"
 import AddButton from "@/components/add-button"
+import { hasSystemPermission } from "@workspace/auth/system-permissions"
 
 export const metadata: Metadata = {
   title: "Manage Users",
@@ -17,7 +18,7 @@ type UsersPageProps = {
 }
 
 export default async function UsersPage({ searchParams }: UsersPageProps) {
-  await requireSystemPermission({ user: ["list"] })
+  const session = await requireSystemPermission({ user: ["list"] })
   const params = await searchParams
 
   const usersParams: UsersParams = {
@@ -38,8 +39,9 @@ export default async function UsersPage({ searchParams }: UsersPageProps) {
           <h1 className="text-xl font-bold md:text-2xl">Manage Users</h1>
           <p className="text-sm text-muted-foreground">View and manage all users.</p>
         </div>
-     
-        <AddButton label="Add User" url="/users/add" />
+
+        {/* /users/add needs user:create, which listing users doesn't imply */}
+        {hasSystemPermission(session.user.role, { user: ["create"] }) && <AddButton label="Add User" url="/users/add" />}
       </div>
       <UsersTable data={result.data} />
     </main>
