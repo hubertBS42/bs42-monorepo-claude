@@ -6,6 +6,13 @@ export const ROLE_LABELS: Record<string, string> = {
   user: "User",
 }
 
+// Visual weight follows privilege. success/destructive are left to the status badges, so colours don't mean two things.
+const ROLE_BADGE_VARIANTS: Record<string, "default" | "secondary" | "outline"> = {
+  superAdmin: "default",
+  admin: "secondary",
+  user: "outline",
+}
+
 // Better Auth only clears an expired ban at the user's next sign-in, so `banned` alone can be stale
 export function isBanActive(user: { banned: boolean | null; banExpires: Date | null }) {
   return Boolean(user.banned) && (!user.banExpires || user.banExpires > new Date())
@@ -20,7 +27,7 @@ export function RoleBadges({ role }: { role: string }) {
         .map((r) => r.trim())
         .filter(Boolean)
         .map((r) => (
-          <Badge key={r} variant={r === "user" ? "outline" : "secondary"}>
+          <Badge key={r} variant={ROLE_BADGE_VARIANTS[r] ?? "outline"}>
             {ROLE_LABELS[r] ?? r}
           </Badge>
         ))}
