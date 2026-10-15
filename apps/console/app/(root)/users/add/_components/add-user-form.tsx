@@ -169,7 +169,7 @@ export default function AddUserForm({ stores }: { stores: StoreForSelect[] }) {
                     clearErrors={form.clearErrors}
                     label="Avatar"
                     disabled={isPending}
-                    className="max-w-25"
+                    className="max-w-35"
                   />
                 </div>
                 <div className="col-span-2 grid">
@@ -241,9 +241,16 @@ export default function AddUserForm({ stores }: { stores: StoreForSelect[] }) {
               </CardHeader>
               <CardContent>
                 <FieldGroup className="gap-3">
-                  <SwitchField control={form.control} name="getMarketingEmails" label="Marketing emails" description="Receive emails about new products,  and more." disabled={isPending} />
-                  <SwitchField control={form.control} name="getSecurityEmails" label="Security emails" description="Receive emails about account security." disabled={isPending} />
-                  <SwitchField control={form.control} name="getOrderEmails" label="Order emails" description="Receive emails about order updates." disabled={isPending} />
+                  <SwitchField
+                    control={form.control}
+                    name="getMarketingEmails"
+                    label="Marketing emails"
+                    description="Receive emails about new products,  and more."
+                    disabled={isPending}
+                    variant="card"
+                  />
+                  <SwitchField control={form.control} name="getSecurityEmails" label="Security emails" description="Receive emails about account security." disabled={isPending} variant="card" />
+                  <SwitchField control={form.control} name="getOrderEmails" label="Order emails" description="Receive emails about order updates." disabled={isPending} variant="card" />
                 </FieldGroup>
               </CardContent>
             </Card>

@@ -1,7 +1,7 @@
 "use client"
 
 import { Badge } from "@workspace/ui/components/badge"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@workspace/ui/components/dropdown-menu"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger, DropdownMenuGroup } from "@workspace/ui/components/dropdown-menu"
 import { Button } from "@workspace/ui/components/button"
 import { MoreVertical } from "lucide-react"
 import { useState, useTransition } from "react"
@@ -72,11 +72,13 @@ const AddressCard = ({ address }: { address: Address }) => {
                 }
               />
               <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                <DropdownMenuItem onClick={() => setDialogIsOpen(true)}>Edit</DropdownMenuItem>
-                <DropdownMenuItem variant="destructive" onClick={() => setAlertDialogIsOpen(true)}>
-                  Delete
-                </DropdownMenuItem>
+                <DropdownMenuGroup>
+                  <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                  <DropdownMenuItem onClick={() => setDialogIsOpen(true)}>Edit</DropdownMenuItem>
+                  <DropdownMenuItem variant="destructive" onClick={() => setAlertDialogIsOpen(true)}>
+                    Delete
+                  </DropdownMenuItem>
+                </DropdownMenuGroup>
               </DropdownMenuContent>
             </DropdownMenu>
             {/* Edit address dialog */}

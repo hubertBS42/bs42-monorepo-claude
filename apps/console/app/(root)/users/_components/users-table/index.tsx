@@ -3,7 +3,7 @@ import { DataTable } from "@workspace/tables"
 import { UsersData } from "@/types"
 import { columns } from "./columns"
 import { filters } from "./filters"
-import { useRouter } from "next/router"
+import { useRouter } from "next/navigation"
 
 interface UsersTableProps {
   data: UsersData

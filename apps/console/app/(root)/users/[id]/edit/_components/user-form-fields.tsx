@@ -57,7 +57,7 @@ const UserFormFields = <T extends FieldValues>({ control, user, isPending, clear
                 clearErrors={clearErrors}
                 label="Avatar"
                 disabled={isPending}
-                className="max-w-25"
+                className="max-w-35"
                 defaultValues={user.image}
               />
             </div>
@@ -106,9 +106,16 @@ const UserFormFields = <T extends FieldValues>({ control, user, isPending, clear
           </CardHeader>
           <CardContent>
             <FieldGroup className="gap-3">
-              <SwitchField control={control} name={"getMarketingEmails" as Path<T>} label="Marketing emails" description="Receive emails about new products and more." disabled={isPending} />
-              <SwitchField control={control} name={"getSecurityEmails" as Path<T>} label="Security emails" description="Receive emails about account security." disabled={isPending} />
-              <SwitchField control={control} name={"getOrderEmails" as Path<T>} label="Order emails" description="Receive emails about order updates." disabled={isPending} />
+              <SwitchField
+                control={control}
+                name={"getMarketingEmails" as Path<T>}
+                label="Marketing emails"
+                description="Receive emails about new products and more."
+                disabled={isPending}
+                variant="card"
+              />
+              <SwitchField control={control} name={"getSecurityEmails" as Path<T>} label="Security emails" description="Receive emails about account security." disabled={isPending} variant="card" />
+              <SwitchField control={control} name={"getOrderEmails" as Path<T>} label="Order emails" description="Receive emails about order updates." disabled={isPending} variant="card" />
             </FieldGroup>
           </CardContent>
         </Card>
