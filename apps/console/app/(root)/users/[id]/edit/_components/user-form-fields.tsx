@@ -4,7 +4,7 @@ import TextInputField from "@workspace/forms/components/text-input-field"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@workspace/ui/components/card"
 import type { UserDetails } from "@/types"
 import { isBanActive, RoleBadges, UserStatusBadge } from "@/components/user-badges"
-import { format } from "date-fns"
+import { formatDate } from "@workspace/utils/date"
 import { Control, FieldValues, Path, UseFormClearErrors } from "react-hook-form"
 import { Field, FieldGroup, FieldLabel } from "@workspace/ui/components/field"
 import ImageField from "@workspace/forms/components/image-field"
@@ -139,7 +139,7 @@ const UserFormFields = <T extends FieldValues>({ control, user, isPending, clear
                 </div>
                 <div>
                   <h3 className="font-medium">Ban Expiration:</h3>
-                  <p className="text-muted-foreground">{user.banExpires ? format(user.banExpires, "LLL dd, y") : "Never"}</p>
+                  <p className="text-muted-foreground">{user.banExpires ? formatDate(user.banExpires, "LLL dd, y") : "Never"}</p>
                 </div>
               </div>
             </CardContent>

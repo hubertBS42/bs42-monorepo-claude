@@ -3,6 +3,7 @@ import "server-only"
 import type { UsersData, UsersParams, UserDetails } from "@/types"
 import { formatError } from "@workspace/auth/format-error"
 import { prisma } from "@workspace/db"
+import type { Prisma } from "@workspace/db/client"
 import type { DataResponse } from "@workspace/contracts"
 import { getPaginationError } from "@workspace/utils/pagination"
 import { consoleAuth } from "@workspace/auth/console"
@@ -32,17 +33,25 @@ export const getUsers = async (filters: UsersParams = {}): Promise<DataResponse<
       return { success: false, error: paginationError }
     }
 
-    const { name, email, page = 1, pageSize = 10, sort, order } = filters
+    const { name, email, role, status, page = 1, pageSize = 10, sort, order } = filters
 
     // Only superAdmins can see superAdmins. Role strings can be comma-separated, so match the token
     // anywhere in the string (no other role name contains "superAdmin").
     const isSuperAdmin = hasSystemRole(session.user.role, ["superAdmin"])
 
-    const where = {
-      ...(!isSuperAdmin && { NOT: { role: { contains: "superAdmin" } } }),
-      ...(name && { name: { contains: name, mode: "insensitive" as const } }),
-      ...(email && { email: { contains: email, mode: "insensitive" as const } }),
-    }
+    const now = new Date()
+    const conditions: Prisma.UserWhereInput[] = [
+      ...(!isSuperAdmin ? [{ NOT: { role: { contains: "superAdmin" } } }] : []),
+      ...(name ? [{ name: { contains: name, mode: "insensitive" as const } }] : []),
+      ...(email ? [{ email: { contains: email, mode: "insensitive" as const } }] : []),
+      // Match the role as a whole token in the comma-separated string, not as a substring
+      ...(role ? [{ OR: [{ role }, { role: { startsWith: `${role},` } }, { role: { endsWith: `,${role}` } }, { role: { contains: `,${role},` } }] }] : []),
+      // Same rule as isBanActive: a ban only counts until it expires. Active is spelled out rather than written as
+      // NOT(banned), because banned is nullable and NOT around a null comparison would drop those users.
+      ...(status === "banned" ? [{ banned: true, OR: [{ banExpires: null }, { banExpires: { gt: now } }] }] : []),
+      ...(status === "active" ? [{ OR: [{ banned: null }, { banned: false }, { banExpires: { lte: now } }] }] : []),
+    ]
+    const where: Prisma.UserWhereInput = { AND: conditions }
 
     const orderBy = sort ? { [sort]: order ?? "asc" } : { createdAt: "desc" as const }
 

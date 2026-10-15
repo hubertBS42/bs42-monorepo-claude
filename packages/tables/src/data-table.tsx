@@ -1,31 +1,15 @@
 "use client"
 
-import {
-  flexRender,
-  getCoreRowModel,
-  useReactTable,
-  type ColumnDef,
-} from "@tanstack/react-table"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@workspace/ui/components/table"
+import { flexRender, getCoreRowModel, useReactTable, type ColumnDef } from "@tanstack/react-table"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@workspace/ui/components/table"
 import { cn } from "@workspace/ui/lib/utils"
+import Link from "next/link"
+import { useRouter } from "next/navigation"
+import type { MouseEvent } from "react"
 import FiltersToolbar from "./filters-toolbar"
 import Pagination from "./pagination"
 
-export type FilterType =
-  | "text"
-  | "select"
-  | "date"
-  | "dateRange"
-  | "number"
-  | "numberRange"
-  | "boolean"
+export type FilterType = "text" | "select" | "date" | "dateRange" | "number" | "numberRange" | "boolean"
 
 export interface FilterConfig {
   key: string
@@ -47,18 +31,29 @@ interface DataTableProps<TData, TValue> {
   data: TData[]
   filters?: FilterConfig[]
   pagination?: PaginationConfig
-  onRowClick?: (row: TData) => void
+  // Makes each row open this URL. The row's main cell becomes a real link (keyboard, new tab, copy link),
+  // and a click anywhere else on the row follows it too.
+  getRowHref?: (row: TData) => string
+  // The column whose cell holds the link. Defaults to the first column other than "select".
+  rowLinkColumnId?: string
   enablePagination?: boolean
 }
 
-export function DataTable<TData, TValue>({
-  columns,
-  data,
-  filters = [],
-  pagination,
-  onRowClick,
-  enablePagination = true,
-}: DataTableProps<TData, TValue>) {
+// Clicks on these keep their own behaviour instead of opening the row
+const INTERACTIVE_SELECTOR = "a, button, input, select, textarea, label, [role='checkbox'], [role='button'], [role='menuitem']"
+
+// Whether a row click should open the row: not on a control, not a text selection, and not from a portal
+// (React bubbles events from portaled menus and dialogs through the row even though they aren't inside it)
+function isPlainRowClick(event: MouseEvent<HTMLTableRowElement>) {
+  const target = event.target as Element
+  if (!event.currentTarget.contains(target)) return false
+  if (target.closest(INTERACTIVE_SELECTOR)) return false
+  return !window.getSelection()?.toString()
+}
+
+export function DataTable<TData, TValue>({ columns, data, filters = [], pagination, getRowHref, rowLinkColumnId, enablePagination = true }: DataTableProps<TData, TValue>) {
+  const router = useRouter()
+
   // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
     data,
@@ -76,6 +71,20 @@ export function DataTable<TData, TValue>({
     },
   })
 
+  const linkColumnId = getRowHref ? (rowLinkColumnId ?? table.getAllLeafColumns().find((column) => column.id !== "select")?.id) : undefined
+
+  const handleRowClick = (event: MouseEvent<HTMLTableRowElement>, href: string) => {
+    if (!isPlainRowClick(event)) return
+    // Match what the same click on a link does
+    if (event.metaKey || event.ctrlKey || event.shiftKey) window.open(href, "_blank", "noopener")
+    else router.push(href)
+  }
+
+  const handleRowAuxClick = (event: MouseEvent<HTMLTableRowElement>, href: string) => {
+    // Middle click opens a new tab, as it would on a link
+    if (event.button === 1 && isPlainRowClick(event)) window.open(href, "_blank", "noopener")
+  }
+
   return (
     <div className="grid overflow-hidden rounded-md border">
       {filters.length > 0 && <FiltersToolbar filters={filters} />}
@@ -87,12 +96,7 @@ export function DataTable<TData, TValue>({
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header, idx) => (
                   <TableHead key={header.id} className={cn(idx === 0 && "w-7")}>
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
+                    {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
                   </TableHead>
                 ))}
               </TableRow>
@@ -100,34 +104,36 @@ export function DataTable<TData, TValue>({
           </TableHeader>
           <TableBody>
             {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
-                  className={cn(onRowClick && "cursor-pointer")}
-                  onClick={() => onRowClick?.(row.original)}
-                >
-                  {row.getVisibleCells().map((cell, idx) => (
-                    <TableCell
-                      key={cell.id}
-                      className={cn(
-                        idx === row.getVisibleCells().length - 1 && "w-7"
-                      )}
-                    >
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
+              table.getRowModel().rows.map((row) => {
+                const href = getRowHref?.(row.original)
+                return (
+                  <TableRow
+                    key={row.id}
+                    data-state={row.getIsSelected() && "selected"}
+                    className={cn(href && "cursor-pointer")}
+                    onClick={href ? (event) => handleRowClick(event, href) : undefined}
+                    onAuxClick={href ? (event) => handleRowAuxClick(event, href) : undefined}
+                  >
+                    {row.getVisibleCells().map((cell, idx) => {
+                      const content = flexRender(cell.column.columnDef.cell, cell.getContext())
+                      return (
+                        <TableCell key={cell.id} className={cn(idx === row.getVisibleCells().length - 1 && "w-7")}>
+                          {href && cell.column.id === linkColumnId ? (
+                            <Link href={href} className="font-medium underline-offset-4 hover:underline">
+                              {content}
+                            </Link>
+                          ) : (
+                            content
+                          )}
+                        </TableCell>
+                      )
+                    })}
+                  </TableRow>
+                )
+              })
             ) : (
               <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="h-24 text-center"
-                >
+                <TableCell colSpan={columns.length} className="h-24 text-center">
                   No Results.
                 </TableCell>
               </TableRow>

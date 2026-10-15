@@ -8,22 +8,18 @@ import { useTransition } from "react"
 
 interface ColumnHeaderProps extends React.HTMLAttributes<HTMLDivElement> {
   title: string
-  sortKey: string
+  // Leave out for columns that can't be sorted
+  sortKey?: string
   enableSorting?: boolean
 }
 
-export default function ColumnHeader({
-  title,
-  sortKey,
-  enableSorting = true,
-  className,
-}: ColumnHeaderProps) {
+export default function ColumnHeader({ title, sortKey, enableSorting = true, className }: ColumnHeaderProps) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const [isPending, startTransition] = useTransition()
 
-  if (!enableSorting) {
+  if (!enableSorting || !sortKey) {
     return <div className={cn(className)}>{title}</div>
   }
 
@@ -54,13 +50,7 @@ export default function ColumnHeader({
   }
 
   return (
-    <Button
-      variant="ghost"
-      size="sm"
-      className="-ml-2.5 h-8"
-      onClick={handleSort}
-      disabled={isPending}
-    >
+    <Button variant="ghost" size="sm" className="-ml-2.5 h-8" onClick={handleSort} disabled={isPending}>
       <span>{title}</span>
       {isDesc ? <ArrowDown /> : isAsc ? <ArrowUp /> : <ChevronsUpDown />}
     </Button>

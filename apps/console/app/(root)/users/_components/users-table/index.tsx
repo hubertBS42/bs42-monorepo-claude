@@ -1,22 +1,21 @@
 "use client"
 import { DataTable } from "@workspace/tables"
-import { UsersData } from "@/types"
+import type { UsersData } from "@/types"
 import { columns } from "./columns"
-import { filters } from "./filters"
-import { useRouter } from "next/navigation"
+import { getUserFilters } from "./filters"
 
 interface UsersTableProps {
   data: UsersData
+  canSeeSuperAdmins: boolean
 }
 
-const UsersTable = ({ data }: UsersTableProps) => {
-  const router = useRouter()
+const UsersTable = ({ data, canSeeSuperAdmins }: UsersTableProps) => {
   return (
     <DataTable
       columns={columns}
-      filters={filters}
+      filters={getUserFilters({ canSeeSuperAdmins })}
       data={data.data}
-      onRowClick={(user) => router.push(`/users/${user.id}/edit`)}
+      getRowHref={(user) => `/users/${user.id}/edit`}
       pagination={{
         total: data.total,
         page: data.page,

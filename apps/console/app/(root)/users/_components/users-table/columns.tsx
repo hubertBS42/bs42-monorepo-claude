@@ -1,5 +1,5 @@
 import { ColumnDef } from "@tanstack/react-table"
-import { format } from "date-fns"
+import { formatDate } from "@workspace/utils/date"
 import { Checkbox } from "@workspace/ui/components/checkbox"
 import { ColumnHeader } from "@workspace/tables"
 import type { User } from "@workspace/db/client"
@@ -35,12 +35,12 @@ export const columns: ColumnDef<User, unknown>[] = [
   },
   {
     id: "status",
-    header: () => <ColumnHeader title="Status" sortKey="banned" enableSorting={false} />,
+    header: () => <ColumnHeader title="Status" />,
     cell: ({ row }) => <UserStatusBadge user={row.original} />,
   },
   {
     accessorKey: "createdAt",
     header: () => <ColumnHeader title="Joined On" sortKey="createdAt" />,
-    cell: ({ row }) => <span>{format(row.original.createdAt, "MMM d, yyyy, h:mm a")}</span>,
+    cell: ({ row }) => <span>{formatDate(row.original.createdAt, "MMM d, yyyy, h:mm a")}</span>,
   },
 ]

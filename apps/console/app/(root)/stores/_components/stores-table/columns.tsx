@@ -1,5 +1,5 @@
 import { ColumnDef } from "@tanstack/react-table"
-import { format } from "date-fns"
+import { formatDate } from "@workspace/utils/date"
 
 import { Badge } from "@workspace/ui/components/badge"
 import { Checkbox } from "@workspace/ui/components/checkbox"
@@ -11,8 +11,7 @@ import { capitalizeWord } from "@workspace/utils/text"
 const genStatusBadge = (status: StoreStatus) => {
   const statusConfig: Record<StoreStatus, { className: string }> = {
     ACTIVE: {
-      className:
-        "border-transparent bg-green-600/10 text-green-700 dark:bg-green-400/10 dark:text-green-400",
+      className: "border-transparent bg-green-600/10 text-green-700 dark:bg-green-400/10 dark:text-green-400",
     },
     SUSPENDED: { className: "" },
   }
@@ -32,22 +31,12 @@ export const columns: ColumnDef<Store, unknown>[] = [
     id: "select",
     header: ({ table }) => (
       <Checkbox
-        checked={
-          table.getIsAllPageRowsSelected() ||
-          (table.getIsSomePageRowsSelected() && "indeterminate")
-        }
+        checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && "indeterminate")}
         onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
         aria-label="Select all"
       />
     ),
-    cell: ({ row }) => (
-      <Checkbox
-        checked={row.getIsSelected()}
-        onCheckedChange={(value) => row.toggleSelected(!!value)}
-        aria-label="Select row"
-        onClick={(e) => e.stopPropagation()}
-      />
-    ),
+    cell: ({ row }) => <Checkbox checked={row.getIsSelected()} onCheckedChange={(value) => row.toggleSelected(!!value)} aria-label="Select row" onClick={(e) => e.stopPropagation()} />,
     enableSorting: false,
     enableHiding: false,
   },
@@ -57,9 +46,7 @@ export const columns: ColumnDef<Store, unknown>[] = [
   },
   {
     accessorKey: "slug",
-    header: () => (
-      <ColumnHeader title="Slug" sortKey="name" enableSorting={false} />
-    ),
+    header: () => <ColumnHeader title="Slug" />,
   },
   {
     accessorKey: "status",
@@ -71,7 +58,7 @@ export const columns: ColumnDef<Store, unknown>[] = [
     header: () => <ColumnHeader title="Created On" sortKey="createdAt" />,
     cell: ({ row }) => {
       const dateTime: Date = row.original.createdAt
-      const formatted = format(dateTime, "MMM d, yyyy, h:mm a")
+      const formatted = formatDate(dateTime, "MMM d, yyyy, h:mm a")
       return <span>{formatted}</span>
     },
   },

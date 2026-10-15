@@ -1,5 +1,5 @@
 import { Status } from "@workspace/db/enums"
-import { BreadcrumbConfig, StoreStatus } from "./types"
+import { BreadcrumbConfig, StoreStatus, UserStatusFilter } from "./types"
 import { capitalizeWord } from "@workspace/utils/text"
 
 export const BREADCRUMB_DATA: BreadcrumbConfig[] = [
@@ -298,3 +298,5 @@ export const BRAND_STATUS_OPTIONS = Object.values(Status).map((value) => ({
   label: capitalizeWord(value),
   value,
 }))
+
+export const USER_STATUS_FILTERS: readonly UserStatusFilter[] = ["active", "banned"]

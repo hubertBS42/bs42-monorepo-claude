@@ -1,6 +1,6 @@
 import { Badge } from "@workspace/ui/components/badge"
 
-const roleLabels: Record<string, string> = {
+export const ROLE_LABELS: Record<string, string> = {
   superAdmin: "Super Admin",
   admin: "Admin",
   user: "User",
@@ -21,7 +21,7 @@ export function RoleBadges({ role }: { role: string }) {
         .filter(Boolean)
         .map((r) => (
           <Badge key={r} variant={r === "user" ? "outline" : "secondary"}>
-            {roleLabels[r] ?? r}
+            {ROLE_LABELS[r] ?? r}
           </Badge>
         ))}
     </div>

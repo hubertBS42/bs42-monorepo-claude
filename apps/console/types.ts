@@ -2,6 +2,7 @@ import { PaginationParams, PaginatedResult } from "@workspace/contracts"
 import { Brand, Organization, Prisma, User } from "@workspace/db/client"
 import { OrganizationStatus } from "@workspace/db/enums"
 import type { LucideIcon } from "lucide-react"
+import type { SystemRole } from "@workspace/auth/system-permissions"
 
 export interface BreadcrumbSegment {
   text: string
@@ -52,9 +53,14 @@ export interface StoresParams extends PaginationParams {
 
 export type UsersData = PaginatedResult<User>
 
+// "Banned" means a ban that hasn't expired yet (see isBanActive)
+export type UserStatusFilter = "active" | "banned"
+
 export interface UsersParams extends PaginationParams {
   name?: string
   email?: string
+  role?: SystemRole
+  status?: UserStatusFilter
 }
 
 export type UserDetails = Prisma.UserGetPayload<{
