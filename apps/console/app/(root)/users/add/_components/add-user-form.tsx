@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@work
 import { addUserFormSchema } from "@/lib/schemas/user.schemas"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useRouter } from "next/navigation"
-import { useEffect, useTransition } from "react"
+import { useTransition } from "react"
 import { SubmitHandler, useFieldArray, useForm, useWatch } from "react-hook-form"
 import { toast } from "@workspace/ui/components/toast"
 import { z } from "zod"
@@ -18,7 +18,7 @@ import { createUserAction } from "@/lib/actions/user.actions"
 import SharedFormHeader from "@/components/shared-form-header"
 import SharedFormFooter from "@/components/shared-form-footer"
 import { capitalizeWord } from "@workspace/utils/text"
-import { StoreForSelect } from "@/types"
+import type { StoreForSelect } from "@/types"
 import ImageField from "@workspace/forms/components/image-field"
 import DateField from "@workspace/forms/components/date-field"
 import SwitchField from "@workspace/forms/components/switch-field"
@@ -38,11 +38,13 @@ export default function AddUserForm({ stores }: { stores: StoreForSelect[] }) {
       image: "",
       phone: "",
       dob: null,
-      getMarketingEmails: true,
+      // Marketing needs the person's own consent, so it's off until they opt in. Order and security emails are service messages.
+      getMarketingEmails: false,
       getOrderEmails: true,
       getSecurityEmails: true,
       systemRole: "user",
-      stores: [],
+      // Store users need at least one store, so the form starts with one row
+      stores: stores[0] ? [{ storeId: stores[0].id, storeRole: "member" }] : [],
     },
   })
 
@@ -51,8 +53,7 @@ export default function AddUserForm({ stores }: { stores: StoreForSelect[] }) {
     name: "stores",
   })
 
-  // eslint-disable-next-line react-hooks/incompatible-library
-  const selectedRole = form.watch("systemRole")
+  const selectedRole = useWatch({ control: form.control, name: "systemRole" })
   const isStoreUser = selectedRole === "user"
   const selectedStores = useWatch({ control: form.control, name: "stores" }) ?? []
   const selectedStoreIds = selectedStores.map((store) => store?.storeId)
@@ -60,20 +61,10 @@ export default function AddUserForm({ stores }: { stores: StoreForSelect[] }) {
   const storesError = form.getFieldState("stores", form.formState).error
   const storesErrorMessage = storesError?.message ?? (storesError as { root?: { message?: string } } | undefined)?.root?.message
 
-  useEffect(() => {
-    if (!isStoreUser) return
-    if (!stores.length) return
-
-    const currentStores = form.getValues("stores")
-    if (currentStores.length === 0) {
-      form.setValue("stores", [{ storeId: stores[0]?.id ?? "", storeRole: "member" }])
-    }
-  }, [form, isStoreUser, stores])
-
   const systemRoleOptions = SYSTEM_ROLE_NAMES.filter((item) => item !== "superAdmin").map((role) => ({ label: capitalizeWord(role), value: role }))
   const storeRoleOptions = ORG_ROLE_NAMES.filter((item) => item !== "owner").map((role) => ({ label: capitalizeWord(role), value: role }))
 
-  const onSubmit: SubmitHandler<z.infer<typeof addUserFormSchema>> = async (data) => {
+  const onSubmit: SubmitHandler<z.infer<typeof addUserFormSchema>> = (data) => {
     startTransition(async () => {
       const response = await createUserAction({
         name: data.name,
@@ -81,7 +72,7 @@ export default function AddUserForm({ stores }: { stores: StoreForSelect[] }) {
         systemRole: data.systemRole,
         image: data.image || undefined,
         phone: data.phone || null,
-        dob: data.dob ?? null,
+        dob: data.dob,
         getMarketingEmails: data.getMarketingEmails,
         getOrderEmails: data.getOrderEmails,
         getSecurityEmails: data.getSecurityEmails,
@@ -97,10 +88,10 @@ export default function AddUserForm({ stores }: { stores: StoreForSelect[] }) {
             type: "warning",
           })
           router.push("/users")
-        } else if (response.error === "User already exists. Use another email.") {
+        } else if (response.code === "EMAIL_EXISTS") {
           form.setError("email", {
             type: "custom",
-            message: "This email address is already registered to a user",
+            message: response.error,
           })
         } else {
           toast.add({
@@ -130,11 +121,19 @@ export default function AddUserForm({ stores }: { stores: StoreForSelect[] }) {
     await deleteImages([url])
   }
 
-  const handleDiscard = async () => {
+  const handleDiscard = () => {
     startTransition(async () => {
       const image = form.getValues("image")
-      if (image?.trim()) await deleteImages([image])
-      router.push("/users")
+      try {
+        if (image?.trim()) await deleteImages([image])
+        router.push("/users")
+      } catch (error) {
+        toast.add({
+          title: "Unable to discard changes",
+          description: error instanceof Error ? error.message : "The uploaded avatar could not be removed. Please try again.",
+          type: "error",
+        })
+      }
     })
   }
 
@@ -193,7 +192,7 @@ export default function AddUserForm({ stores }: { stores: StoreForSelect[] }) {
             {isStoreUser && (
               <Card>
                 <CardHeader>
-                  <CardTitle>Store</CardTitle>
+                  <CardTitle>Stores</CardTitle>
                   <CardDescription>Assign this user to one or more stores.</CardDescription>
                 </CardHeader>
                 <CardContent className="grid gap-4">
@@ -245,7 +244,7 @@ export default function AddUserForm({ stores }: { stores: StoreForSelect[] }) {
                     control={form.control}
                     name="getMarketingEmails"
                     label="Marketing emails"
-                    description="Receive emails about new products,  and more."
+                    description="Receive emails about new products and more."
                     disabled={isPending}
                     variant="card"
                   />

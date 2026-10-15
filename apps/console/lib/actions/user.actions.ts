@@ -64,6 +64,11 @@ export async function createUserAction(input: z.input<typeof createUserActionSch
     if ("error" in auth) return { success: false, error: auth.error }
     const { headersObj } = auth
 
+    // Checked after the permission check so it can't be used to probe which emails are registered.
+    // Better Auth stores emails lowercased and would reject the duplicate too, but only with a message string.
+    const existing = await prisma.user.findUnique({ where: { email: email.toLowerCase() }, select: { id: true } })
+    if (existing) return { success: false, error: "This email address is already registered to a user", code: "EMAIL_EXISTS" }
+
     // The user sets their own password from the email below, so this one is never shared
     const password = randomBytes(32).toString("base64url")
 
