@@ -15,10 +15,7 @@ interface FiltersToolbarProps {
   filters: FilterConfig[]
 }
 
-const buildValuesFromParams = (
-  filters: FilterConfig[],
-  searchParams: URLSearchParams
-): Record<string, string> => {
+const buildValuesFromParams = (filters: FilterConfig[], searchParams: URLSearchParams): Record<string, string> => {
   const values: Record<string, string> = {}
   filters.forEach((f) => {
     if (f.type === "dateRange") {
@@ -40,13 +37,10 @@ const FiltersToolbar = ({ filters }: FiltersToolbarProps) => {
   const searchParams = useSearchParams()
   const [isPending, startTransition] = useTransition()
 
-  const [values, setValues] = useState<Record<string, string>>(() =>
-    buildValuesFromParams(filters, searchParams)
-  )
+  const [values, setValues] = useState<Record<string, string>>(() => buildValuesFromParams(filters, searchParams))
 
   const searchParamsKey = searchParams.toString()
-  const [prevSearchParamsKey, setPrevSearchParamsKey] =
-    useState(searchParamsKey)
+  const [prevSearchParamsKey, setPrevSearchParamsKey] = useState(searchParamsKey)
   if (searchParamsKey !== prevSearchParamsKey) {
     setPrevSearchParamsKey(searchParamsKey)
     setValues(buildValuesFromParams(filters, searchParams))
@@ -130,48 +124,24 @@ const FiltersToolbar = ({ filters }: FiltersToolbarProps) => {
                 size="sm"
                 loadingPlaceholder="All"
                 placeholder={filter.placeholder ?? "Select..."}
+                className="w-full"
               />
             )}
             {filter.type === "dateRange" && (
-              <DateRangeFilter
-                id={filter.key}
-                startKey={`${filter.key}Start`}
-                endKey={`${filter.key}End`}
-                values={values}
-                setValues={setValues}
-                applyFilters={applyFilters}
-                isPending={isPending}
-              />
+              <DateRangeFilter id={filter.key} startKey={`${filter.key}Start`} endKey={`${filter.key}End`} values={values} setValues={setValues} applyFilters={applyFilters} isPending={isPending} />
             )}
             {filter.type === "numberRange" && (
-              <NumberRangeFilter
-                minKey={`${filter.key}Min`}
-                maxKey={`${filter.key}Max`}
-                values={values}
-                setValues={setValues}
-                applyFilters={applyFilters}
-                isPending={isPending}
-              />
+              <NumberRangeFilter minKey={`${filter.key}Min`} maxKey={`${filter.key}Max`} values={values} setValues={setValues} applyFilters={applyFilters} isPending={isPending} />
             )}
           </div>
         ))}
       </div>
       <div className="flex gap-2">
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() => applyFilters()}
-          disabled={isPending}
-        >
+        <Button size="sm" variant="outline" onClick={() => applyFilters()} disabled={isPending}>
           Search
         </Button>
         {isFiltered && (
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={clearFilters}
-            disabled={isPending}
-          >
+          <Button size="sm" variant="ghost" onClick={clearFilters} disabled={isPending}>
             <X className="size-4" />
             Reset Filters
           </Button>
