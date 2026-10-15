@@ -5,6 +5,7 @@ import { Button } from "@workspace/ui/components/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@workspace/ui/components/card"
 import { addUserFormSchema } from "@/lib/schemas/user.schemas"
 import { zodResolver } from "@hookform/resolvers/zod"
+import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useTransition } from "react"
 import { SubmitHandler, useFieldArray, useForm, useWatch } from "react-hook-form"
@@ -196,6 +197,15 @@ export default function AddUserForm({ stores }: { stores: StoreForSelect[] }) {
                   <CardDescription>Assign this user to one or more stores.</CardDescription>
                 </CardHeader>
                 <CardContent className="grid gap-4">
+                  {stores.length === 0 && (
+                    <p className="text-sm text-muted-foreground">
+                      There are no stores yet, so store users can&apos;t be added.{" "}
+                      <Link href="/stores/add" className="font-medium text-foreground underline-offset-4 hover:underline">
+                        Create a store
+                      </Link>{" "}
+                      first, or make this user an admin.
+                    </p>
+                  )}
                   {fields.map((field, index) => {
                     const availableStoreOptions = stores
                       .filter((store) => !selectedStoreIds.some((storeId, i) => i !== index && storeId === store.id))
