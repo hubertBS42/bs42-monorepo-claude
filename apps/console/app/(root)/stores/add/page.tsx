@@ -1,4 +1,4 @@
-import { Metadata } from "next"
+import type { Metadata } from "next"
 import AddStoreForm from "./_components/add-store-form"
 import { requireSystemPermission } from "@/lib/auth-guard"
 

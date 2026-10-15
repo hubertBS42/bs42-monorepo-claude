@@ -2,6 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useRouter } from "next/navigation"
+import { useState } from "react"
 import { SubmitHandler, useForm } from "react-hook-form"
 import z from "zod"
 import { StoreStatus } from "@/types"
@@ -19,6 +20,9 @@ import { toast } from "@workspace/ui/components/toast"
 
 export default function AddStoreForm() {
   const router = useRouter()
+  // isSubmitting turns false as soon as onSubmit returns, while the redirect is still loading, so a second click
+  // would create a second store. This keeps the form locked from a successful create until the page changes.
+  const [isCreated, setIsCreated] = useState(false)
 
   const form = useForm<z.infer<typeof addStoreFormSchema>>({
     resolver: zodResolver(addStoreFormSchema),
@@ -50,14 +54,17 @@ export default function AddStoreForm() {
         type: "error",
       })
     } else {
+      setIsCreated(true)
       router.push("/stores")
       toast.add({
-        title: "Store created successfully",
-        description: "The store has been created successfully.",
+        title: "Store created",
+        description: "You can now add members and products.",
         type: "success",
       })
     }
   }
+  const isBusy = form.formState.isSubmitting || isCreated
+
   const handleAddLogo = async (data: FileList) => {
     const formData = new FormData()
     Array.from(data).forEach((file) => formData.append("files", file))
@@ -88,7 +95,7 @@ export default function AddStoreForm() {
           heading="Add Store"
           description="Create a new store to manage members and products."
           backTo="/stores"
-          isPending={form.formState.isSubmitting}
+          isPending={isBusy}
           isDirty={form.formState.isDirty}
           handleDiscard={handleDiscard}
         />
@@ -113,26 +120,14 @@ export default function AddStoreForm() {
                       onRemove={handleRemoveLogo}
                       clearErrors={form.clearErrors}
                       label="Logo"
-                      disabled={form.formState.isSubmitting}
+                      disabled={isBusy}
                       className="max-w-35"
                     />
 
-                    <TextInputField control={form.control} label="Name" name="name" disabled={form.formState.isSubmitting} autoFocus />
+                    <TextInputField control={form.control} label="Name" name="name" disabled={isBusy} autoFocus />
 
-                    <RichTextField
-                      control={form.control}
-                      name="shippingPolicy"
-                      label="Shipping Policy"
-                      placeholder="Describe your shipping policy..."
-                      disabled={form.formState.isSubmitting}
-                    />
-                    <RichTextField
-                      control={form.control}
-                      name="returnsPolicy"
-                      label="Returns Policy"
-                      disabled={form.formState.isSubmitting}
-                      placeholder="Describe your returns policy..."
-                    />
+                    <RichTextField control={form.control} name="shippingPolicy" label="Shipping Policy" placeholder="Describe your shipping policy..." disabled={isBusy} />
+                    <RichTextField control={form.control} name="returnsPolicy" label="Returns Policy" disabled={isBusy} placeholder="Describe your returns policy..." />
                   </FieldGroup>
                 </CardContent>
               </Card>
@@ -145,17 +140,12 @@ export default function AddStoreForm() {
                 <CardDescription>Set the status for this store.</CardDescription>
               </CardHeader>
               <CardContent>
-                <SelectField control={form.control} name="status" disabled={form.formState.isSubmitting} options={STORE_STATUS_OPTIONS} />
+                <SelectField control={form.control} name="status" disabled={isBusy} options={STORE_STATUS_OPTIONS} aria-label="Status" />
               </CardContent>
             </Card>
           </div>
 
-          <ResourceFormFooter
-            backTo="/stores"
-            isPending={form.formState.isSubmitting}
-            isDirty={form.formState.isDirty}
-            handleDiscard={handleDiscard}
-          />
+          <ResourceFormFooter backTo="/stores" isPending={isBusy} isDirty={form.formState.isDirty} handleDiscard={handleDiscard} />
         </div>
       </div>
     </form>
