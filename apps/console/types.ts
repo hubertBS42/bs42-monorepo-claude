@@ -49,6 +49,7 @@ export type StoresData = PaginatedResult<Store>
 
 export interface StoresParams extends PaginationParams {
   name?: string
+  status?: StoreStatus
 }
 
 export type UsersData = PaginatedResult<User>

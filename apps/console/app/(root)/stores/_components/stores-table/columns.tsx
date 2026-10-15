@@ -1,30 +1,18 @@
-import { ColumnDef } from "@tanstack/react-table"
+import type { ColumnDef } from "@tanstack/react-table"
 import { formatDate } from "@workspace/utils/date"
 
 import { Badge } from "@workspace/ui/components/badge"
 import { Checkbox } from "@workspace/ui/components/checkbox"
-import { cn } from "@workspace/ui/lib/utils"
 import { ColumnHeader } from "@workspace/tables"
-import { Store, StoreStatus } from "@/types"
+import type { Store, StoreStatus } from "@/types"
 import { capitalizeWord } from "@workspace/utils/text"
 
-const genStatusBadge = (status: StoreStatus) => {
-  const statusConfig: Record<StoreStatus, { className: string }> = {
-    ACTIVE: {
-      className: "border-transparent bg-green-600/10 text-green-700 dark:bg-green-400/10 dark:text-green-400",
-    },
-    SUSPENDED: { className: "" },
-  }
-
-  const config = statusConfig[status] ?? statusConfig.ACTIVE
-  const variant = status === "SUSPENDED" ? "destructive" : "outline"
-
-  return (
-    <Badge variant={variant} className={cn(config.className)}>
-      {capitalizeWord(status)}
-    </Badge>
-  )
+const statusBadgeVariants: Record<StoreStatus, "success" | "destructive"> = {
+  ACTIVE: "success",
+  SUSPENDED: "destructive",
 }
+
+const genStatusBadge = (status: StoreStatus) => <Badge variant={statusBadgeVariants[status]}>{capitalizeWord(status)}</Badge>
 
 export const columns: ColumnDef<Store, unknown>[] = [
   {
@@ -56,10 +44,6 @@ export const columns: ColumnDef<Store, unknown>[] = [
   {
     accessorKey: "createdAt",
     header: () => <ColumnHeader title="Created On" sortKey="createdAt" />,
-    cell: ({ row }) => {
-      const dateTime: Date = row.original.createdAt
-      const formatted = formatDate(dateTime, "MMM d, yyyy, h:mm a")
-      return <span>{formatted}</span>
-    },
+    cell: ({ row }) => <span>{formatDate(row.original.createdAt, "MMM d, yyyy, h:mm a")}</span>,
   },
 ]

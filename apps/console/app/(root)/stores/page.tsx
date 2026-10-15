@@ -2,8 +2,8 @@ import type { Metadata } from "next"
 import StoresTable from "./_components/stores-table"
 import { getStores, MAX_STORES_PAGE_SIZE, STORE_SORT_FIELDS } from "@/lib/data/stores.data"
 import AddButton from "@/components/add-button"
-import type { StoresParams } from "@/types"
-import { getOrderParam, getPositiveIntegerParam, getSortParam, getStringParam } from "@workspace/utils/search-params"
+import { StoreStatus, type StoresParams } from "@/types"
+import { getEnumParam, getOrderParam, getPositiveIntegerParam, getSortParam, getStringParam } from "@workspace/utils/search-params"
 import { requireConsoleAdmin } from "@/lib/auth-guard"
 
 export const metadata: Metadata = {
@@ -22,6 +22,7 @@ export default async function StoresPage({ searchParams }: StoresPageProps) {
 
   const storesParams: StoresParams = {
     name: getStringParam(params.name),
+    status: getEnumParam(params.status, Object.values(StoreStatus)),
     page: getPositiveIntegerParam(params.page, 1),
     pageSize: getPositiveIntegerParam(params.pageSize, 10, MAX_STORES_PAGE_SIZE),
     sort: getSortParam(params.sort, STORE_SORT_FIELDS),

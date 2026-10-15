@@ -31,9 +31,5 @@ export function RoleBadges({ role }: { role: string }) {
 export function UserStatusBadge({ user }: { user: { banned: boolean | null; banExpires: Date | null } }) {
   if (isBanActive(user)) return <Badge variant="destructive">Banned</Badge>
 
-  return (
-    <Badge variant="outline" className="border-transparent bg-green-600/10 text-green-700 dark:bg-green-400/10 dark:text-green-400">
-      Active
-    </Badge>
-  )
+  return <Badge variant="success">Active</Badge>
 }

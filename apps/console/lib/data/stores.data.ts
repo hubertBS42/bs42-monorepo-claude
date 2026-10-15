@@ -7,6 +7,7 @@ import { PLATFORM_ORGANIZATION_SLUG } from "@workspace/contracts"
 import { consoleAdminRoles, hasSystemRole } from "@workspace/auth/system-permissions"
 import { headers } from "next/headers"
 import { prisma } from "@workspace/db"
+import type { Prisma } from "@workspace/db/client"
 import type { DataResponse } from "@workspace/contracts"
 import { getPaginationError } from "@workspace/utils/pagination"
 
@@ -32,13 +33,16 @@ export const getStores = async (filters: StoresParams = {}): Promise<DataRespons
       return { success: false, error: paginationError }
     }
 
-    const { name, page = 1, pageSize = 10, sort, order } = filters
+    const { name, status, page = 1, pageSize = 10, sort, order } = filters
 
     const isSystemAdmin = hasSystemRole(session.user.role, consoleAdminRoles)
 
-    const where = {
-      ...(isSystemAdmin ? { slug: { not: PLATFORM_ORGANIZATION_SLUG } } : { members: { some: { userId: session.user.id } } }),
+    const where: Prisma.OrganizationWhereInput = {
+      // The platform organization isn't a store, so it's never listed, whoever is asking
+      slug: { not: PLATFORM_ORGANIZATION_SLUG },
+      ...(!isSystemAdmin && { members: { some: { userId: session.user.id } } }),
       ...(name && { name: { contains: name, mode: "insensitive" as const } }),
+      ...(status && { status }),
     }
 
     const orderBy = sort ? { [sort]: order ?? "asc" } : { name: "asc" as const }
