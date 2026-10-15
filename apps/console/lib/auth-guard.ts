@@ -74,13 +74,13 @@ export async function requireSystemPermission(permissions: SystemPermission) {
   return session
 }
 
-export async function requireOrganizationPermission(organizationId: string, permissions: OrganizationPermission) {
-  const session = await getConsoleSession()
-
+// Returns the user's role in the organization when it grants the permissions, otherwise null.
+// For server actions, which should return an error instead of redirecting.
+export async function getOrganizationRoleWithPermission(userId: string, organizationId: string, permissions: OrganizationPermission) {
   const membership = await prisma.member.findFirst({
     where: {
       organizationId,
-      userId: session.user.id,
+      userId,
     },
     select: {
       role: true,
@@ -88,8 +88,19 @@ export async function requireOrganizationPermission(organizationId: string, perm
   })
 
   if (!membership || !isOrganizationRole(membership.role) || !organizationRoles[membership.role].authorize(permissions).success) {
+    return null
+  }
+
+  return membership.role
+}
+
+export async function requireOrganizationPermission(organizationId: string, permissions: OrganizationPermission) {
+  const session = await getConsoleSession()
+
+  const role = await getOrganizationRoleWithPermission(session.user.id, organizationId, permissions)
+  if (!role) {
     redirect("/forbidden")
   }
 
-  return { session, organizationId, role: membership.role }
+  return { session, organizationId, role }
 }

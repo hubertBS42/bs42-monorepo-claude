@@ -711,6 +711,9 @@ importers:
       '@workspace/contracts':
         specifier: workspace:*
         version: link:../contracts
+      libphonenumber-js:
+        specifier: ^1.13.14
+        version: 1.13.14
     devDependencies:
       '@workspace/eslint-config':
         specifier: workspace:*

@@ -1,5 +1,5 @@
 import { admin, organization } from "better-auth/plugins"
-import { consoleAdminRoles, hasSystemPermission, hasSystemRole, systemAccessController, systemRoles } from "./system-permissions"
+import { consoleAdminRoles, hasSystemPermission, hasSystemRole, storeRoleForSystemAdmin, systemAccessController, systemRoles } from "./system-permissions"
 import { organizationAccessController, organizationRoles } from "./organization-permissions"
 import { InviteMemberEmail, sendEmail } from "@workspace/email"
 import { authURLs } from "./constants"
@@ -56,7 +56,7 @@ export const consolePlugins = [
           select: { role: true },
         })
 
-        if (hasSystemRole(creator?.role, ["admin"]) && !hasSystemRole(creator?.role, ["superAdmin"])) {
+        if (hasSystemRole(creator?.role, consoleAdminRoles) && storeRoleForSystemAdmin(creator?.role) === "admin") {
           // Downgrade creator from owner to admin
           await prisma.member.updateMany({
             where: {
@@ -79,11 +79,11 @@ export const consolePlugins = [
         // Add all other system admins as members of the new org
         await prisma.member.createMany({
           data: systemAdmins
-            .filter((systemAdmin) => hasSystemRole(systemAdmin.role, ["admin", "superAdmin"]))
+            .filter((systemAdmin) => hasSystemRole(systemAdmin.role, consoleAdminRoles))
             .map((systemAdmin) => ({
               userId: systemAdmin.id,
               organizationId: organization.id,
-              role: hasSystemRole(systemAdmin.role, ["superAdmin"]) ? "owner" : "admin",
+              role: storeRoleForSystemAdmin(systemAdmin.role),
             })),
           skipDuplicates: true,
         })

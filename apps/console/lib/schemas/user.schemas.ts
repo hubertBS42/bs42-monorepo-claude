@@ -1,5 +1,5 @@
 import { ORG_ROLE_NAMES } from "@workspace/auth/organization-permissions"
-import { isPossiblePhoneNumber } from "@workspace/forms"
+import { isPossiblePhoneNumber } from "@workspace/utils/phone"
 import z from "zod"
 
 // Optional phone schema (for fields that can be null/empty)
@@ -53,12 +53,15 @@ export const addUserFormSchema = z.discriminatedUnion("systemRole", [
   }),
   baseUserFormSchema.extend({
     systemRole: z.literal("user"),
-    stores: z.array(
-      z.object({
-        storeId: z.string().min(1, "Store is required"),
-        storeRole: z.enum(["member", "admin"] as const),
-      })
-    ),
+    // Store users can only reach the console through a store membership
+    stores: z
+      .array(
+        z.object({
+          storeId: z.string().min(1, "Store is required"),
+          storeRole: z.enum(["member", "admin"] as const),
+        })
+      )
+      .min(1, "Assign the user to at least one store"),
   }),
 ])
 
@@ -98,7 +101,7 @@ export const updateAddressFormSchema = addAddressFormSchema.extend({
 })
 
 export const banUserFormSchema = z.object({
-  userId: z.string().min(1, "UserId is required"),
+  userId: z.uuid("Invalid user ID"),
   banReason: z.string().nullable(),
   banExpiresIn: z
     .date()
@@ -111,4 +114,53 @@ export const banUserFormSchema = z.object({
 export const inviteMemberFormSchema = z.object({
   email: z.email("Please enter a valid email address"),
   role: z.enum(["member", "admin"] as const),
+})
+
+// Server action inputs. Actions are public endpoints, so these check everything the forms above send,
+// plus what the forms don't let you pick (IDs, the full role sets).
+
+export const createUserActionSchema = baseUserFormSchema.extend({
+  // No superAdmin: that role is granted by promoting an existing, activated user, never at creation,
+  // so a mistyped email can't hand someone the top role through the set-password link
+  systemRole: z.enum(["admin", "user"], "Invalid system role"),
+  stores: z
+    .array(
+      z.object({
+        storeId: z.uuid("Invalid store ID"),
+        storeRole: z.enum(ORG_ROLE_NAMES),
+      })
+    )
+    .optional(),
+})
+
+export const updateUserActionSchema = baseUserFormSchema.extend({
+  id: z.uuid("Invalid user ID"),
+  stores: z
+    .array(
+      z.object({
+        memberId: z.uuid("Invalid member ID").optional(),
+        storeId: z.uuid("Invalid store ID"),
+        storeRole: z.enum(ORG_ROLE_NAMES),
+        isNew: z.boolean(),
+      })
+    )
+    .optional(),
+  removedMembers: z
+    .array(
+      z.object({
+        memberId: z.uuid("Invalid member ID"),
+        storeId: z.uuid("Invalid store ID"),
+      })
+    )
+    .optional(),
+})
+
+export const addAddressActionSchema = z.object({
+  userId: z.uuid("Invalid user ID"),
+  data: addAddressFormSchema,
+})
+
+export const updateAddressActionSchema = z.object({
+  userId: z.uuid("Invalid user ID"),
+  data: updateAddressFormSchema.extend({ id: z.uuid("Invalid address ID") }),
 })

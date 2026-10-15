@@ -16,8 +16,10 @@ export const systemRoles = {
   user: systemAccessController.newRole({
     ...userAc.statements,
   }),
+  // No set-role, set-password or impersonate: admins could otherwise make themselves superAdmin or act as one.
+  // Roles on new users are set by the console's createUserAction after its own checks.
   admin: systemAccessController.newRole({
-    user: ["list", "get"],
+    user: ["create", "list", "get", "update", "set-email", "ban", "delete"],
     session: ["list", "revoke"],
     organization: ["create", "update"],
     brand: ["create", "update", "delete"],
@@ -59,3 +61,13 @@ export function hasSystemPermission(role: string | null | undefined, permissions
 }
 
 export const SYSTEM_ROLE_NAMES = Object.keys(systemRoles) as [SystemRole, ...Array<SystemRole>]
+
+// Only superAdmins can manage (update, ban, delete) users who hold the superAdmin role
+export function canManageUserWithRole(actorRole: string | null | undefined, targetRole: string | null | undefined) {
+  return hasSystemRole(actorRole, ["superAdmin"]) || !hasSystemRole(targetRole, ["superAdmin"])
+}
+
+// The role system admins get in every store: superAdmins are owners, admins are admins
+export function storeRoleForSystemAdmin(role: string | null | undefined): "owner" | "admin" {
+  return hasSystemRole(role, ["superAdmin"]) ? "owner" : "admin"
+}

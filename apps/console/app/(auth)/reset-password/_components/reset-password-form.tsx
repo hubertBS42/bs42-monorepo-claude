@@ -34,8 +34,6 @@ export function ResetPasswordForm() {
         })
         return
       }
-
-      // setIsSubmitted(true)
     } catch (error) {
       console.error("Password reset request failed:", error)
       form.setError("root", {
@@ -49,30 +47,19 @@ export function ResetPasswordForm() {
       <CardHeader>
         <CardTitle>Reset your password</CardTitle>
         <CardDescription>
-          {form.formState.isSubmitting
-            ? "If an account exists for that email, we sent a reset link."
-            : "Enter your email below to receive a password reset link."}
+          {form.formState.isSubmitSuccessful ? "If an account exists for that email, we sent a reset link." : "Enter your email below to receive a password reset link."}
         </CardDescription>
       </CardHeader>
 
       <CardContent>
-        {form.formState.isSubmitting ? (
+        {form.formState.isSubmitSuccessful ? (
           <Link href="/login" className={buttonVariants({ variant: "default" })}>
             Back to login
           </Link>
         ) : (
           <form onSubmit={form.handleSubmit(onSubmit)}>
             <FieldGroup>
-              <TextInputField
-                control={form.control}
-                name="email"
-                label="Email"
-                type="email"
-                autoComplete="email"
-                placeholder="m@example.com"
-                disabled={form.formState.isSubmitting}
-                autoFocus
-              />
+              <TextInputField control={form.control} name="email" label="Email" type="email" autoComplete="email" placeholder="m@example.com" disabled={form.formState.isSubmitting} autoFocus />
 
               {form.formState.errors.root && <FieldError errors={[form.formState.errors.root]} />}
 

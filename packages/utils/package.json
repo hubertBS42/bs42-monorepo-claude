@@ -7,6 +7,7 @@
     "./env": "./src/env.ts",
     "./name": "./src/name.ts",
     "./pagination": "./src/pagination.ts",
+    "./phone": "./src/phone.ts",
     "./search-params": "./src/search-params.ts",
     "./text": "./src/text.ts"
   },
@@ -16,12 +17,13 @@
     "lint": "eslint"
   },
   "dependencies": {
-    "@workspace/contracts": "workspace:*"
+    "@workspace/contracts": "workspace:*",
+    "libphonenumber-js": "^1.13.14"
   },
   "devDependencies": {
-    "@workspace/typescript-config": "workspace:*",
-    "typescript": "^5",
     "@workspace/eslint-config": "workspace:*",
-    "eslint": "^10"
+    "@workspace/typescript-config": "workspace:*",
+    "eslint": "^10",
+    "typescript": "^5"
   }
 }
