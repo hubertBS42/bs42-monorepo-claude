@@ -1,6 +1,6 @@
-import { requireConsoleAdmin } from "@/lib/auth-guard"
+import { requireSystemPermission } from "@/lib/auth-guard"
 
 export default async function OrdersPage() {
-  await requireConsoleAdmin()
+  await requireSystemPermission({ order: ["read"] })
   return <div>page</div>
 }

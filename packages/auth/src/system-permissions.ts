@@ -7,6 +7,8 @@ const statement = {
   brand: ["create", "update", "delete"],
   category: ["create", "update", "delete"],
   product: ["create", "update", "delete"],
+  // Platform orders (the platform is the seller). update covers status, shipping and tax overrides; refund gives money back.
+  order: ["read", "create", "update", "refund"],
   appSettings: ["update"],
 } as const
 
@@ -25,6 +27,7 @@ export const systemRoles = {
     brand: ["create", "update", "delete"],
     category: ["create", "update", "delete"],
     product: ["create", "update", "delete"],
+    order: ["read", "create", "update", "refund"],
   }),
   superAdmin: systemAccessController.newRole({
     ...adminAc.statements,
@@ -32,6 +35,7 @@ export const systemRoles = {
     brand: ["create", "update", "delete"],
     category: ["create", "update", "delete"],
     product: ["create", "update", "delete"],
+    order: ["read", "create", "update", "refund"],
     appSettings: ["update"],
   }),
 }
