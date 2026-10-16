@@ -93,6 +93,23 @@ model Brand {
   @@map("brand")
 }
 
+model Category {
+  id              String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name            String
+  slug            String     @unique
+  description     String?
+  image           String?
+  parent          Category?  @relation("CategoriesHierarchy", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  parentId        String?    @db.Uuid
+  childCategories Category[] @relation("CategoriesHierarchy")
+  status          Status     @default(DRAFT)
+  isFeatured      Boolean    @default(false)
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @default(now()) @updatedAt
+
+  @@map("category")
+}
+
 model Session {
   id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   expiresAt DateTime
