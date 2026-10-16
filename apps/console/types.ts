@@ -1,6 +1,6 @@
 import { PaginationParams, PaginatedResult } from "@workspace/contracts"
 import { Brand, Organization, Prisma, User } from "@workspace/db/client"
-import { OrganizationStatus } from "@workspace/db/enums"
+import { OrganizationStatus, Status } from "@workspace/db/enums"
 import type { LucideIcon } from "lucide-react"
 import type { SystemRole } from "@workspace/auth/system-permissions"
 
@@ -89,6 +89,7 @@ export type InvitationDetails = Prisma.InvitationGetPayload<{
 
 export interface BrandsParams extends PaginationParams {
   name?: string
+  status?: Status
 }
 
 export type BrandsData = PaginatedResult<Brand>
