@@ -5,10 +5,8 @@ import { requireSystemPermission } from "@/lib/auth-guard"
 export const metadata: Metadata = {
   title: "Add Brand",
 }
-const AddBrandPage = async () => {
+export default async function AddBrandPage() {
   await requireSystemPermission({ brand: ["create"] })
 
   return <AddBrandForm />
 }
-
-export default AddBrandPage
