@@ -6,12 +6,14 @@ export const appSettingsSchema = z
     storeDescription: z.string().trim().max(160),
     consoleName: z.string().trim().max(60),
     consoleDescription: z.string().trim().max(160),
-    logoUrl: z.url().or(z.literal("")),
-    faviconUrl: z.url().or(z.literal("")),
+    logoUrl: z.httpUrl().or(z.literal("")),
+    faviconUrl: z.httpUrl().or(z.literal("")),
     taxEnabled: z.boolean(),
     // A percentage (15 = 15%), stored as a fraction. "" is an emptied number field.
     taxRatePercent: z.number().or(z.literal("")),
     taxShipping: z.boolean(),
+    // The version the form was opened with (getAppSettingsVersion); not a field the user sees
+    version: z.string(),
   })
   .superRefine((data, ctx) => {
     const rate = data.taxRatePercent

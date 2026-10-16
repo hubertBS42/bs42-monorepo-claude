@@ -18,7 +18,8 @@ import { deleteImages, uploadImages } from "@/lib/storage"
 
 type FormValues = z.infer<typeof appSettingsSchema>
 
-export default function SettingsForm({ settings }: { settings: AppSettingsData }) {
+// version: the settings' version when the page loaded (getAppSettingsVersion), so a save can't undo someone else's
+export default function SettingsForm({ settings, version }: { settings: AppSettingsData; version: string }) {
   const router = useRouter()
 
   const defaultValues: FormValues = {
@@ -32,6 +33,7 @@ export default function SettingsForm({ settings }: { settings: AppSettingsData }
     // Rounded, because a fraction times 100 can come out as 15.000000000000002
     taxRatePercent: Math.round(settings.taxRate * 10000) / 100,
     taxShipping: settings.taxShipping,
+    version,
   }
 
   const form = useForm<FormValues>({
@@ -80,18 +82,16 @@ export default function SettingsForm({ settings }: { settings: AppSettingsData }
   }
 
   const onSubmit: SubmitHandler<FormValues> = async (data) => {
-    form.clearErrors("root")
-
     const result = await saveAppSettings(data)
     if (!result.success) {
-      form.setError("root", { message: result.error })
       toast.add({ title: "Unable to save settings", description: result.error, type: "error" })
       return
     }
 
     setSaved({ logoUrl: data.logoUrl, faviconUrl: data.faviconUrl })
     setUnsaved([])
-    form.reset(data)
+    // The new version, so the next save from this page isn't mistaken for a stale one
+    form.reset({ ...data, version: result.version })
     toast.add({ title: "Settings saved", type: "success" })
     router.refresh()
   }
@@ -158,12 +158,6 @@ export default function SettingsForm({ settings }: { settings: AppSettingsData }
                   </FieldGroup>
                 </CardContent>
               </Card>
-
-              {form.formState.errors.root && (
-                <p role="alert" className="text-sm text-destructive">
-                  {form.formState.errors.root.message}
-                </p>
-              )}
             </div>
 
             {/* Right column */}
