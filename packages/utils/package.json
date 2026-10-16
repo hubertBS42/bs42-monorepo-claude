@@ -10,7 +10,8 @@
     "./pagination": "./src/pagination.ts",
     "./phone": "./src/phone.ts",
     "./search-params": "./src/search-params.ts",
-    "./text": "./src/text.ts"
+    "./text": "./src/text.ts",
+    "./currency": "./src/currency.ts"
   },
   "scripts": {
     "typecheck": "tsc --project tsconfig.json --noEmit",
