@@ -4,7 +4,7 @@ import slugify from "slugify"
 import { deleteFiles, isManagedFileUrl } from "@workspace/storage"
 import { PLATFORM_ORGANIZATION_SLUG } from "@workspace/contracts"
 
-type ModelType = "organization" | "brand"
+type ModelType = "organization" | "brand" | "category"
 type SlugClient = PrismaClient | Prisma.TransactionClient
 
 const MAX_SLUG_RETRIES = 4
@@ -69,18 +69,18 @@ const generateUniqueSlug = async ({ name, id, model, client }: { name: string; i
           select: { id: true },
         }),
     },
-    // category: {
-    //   getById: (id) =>
-    //     client.category.findUnique({
-    //       where: { id },
-    //       select: { name: true, slug: true },
-    //     }),
-    //   getBySlug: (slug) =>
-    //     client.category.findUnique({
-    //       where: { slug },
-    //       select: { id: true },
-    //     }),
-    // },
+    category: {
+      getById: (id) =>
+        client.category.findUnique({
+          where: { id },
+          select: { name: true, slug: true },
+        }),
+      getBySlug: (slug) =>
+        client.category.findUnique({
+          where: { slug },
+          select: { id: true },
+        }),
+    },
     // product: {
     //   getById: (id) =>
     //     client.product.findUnique({
@@ -350,6 +350,81 @@ function createPrisma() {
           })
 
           await removeFiles(logos)
+          return result
+        },
+      },
+      category: {
+        async create({ args, query }) {
+          return withUniqueSlugRetry({
+            name: args.data.name,
+            model: "category",
+            client: base,
+            run: (slug) => {
+              args.data.slug = slug
+              return query(args)
+            },
+          })
+        },
+
+        async update({ args, query }) {
+          const nameUpdate = args.data.name
+          const name = typeof nameUpdate === "string" ? nameUpdate : nameUpdate?.set
+
+          // Clients can never set the slug on update
+          delete args.data.slug
+
+          if (name === undefined) {
+            return query(args)
+          }
+
+          const existing = await base.category.findUnique({
+            where: args.where,
+            select: { id: true, slug: true },
+          })
+
+          if (!existing) {
+            return query(args)
+          }
+
+          return withUniqueSlugRetry({
+            name,
+            id: existing.id,
+            model: "category",
+            client: base,
+            run: (slug) => {
+              args.data.slug = slug
+              return query(args)
+            },
+          })
+        },
+
+        async delete({ args, query }) {
+          // Read the image first so `select`/`include` on the caller's args still apply
+          const existing = await base.category.findUnique({
+            where: args.where,
+            select: { image: true },
+          })
+
+          const deleted = await query(args)
+          await removeFiles([existing?.image])
+          return deleted
+        },
+
+        async deleteMany({ args }) {
+          const { result, images } = await base.$transaction(async (tx) => {
+            const categories = await tx.category.findMany({
+              where: args.where,
+              select: { id: true, image: true },
+            })
+
+            const result = await tx.category.deleteMany({
+              where: { id: { in: categories.map((category) => category.id) } },
+            })
+
+            return { result, images: categories.map((category) => category.image) }
+          })
+
+          await removeFiles(images)
           return result
         },
       },

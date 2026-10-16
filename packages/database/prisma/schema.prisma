@@ -1,6 +1,7 @@
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
+  provider        = "prisma-client"
+  output          = "../generated/prisma"
+  previewFeatures = ["partialIndexes"]
 }
 
 datasource db {
@@ -99,7 +100,7 @@ model Category {
   slug            String     @unique
   description     String?
   image           String?
-  parent          Category?  @relation("CategoriesHierarchy", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  parent          Category?  @relation("CategoriesHierarchy", fields: [parentId], references: [id], onDelete: NoAction)
   parentId        String?    @db.Uuid
   childCategories Category[] @relation("CategoriesHierarchy")
   status          Status     @default(DRAFT)
@@ -107,6 +108,10 @@ model Category {
   createdAt       DateTime   @default(now())
   updatedAt       DateTime   @default(now()) @updatedAt
 
+  // Names are unique among siblings, and the first index also serves lookups by parent. Postgres treats NULLs as
+  // distinct, so top-level categories need their own partial index.
+  @@unique([parentId, name])
+  @@unique([name], map: "category_root_name_key", where: { parentId: null })
   @@map("category")
 }
 
