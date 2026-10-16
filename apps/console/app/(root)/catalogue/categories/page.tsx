@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import CategoriesTable from "./_components/categories-table"
 import { getCategoryTree } from "@/lib/data/categories.data"
+import AddButton from "@/components/add-button"
 import { requireConsoleAdmin } from "@/lib/auth-guard"
 
 export const metadata: Metadata = {
@@ -19,6 +20,8 @@ export default async function CategoriesPage() {
           <h1 className="text-xl font-bold md:text-2xl">Manage Categories</h1>
           <p className="text-sm text-muted-foreground">View and manage all categories and their subcategories.</p>
         </div>
+
+        <AddButton label="Add Category" url="/catalogue/categories/add" />
       </div>
       <CategoriesTable data={result.data} />
     </main>

@@ -6,7 +6,9 @@ import { consoleAuth } from "@workspace/auth/console"
 import { headers } from "next/headers"
 import { prisma } from "@workspace/db"
 import type { Category } from "@workspace/db/client"
+import { Status } from "@workspace/db/enums"
 import type { DataResponse } from "@workspace/contracts"
+import type { TreeSelectOption } from "@workspace/forms"
 
 async function getSession() {
   return consoleAuth.api.getSession({
@@ -40,6 +42,33 @@ export const getCategoryTree = async (): Promise<DataResponse<CategoryNode[]>> =
     })
 
     return { success: true, data: buildCategoryTree(categories) }
+  } catch (error) {
+    return { success: false, error: formatError(error) }
+  }
+}
+
+function toTreeOptions(nodes: CategoryNode[]): TreeSelectOption[] {
+  return nodes.map((node) => ({ label: node.name, value: node.id, children: toTreeOptions(node.children) }))
+}
+
+// Options for the parent category select. Archived categories stay in the tree, so their subcategories keep their
+// place, but are returned as disabledIds: an archived category can't take new subcategories.
+export const getCategoryOptions = async (): Promise<DataResponse<{ options: TreeSelectOption[]; disabledIds: string[] }>> => {
+  try {
+    const session = await getSession()
+    if (!session) return { success: false, error: "Unauthorized" }
+
+    const categories = await prisma.category.findMany({
+      orderBy: [{ position: "asc" }, { name: "asc" }, { id: "asc" }],
+    })
+
+    return {
+      success: true,
+      data: {
+        options: toTreeOptions(buildCategoryTree(categories)),
+        disabledIds: categories.filter((category) => category.status === Status.ARCHIVED).map((category) => category.id),
+      },
+    }
   } catch (error) {
     return { success: false, error: formatError(error) }
   }
