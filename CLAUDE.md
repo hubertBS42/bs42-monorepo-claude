@@ -62,7 +62,7 @@ A "store" is a Better Auth organization. One special organization, slug `PLATFOR
 ### Two permission layers
 - System roles (`user`, `admin`, `superAdmin`) on `User.role`, defined in `system-permissions.ts`. Role strings can be comma-separated; always check with `hasSystemRole` / `hasSystemPermission`, never `===`.
 - Organization roles (`owner`, `admin`, `member`) on `Member.role`, defined in `organization-permissions.ts`.
-- The catalogue (brands, categories, products) is global, not per store: it uses the system permissions `brand`/`category`/`product` and `/catalogue` is admin-only in the global workspace.
+- The catalogue (brands, categories, products) is global, not per store: it uses the system permissions `brand`/`category`/`product` and `/catalogue` is admin-only in the global workspace. Platform orders use the system permission `order` (`read`, `create`, `update`, `refund`).
 - **SuperAdmins**:
   - Only superAdmins can manage superAdmins: console actions check `canManageUserWithRole`, and a consoleAuth `hooks.before` blocks Better Auth's admin write endpoints.
   - User loaders in `lib/data/users.data.ts` hide superAdmins from everyone else.
@@ -82,10 +82,24 @@ A "store" is a Better Auth organization. One special organization, slug `PLATFOR
 
 ### Database client extensions
 `@workspace/db` exports a Prisma 7 client (driver adapter `@prisma/adapter-pg`, generated into `packages/database/generated/prisma`) wrapped in `$extends` query hooks:
-- **Slugs** (organizations and brands) are generated server-side from the name, with uniqueness retries. Any client-supplied slug is discarded, so callers send a placeholder (Better Auth requires one; Prisma's types require one for brands). The exception is the platform org.
-- **File cleanup**: deleting an organization, user, brand or category removes its logo/image from Azure Blob Storage after the delete commits (`removeFiles` from `@workspace/storage`). Files nothing references any more, such as uploads from a form left without saving, are removed by `sweepOrphanedFiles` (`packages/database/src/file-sweep.ts`), which `POST /api/cron/file-cleanup` runs for a scheduler using `CRON_SECRET`. A new column holding file URLs must be added to the sweep's list, or the sweep deletes its files.
+- **Slugs** (organizations, brands and categories) are generated server-side from the name, with uniqueness retries. Any client-supplied slug is discarded, so callers send a placeholder (Better Auth requires one; Prisma's types require one for brands and categories). The exception is the platform org. Only a rename changes a slug, so moving a category keeps its URL; a taken category slug tries the parent's slug as a prefix (`men-accessories`) before numbering.
+- **File cleanup**: deleting an organization, user, brand or category removes its logo/image from Azure Blob Storage after the delete commits (`removeFiles` from `@workspace/storage`). Files nothing references any more, such as uploads from a form left without saving, are removed by `sweepOrphanedFiles` (`packages/database/src/file-sweep.ts`), which `POST /api/cron/file-cleanup` runs for a scheduler using `CRON_SECRET`. A new column holding file URLs must be added to both lists in `file-sweep.ts` (`getReferencedFileUrls` and `findReferencedFileUrls`), or the sweep deletes its files and the storage delete route stops protecting them.
 
-`readAppSettings()` reads the singleton `AppSettings` row (falling back to defaults). The console caches it via `unstable_cache` with the `app-settings` tag.
+`readAppSettings()` reads the singleton `AppSettings` row (falling back to defaults). The console caches it via `unstable_cache` with the `app-settings` tag. The settings form carries the row's `updatedAt` as a version and `saveAppSettings` only writes if it still matches (`CONFLICT` otherwise), so a stale form can't undo another save.
+
+Migrations: Prisma doesn't model `CHECK` constraints or triggers, so they live in the migration SQL (stock, quantities, ratings, tax rates; the category cycle trigger). `prisma migrate dev` is interactive when a change could lose data (e.g. removing an enum value), so in a non-interactive shell generate that migration with `prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --script`.
+
+### Categories
+- A self-referencing tree (`parentId`, `onDelete: NoAction` on purpose: Postgres checks it at the end of the statement, so a `deleteMany` can remove a parent and its children together, which `Restrict` would reject).
+- Names are unique among siblings (`@@unique([parentId, name])` plus a partial index for top-level names, via the `partialIndexes` preview feature). Siblings are ordered by `position`, then name.
+- The `category_prevent_cycle` trigger rejects moving a category under itself or a descendant. Under the driver adapter its `category_no_cycle` error only appears in the error's `meta`; `updateCategoryAction` maps it to `PARENT_CYCLE`.
+- `lib/data/categories.data.ts`: `getCategoryTree` (for `DataTableTree`), `getCategoryOptions(editingId?)` for the parent select (archived categories and the edited category's own subtree are disabled), `getCategoryById` (with `childCount`). Deleting a category with subcategories returns `HAS_CHILDREN`.
+
+### Orders and money
+- Catalogue prices (products, store listings, variants) are USD. Customers are charged in GHS at the day's exchange rate (`ExchangeRate`, one row per pair per day, `rate` = units of `to` per 1 `from`). Order amounts are named after their currency (`subtotalUsd`, `subtotalGhs`, `shippingGhs`, `taxGhs`, `totalGhs`, `unitPriceUsd`/`unitPriceGhs`, ...).
+- Each order line stores its GHS amounts, its share of the discount (`discountGhs`) and its tax (`taxGhs`), each rounded once; the order's subtotal, discount and tax are their sums, so receipts add up. `totalGhs = subtotalGhs - discountAmountGhs + shippingGhs + taxGhs`. Orders copy the exchange rate and tax rate they used.
+- The platform is the seller of record: one tax rate in `AppSettings` (`taxEnabled`, `taxRate` as a fraction, `taxShipping`). Shown prices exclude tax; tax is charged after the discount. Do all money maths with `Prisma.Decimal`, never JS numbers (`AppSettingsData.taxRate` is a plain number only so it can reach client components).
+- Anything that has been ordered is archived, never deleted: `OrderItem`'s links to stores, listings, variants and products are `Restrict`, and its snapshot fields keep what was sold at the time. Delete actions should return a code ("archive it instead") rather than hit the foreign key. `PaymentStatus` is the source of truth for money; `OrderStatus` tracks fulfilment only.
 
 ### Console app conventions
 - Routes are grouped: `(auth)` pages are public, `(root)` is the authenticated shell, and `(misc)` holds `no-stores` and `accept-invitation`. Route-specific components live in `_components/` next to the page.
@@ -100,7 +114,7 @@ A "store" is a Better Auth organization. One special organization, slug `PLATFOR
 - Uploads go through `app/api/storage/{images,documents,files}/route.ts` → `lib/storage-api.ts` (per-route `UploadPolicy`) → `@workspace/storage` (Azure Blob via `DefaultAzureCredential`; `AZURE_STORAGE_ACCOUNT_NAME`, optional `AZURE_STORAGE_CONTAINER_NAME`). `/api` skips `proxy.ts`, so these routes check for a console user themselves, and the delete route refuses files a record still references (`findReferencedFileUrls`): the browser only deletes unsaved uploads.
 - Store input is checked in the organization hooks (`packages/auth/src/store-input.ts`), because store admins can call Better Auth's organization endpoints directly: logos must be our own blobs, policy HTML is sanitised, and only system admins may change a store's status.
 - Form fields come from `@workspace/forms` (react-hook-form wrappers), data tables from `@workspace/tables` (TanStack Table), and primitives from `@workspace/ui`.
-- Table rows link to their page with `DataTable`'s `getRowHref`, which makes the main cell a real link.
+- Table rows link to their page with `DataTable`'s `getRowHref`, which makes the main cell a real link. `DataTableTree` shows nested rows (`getSubRows`, same `getRowHref`) and isn't paginated. Toolbar filter types: `text`, `select`, `number`, `boolean` (`true`/`false`), `date` (a plain `yyyy-MM-dd` day), `dateRange`, `numberRange`.
 - Dates rendered in client components use `formatDate` from `@workspace/utils/date`. It formats in one fixed zone so the server render and hydration match.
 - A form inside a dialog must call `e.stopPropagation()` before `handleSubmit`. React bubbles events through portals, so otherwise submitting the dialog also submits the page form around it.
 - Never include `Session` rows in data passed to client components: each row holds its token.
