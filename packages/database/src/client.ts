@@ -1,31 +1,14 @@
 import { Prisma, PrismaClient } from "../generated/prisma/client"
 import { PrismaPg } from "@prisma/adapter-pg"
 import slugify from "slugify"
-import { deleteFiles, isManagedFileUrl } from "@workspace/storage"
+// removeFiles runs after the delete has committed and never throws
+import { removeFiles } from "@workspace/storage"
 import { PLATFORM_ORGANIZATION_SLUG } from "@workspace/contracts"
 
 type ModelType = "organization" | "brand" | "category"
 type SlugClient = PrismaClient | Prisma.TransactionClient
 
 const MAX_SLUG_RETRIES = 4
-
-/* -------------------------------------------------------------------------- */
-/*  Files                                                                      */
-/* -------------------------------------------------------------------------- */
-
-/**
- * Runs after the database change has committed. A failed blob delete leaves an
- * orphaned file, which is far cheaper than failing a request whose row is
- * already gone, so errors are logged instead of thrown.
- */
-async function removeFiles(urls: (string | null | undefined)[]) {
-  try {
-    const files = urls.filter((url): url is string => !!url && isManagedFileUrl(url))
-    if (files.length > 0) await deleteFiles(files)
-  } catch (error) {
-    console.error("File cleanup failed:", error)
-  }
-}
 
 /* -------------------------------------------------------------------------- */
 /*  Slugs                                                                      */

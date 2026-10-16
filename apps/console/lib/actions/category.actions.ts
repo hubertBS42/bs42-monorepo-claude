@@ -6,7 +6,7 @@ import { Prisma } from "@workspace/db/client"
 import { Status } from "@workspace/db/enums"
 import { formatError } from "@workspace/auth/format-error"
 import { ActionResponse } from "@workspace/contracts"
-import { deleteFiles, isManagedFileUrl } from "@workspace/storage"
+import { isManagedFileUrl, removeFiles } from "@workspace/storage"
 import { requireSystemPermission } from "@/lib/auth-guard"
 
 // Every export here is a public endpoint, so every input is validated
@@ -24,16 +24,6 @@ const PARENT_NOT_FOUND: ActionResponse = { success: false, error: "The parent ca
 const PARENT_ARCHIVED: ActionResponse = { success: false, error: "An archived category can't be a parent.", code: "PARENT_ARCHIVED" }
 const INVALID_IMAGE: ActionResponse = { success: false, error: "Invalid image URL.", code: "INVALID_FILE" }
 const PARENT_CYCLE: ActionResponse = { success: false, error: "A category can't be moved under itself or one of its subcategories.", code: "PARENT_CYCLE" }
-
-/** Best-effort delete. A leftover blob is cheaper than failing a request that already succeeded. */
-async function removeFiles(urls: (string | null | undefined)[]) {
-  try {
-    const files = urls.filter((url): url is string => !!url && isManagedFileUrl(url))
-    if (files.length > 0) await deleteFiles(files)
-  } catch (error) {
-    console.error("Category file cleanup failed:", error)
-  }
-}
 
 // Names are unique among siblings but case-sensitive in the database, so "Shoes" and "shoes" are caught here instead
 async function isNameTaken(name: string, parentId: string | null, excludeId?: string) {

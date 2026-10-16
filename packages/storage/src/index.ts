@@ -131,3 +131,30 @@ export function isManagedFileUrl(value: string): boolean {
     throw error
   }
 }
+
+/**
+ * Best-effort delete for files a database change no longer references. Run it after the change has committed:
+ * a leftover blob is far cheaper than failing a request whose data is already saved, so errors are logged, not thrown.
+ * Empty values and URLs outside our container are skipped.
+ */
+export async function removeFiles(urls: readonly (string | null | undefined)[], context = "File cleanup"): Promise<void> {
+  try {
+    const files = urls.filter((url): url is string => !!url && isManagedFileUrl(url))
+    if (files.length > 0) await deleteFiles(files)
+  } catch (error) {
+    console.error(`${context} failed:`, error)
+  }
+}
+
+export interface StoredFile {
+  url: string
+  lastModified: Date
+}
+
+/** Every blob in the container, one page at a time. */
+export async function* listFiles(): AsyncGenerator<StoredFile> {
+  const client = getContainerClient()
+  for await (const blob of client.listBlobsFlat()) {
+    yield { url: client.getBlockBlobClient(blob.name).url, lastModified: blob.properties.lastModified }
+  }
+}

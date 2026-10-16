@@ -2,20 +2,10 @@
 
 import { ActionResponse } from "@workspace/contracts"
 import { prisma, readAppSettings } from "@workspace/db"
-import { deleteFiles, isManagedFileUrl } from "@workspace/storage"
+import { isManagedFileUrl, removeFiles } from "@workspace/storage"
 import { updateTag } from "next/cache"
 import { requireSystemPermission } from "../auth-guard"
 import { appSettingsSchema } from "../schemas/app-settings.schemas"
-
-/** Best-effort delete. A leftover blob is cheaper than failing a request that already succeeded. */
-async function removeFiles(urls: (string | null | undefined)[]) {
-  try {
-    const files = urls.filter((url): url is string => !!url && isManagedFileUrl(url))
-    if (files.length > 0) await deleteFiles(files)
-  } catch (error) {
-    console.error("App settings file cleanup failed:", error)
-  }
-}
 
 /**
  * Receives plain values. Images are uploaded by the client beforehand

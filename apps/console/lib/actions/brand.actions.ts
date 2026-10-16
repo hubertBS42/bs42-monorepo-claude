@@ -5,7 +5,7 @@ import { prisma } from "@workspace/db"
 import { Prisma } from "@workspace/db/client"
 import { formatError } from "@workspace/auth/format-error"
 import { ActionResponse } from "@workspace/contracts"
-import { deleteFiles, isManagedFileUrl } from "@workspace/storage"
+import { isManagedFileUrl, removeFiles } from "@workspace/storage"
 import { requireSystemPermission } from "@/lib/auth-guard"
 
 // Every export here is a public endpoint, so every input is validated
@@ -18,16 +18,6 @@ const brandIdSchema = z.uuid("Invalid brand ID")
 
 const NAME_EXISTS: ActionResponse = { success: false, error: "A brand with this name already exists.", code: "NAME_EXISTS" }
 const INVALID_LOGO: ActionResponse = { success: false, error: "Invalid logo URL.", code: "INVALID_FILE" }
-
-/** Best-effort delete. A leftover blob is cheaper than failing a request that already succeeded. */
-async function removeFiles(urls: (string | null | undefined)[]) {
-  try {
-    const files = urls.filter((url): url is string => !!url && isManagedFileUrl(url))
-    if (files.length > 0) await deleteFiles(files)
-  } catch (error) {
-    console.error("Brand file cleanup failed:", error)
-  }
-}
 
 // The name column is unique but case-sensitive, so "Nike" and "nike" are caught here instead
 async function isNameTaken(name: string, excludeId?: string) {
