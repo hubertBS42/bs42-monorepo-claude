@@ -7,6 +7,7 @@ import { prisma, readAppSettings, resolveConsoleName } from "@workspace/db"
 import { nextCookies } from "better-auth/next-js"
 import { APIError } from "better-auth/api"
 import { PLATFORM_ORGANIZATION_SLUG, INVITATION_EXPIRATION_SECONDS } from "@workspace/contracts"
+import { checkStoreInput } from "./store-input"
 
 export const consolePlugins = [
   admin({
@@ -41,6 +42,15 @@ export const consolePlugins = [
       })
     },
     organizationHooks: {
+      beforeCreateOrganization: async ({ organization }) => ({ data: checkStoreInput(organization) }),
+      // Store admins (including invited staff) may call this endpoint directly, not just through the console form
+      beforeUpdateOrganization: async ({ organization, user }) => {
+        // Suspending or reactivating a store is for system admins, so store staff can't lift their own suspension
+        if (organization.status !== undefined && !hasSystemPermission(user.role, { organization: ["update"] })) {
+          throw new APIError("FORBIDDEN", { message: "Only platform admins can change a store's status." })
+        }
+        return { data: checkStoreInput(organization) }
+      },
       beforeDeleteOrganization: async ({ organization }) => {
         if (organization.slug === PLATFORM_ORGANIZATION_SLUG) {
           throw new APIError("FORBIDDEN", {
