@@ -191,7 +191,7 @@ const NumberInputField = <T extends FieldValues>({
                   title="Increase"
                   className="flex-1 rounded-none disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50"
                   onClick={() => handleStep("up", field.value, field.onChange)}
-                  disabled={max !== undefined && currentValue >= max}
+                  disabled={inputProps.disabled || (max !== undefined && currentValue >= max)}
                 >
                   <ChevronUpIcon className="size-3.5" />
                 </InputGroupButton>
@@ -201,11 +201,11 @@ const NumberInputField = <T extends FieldValues>({
                   aria-label="Decrease value"
                   size="icon-sm"
                   title="Decrease"
-                  className="] flex-1 rounded-none disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50"
+                  className="flex-1 rounded-none disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50"
                   onClick={() =>
                     handleStep("down", field.value, field.onChange)
                   }
-                  disabled={min !== undefined && currentValue <= min}
+                  disabled={inputProps.disabled || (min !== undefined && currentValue <= min)}
                 >
                   <ChevronDownIcon className="size-3.5" />
                 </InputGroupButton>
