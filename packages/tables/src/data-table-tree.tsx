@@ -62,6 +62,10 @@ export function DataTableTree<TData extends { id: string }, TValue>({ columns, d
                   <TableRow
                     key={row.id}
                     data-state={row.getIsSelected() && "selected"}
+                    // The expanded state lives on the row, not the toggle: TableRow highlights rows that contain an
+                    // aria-expanded="true" element (an open menu), which would keep every expanded row highlighted
+                    aria-expanded={row.getCanExpand() ? row.getIsExpanded() : undefined}
+                    aria-level={row.depth + 1}
                     className={cn(href && "cursor-pointer")}
                     onClick={href ? (event) => handleRowClick(event, href) : undefined}
                     onAuxClick={href ? (event) => handleRowAuxClick(event, href) : undefined}
@@ -85,7 +89,6 @@ export function DataTableTree<TData extends { id: string }, TValue>({ columns, d
                                 onClick={row.getToggleExpandedHandler()}
                                 className="-m-1 flex shrink-0 cursor-pointer rounded-sm p-1 text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                                 aria-label={row.getIsExpanded() ? "Collapse row" : "Expand row"}
-                                aria-expanded={row.getIsExpanded()}
                               >
                                 <ChevronRight className={cn("size-4 transition-transform", row.getIsExpanded() && "rotate-90")} />
                               </button>
