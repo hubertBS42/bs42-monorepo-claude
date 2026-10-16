@@ -17,17 +17,22 @@ const statusBadgeVariants: Record<Status, "outline" | "success" | "secondary"> =
   ARCHIVED: "secondary",
 }
 
-// Condition isn't an error state, so none of it is red: new, refurbished and used each get one colour
-const conditionBadgeVariants: Record<Condition, "success" | "secondary" | "outline"> = {
-  NEW: "success",
-  REFURBISHED: "secondary",
-  USED_LIKE_NEW: "outline",
-  USED_GOOD: "outline",
-  USED_FAIR: "outline",
+// Badge has too few variants for five conditions, so each gets its own tint in the style of the success variant.
+// Condition isn't an error state, so none of them is red.
+const conditionBadgeClasses: Record<Condition, string> = {
+  NEW: "bg-green-600/10 text-green-700 dark:bg-green-400/10 dark:text-green-400",
+  USED_LIKE_NEW: "bg-teal-600/10 text-teal-700 dark:bg-teal-400/10 dark:text-teal-400",
+  REFURBISHED: "bg-blue-600/10 text-blue-700 dark:bg-blue-400/10 dark:text-blue-400",
+  USED_GOOD: "bg-amber-600/10 text-amber-700 dark:bg-amber-400/10 dark:text-amber-400",
+  USED_FAIR: "bg-orange-600/10 text-orange-700 dark:bg-orange-400/10 dark:text-orange-400",
 }
 
 const genStatusBadge = (status: Status) => <Badge variant={statusBadgeVariants[status]}>{capitalizeWord(status)}</Badge>
-const genConditionBadge = (condition: Condition) => <Badge variant={conditionBadgeVariants[condition]}>{CONDITION_LABELS[condition]}</Badge>
+const genConditionBadge = (condition: Condition) => (
+  <Badge variant="secondary" className={conditionBadgeClasses[condition]}>
+    {CONDITION_LABELS[condition]}
+  </Badge>
+)
 
 export const columns: ColumnDef<ProductListItem, unknown>[] = [
   {
