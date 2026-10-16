@@ -64,6 +64,7 @@ export default function DeleteStore({ store }: { store: Store }) {
 
   if (isLoading) return <Skeleton className="h-9 rounded-md" />
 
+  // getStoreById never returns the platform organization; this is defence in depth
   const isPlatformOrganization = store.slug === PLATFORM_ORGANIZATION_SLUG
   const canDelete =
     !isPlatformOrganization &&
@@ -117,7 +118,7 @@ export default function DeleteStore({ store }: { store: Store }) {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-            <AlertDialogDescription>{`This action cannot be undone. ${store.name} and all related data will be permanently deleted.`}</AlertDialogDescription>
+            <AlertDialogDescription>{`This action cannot be undone. ${store.name}, its members and its listings will be permanently deleted. A store that has orders can't be deleted; suspend it instead.`}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>

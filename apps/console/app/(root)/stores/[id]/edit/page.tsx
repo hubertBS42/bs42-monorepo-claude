@@ -13,10 +13,11 @@ type Props = {
   params: Promise<{ id: string }>
 }
 export default async function EditStorePage({ params }: Props) {
-  const { id } = await params
-  if (!z.uuid().safeParse(id).success) notFound()
   // System admins only, and only for stores they are a member of with update rights
   await requireSystemPermission({ organization: ["update"] })
+  const { id } = await params
+  // Member.organizationId is a UUID column, so the membership check below needs a valid one
+  if (!z.uuid().safeParse(id).success) notFound()
   await requireOrganizationPermission(id, { organization: ["update"] })
   const response = await getStoreById(id)
 

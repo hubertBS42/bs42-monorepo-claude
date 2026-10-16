@@ -10,6 +10,7 @@ import { prisma } from "@workspace/db"
 import type { Prisma } from "@workspace/db/client"
 import type { DataResponse } from "@workspace/contracts"
 import { getPaginationError } from "@workspace/utils/pagination"
+import { z } from "zod"
 
 export const MAX_STORES_PAGE_SIZE = 100
 export const STORE_SORT_FIELDS = ["name", "status", "createdAt", "updatedAt"] as const
@@ -103,7 +104,8 @@ export const getStoreById = async (storeId: string): Promise<DataResponse<Store>
     const session = await getSession()
     if (!session) return { success: false, error: "Unauthorized" }
 
-    if (!storeId) return { success: false, error: "Missing or invalid store ID." }
+    // Organization.id is a UUID column, so any other value would make Postgres throw instead of finding nothing
+    if (!z.uuid().safeParse(storeId).success) return { success: false, error: "Store not found", code: "NOT_FOUND" }
 
     const isSystemAdmin = hasSystemRole(session.user.role, consoleAdminRoles)
     const store = await prisma.organization.findFirst({

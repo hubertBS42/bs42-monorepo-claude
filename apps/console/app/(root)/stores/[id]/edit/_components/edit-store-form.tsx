@@ -2,7 +2,7 @@
 import ResourceFormHeader from "@/components/shared-form-header"
 import { updateStoreFormSchema } from "@/lib/schemas/store.schemas"
 import { deleteImages, uploadImages } from "@/lib/storage"
-import { Store, StoreStatus } from "@/types"
+import type { Store } from "@/types"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { consoleAuthClient } from "@workspace/auth/console-client"
 import { ImageField, SelectField, TextInputField } from "@workspace/forms"
@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@work
 import { FieldGroup } from "@workspace/ui/components/field"
 import { toast } from "@workspace/ui/components/toast"
 import { useRouter } from "next/navigation"
+import { useState } from "react"
 import { SubmitHandler, useForm } from "react-hook-form"
 import z from "zod"
 import { STORE_STATUS_OPTIONS } from "@/constants"
@@ -20,6 +21,10 @@ import RichTextField from "@workspace/forms/components/rich-text-editor/rich-tex
 export default function EditStoreForm({ store }: { store: Store }) {
   const router = useRouter()
 
+  // isSubmitting turns false as soon as onSubmit returns, while the redirect is still loading.
+  // This keeps the form locked from a successful save until the page changes.
+  const [isSaved, setIsSaved] = useState(false)
+
   const form = useForm<z.infer<typeof updateStoreFormSchema>>({
     resolver: zodResolver(updateStoreFormSchema),
     defaultValues: {
@@ -28,7 +33,7 @@ export default function EditStoreForm({ store }: { store: Store }) {
       logo: store.logo ?? "",
       returnsPolicy: store.returnsPolicy,
       shippingPolicy: store.shippingPolicy,
-      status: store.status as StoreStatus,
+      status: store.status,
     },
   })
 
@@ -38,6 +43,8 @@ export default function EditStoreForm({ store }: { store: Store }) {
       data: {
         name: data.name,
         logo: data.logo?.trim() ? data.logo : null,
+        // "" rather than undefined, which would leave the policy unchanged. The organization hook sanitises the HTML
+        // and stores an empty policy as null.
         returnsPolicy: data.returnsPolicy ?? "",
         shippingPolicy: data.shippingPolicy ?? "",
         status: data.status,
@@ -55,18 +62,18 @@ export default function EditStoreForm({ store }: { store: Store }) {
       return
     }
 
-    // The previous logo is only removed once the update has been saved
-    if (store.logo && data.logo !== store.logo) {
-      await deleteImages([store.logo]).catch(() => undefined)
-    }
-
+    // A replaced logo isn't deleted from here: once the store points at the new one, nothing references the old
+    // file, and the orphaned-file sweep removes it
+    setIsSaved(true)
+    router.push("/stores")
     toast.add({
-      title: "Operation succeeded",
-      description: "Store updated successfully.",
+      title: "Store updated",
+      description: "Your changes have been saved.",
       type: "success",
     })
-    router.push("/stores")
   }
+
+  const isBusy = form.formState.isSubmitting || isSaved
 
   const handleAddLogo = async (data: FileList) => {
     const formData = new FormData()
@@ -75,7 +82,7 @@ export default function EditStoreForm({ store }: { store: Store }) {
   }
 
   const handleRemoveLogo = async (url: string) => {
-    // The saved logo is deleted on submit, so discarding needs no restore
+    // The saved logo stays until a save replaces it, so discarding needs no restore
     if (url === store.logo) return
     await deleteImages([url])
   }
@@ -99,9 +106,9 @@ export default function EditStoreForm({ store }: { store: Store }) {
       <div className="grid gap-y-6">
         <ResourceFormHeader
           heading="Edit Store"
-          description="Update store's details and status."
+          description="Update the store's details and status."
           backTo="/stores"
-          isPending={form.formState.isSubmitting}
+          isPending={isBusy}
           isDirty={form.formState.isDirty}
           handleDiscard={handleDiscard}
         />
@@ -126,15 +133,15 @@ export default function EditStoreForm({ store }: { store: Store }) {
                       onRemove={handleRemoveLogo}
                       clearErrors={form.clearErrors}
                       label="Logo"
-                      disabled={form.formState.isSubmitting}
+                      disabled={isBusy}
                       className="max-w-35"
                       defaultValues={store.logo}
                     />
-                    <TextInputField control={form.control} label="Name" name="name" disabled={form.formState.isSubmitting} autoFocus />
+                    <TextInputField control={form.control} label="Name" name="name" disabled={isBusy} autoFocus />
 
-                    <RichTextField control={form.control} label="Shipping Policy" name="shippingPolicy" placeholder="Write something..." disabled={form.formState.isSubmitting} />
+                    <RichTextField control={form.control} label="Shipping Policy" name="shippingPolicy" placeholder="Write something..." disabled={isBusy} />
 
-                    <RichTextField control={form.control} label="Returns Policy" name="returnsPolicy" placeholder="Write something..." disabled={form.formState.isSubmitting} />
+                    <RichTextField control={form.control} label="Returns Policy" name="returnsPolicy" placeholder="Write something..." disabled={isBusy} />
                   </FieldGroup>
                 </CardContent>
               </Card>
@@ -148,14 +155,14 @@ export default function EditStoreForm({ store }: { store: Store }) {
                   <CardDescription>Set the status for this store.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <SelectField control={form.control} name="status" disabled={form.formState.isSubmitting} options={STORE_STATUS_OPTIONS} />
+                  <SelectField control={form.control} name="status" disabled={isBusy} options={STORE_STATUS_OPTIONS} aria-label="Status" />
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader>
                   <CardTitle>Danger Zone</CardTitle>
-                  <CardDescription>Permanently delete this organization and all associated data.</CardDescription>
+                  <CardDescription>Permanently delete this store.</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <DeleteStore store={store} />
@@ -163,7 +170,7 @@ export default function EditStoreForm({ store }: { store: Store }) {
               </Card>
             </div>
           </div>
-          <ResourceFormFooter backTo="/stores" isPending={form.formState.isSubmitting} isDirty={form.formState.isDirty} handleDiscard={handleDiscard} />
+          <ResourceFormFooter backTo="/stores" isPending={isBusy} isDirty={form.formState.isDirty} handleDiscard={handleDiscard} />
         </div>
       </div>
     </form>
