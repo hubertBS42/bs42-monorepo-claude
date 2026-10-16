@@ -3,10 +3,10 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
-import { SubmitHandler, useForm } from "react-hook-form"
+import { SubmitHandler, useForm, useWatch } from "react-hook-form"
 import z from "zod"
 import type { AppSettingsData } from "@workspace/contracts"
-import { ImageField, TextareaField, TextInputField } from "@workspace/forms"
+import { ImageField, NumberInputField, SwitchField, TextareaField, TextInputField } from "@workspace/forms"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@workspace/ui/components/card"
 import { FieldGroup } from "@workspace/ui/components/field"
 import { toast } from "@workspace/ui/components/toast"
@@ -28,6 +28,10 @@ export default function SettingsForm({ settings }: { settings: AppSettingsData }
     consoleDescription: settings.consoleDescription ?? "",
     logoUrl: settings.logoUrl ?? "",
     faviconUrl: settings.faviconUrl ?? "",
+    taxEnabled: settings.taxEnabled,
+    // Rounded, because a fraction times 100 can come out as 15.000000000000002
+    taxRatePercent: Math.round(settings.taxRate * 10000) / 100,
+    taxShipping: settings.taxShipping,
   }
 
   const form = useForm<FormValues>({
@@ -43,6 +47,7 @@ export default function SettingsForm({ settings }: { settings: AppSettingsData }
   const [unsaved, setUnsaved] = useState<string[]>([])
 
   const isPending = form.formState.isSubmitting
+  const taxEnabled = useWatch({ control: form.control, name: "taxEnabled" })
 
   const handleAdd = async (files: FileList) => {
     const formData = new FormData()
@@ -96,7 +101,7 @@ export default function SettingsForm({ settings }: { settings: AppSettingsData }
       <div className="grid gap-y-6">
         <ResourceFormHeader
           heading="Platform Settings"
-          description="Manage the names, descriptions and branding of the storefront and the console."
+          description="Manage the names, descriptions, branding and tax of the storefront and the console."
           backTo="/"
           isPending={isPending}
           isDirty={form.formState.isDirty}
@@ -129,6 +134,27 @@ export default function SettingsForm({ settings }: { settings: AppSettingsData }
                   <FieldGroup>
                     <TextInputField control={form.control} name="consoleName" label="Name" placeholder="Leave empty to use the storefront name" disabled={isPending} />
                     <TextareaField control={form.control} name="consoleDescription" label="Description" placeholder="A short description (160 characters maximum)" disabled={isPending} />
+                  </FieldGroup>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Tax</CardTitle>
+                  <CardDescription>Prices are shown without tax. When tax is on, it is added at checkout and each order keeps the rate it was charged.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <FieldGroup>
+                    <SwitchField control={form.control} name="taxEnabled" label="Charge tax" description="Add tax to every order" variant="card" disabled={isPending} />
+                    <NumberInputField control={form.control} name="taxRatePercent" label="Tax rate (%)" min={0} max={100} step={0.01} disabled={isPending || !taxEnabled} />
+                    <SwitchField
+                      control={form.control}
+                      name="taxShipping"
+                      label="Tax delivery fees"
+                      description="Charge tax on the delivery fee too"
+                      variant="card"
+                      disabled={isPending || !taxEnabled}
+                    />
                   </FieldGroup>
                 </CardContent>
               </Card>

@@ -2,6 +2,7 @@
 
 import { ActionResponse } from "@workspace/contracts"
 import { prisma, readAppSettings } from "@workspace/db"
+import { Prisma } from "@workspace/db/client"
 import { isManagedFileUrl, removeFiles } from "@workspace/storage"
 import { updateTag } from "next/cache"
 import { requireSystemPermission } from "../auth-guard"
@@ -22,9 +23,13 @@ export async function saveAppSettings(input: unknown): Promise<ActionResponse> {
     return { success: false, error: parsed.error.issues[0]?.message ?? "Invalid settings", code: "INVALID" }
   }
 
+  const { taxRatePercent, ...fields } = parsed.data
+
   // The form works with plain strings; empty values are stored as null
   const data = {
-    ...parsed.data,
+    ...fields,
+    // Decimal arithmetic, so 15% is stored as exactly 0.15. Turning tax off keeps the rate for next time.
+    taxRate: new Prisma.Decimal(taxRatePercent === "" ? 0 : taxRatePercent).div(100),
     storeDescription: parsed.data.storeDescription || null,
     consoleName: parsed.data.consoleName || null,
     consoleDescription: parsed.data.consoleDescription || null,

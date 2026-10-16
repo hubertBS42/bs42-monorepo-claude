@@ -39,4 +39,9 @@ export type AppSettingsData = {
   consoleDescription: string | null
   logoUrl: string | null
   faviconUrl: string | null
+  // Tax on orders. taxRate is a fraction (0.15 is 15%) as a plain number, so it can reach client components and
+  // the settings cache. Checkout maths should read AppSettings.taxRate as a Decimal instead.
+  taxEnabled: boolean
+  taxRate: number
+  taxShipping: boolean
 }

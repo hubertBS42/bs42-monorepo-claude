@@ -12,6 +12,9 @@ export const DEFAULT_APP_SETTINGS: AppSettingsData = {
   consoleDescription: null,
   logoUrl: null,
   faviconUrl: null,
+  taxEnabled: false,
+  taxRate: 0,
+  taxShipping: false,
 }
 
 export const resolveConsoleName = (s: AppSettingsData) => s.consoleName ?? s.storeName
@@ -27,6 +30,9 @@ export async function readAppSettings(): Promise<AppSettingsData> {
         consoleDescription: row.consoleDescription,
         logoUrl: row.logoUrl,
         faviconUrl: row.faviconUrl,
+        taxEnabled: row.taxEnabled,
+        taxRate: row.taxRate.toNumber(),
+        taxShipping: row.taxShipping,
       }
     : DEFAULT_APP_SETTINGS
 }

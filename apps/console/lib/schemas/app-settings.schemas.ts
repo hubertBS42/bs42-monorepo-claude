@@ -1,10 +1,26 @@
 import z from "zod"
 
-export const appSettingsSchema = z.object({
-  storeName: z.string().trim().min(1, "Store name is required").max(60),
-  storeDescription: z.string().trim().max(160),
-  consoleName: z.string().trim().max(60),
-  consoleDescription: z.string().trim().max(160),
-  logoUrl: z.url().or(z.literal("")),
-  faviconUrl: z.url().or(z.literal("")),
-})
+export const appSettingsSchema = z
+  .object({
+    storeName: z.string().trim().min(1, "Store name is required").max(60),
+    storeDescription: z.string().trim().max(160),
+    consoleName: z.string().trim().max(60),
+    consoleDescription: z.string().trim().max(160),
+    logoUrl: z.url().or(z.literal("")),
+    faviconUrl: z.url().or(z.literal("")),
+    taxEnabled: z.boolean(),
+    // A percentage (15 = 15%), stored as a fraction. "" is an emptied number field.
+    taxRatePercent: z.number().or(z.literal("")),
+    taxShipping: z.boolean(),
+  })
+  .superRefine((data, ctx) => {
+    const rate = data.taxRatePercent
+    if (rate === "") {
+      if (data.taxEnabled) ctx.addIssue({ code: "custom", path: ["taxRatePercent"], message: "Enter the tax rate." })
+      return
+    }
+    if (rate < 0 || rate > 100) ctx.addIssue({ code: "custom", path: ["taxRatePercent"], message: "The tax rate must be between 0 and 100%." })
+    else if (data.taxEnabled && rate === 0) ctx.addIssue({ code: "custom", path: ["taxRatePercent"], message: "Enter a rate above 0%, or turn tax off." })
+    // The column holds a fraction with 4 decimals, so the percentage can have 2
+    else if (Math.abs(rate * 100 - Math.round(rate * 100)) > 1e-9) ctx.addIssue({ code: "custom", path: ["taxRatePercent"], message: "Use at most 2 decimal places." })
+  })
