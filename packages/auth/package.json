@@ -7,7 +7,7 @@
     "lint": "eslint",
     "format": "prettier --write \"**/*.{ts,tsx}\"",
     "typecheck": "tsc --noEmit",
-    "auth:generate": "pnpm exec auth generate --config src/schema-config.ts --output ../database/prisma/schema.prisma --adapter prisma --dialect postgresql --yes"
+    "auth:generate": "node --conditions=react-server --env-file=../database/.env node_modules/auth/dist/index.mjs generate --config src/schema-config.ts --output ../database/prisma/schema.prisma --adapter prisma --dialect postgresql --yes"
   },
   "dependencies": {
     "@better-auth/prisma-adapter": "^1.7.6",
