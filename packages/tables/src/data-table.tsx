@@ -4,10 +4,9 @@ import { flexRender, getCoreRowModel, useReactTable, type ColumnDef } from "@tan
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@workspace/ui/components/table"
 import { cn } from "@workspace/ui/lib/utils"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
-import type { MouseEvent } from "react"
 import FiltersToolbar from "./filters-toolbar"
 import Pagination from "./pagination"
+import { useRowLink } from "./use-row-link"
 
 export type FilterType = "text" | "select" | "date" | "dateRange" | "number" | "numberRange" | "boolean"
 
@@ -39,20 +38,8 @@ interface DataTableProps<TData, TValue> {
   enablePagination?: boolean
 }
 
-// Clicks on these keep their own behaviour instead of opening the row
-const INTERACTIVE_SELECTOR = "a, button, input, select, textarea, label, [role='checkbox'], [role='button'], [role='menuitem']"
-
-// Whether a row click should open the row: not on a control, not a text selection, and not from a portal
-// (React bubbles events from portaled menus and dialogs through the row even though they aren't inside it)
-function isPlainRowClick(event: MouseEvent<HTMLTableRowElement>) {
-  const target = event.target as Element
-  if (!event.currentTarget.contains(target)) return false
-  if (target.closest(INTERACTIVE_SELECTOR)) return false
-  return !window.getSelection()?.toString()
-}
-
 export function DataTable<TData, TValue>({ columns, data, filters = [], pagination, getRowHref, rowLinkColumnId, enablePagination = true }: DataTableProps<TData, TValue>) {
-  const router = useRouter()
+  const { handleRowClick, handleRowAuxClick } = useRowLink()
 
   // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
@@ -72,18 +59,6 @@ export function DataTable<TData, TValue>({ columns, data, filters = [], paginati
   })
 
   const linkColumnId = getRowHref ? (rowLinkColumnId ?? table.getAllLeafColumns().find((column) => column.id !== "select")?.id) : undefined
-
-  const handleRowClick = (event: MouseEvent<HTMLTableRowElement>, href: string) => {
-    if (!isPlainRowClick(event)) return
-    // Match what the same click on a link does
-    if (event.metaKey || event.ctrlKey || event.shiftKey) window.open(href, "_blank", "noopener")
-    else router.push(href)
-  }
-
-  const handleRowAuxClick = (event: MouseEvent<HTMLTableRowElement>, href: string) => {
-    // Middle click opens a new tab, as it would on a link
-    if (event.button === 1 && isPlainRowClick(event)) window.open(href, "_blank", "noopener")
-  }
 
   return (
     <div className="grid overflow-hidden rounded-md border">
