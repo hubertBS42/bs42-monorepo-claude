@@ -1,5 +1,5 @@
 import { PaginationParams, PaginatedResult } from "@workspace/contracts"
-import { Brand, Organization, Prisma, User } from "@workspace/db/client"
+import { Brand, Category, Organization, Prisma, User } from "@workspace/db/client"
 import { OrganizationStatus, Status } from "@workspace/db/enums"
 import type { LucideIcon } from "lucide-react"
 import type { SystemRole } from "@workspace/auth/system-permissions"
@@ -93,3 +93,8 @@ export interface BrandsParams extends PaginationParams {
 }
 
 export type BrandsData = PaginatedResult<Brand>
+
+// A category with its subcategories, as the categories tree table shows them
+export type CategoryNode = Category & {
+  children: CategoryNode[]
+}
