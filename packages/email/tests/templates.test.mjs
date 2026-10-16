@@ -26,16 +26,8 @@ const templates = [
     }),
     "https://example.com/reset",
   ],
-  [
-    "password setup",
-    SetPasswordEmail({ name: "Alex Morgan", url: "https://example.com/setup" }),
-    "https://example.com/setup",
-  ],
-  [
-    "password update",
-    PasswordUpdatedEmail({ name: "Alex Morgan" }),
-    "Password updated",
-  ],
+  ["password setup", SetPasswordEmail({ name: "Alex Morgan", url: "https://example.com/setup" }), "https://example.com/setup"],
+  ["password update", PasswordUpdatedEmail({ name: "Alex Morgan" }), "Password updated"],
   [
     "member invitation",
     InviteMemberEmail({
@@ -51,15 +43,15 @@ const templates = [
     "order confirmation",
     OrderConfirmation({
       ...orderDetails,
-      items: [],
+      items: [{ productName: "Example Shirt", variantDescription: "Red / L", quantity: 2, totalPriceGhs: 10 }],
       subtotalGhs: 10,
-      shippingPrice: 0,
-      taxPrice: 0,
-      discountAmount: null,
+      shippingGhs: 0,
+      taxGhs: 0,
+      discountAmountGhs: 0,
       discountType: null,
       discountValue: null,
       discountReason: null,
-      totalPrice: 10,
+      totalGhs: 10,
       shippingMethod: "PICKUP",
       paymentMethod: "Cash",
     }),
@@ -80,7 +72,7 @@ const templates = [
     OrderCancelled({
       ...orderDetails,
       cancellationReason: "Customer request",
-      totalPrice: 10,
+      totalGhs: 10,
     }),
     "Customer request",
   ],
@@ -89,7 +81,7 @@ const templates = [
     OrderRefunded({
       ...orderDetails,
       refundReason: "Customer request",
-      totalPrice: 10,
+      refundAmountGhs: 10,
     }),
     "Customer request",
   ],
@@ -101,3 +93,32 @@ for (const [name, template, expectedContent] of templates) {
     assert.ok(html.includes(expectedContent))
   })
 }
+
+test("order summary shows each line's stored GHS amount and hides a zero discount", async () => {
+  const html = await render(
+    OrderConfirmation({
+      ...orderDetails,
+      // 1.333 USD × 3 would round differently per line than in total; the template must show the stored amounts as they are
+      items: [
+        { productName: "Line A", variantDescription: null, quantity: 1, totalPriceGhs: 20.67 },
+        { productName: "Line B", variantDescription: null, quantity: 1, totalPriceGhs: 20.66 },
+      ],
+      subtotalGhs: 41.33,
+      shippingGhs: 0,
+      taxGhs: 0,
+      discountAmountGhs: 0,
+      discountType: null,
+      discountValue: null,
+      discountReason: null,
+      totalGhs: 41.33,
+      shippingMethod: "PICKUP",
+      paymentMethod: "Cash",
+    })
+  )
+  assert.ok(html.includes("20.67"))
+  assert.ok(html.includes("20.66"))
+  assert.ok(html.includes("41.33"))
+  // `0 && …` would render a stray "0" where the discount row goes
+  assert.ok(!html.includes("Discount"))
+  assert.ok(!/>0</.test(html))
+})

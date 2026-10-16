@@ -1,26 +1,19 @@
 import { Section, Text } from "react-email"
 import { OrderLayout } from "./components/order-layout.js"
-import { OrderSummary } from "./components/order-summary.js"
+import { OrderSummary, type OrderSummaryItem } from "./components/order-summary.js"
 
 interface OrderConfirmationProps {
   customerName: string
   reference: string
-  items: {
-    productName: string
-    variantDescription: string | null
-    quantity: number
-    unitPrice: number
-    totalPrice: number
-    exchangeRate: number
-  }[]
+  items: OrderSummaryItem[]
   subtotalGhs: number
-  shippingPrice: number
-  taxPrice: number
-  discountAmount: number | null
+  shippingGhs: number
+  taxGhs: number
+  discountAmountGhs: number | null
   discountType: string | null
   discountValue: number | null
   discountReason: string | null
-  totalPrice: number
+  totalGhs: number
   shippingMethod: string
   shippingAddress?: string | null
   paymentMethod: string
@@ -34,13 +27,13 @@ export const OrderConfirmation = ({
   reference,
   items,
   subtotalGhs,
-  shippingPrice,
-  taxPrice,
-  discountAmount,
+  shippingGhs,
+  taxGhs,
+  discountAmountGhs,
   discountType,
   discountValue,
   discountReason,
-  totalPrice,
+  totalGhs,
   shippingMethod,
   shippingAddress,
   paymentMethod,
@@ -57,13 +50,13 @@ export const OrderConfirmation = ({
       <OrderSummary
         items={items}
         subtotalGhs={subtotalGhs}
-        shippingPrice={shippingPrice}
-        taxPrice={taxPrice}
-        discountAmount={discountAmount}
+        shippingGhs={shippingGhs}
+        taxGhs={taxGhs}
+        discountAmountGhs={discountAmountGhs}
         discountType={discountType}
         discountValue={discountValue}
         discountReason={discountReason}
-        totalPrice={totalPrice}
+        totalGhs={totalGhs}
       />
 
       {/* Delivery info */}

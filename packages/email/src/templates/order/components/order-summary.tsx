@@ -1,22 +1,22 @@
 import { Column, Row, Section, Text, Hr } from "react-email"
 import { formatCurrencyGhs } from "../../../formatters.js"
 
-interface OrderItem {
+// Amounts are the GHS values stored on the order (OrderItem.totalPriceGhs, Order.subtotalGhs, ...).
+// They're never converted here: each line was rounded once when the order was placed, so they add up.
+export interface OrderSummaryItem {
   productName: string
   variantDescription: string | null
   quantity: number
-  unitPrice: number
-  totalPrice: number
-  exchangeRate: number
+  totalPriceGhs: number
 }
 
 interface OrderSummaryProps {
-  items: OrderItem[]
+  items: OrderSummaryItem[]
   subtotalGhs: number
-  shippingPrice: number
-  taxPrice: number
-  discountAmount: number | null
-  totalPrice: number
+  shippingGhs: number
+  taxGhs: number
+  discountAmountGhs: number | null
+  totalGhs: number
   discountReason?: string | null
   discountType?: string | null
   discountValue?: number | null
@@ -24,17 +24,7 @@ interface OrderSummaryProps {
 
 const fmt = formatCurrencyGhs
 
-export const OrderSummary = ({
-  items,
-  subtotalGhs,
-  shippingPrice,
-  taxPrice,
-  discountAmount,
-  totalPrice,
-  discountReason,
-  discountType,
-  discountValue,
-}: OrderSummaryProps) => {
+export const OrderSummary = ({ items, subtotalGhs, shippingGhs, taxGhs, discountAmountGhs, totalGhs, discountReason, discountType, discountValue }: OrderSummaryProps) => {
   return (
     <Section>
       <Text className="mb-2 font-semibold text-[#18181b]">Order Items</Text>
@@ -42,22 +32,12 @@ export const OrderSummary = ({
       {items.map((item, index) => (
         <Row key={index} className="mb-2">
           <Column className="flex-1">
-            <Text className="m-0 text-sm text-gray-900">
-              {item.productName}
-            </Text>
-            {item.variantDescription && (
-              <Text className="m-0 text-xs text-[#71717a]">
-                {item.variantDescription}
-              </Text>
-            )}
-            <Text className="m-0 text-xs text-[#71717a]">
-              Qty: {item.quantity}
-            </Text>
+            <Text className="m-0 text-sm text-gray-900">{item.productName}</Text>
+            {item.variantDescription && <Text className="m-0 text-xs text-[#71717a]">{item.variantDescription}</Text>}
+            <Text className="m-0 text-xs text-[#71717a]">Qty: {item.quantity}</Text>
           </Column>
           <Column className="text-right">
-            <Text className="m-0 text-sm text-gray-900">
-              {fmt(item.totalPrice * item.exchangeRate)}
-            </Text>
+            <Text className="m-0 text-sm text-gray-900">{fmt(item.totalPriceGhs)}</Text>
           </Column>
         </Row>
       ))}
@@ -79,38 +59,32 @@ export const OrderSummary = ({
           <Text className="m-0 text-sm text-[#71717a]">Shipping</Text>
         </Column>
         <Column className="text-right">
-          <Text className="m-0 text-sm text-gray-900">
-            {fmt(shippingPrice)}
-          </Text>
+          <Text className="m-0 text-sm text-gray-900">{fmt(shippingGhs)}</Text>
         </Column>
       </Row>
 
-      {taxPrice > 0 && (
+      {taxGhs > 0 && (
         <Row className="mb-1">
           <Column className="flex-1">
             <Text className="m-0 text-sm text-[#71717a]">Tax</Text>
           </Column>
           <Column className="text-right">
-            <Text className="m-0 text-sm text-gray-900">{fmt(taxPrice)}</Text>
+            <Text className="m-0 text-sm text-gray-900">{fmt(taxGhs)}</Text>
           </Column>
         </Row>
       )}
 
-      {discountAmount && discountAmount > 0 && (
+      {discountAmountGhs !== null && discountAmountGhs > 0 && (
         <Row className="mb-1">
           <Column className="flex-1">
             <Text className="m-0 text-sm text-[#71717a]">
               Discount
-              {discountType === "PERCENTAGE" &&
-                discountValue &&
-                ` (${discountValue}%)`}
+              {discountType === "PERCENTAGE" && discountValue !== null && discountValue !== undefined && ` (${discountValue}%)`}
               {discountReason && ` · ${discountReason}`}
             </Text>
           </Column>
           <Column className="text-right">
-            <Text className="m-0 text-sm text-red-500">
-              -{fmt(discountAmount)}
-            </Text>
+            <Text className="m-0 text-sm text-red-500">-{fmt(discountAmountGhs)}</Text>
           </Column>
         </Row>
       )}
@@ -122,9 +96,7 @@ export const OrderSummary = ({
           <Text className="m-0 font-semibold text-gray-900">Total</Text>
         </Column>
         <Column className="text-right">
-          <Text className="m-0 font-semibold text-gray-900">
-            {fmt(totalPrice)}
-          </Text>
+          <Text className="m-0 font-semibold text-gray-900">{fmt(totalGhs)}</Text>
         </Column>
       </Row>
     </Section>
