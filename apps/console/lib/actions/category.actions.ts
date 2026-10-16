@@ -15,6 +15,10 @@ function invalidInput(error: z.ZodError): ActionResponse {
   return { success: false, error: error.issues[0]?.message ?? "Invalid input", code: "INVALID" }
 }
 
+const categoryIdSchema = z.uuid("Invalid category ID")
+
+const NOT_FOUND: ActionResponse = { success: false, error: "Category not found.", code: "NOT_FOUND" }
+const HAS_CHILDREN: ActionResponse = { success: false, error: "This category has subcategories. Move or delete them first.", code: "HAS_CHILDREN" }
 const NAME_EXISTS: ActionResponse = { success: false, error: "A category with this name already exists under this parent.", code: "NAME_EXISTS" }
 const PARENT_NOT_FOUND: ActionResponse = { success: false, error: "The parent category no longer exists.", code: "PARENT_NOT_FOUND" }
 const PARENT_ARCHIVED: ActionResponse = { success: false, error: "An archived category can't be a parent.", code: "PARENT_ARCHIVED" }
@@ -34,7 +38,8 @@ function isUniqueConstraintError(error: unknown) {
   return error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002"
 }
 
-// The parent was deleted between the check and the insert
+// On create: the parent was deleted between the check and the insert.
+// On delete: a subcategory was added between the check and the delete.
 function isForeignKeyError(error: unknown) {
   return error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2003"
 }
@@ -68,6 +73,29 @@ export async function createCategoryAction(input: z.input<typeof addCategoryForm
   } catch (error) {
     if (isUniqueConstraintError(error)) return NAME_EXISTS
     if (isForeignKeyError(error)) return PARENT_NOT_FOUND
+    return { success: false, error: formatError(error) }
+  }
+}
+
+export async function deleteCategoryAction(categoryId: string): Promise<ActionResponse> {
+  // Outside the try block: redirect() works by throwing and must not be caught
+  await requireSystemPermission({ category: ["delete"] })
+
+  try {
+    const parsed = categoryIdSchema.safeParse(categoryId)
+    if (!parsed.success) return invalidInput(parsed.error)
+
+    // The foreign key would reject this anyway, but with an error the form can't explain
+    if ((await prisma.category.count({ where: { parentId: parsed.data } })) > 0) return HAS_CHILDREN
+
+    // The Prisma hook removes the image after the delete commits
+    await prisma.category.delete({
+      where: { id: parsed.data },
+    })
+    return { success: true }
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") return NOT_FOUND
+    if (isForeignKeyError(error)) return HAS_CHILDREN
     return { success: false, error: formatError(error) }
   }
 }

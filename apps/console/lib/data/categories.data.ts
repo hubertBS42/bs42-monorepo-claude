@@ -9,6 +9,9 @@ import type { Category } from "@workspace/db/client"
 import { Status } from "@workspace/db/enums"
 import type { DataResponse } from "@workspace/contracts"
 import type { TreeSelectOption } from "@workspace/forms"
+import { z } from "zod"
+
+const categoryIdSchema = z.uuid()
 
 async function getSession() {
   return consoleAuth.api.getSession({
@@ -69,6 +72,29 @@ export const getCategoryOptions = async (): Promise<DataResponse<{ options: Tree
         disabledIds: categories.filter((category) => category.status === Status.ARCHIVED).map((category) => category.id),
       },
     }
+  } catch (error) {
+    return { success: false, error: formatError(error) }
+  }
+}
+
+// childCount lets the edit page explain why a category can't be deleted yet
+export const getCategoryById = async (categoryId: string): Promise<DataResponse<Category & { childCount: number }>> => {
+  try {
+    const session = await getSession()
+    if (!session) return { success: false, error: "Unauthorized" }
+
+    // Category.id is a UUID column, so any other value would make Postgres throw instead of finding nothing
+    if (!categoryIdSchema.safeParse(categoryId).success) return { success: false, error: "Category not found.", code: "NOT_FOUND" }
+
+    const category = await prisma.category.findUnique({
+      where: { id: categoryId },
+      include: { _count: { select: { childCategories: true } } },
+    })
+
+    if (!category) return { success: false, error: "Category not found.", code: "NOT_FOUND" }
+
+    const { _count, ...rest } = category
+    return { success: true, data: { ...rest, childCount: _count.childCategories } }
   } catch (error) {
     return { success: false, error: formatError(error) }
   }
