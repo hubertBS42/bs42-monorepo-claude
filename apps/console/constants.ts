@@ -1,4 +1,4 @@
-import { Status } from "@workspace/db/enums"
+import { Condition, Status } from "@workspace/db/enums"
 import { BreadcrumbConfig, StoreStatus, UserStatusFilter } from "./types"
 import { capitalizeWord } from "@workspace/utils/text"
 
@@ -297,6 +297,19 @@ export const STORE_STATUS_OPTIONS = Object.values(StoreStatus).map((value) => ({
 // Catalogue status (brands, categories)
 export const STATUS_OPTIONS = Object.values(Status).map((value) => ({
   label: capitalizeWord(value),
+  value,
+}))
+
+export const CONDITION_LABELS: Record<Condition, string> = {
+  NEW: "New",
+  REFURBISHED: "Refurbished",
+  USED_LIKE_NEW: "Used – like new",
+  USED_GOOD: "Used – good",
+  USED_FAIR: "Used – fair",
+}
+
+export const CONDITION_OPTIONS = Object.values(Condition).map((value) => ({
+  label: CONDITION_LABELS[value],
   value,
 }))
 

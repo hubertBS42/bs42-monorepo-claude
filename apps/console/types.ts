@@ -98,3 +98,52 @@ export type BrandsData = PaginatedResult<Brand>
 export type CategoryNode = Category & {
   children: CategoryNode[]
 }
+
+export type ProductListItem = Omit<ProductListRow, "baseSellPrice"> & { baseSellPrice: string }
+
+type ProductListRow = Prisma.ProductGetPayload<{
+  select: {
+    id: true
+    name: true
+    images: true
+    brand: {
+      select: { name: true }
+    }
+    baseSellPrice: true
+    category: {
+      select: { name: true }
+    }
+    condition: true
+    hasVariants: true
+    status: true
+    createdAt: true
+  }
+}>
+
+export interface ProductsParams extends PaginationParams {
+  name?: string
+  status?: Status
+}
+export type ProductsData = PaginatedResult<ProductListItem>
+
+export type ProductDetails = Prisma.ProductGetPayload<{
+  include: {
+    category: { select: { name: true } }
+    variants: {
+      include: {
+        variantValues: {
+          include: {
+            optionValue: {
+              include: { option: true }
+            }
+          }
+        }
+      }
+    }
+    variantOptions: {
+      include: { values: true }
+    }
+    documents: true
+    brand: true
+  }
+}>
