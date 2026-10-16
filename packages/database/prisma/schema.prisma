@@ -27,6 +27,7 @@ enum OrganizationStatus {
   SUSPENDED
 }
 
+// Fulfilment only. Refunds are a payment state (PaymentStatus), so a refunded order is e.g. CANCELLED + REFUNDED.
 enum OrderStatus {
   PENDING
   CONFIRMED
@@ -35,7 +36,6 @@ enum OrderStatus {
   DELIVERED
   COMPLETED
   CANCELLED
-  REFUNDED
 }
 
 enum PaymentMethod {
@@ -44,9 +44,12 @@ enum PaymentMethod {
   MOBILE_MONEY
 }
 
+// The source of truth for money: whether the customer has paid and what was given back
 enum PaymentStatus {
   PENDING
   PAID
+  FAILED
+  PARTIALLY_REFUNDED
   REFUNDED
 }
 
@@ -71,6 +74,8 @@ model AppSettings {
   // The platform is the seller of record, so one tax rate applies to every order. A fraction: 0.15 is 15%.
   // Shown prices exclude tax: it's added on top at checkout (see Order.taxGhs).
   // Each order copies it (Order.taxRate), so changing it never alters past orders.
+  // When taxEnabled is off, orders are charged no tax and copy a taxRate of 0.
+  taxEnabled         Boolean  @default(false)
   taxRate            Decimal  @default(0) @db.Decimal(5, 4)
   // Whether the delivery fee is taxed too
   taxShipping        Boolean  @default(false)
@@ -210,7 +215,7 @@ model Product {
   condition   Condition @default(NEW)
   description String?
   images      String[] // Main product images
-  rating      Decimal   @default(0) @db.Decimal(12, 2)
+  rating      Decimal   @default(0) @db.Decimal(3, 2) // average review rating, 0.00-5.00
   numReviews  Int       @default(0)
   banner      String?
   tags        String[]
@@ -423,7 +428,7 @@ model Order {
   userId        String? @db.Uuid
   user          User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
   customerName  String
-  customerEmail String
+  customerEmail String? // optional: walk-in POS customers may not give one
   customerPhone String?
 
   shippingMethod ShippingMethod @default(DELIVERY)
