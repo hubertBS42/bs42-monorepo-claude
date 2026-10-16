@@ -105,6 +105,8 @@ model Category {
   childCategories Category[] @relation("CategoriesHierarchy")
   status          Status     @default(DRAFT)
   isFeatured      Boolean    @default(false)
+  // Order among siblings, lowest first. Ties (all 0 until someone reorders) fall back to name order.
+  position        Int        @default(0)
   createdAt       DateTime   @default(now())
   updatedAt       DateTime   @default(now()) @updatedAt
 
