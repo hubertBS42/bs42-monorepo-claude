@@ -17,3 +17,7 @@ export const addCategoryFormSchema = z.object({
   isFeatured: z.boolean(),
   status: z.enum(Status),
 })
+
+export const updateCategoryFormSchema = addCategoryFormSchema.extend({
+  id: z.uuid("Invalid category ID."),
+})

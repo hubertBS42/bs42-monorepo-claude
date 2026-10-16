@@ -1,12 +1,12 @@
 "use server"
 import { z } from "zod"
-import { addCategoryFormSchema } from "@/lib/schemas/category.schemas"
+import { addCategoryFormSchema, updateCategoryFormSchema } from "@/lib/schemas/category.schemas"
 import { prisma } from "@workspace/db"
 import { Prisma } from "@workspace/db/client"
 import { Status } from "@workspace/db/enums"
 import { formatError } from "@workspace/auth/format-error"
 import { ActionResponse } from "@workspace/contracts"
-import { isManagedFileUrl } from "@workspace/storage"
+import { deleteFiles, isManagedFileUrl } from "@workspace/storage"
 import { requireSystemPermission } from "@/lib/auth-guard"
 
 // Every export here is a public endpoint, so every input is validated
@@ -23,6 +23,17 @@ const NAME_EXISTS: ActionResponse = { success: false, error: "A category with th
 const PARENT_NOT_FOUND: ActionResponse = { success: false, error: "The parent category no longer exists.", code: "PARENT_NOT_FOUND" }
 const PARENT_ARCHIVED: ActionResponse = { success: false, error: "An archived category can't be a parent.", code: "PARENT_ARCHIVED" }
 const INVALID_IMAGE: ActionResponse = { success: false, error: "Invalid image URL.", code: "INVALID_FILE" }
+const PARENT_CYCLE: ActionResponse = { success: false, error: "A category can't be moved under itself or one of its subcategories.", code: "PARENT_CYCLE" }
+
+/** Best-effort delete. A leftover blob is cheaper than failing a request that already succeeded. */
+async function removeFiles(urls: (string | null | undefined)[]) {
+  try {
+    const files = urls.filter((url): url is string => !!url && isManagedFileUrl(url))
+    if (files.length > 0) await deleteFiles(files)
+  } catch (error) {
+    console.error("Category file cleanup failed:", error)
+  }
+}
 
 // Names are unique among siblings but case-sensitive in the database, so "Shoes" and "shoes" are caught here instead
 async function isNameTaken(name: string, parentId: string | null, excludeId?: string) {
@@ -38,7 +49,7 @@ function isUniqueConstraintError(error: unknown) {
   return error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002"
 }
 
-// On create: the parent was deleted between the check and the insert.
+// On create or update: the parent was deleted between the check and the write.
 // On delete: a subcategory was added between the check and the delete.
 function isForeignKeyError(error: unknown) {
   return error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2003"
@@ -73,6 +84,55 @@ export async function createCategoryAction(input: z.input<typeof addCategoryForm
   } catch (error) {
     if (isUniqueConstraintError(error)) return NAME_EXISTS
     if (isForeignKeyError(error)) return PARENT_NOT_FOUND
+    return { success: false, error: formatError(error) }
+  }
+}
+
+// Raised by the category_prevent_cycle trigger. Under the driver adapter its name only appears in the error meta.
+function isCycleError(error: unknown) {
+  return error instanceof Prisma.PrismaClientKnownRequestError && JSON.stringify(error.meta ?? {}).includes("category_no_cycle")
+}
+
+export async function updateCategoryAction(input: z.input<typeof updateCategoryFormSchema>): Promise<ActionResponse> {
+  // Outside the try block: redirect() works by throwing and must not be caught
+  await requireSystemPermission({ category: ["update"] })
+
+  try {
+    const parsed = updateCategoryFormSchema.safeParse(input)
+    if (!parsed.success) return invalidInput(parsed.error)
+
+    const { id, ...data } = parsed.data
+
+    if (data.image !== null && !isManagedFileUrl(data.image)) return INVALID_IMAGE
+
+    const previous = await prisma.category.findUnique({ where: { id }, select: { image: true, parentId: true } })
+    if (!previous) return NOT_FOUND
+
+    // Only a new parent is checked, so a category whose parent was archived later can still be edited
+    if (data.parentId && data.parentId !== previous.parentId) {
+      // The trigger rejects deeper cycles; this one is cheap to catch with a clear message
+      if (data.parentId === id) return PARENT_CYCLE
+      const parent = await prisma.category.findUnique({ where: { id: data.parentId }, select: { status: true } })
+      if (!parent) return PARENT_NOT_FOUND
+      if (parent.status === Status.ARCHIVED) return PARENT_ARCHIVED
+    }
+
+    if (await isNameTaken(data.name, data.parentId, id)) return NAME_EXISTS
+
+    await prisma.category.update({
+      where: { id },
+      data,
+    })
+
+    // Only the server knows the previous image, so it removes a replaced one once the update has been saved
+    if (previous.image !== data.image) await removeFiles([previous.image])
+
+    return { success: true }
+  } catch (error) {
+    if (isCycleError(error)) return PARENT_CYCLE
+    if (isUniqueConstraintError(error)) return NAME_EXISTS
+    if (isForeignKeyError(error)) return PARENT_NOT_FOUND
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") return NOT_FOUND
     return { success: false, error: formatError(error) }
   }
 }

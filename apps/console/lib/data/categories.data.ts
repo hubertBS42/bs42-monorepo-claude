@@ -54,9 +54,24 @@ function toTreeOptions(nodes: CategoryNode[]): TreeSelectOption[] {
   return nodes.map((node) => ({ label: node.name, value: node.id, children: toTreeOptions(node.children) }))
 }
 
+// The ids of a node and everything below it
+function collectSubtreeIds(node: CategoryNode): string[] {
+  return [node.id, ...node.children.flatMap(collectSubtreeIds)]
+}
+
+function findNode(nodes: CategoryNode[], id: string): CategoryNode | undefined {
+  for (const node of nodes) {
+    if (node.id === id) return node
+    const found = findNode(node.children, id)
+    if (found) return found
+  }
+  return undefined
+}
+
 // Options for the parent category select. Archived categories stay in the tree, so their subcategories keep their
-// place, but are returned as disabledIds: an archived category can't take new subcategories.
-export const getCategoryOptions = async (): Promise<DataResponse<{ options: TreeSelectOption[]; disabledIds: string[] }>> => {
+// place, but are returned as disabledIds: an archived category can't take new subcategories. On an edit page, pass
+// the category's id: it and its subcategories are disabled too, since moving it under them would make a cycle.
+export const getCategoryOptions = async (editingId?: string): Promise<DataResponse<{ options: TreeSelectOption[]; disabledIds: string[] }>> => {
   try {
     const session = await getSession()
     if (!session) return { success: false, error: "Unauthorized" }
@@ -65,11 +80,15 @@ export const getCategoryOptions = async (): Promise<DataResponse<{ options: Tree
       orderBy: [{ position: "asc" }, { name: "asc" }, { id: "asc" }],
     })
 
+    const tree = buildCategoryTree(categories)
+    const editing = editingId ? findNode(tree, editingId) : undefined
+    const disabledIds = new Set([...categories.filter((category) => category.status === Status.ARCHIVED).map((category) => category.id), ...(editing ? collectSubtreeIds(editing) : [])])
+
     return {
       success: true,
       data: {
-        options: toTreeOptions(buildCategoryTree(categories)),
-        disabledIds: categories.filter((category) => category.status === Status.ARCHIVED).map((category) => category.id),
+        options: toTreeOptions(tree),
+        disabledIds: [...disabledIds],
       },
     }
   } catch (error) {
