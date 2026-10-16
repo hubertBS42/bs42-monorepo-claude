@@ -62,6 +62,7 @@ A "store" is a Better Auth organization. One special organization, slug `PLATFOR
 ### Two permission layers
 - System roles (`user`, `admin`, `superAdmin`) on `User.role`, defined in `system-permissions.ts`. Role strings can be comma-separated; always check with `hasSystemRole` / `hasSystemPermission`, never `===`.
 - Organization roles (`owner`, `admin`, `member`) on `Member.role`, defined in `organization-permissions.ts`.
+- The catalogue (brands, categories, products) is global, not per store: it uses the system permissions `brand`/`category`/`product` and `/catalogue` is admin-only in the global workspace.
 - **SuperAdmins**:
   - Only superAdmins can manage superAdmins: console actions check `canManageUserWithRole`, and a consoleAuth `hooks.before` blocks Better Auth's admin write endpoints.
   - User loaders in `lib/data/users.data.ts` hide superAdmins from everyone else.
@@ -81,14 +82,21 @@ A "store" is a Better Auth organization. One special organization, slug `PLATFOR
 
 ### Database client extensions
 `@workspace/db` exports a Prisma 7 client (driver adapter `@prisma/adapter-pg`, generated into `packages/database/generated/prisma`) wrapped in `$extends` query hooks:
-- **Organization slugs** are generated server-side from the name, with uniqueness retries. Any client-supplied slug is discarded: Better Auth requires one, so callers send a random placeholder. The exception is the platform org.
-- **File cleanup**: deleting an organization or user removes its logo/image from Azure Blob Storage after the delete commits.
+- **Slugs** (organizations and brands) are generated server-side from the name, with uniqueness retries. Any client-supplied slug is discarded, so callers send a placeholder (Better Auth requires one; Prisma's types require one for brands). The exception is the platform org.
+- **File cleanup**: deleting an organization, user or brand removes its logo/image from Azure Blob Storage after the delete commits.
 
 `readAppSettings()` reads the singleton `AppSettings` row (falling back to defaults). The console caches it via `unstable_cache` with the `app-settings` tag.
 
 ### Console app conventions
 - Routes are grouped: `(auth)` pages are public, `(root)` is the authenticated shell, and `(misc)` holds `no-stores` and `accept-invitation`. Route-specific components live in `_components/` next to the page.
 - Server actions live in `lib/actions/*.actions.ts` (`"use server"`), validate input with zod schemas from `lib/schemas/*.schemas.ts`, and return `ActionResponse` from `@workspace/contracts`. Data loaders live in `lib/data/`.
+  - Every exported action is a public endpoint, so each one calls its guard (e.g. `requireSystemPermission`) before its `try` block: `redirect()` works by throwing, and a `catch` would swallow it.
+  - Report conflicts with a `code` the form can match (`EMAIL_EXISTS`, `NAME_EXISTS`), not the `formatError` text. Under the pg driver adapter Prisma can leave `meta.target` empty, so unique violations may only say "Field already exists".
+  - Loaders for `SelectField` options return `SelectItem[]` (`{ id, name }`, from `@/types`).
+- Zod schemas: use `z.httpUrl()` for URLs, since `z.url()` accepts `javascript:`. When a schema has transforms, type the form as `useForm<z.input<S>, unknown, z.output<S>>` and its submit handler with `z.output<S>`.
+- Images on edit forms: the action rejects URLs outside our container (`isManagedFileUrl`) and removes the replaced image only after the update succeeds (brands, app settings). The form must not delete the saved image when it's removed, only images uploaded during that edit. Stores do the same from the client, because they update through Better Auth.
+- Toasts: `toast` from `@workspace/ui/components/toast` is Base UI's toast manager. Use `toast.add({ title, description, type })`; there is no `toast.success`/`toast.error`.
+- Action buttons (e.g. `DeleteStore`, `DeleteBrand`) check their own permission from the client session, show a skeleton while it loads and a line explaining a disabled button. The server action checks again.
 - Uploads go through `app/api/storage/{images,documents,files}/route.ts` → `lib/storage-api.ts` (per-route `UploadPolicy`) → `@workspace/storage` (Azure Blob via `DefaultAzureCredential`; `AZURE_STORAGE_ACCOUNT_NAME`, optional `AZURE_STORAGE_CONTAINER_NAME`).
 - Form fields come from `@workspace/forms` (react-hook-form wrappers), data tables from `@workspace/tables` (TanStack Table), and primitives from `@workspace/ui`.
 - Table rows link to their page with `DataTable`'s `getRowHref`, which makes the main cell a real link.
