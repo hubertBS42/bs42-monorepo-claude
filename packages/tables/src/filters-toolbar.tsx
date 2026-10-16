@@ -8,8 +8,15 @@ import { Input } from "@workspace/ui/components/input"
 import ClientOnlySelect from "@workspace/ui/components/client-only-select"
 import { X } from "lucide-react"
 import type { FilterConfig } from "./data-table"
+import DateFilter from "./filters/date-filter"
 import DateRangeFilter from "./filters/date-range-filter"
 import NumberRangeFilter from "./filters/number-range-filter"
+
+// Boolean filters store "true" / "false" in the URL. Pass options to relabel them, e.g. Featured / Not featured.
+const DEFAULT_BOOLEAN_OPTIONS = [
+  { label: "Yes", value: "true" },
+  { label: "No", value: "false" },
+]
 
 interface FiltersToolbarProps {
   filters: FilterConfig[]
@@ -127,6 +134,43 @@ const FiltersToolbar = ({ filters }: FiltersToolbarProps) => {
                 className="w-full"
               />
             )}
+            {filter.type === "number" && (
+              <Input
+                id={filter.key}
+                type="number"
+                className="h-8"
+                placeholder={filter.placeholder ?? "Filter..."}
+                value={values[filter.key] ?? ""}
+                onChange={(e) =>
+                  setValues((prev) => ({
+                    ...prev,
+                    [filter.key]: e.target.value,
+                  }))
+                }
+                onKeyDown={(e) => e.key === "Enter" && applyFilters()}
+                disabled={isPending}
+              />
+            )}
+            {filter.type === "boolean" && (
+              <ClientOnlySelect
+                id={filter.key}
+                value={values[filter.key] || "all"}
+                onValueChange={(value) => {
+                  const newValues = {
+                    ...values,
+                    [filter.key]: value === "all" ? "" : value,
+                  }
+                  setValues(newValues)
+                  applyFilters(newValues)
+                }}
+                options={[{ label: filter.placeholder ?? "All", value: "all" }, ...(filter.options ?? DEFAULT_BOOLEAN_OPTIONS)]}
+                size="sm"
+                loadingPlaceholder="All"
+                placeholder={filter.placeholder ?? "All"}
+                className="w-full"
+              />
+            )}
+            {filter.type === "date" && <DateFilter id={filter.key} filterKey={filter.key} values={values} setValues={setValues} applyFilters={applyFilters} isPending={isPending} />}
             {filter.type === "dateRange" && (
               <DateRangeFilter id={filter.key} startKey={`${filter.key}Start`} endKey={`${filter.key}End`} values={values} setValues={setValues} applyFilters={applyFilters} isPending={isPending} />
             )}
