@@ -36,7 +36,7 @@ pnpm --filter @workspace/db db:migrate    # prisma migrate dev
 pnpm --filter @workspace/db db:deploy     # prisma migrate deploy
 ```
 
-Better Auth owns most of the schema. After changing auth plugins or `additionalFields`, regenerate the Prisma schema with `pnpm --filter @workspace/auth auth:generate` (writes `packages/database/prisma/schema.prisma`), then create a migration.
+Better Auth owns most of the schema. After changing auth plugins or `additionalFields`, regenerate the Prisma schema with `pnpm --filter @workspace/auth auth:generate` (writes `packages/database/prisma/schema.prisma`), then create a migration. The script runs the CLI with `--conditions=react-server` (so `server-only` imports load) and `--env-file=../database/.env` (the plugins import the database client). It keeps the non-auth models; its only side effect is a blank line after top-level comments.
 
 Tests use the built-in Node test runner and exist only in `packages/email` (`packages/utils` has a `test` script but no `tests/` directory yet):
 
@@ -83,7 +83,7 @@ A "store" is a Better Auth organization. One special organization, slug `PLATFOR
 ### Database client extensions
 `@workspace/db` exports a Prisma 7 client (driver adapter `@prisma/adapter-pg`, generated into `packages/database/generated/prisma`) wrapped in `$extends` query hooks:
 - **Slugs** (organizations and brands) are generated server-side from the name, with uniqueness retries. Any client-supplied slug is discarded, so callers send a placeholder (Better Auth requires one; Prisma's types require one for brands). The exception is the platform org.
-- **File cleanup**: deleting an organization, user or brand removes its logo/image from Azure Blob Storage after the delete commits.
+- **File cleanup**: deleting an organization, user, brand or category removes its logo/image from Azure Blob Storage after the delete commits (`removeFiles` from `@workspace/storage`). Files nothing references any more, such as uploads from a form left without saving, are removed by `sweepOrphanedFiles` (`packages/database/src/file-sweep.ts`), which `POST /api/cron/file-cleanup` runs for a scheduler using `CRON_SECRET`. A new column holding file URLs must be added to the sweep's list, or the sweep deletes its files.
 
 `readAppSettings()` reads the singleton `AppSettings` row (falling back to defaults). The console caches it via `unstable_cache` with the `app-settings` tag.
 
@@ -91,7 +91,7 @@ A "store" is a Better Auth organization. One special organization, slug `PLATFOR
 - Routes are grouped: `(auth)` pages are public, `(root)` is the authenticated shell, and `(misc)` holds `no-stores` and `accept-invitation`. Route-specific components live in `_components/` next to the page.
 - Server actions live in `lib/actions/*.actions.ts` (`"use server"`), validate input with zod schemas from `lib/schemas/*.schemas.ts`, and return `ActionResponse` from `@workspace/contracts`. Data loaders live in `lib/data/`.
   - Every exported action is a public endpoint, so each one calls its guard (e.g. `requireSystemPermission`) before its `try` block: `redirect()` works by throwing, and a `catch` would swallow it.
-  - Report conflicts with a `code` the form can match (`EMAIL_EXISTS`, `NAME_EXISTS`), not the `formatError` text. Under the pg driver adapter Prisma can leave `meta.target` empty, so unique violations may only say "Field already exists".
+  - Report conflicts with a `code` the form can match (`EMAIL_EXISTS`, `NAME_EXISTS`), not the `formatError` text. Under the pg driver adapter Prisma leaves `meta.target` empty; the constraint name is in `meta.driverAdapterError.cause.constraint.index`, which `formatPrismaError` uses to name the field.
   - Loaders for `SelectField` options return `SelectItem[]` (`{ id, name }`, from `@/types`).
 - Zod schemas: use `z.httpUrl()` for URLs, since `z.url()` accepts `javascript:`. When a schema has transforms, type the form as `useForm<z.input<S>, unknown, z.output<S>>` and its submit handler with `z.output<S>`.
 - Images on edit forms: the action rejects URLs outside our container (`isManagedFileUrl`) and removes the replaced image only after the update succeeds (brands, app settings). The form must not delete the saved image when it's removed, only images uploaded during that edit. Stores do the same from the client, because they update through Better Auth.
