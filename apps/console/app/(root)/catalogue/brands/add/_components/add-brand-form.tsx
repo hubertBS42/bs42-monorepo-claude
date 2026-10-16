@@ -12,7 +12,7 @@ import SharedFormHeader from "@/components/shared-form-header"
 import SharedFormFooter from "@/components/shared-form-footer"
 import { createBrandAction } from "@/lib/actions/brand.actions"
 import { ImageField, SelectField, SwitchField, TextareaField, TextInputField } from "@workspace/forms"
-import { BRAND_STATUS_OPTIONS } from "@/constants"
+import { STATUS_OPTIONS } from "@/constants"
 import { Status } from "@workspace/db/enums"
 import { deleteImages, uploadImages } from "@/lib/storage"
 
@@ -150,7 +150,7 @@ const AddBrandForm = () => {
                 <CardDescription>Set the status for this brand.</CardDescription>
               </CardHeader>
               <CardContent>
-                <SelectField control={form.control} name="status" disabled={isBusy} options={BRAND_STATUS_OPTIONS} aria-label="Status" />
+                <SelectField control={form.control} name="status" disabled={isBusy} options={STATUS_OPTIONS} aria-label="Status" />
               </CardContent>
             </Card>
           </div>

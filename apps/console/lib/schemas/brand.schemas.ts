@@ -1,8 +1,6 @@
 import { Status } from "@workspace/db/enums"
 import { z } from "zod"
-
-// http(s) only, so a stored link can't be a javascript: URL. An empty field is saved as null.
-const optionalHttpUrl = (message: string) => z.union([z.httpUrl(message), z.literal("").transform(() => null)]).nullable()
+import { optionalHttpUrl } from "./common.schemas"
 
 export const addBrandFormSchema = z.object({
   name: z.string().trim().min(1, "You must provide a brand name.").min(3, "Brand name must be at least 3 characters.").max(100, "Brand name must be at most 100 characters."),

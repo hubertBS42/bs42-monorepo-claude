@@ -12,7 +12,7 @@ import SharedFormHeader from "@/components/shared-form-header"
 import SharedFormFooter from "@/components/shared-form-footer"
 import { updateBrandAction } from "@/lib/actions/brand.actions"
 import { ImageField, SelectField, SwitchField, TextareaField, TextInputField } from "@workspace/forms"
-import { BRAND_STATUS_OPTIONS } from "@/constants"
+import { STATUS_OPTIONS } from "@/constants"
 import type { Brand } from "@workspace/db/client"
 import { deleteImages, uploadImages } from "@/lib/storage"
 import DeleteBrand from "./delete-brand"
@@ -150,7 +150,7 @@ export default function EditBrandForm({ brand }: { brand: Brand }) {
                   <CardDescription>Set the status for this brand.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <SelectField control={form.control} name="status" disabled={isBusy} options={BRAND_STATUS_OPTIONS} aria-label="Status" />
+                  <SelectField control={form.control} name="status" disabled={isBusy} options={STATUS_OPTIONS} aria-label="Status" />
                 </CardContent>
               </Card>
 

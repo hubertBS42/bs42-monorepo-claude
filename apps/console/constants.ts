@@ -294,7 +294,8 @@ export const STORE_STATUS_OPTIONS = Object.values(StoreStatus).map((value) => ({
   value,
 }))
 
-export const BRAND_STATUS_OPTIONS = Object.values(Status).map((value) => ({
+// Catalogue status (brands, categories)
+export const STATUS_OPTIONS = Object.values(Status).map((value) => ({
   label: capitalizeWord(value),
   value,
 }))
