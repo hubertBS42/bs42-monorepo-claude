@@ -1,6 +1,6 @@
 import "server-only"
 
-import type { Store, StoreForSelect, StoresData, StoresParams } from "@/types"
+import type { Store, SelectItem, StoresData, StoresParams } from "@/types"
 import { formatError } from "@workspace/auth/format-error"
 import { consoleAuth } from "@workspace/auth/console"
 import { PLATFORM_ORGANIZATION_SLUG } from "@workspace/contracts"
@@ -72,7 +72,7 @@ export const getStores = async (filters: StoresParams = {}): Promise<DataRespons
   }
 }
 
-export const getStoresForSelect = async (): Promise<DataResponse<StoreForSelect[]>> => {
+export const getStoresForSelect = async (): Promise<DataResponse<SelectItem[]>> => {
   try {
     const session = await getSession()
     if (!session) return { success: false, error: "Unauthorized" }

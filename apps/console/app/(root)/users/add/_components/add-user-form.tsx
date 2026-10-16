@@ -19,7 +19,7 @@ import { createUserAction } from "@/lib/actions/user.actions"
 import SharedFormHeader from "@/components/shared-form-header"
 import SharedFormFooter from "@/components/shared-form-footer"
 import { capitalizeWord } from "@workspace/utils/text"
-import type { StoreForSelect } from "@/types"
+import type { SelectItem } from "@/types"
 import ImageField from "@workspace/forms/components/image-field"
 import DateField from "@workspace/forms/components/date-field"
 import SwitchField from "@workspace/forms/components/switch-field"
@@ -27,7 +27,7 @@ import { FieldError, FieldGroup } from "@workspace/ui/components/field"
 import PhoneField from "@workspace/forms/components/phone-field"
 import { deleteImages, uploadImages } from "@/lib/storage"
 
-export default function AddUserForm({ stores }: { stores: StoreForSelect[] }) {
+export default function AddUserForm({ stores }: { stores: SelectItem[] }) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
 

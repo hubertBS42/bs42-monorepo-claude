@@ -4,6 +4,12 @@ import { OrganizationStatus } from "@workspace/db/enums"
 import type { LucideIcon } from "lucide-react"
 import type { SystemRole } from "@workspace/auth/system-permissions"
 
+// Minimal record shape for loaders that feed SelectField options
+export interface SelectItem {
+  id: string
+  name: string
+}
+
 export interface BreadcrumbSegment {
   text: string
   href: string
@@ -33,13 +39,6 @@ export interface NavItem {
 
 export const StoreStatus = OrganizationStatus
 export type StoreStatus = OrganizationStatus
-
-export type StoreForSelect = Prisma.OrganizationGetPayload<{
-  select: {
-    id: true
-    name: true
-  }
-}>
 
 export type Store = Omit<Organization, "status"> & {
   status: StoreStatus
@@ -93,10 +92,3 @@ export interface BrandsParams extends PaginationParams {
 }
 
 export type BrandsData = PaginatedResult<Brand>
-
-export type BrandForSelect = Prisma.BrandGetPayload<{
-  select: {
-    id: true
-    name: true
-  }
-}>

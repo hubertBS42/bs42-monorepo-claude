@@ -1,6 +1,6 @@
 "use client"
 
-import type { StoreForSelect, UserDetails } from "@/types"
+import type { SelectItem, UserDetails } from "@/types"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useRouter } from "next/navigation"
 import { useTransition } from "react"
@@ -42,7 +42,7 @@ function getMembershipChanges(members: UserDetails["members"], rows: StoreRow[])
   return { stores, removedMembers }
 }
 
-const EditStoreUserForm = ({ user, stores }: { user: UserDetails; stores: StoreForSelect[] }) => {
+const EditStoreUserForm = ({ user, stores }: { user: UserDetails; stores: SelectItem[] }) => {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
 
