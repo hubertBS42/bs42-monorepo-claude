@@ -3,7 +3,7 @@ import { prisma } from "./client"
 
 export { prisma } from "./client"
 export { formatPrismaError } from "./format-prisma-error"
-export { sweepOrphanedFiles, type FileSweepResult } from "./file-sweep"
+export { findReferencedFileUrls, sweepOrphanedFiles, type FileSweepResult } from "./file-sweep"
 
 export const DEFAULT_APP_SETTINGS: AppSettingsData = {
   storeName: "BS42.NET",

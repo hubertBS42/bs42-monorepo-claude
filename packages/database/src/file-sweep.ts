@@ -8,7 +8,8 @@ const DEFAULT_GRACE_PERIOD_MS = 24 * 60 * 60 * 1000
 const DELETE_BATCH_SIZE = 100
 
 /**
- * Every file URL the database still points at. Add new file columns here, or the sweep deletes their files.
+ * Every file URL the database still points at. Add new file columns here and in findReferencedFileUrls, or the
+ * sweep deletes their files and the delete route stops protecting them.
  * Order items keep their product image as a snapshot of what was sold, so it counts too.
  */
 async function getReferencedFileUrls(): Promise<Set<string>> {
@@ -37,6 +38,41 @@ async function getReferencedFileUrls(): Promise<Set<string>> {
   ]
 
   return new Set(urls.filter((url): url is string => !!url))
+}
+
+/**
+ * Which of these URLs a database row still points at. The same columns as getReferencedFileUrls, queried for just
+ * these URLs, so it's cheap enough to run on every delete request. Keep the two lists in sync.
+ */
+export async function findReferencedFileUrls(urls: readonly string[]): Promise<string[]> {
+  if (urls.length === 0) return []
+  const list = [...urls]
+
+  const [users, organizations, brands, categories, appSettings, products, variants, documents, orderItems] = await Promise.all([
+    prisma.user.findMany({ where: { image: { in: list } }, select: { image: true } }),
+    prisma.organization.findMany({ where: { logo: { in: list } }, select: { logo: true } }),
+    prisma.brand.findMany({ where: { logo: { in: list } }, select: { logo: true } }),
+    prisma.category.findMany({ where: { image: { in: list } }, select: { image: true } }),
+    prisma.appSettings.findMany({ where: { OR: [{ logoUrl: { in: list } }, { faviconUrl: { in: list } }] }, select: { logoUrl: true, faviconUrl: true } }),
+    prisma.product.findMany({ where: { OR: [{ images: { hasSome: list } }, { banner: { in: list } }] }, select: { images: true, banner: true } }),
+    prisma.productVariant.findMany({ where: { images: { hasSome: list } }, select: { images: true } }),
+    prisma.productDocument.findMany({ where: { url: { in: list } }, select: { url: true } }),
+    prisma.orderItem.findMany({ where: { productImage: { in: list } }, select: { productImage: true } }),
+  ])
+
+  const found = new Set<string | null>([
+    ...users.map((user) => user.image),
+    ...organizations.map((organization) => organization.logo),
+    ...brands.map((brand) => brand.logo),
+    ...categories.map((category) => category.image),
+    ...appSettings.flatMap((settings) => [settings.logoUrl, settings.faviconUrl]),
+    ...products.flatMap((product) => [...product.images, product.banner]),
+    ...variants.flatMap((variant) => variant.images),
+    ...documents.map((document) => document.url),
+    ...orderItems.map((item) => item.productImage),
+  ])
+
+  return list.filter((url) => found.has(url))
 }
 
 export interface FileSweepResult {

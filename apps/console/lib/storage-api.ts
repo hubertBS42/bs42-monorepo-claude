@@ -1,6 +1,9 @@
 import { deleteFiles, restoreFiles, StorageValidationError, uploadFiles } from "@workspace/storage"
 import { NextResponse } from "next/server"
 import type { DocumentItem } from "@workspace/contracts"
+import { consoleAuth } from "@workspace/auth/console"
+import { findReferencedFileUrls } from "@workspace/db"
+import { hasConsoleAccess } from "@/lib/auth-guard"
 
 interface UploadPolicy {
   maxFiles: number
@@ -112,6 +115,18 @@ async function readUrls(request: Request): Promise<string[]> {
   return body.urls
 }
 
+/**
+ * /api routes skip proxy.ts, so every storage route checks the caller itself: a console user (a system admin or a
+ * store member), the same rule as the console pages. Storefront customers share the auth cookie but don't pass.
+ * Returns the response to send when access is refused, or null when the request may continue.
+ */
+async function refuseUnlessConsoleUser(request: Request): Promise<NextResponse | null> {
+  const session = await consoleAuth.api.getSession({ headers: request.headers })
+  if (!session) return NextResponse.json({ error: "You must be signed in." }, { status: 401 })
+  if (!(await hasConsoleAccess(session.user))) return NextResponse.json({ error: "You don't have access to the console." }, { status: 403 })
+  return null
+}
+
 function errorResponse(error: unknown): NextResponse {
   if (error instanceof StorageValidationError) {
     return NextResponse.json({ error: error.message }, { status: error.statusCode })
@@ -122,6 +137,9 @@ function errorResponse(error: unknown): NextResponse {
 }
 
 export async function uploadRoute(request: Request, policy: UploadPolicy, includeNames = false): Promise<NextResponse> {
+  const refused = await refuseUnlessConsoleUser(request)
+  if (refused) return refused
+
   try {
     const files = await readUploadFiles(request, policy)
     const urls = await uploadFiles(files)
@@ -138,8 +156,17 @@ export async function uploadRoute(request: Request, policy: UploadPolicy, includ
 }
 
 export async function deleteRoute(request: Request): Promise<NextResponse> {
+  const refused = await refuseUnlessConsoleUser(request)
+  if (refused) return refused
+
   try {
-    await deleteFiles(await readUrls(request))
+    const urls = await readUrls(request)
+    // The browser only removes uploads nothing is saved with yet. Files a record still uses are removed by the
+    // server after the change that replaces them (or by the orphan sweep), never by a client request.
+    if ((await findReferencedFileUrls(urls)).length > 0) {
+      return NextResponse.json({ error: "A file that is in use can't be deleted." }, { status: 409 })
+    }
+    await deleteFiles(urls)
     return NextResponse.json({ success: true })
   } catch (error) {
     return errorResponse(error)
@@ -147,6 +174,9 @@ export async function deleteRoute(request: Request): Promise<NextResponse> {
 }
 
 export async function restoreRoute(request: Request): Promise<NextResponse> {
+  const refused = await refuseUnlessConsoleUser(request)
+  if (refused) return refused
+
   try {
     await restoreFiles(await readUrls(request))
     return NextResponse.json({ success: true })
