@@ -1,69 +1,10 @@
-import sanitizeHtml from "sanitize-html"
 import { APIError } from "better-auth/api"
 import { OrganizationStatus } from "@workspace/db/enums"
 import { isManagedFileUrl } from "@workspace/storage"
+import { sanitizeRichText } from "@workspace/utils/html"
 
 // Stores are created and updated through Better Auth's organization endpoints, which any store admin can call
 // directly, so the organization hooks check the input here instead of trusting the console form.
-
-// What the console's rich text editor (StarterKit, text alignment, tables) can produce, and nothing else
-const POLICY_HTML: sanitizeHtml.IOptions = {
-  allowedTags: [
-    "p",
-    "br",
-    "h1",
-    "h2",
-    "h3",
-    "h4",
-    "h5",
-    "h6",
-    "strong",
-    "b",
-    "em",
-    "i",
-    "u",
-    "s",
-    "code",
-    "pre",
-    "blockquote",
-    "ul",
-    "ol",
-    "li",
-    "hr",
-    "a",
-    "table",
-    "colgroup",
-    "col",
-    "thead",
-    "tbody",
-    "tr",
-    "th",
-    "td",
-  ],
-  allowedAttributes: {
-    "*": ["style"],
-    a: ["href", "target", "rel"],
-    th: ["colspan", "rowspan", "colwidth"],
-    td: ["colspan", "rowspan", "colwidth"],
-    col: ["span"],
-  },
-  allowedStyles: {
-    "*": { "text-align": [/^(left|center|right|justify)$/] },
-    col: { width: [/^\d+(\.\d+)?(px|%)$/], "min-width": [/^\d+(\.\d+)?px$/] },
-  },
-  allowedSchemes: ["http", "https", "mailto", "tel"],
-  transformTags: {
-    a: sanitizeHtml.simpleTransform("a", { rel: "noopener noreferrer nofollow" }),
-  },
-}
-
-/** Policy HTML reduced to what the editor produces. An empty editor ("<p></p>") is stored as null. */
-export function sanitizePolicy(value: unknown): string | null {
-  if (typeof value !== "string") return null
-  const html = sanitizeHtml(value, POLICY_HTML).trim()
-  const text = sanitizeHtml(html, { allowedTags: [], allowedAttributes: {} }).trim()
-  return text ? html : null
-}
 
 const MAX_NAME_LENGTH = 100
 const STATUSES: readonly string[] = Object.values(OrganizationStatus)
@@ -88,7 +29,7 @@ export function checkStoreInput<T extends Record<string, unknown>>(data: T): T {
   }
 
   for (const key of ["shippingPolicy", "returnsPolicy"] as const) {
-    if (key in data) result[key] = sanitizePolicy(data[key])
+    if (key in data) result[key] = sanitizeRichText(data[key])
   }
 
   return result as T
