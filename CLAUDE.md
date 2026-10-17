@@ -98,6 +98,7 @@ Migrations: Prisma doesn't model `CHECK` constraints or triggers, so they live i
 
 ### Products
 - One form for add and edit (`catalogue/products/_components/product-form.tsx`). Products go in leaf categories only, and a published product needs a sell price above 0.
+- The products list (`getProductsForTable`) reads the category tree once per page for each row's path ("Men / Shoes") and for the category filter, which includes subcategories. Search (`search`) matches the name, SKU and barcode, including variants'.
 - `updateProductAction` updates options, values, variants and documents in place, matched by id (`lib/product-sync.ts`). Store listing variants hang off variants and cascade, so recreating a variant would wipe the stores' prices and stock for it. A removed variant that has been ordered, directly or through a store's listing, is archived instead of deleted.
 - The edit loader (`getProductForEdit`) sends plain values plus `savedFiles` (the form never deletes those; the action removes replaced ones after it commits) and each variant's usage, so the form can warn before removing a listed or ordered variant.
 
@@ -121,7 +122,7 @@ Migrations: Prisma doesn't model `CHECK` constraints or triggers, so they live i
 - Store input is checked in the organization hooks (`packages/auth/src/store-input.ts`), because store admins can call Better Auth's organization endpoints directly: logos must be our own blobs, policies are cleaned with `sanitizeRichText`, and only system admins may change a store's status.
 - Rich text (`RichTextField`) is stored as TipTap JSON, not HTML; an empty editor is `null`. Actions save it through `sanitizeRichText` (`@workspace/utils/rich-text`), which keeps only the nodes, marks and attributes the editor can produce and links with http(s)/mailto/tel. Render it with TipTap's renderer and the editor's extensions, never as raw HTML.
 - Form fields come from `@workspace/forms` (react-hook-form wrappers), data tables from `@workspace/tables` (TanStack Table), and primitives from `@workspace/ui`.
-- Table rows link to their page with `DataTable`'s `getRowHref`, which makes the main cell a real link. `DataTableTree` shows nested rows (`getSubRows`, same `getRowHref`) and isn't paginated. Toolbar filter types: `text`, `select`, `number`, `boolean` (`true`/`false`), `date` (a plain `yyyy-MM-dd` day), `dateRange`, `numberRange`.
+- Table rows link to their page with `DataTable`'s `getRowHref`, which makes the main cell a real link. A cell that needs a second link (links can't nest) sets the column's `meta: { rendersRowLink: true }` and renders `RowLink` itself; clicks on any link in a row keep their own target. `DataTableTree` shows nested rows (`getSubRows`, same `getRowHref`) and isn't paginated. Toolbar filter types: `text`, `select`, `number`, `boolean` (`true`/`false`), `date` (a plain `yyyy-MM-dd` day), `dateRange`, `numberRange`.
 - Dates rendered in client components use `formatDate` from `@workspace/utils/date`. It formats in one fixed zone so the server render and hydration match.
 - A form inside a dialog must call `e.stopPropagation()` before `handleSubmit`. React bubbles events through portals, so otherwise submitting the dialog also submits the page form around it.
 - Never include `Session` rows in data passed to client components: each row holds its token.
