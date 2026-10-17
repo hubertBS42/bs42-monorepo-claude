@@ -280,6 +280,37 @@ export interface StoreOrderListItem {
 }
 export type StoreOrdersData = PaginatedResult<StoreOrderListItem>
 
+// The platform's orders list: every order, from every store
+export interface OrdersParams extends PaginationParams {
+  reference?: string
+  // Matches the customer's name, email or phone
+  customer?: string
+  storeId?: string
+  status?: OrderStatus
+  paymentStatus?: PaymentStatus
+  // "true": only orders with more than one store's items; "false": only single-store orders
+  multiStore?: "true" | "false"
+  // Plain yyyy-MM-dd days in the app's time zone, both inclusive
+  placedStart?: string
+  placedEnd?: string
+}
+
+// Amounts are GHS strings: Decimal can't be passed to client components
+export interface OrderListItem {
+  id: string
+  reference: string
+  customerName: string
+  status: OrderStatus
+  paymentStatus: PaymentStatus
+  shippingMethod: ShippingMethod
+  totalGhs: string
+  itemCount: number
+  // The stores whose items are on the order, by the name they had when it was placed
+  storeNames: string[]
+  createdAt: Date
+}
+export type OrdersData = PaginatedResult<OrderListItem>
+
 export interface StoreOrderLine {
   id: string
   productName: string

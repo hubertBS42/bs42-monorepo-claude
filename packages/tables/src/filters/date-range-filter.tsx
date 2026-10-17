@@ -8,9 +8,18 @@ import {
   PopoverTrigger,
 } from "@workspace/ui/components/popover"
 import { cn } from "@workspace/ui/lib/utils"
-import { format } from "date-fns"
+import { format, isValid, parse } from "date-fns"
 import { Calendar as CalendarIcon, X } from "lucide-react"
 import type { DateRange } from "react-day-picker"
+
+// Like DateFilter, the URL holds plain days (yyyy-MM-dd), both included, not timestamps: a timestamp would be the
+// browser's midnight, which isn't the app's. The loader decides what the days mean (e.g. createdAt within them).
+const DAY_FORMAT = "yyyy-MM-dd"
+
+const parseDay = (raw: string | undefined) => {
+  const parsed = raw ? parse(raw, DAY_FORMAT, new Date()) : undefined
+  return parsed && isValid(parsed) ? parsed : undefined
+}
 
 interface DateRangeFilterProps {
   id: string
@@ -31,23 +40,16 @@ const DateRangeFilter = ({
   applyFilters,
   isPending,
 }: DateRangeFilterProps) => {
-  const date: DateRange | undefined =
-    values[startKey] && values[endKey]
-      ? { from: new Date(values[startKey]), to: new Date(values[endKey]) }
-      : undefined
+  const from = parseDay(values[startKey])
+  const to = parseDay(values[endKey])
+  const date: DateRange | undefined = from && to ? { from, to } : undefined
 
   const handleSelect = (range: DateRange | undefined) => {
     if (range?.from) {
-      const from = new Date(range.from)
-      from.setHours(0, 0, 0, 0)
-
-      const to = new Date(range.to ?? range.from)
-      to.setHours(23, 59, 59, 999)
-
       const newValues = {
         ...values,
-        [startKey]: from.toISOString(),
-        [endKey]: to.toISOString(),
+        [startKey]: format(range.from, DAY_FORMAT),
+        [endKey]: format(range.to ?? range.from, DAY_FORMAT),
       }
       setValues(newValues)
 

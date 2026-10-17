@@ -27,3 +27,13 @@ export function getOrderParam(value: SearchParamValue): "asc" | "desc" | undefin
   const order = getStringParam(value)
   return order === "asc" || order === "desc" ? order : undefined
 }
+
+// A plain yyyy-MM-dd day (what the date filters write), only when it's a real calendar day
+export function getDayParam(value: SearchParamValue): string | undefined {
+  const day = getStringParam(value)
+  if (!day || !/^\d{4}-\d{2}-\d{2}$/.test(day)) return undefined
+
+  const [year, month, date] = day.split("-").map(Number) as [number, number, number]
+  const parsed = new Date(Date.UTC(year, month - 1, date))
+  return parsed.getUTCFullYear() === year && parsed.getUTCMonth() === month - 1 && parsed.getUTCDate() === date ? day : undefined
+}
