@@ -13,19 +13,7 @@ import SharedFormHeader from "@/components/shared-form-header"
 import SharedFormFooter from "@/components/shared-form-footer"
 import { Condition, Status } from "@workspace/db/enums"
 import { createProductAction } from "@/lib/actions/product.actions"
-import {
-  ComboboxField,
-  DocumentField,
-  ImageField,
-  NumberInputField,
-  RichTextField,
-  SelectField,
-  SelectTreeField,
-  SwitchField,
-  TagsField,
-  TextInputField,
-  type TreeSelectOption,
-} from "@workspace/forms"
+import { CascaderField, ComboboxField, DocumentField, ImageField, NumberInputField, RichTextField, SelectField, SwitchField, TagsField, TextInputField, type CascaderOption } from "@workspace/forms"
 import { Button } from "@workspace/ui/components/button"
 import { Pencil, PlusCircle, Trash2, X } from "lucide-react"
 import { Label } from "@workspace/ui/components/label"
@@ -53,7 +41,7 @@ type OptionInput = NonNullable<FormInput["variantOptions"]>[number]
 interface AddProductFormProps {
   brands: SelectItem[]
   // The category tree from getCategoryOptions
-  categoryOptions: TreeSelectOption[]
+  categoryOptions: CascaderOption[]
   disabledCategoryIds: string[]
 }
 
@@ -311,13 +299,13 @@ const AddProductForm = ({ brands, categoryOptions, disabledCategoryIds }: AddPro
                       <NumberInputField control={form.control} label="Sell price" name="baseSellPrice" step={0.01} min={0} prependText="$" disabled={isBusy} />
                     </div>
 
-                    <SelectTreeField
+                    <CascaderField
                       control={form.control}
                       label="Category"
                       name="categoryId"
                       options={categoryOptions}
                       disabledOptions={disabledCategoryIds}
-                      branchesSelectable={false}
+                      leafOnly
                       disabled={isBusy}
                       placeholder="Select a category"
                       description="Products go in the most specific category, one without subcategories."
