@@ -20,7 +20,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
   const params = await searchParams
 
   const productsParams: ProductsParams = {
-    name: getStringParam(params.name),
+    search: getStringParam(params.search),
     status: getEnumParam(params.status, Object.values(Status)),
     page: getPositiveIntegerParam(params.page, 1),
     pageSize: getPositiveIntegerParam(params.pageSize, 10, MAX_PRODUCTS_PAGE_SIZE),

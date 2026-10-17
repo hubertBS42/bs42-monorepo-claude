@@ -35,6 +35,14 @@ const genConditionBadge = (condition: Condition) => (
   </Badge>
 )
 
+// A dash for an empty value, with the meaning spelt out for screen readers
+const emptyCell = (label: string) => (
+  <span className="text-muted-foreground">
+    <span aria-hidden="true">—</span>
+    <span className="sr-only">{label}</span>
+  </span>
+)
+
 export const getProductHref = (product: ProductListItem) => `/catalogue/products/${product.id}/edit`
 
 export const columns: ColumnDef<ProductListItem, unknown>[] = [
@@ -77,16 +85,42 @@ export const columns: ColumnDef<ProductListItem, unknown>[] = [
   },
   {
     accessorKey: "baseSellPrice",
-    header: () => <ColumnHeader title="Sell Price" sortKey="baseSellPrice" />,
-    cell: ({ row }) => formatCurrency(row.original.baseSellPrice),
+    // Stores set their own prices per listing, so this is the starting point rather than what customers pay
+    header: () => <ColumnHeader title="Base Price" sortKey="baseSellPrice" />,
+    cell: ({ row }) => (
+      <div className="grid gap-y-0.5">
+        <span>{formatCurrency(row.original.baseSellPrice)}</span>
+        <span className="text-[11px] text-muted-foreground">Buy {formatCurrency(row.original.baseBuyPrice)}</span>
+      </div>
+    ),
   },
   {
-    accessorKey: "category",
+    accessorKey: "categoryPath",
     header: () => <ColumnHeader title="Category" />,
     cell: ({ row }) => {
-      const category = row.original.category
-      return <Badge variant="outline">{category.name}</Badge>
+      const segments = row.original.categoryPath.split(" / ")
+      const leaf = segments.pop()
+      return (
+        <span className="text-sm">
+          {segments.length > 0 && <span className="text-muted-foreground">{segments.join(" / ")} / </span>}
+          {leaf}
+        </span>
+      )
     },
+  },
+  {
+    accessorKey: "variantCount",
+    header: () => <ColumnHeader title="Variants" />,
+    cell: ({ row }) => {
+      const count = row.original.variantCount
+      return count > 0 ? <span>{count === 1 ? "1 variant" : `${count} variants`}</span> : emptyCell("No variants")
+    },
+  },
+  {
+    accessorKey: "storeCount",
+    // How many stores sell it, which is also how many lose it if it's archived
+    header: () => <ColumnHeader title="Stores" />,
+    cell: ({ row }) => (row.original.storeCount > 0 ? <span>{row.original.storeCount}</span> : emptyCell("Not listed in any store")),
   },
   {
     accessorKey: "condition",
@@ -94,18 +128,13 @@ export const columns: ColumnDef<ProductListItem, unknown>[] = [
     cell: ({ row }) => genConditionBadge(row.original.condition),
   },
   {
-    accessorKey: "hasVariants",
-    header: () => <ColumnHeader title="Type" />,
-    cell: ({ row }) => (row.original.hasVariants ? <Badge variant="secondary">Variable</Badge> : <Badge variant="outline">Simple</Badge>),
-  },
-  {
     accessorKey: "status",
     header: () => <ColumnHeader title="Status" sortKey="status" />,
     cell: ({ row }) => genStatusBadge(row.original.status),
   },
   {
-    accessorKey: "createdAt",
-    header: () => <ColumnHeader title="Created On" sortKey="createdAt" />,
-    cell: ({ row }) => <span>{formatDate(row.original.createdAt, "MMM d, yyyy, h:mm a")}</span>,
+    accessorKey: "updatedAt",
+    header: () => <ColumnHeader title="Updated" sortKey="updatedAt" />,
+    cell: ({ row }) => <span>{formatDate(row.original.updatedAt, "MMM d, yyyy")}</span>,
   },
 ]

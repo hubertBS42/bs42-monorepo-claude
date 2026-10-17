@@ -1,6 +1,6 @@
 import { PaginationParams, PaginatedResult } from "@workspace/contracts"
 import { Brand, Category, Organization, Prisma, User } from "@workspace/db/client"
-import { OrganizationStatus, Status } from "@workspace/db/enums"
+import { Condition, OrganizationStatus, Status } from "@workspace/db/enums"
 import type { LucideIcon } from "lucide-react"
 import type { SystemRole } from "@workspace/auth/system-permissions"
 
@@ -99,29 +99,27 @@ export type CategoryNode = Category & {
   children: CategoryNode[]
 }
 
-export type ProductListItem = Omit<ProductListRow, "baseSellPrice"> & { baseSellPrice: string }
-
-type ProductListRow = Prisma.ProductGetPayload<{
-  select: {
-    id: true
-    name: true
-    images: true
-    brand: {
-      select: { id: true; name: true }
-    }
-    baseSellPrice: true
-    category: {
-      select: { name: true }
-    }
-    condition: true
-    hasVariants: true
-    status: true
-    createdAt: true
-  }
-}>
+// A products table row. Prices are strings because Decimal can't be passed to client components
+export interface ProductListItem {
+  id: string
+  name: string
+  images: string[]
+  brand: { id: string; name: string }
+  baseSellPrice: string
+  baseBuyPrice: string
+  // From the top-level category down, e.g. "Men / Accessories": names only have to be unique among siblings
+  categoryPath: string
+  condition: Condition
+  status: Status
+  updatedAt: Date
+  // Archived variants and listings aren't counted; 0 variants means a simple product
+  variantCount: number
+  storeCount: number
+}
 
 export interface ProductsParams extends PaginationParams {
-  name?: string
+  // Matches the name, the SKU or barcode, or any variant's SKU or barcode
+  search?: string
   status?: Status
 }
 export type ProductsData = PaginatedResult<ProductListItem>
