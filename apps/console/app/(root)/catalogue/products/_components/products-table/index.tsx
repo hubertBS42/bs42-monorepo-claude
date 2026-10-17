@@ -2,17 +2,19 @@
 import { DataTable } from "@workspace/tables"
 import type { ProductsData } from "@/types"
 import { columns, getProductHref } from "./columns"
-import { filters } from "./filters"
+import { getProductFilters } from "./filters"
+import type { ProductFilterOptions } from "@/lib/data/products.data"
 
 interface ProductsTableProps {
   data: ProductsData
+  filterOptions: ProductFilterOptions
 }
 
-const ProductsTable = ({ data }: ProductsTableProps) => {
+const ProductsTable = ({ data, filterOptions }: ProductsTableProps) => {
   return (
     <DataTable
       columns={columns}
-      filters={filters}
+      filters={getProductFilters(filterOptions)}
       data={data.data}
       getRowHref={getProductHref}
       pagination={{

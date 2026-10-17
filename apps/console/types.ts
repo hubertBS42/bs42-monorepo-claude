@@ -109,7 +109,6 @@ export interface ProductListItem {
   baseBuyPrice: string
   // From the top-level category down, e.g. "Men / Accessories": names only have to be unique among siblings
   categoryPath: string
-  condition: Condition
   status: Status
   updatedAt: Date
   // Archived variants and listings aren't counted; 0 variants means a simple product
@@ -121,6 +120,11 @@ export interface ProductsParams extends PaginationParams {
   // Matches the name, the SKU or barcode, or any variant's SKU or barcode
   search?: string
   status?: Status
+  brandId?: string
+  // Includes the categories under it
+  categoryId?: string
+  condition?: Condition
+  hasVariants?: boolean
 }
 export type ProductsData = PaginatedResult<ProductListItem>
 

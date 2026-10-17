@@ -1,11 +1,18 @@
 import { requireConsoleAdmin } from "@/lib/auth-guard"
 import type { Metadata } from "next"
 import type { ProductsParams } from "@/types"
-import { getProductsForTable, MAX_PRODUCTS_PAGE_SIZE, PRODUCT_SORT_FIELDS } from "@/lib/data/products.data"
+import { getProductFilterOptions, getProductsForTable, MAX_PRODUCTS_PAGE_SIZE, PRODUCT_SORT_FIELDS } from "@/lib/data/products.data"
 import { getEnumParam, getOrderParam, getPositiveIntegerParam, getSortParam, getStringParam } from "@workspace/utils/search-params"
 import AddButton from "@/components/add-button"
 import ProductsTable from "./_components/products-table"
-import { Status } from "@workspace/db/enums"
+import { Condition, Status } from "@workspace/db/enums"
+import { z } from "zod"
+
+// The ids go straight into a uuid column, where anything else is a database error rather than "no match"
+const getUuidParam = (value: string | string[] | undefined) => {
+  const id = getStringParam(value)
+  return id && z.uuid().safeParse(id).success ? id : undefined
+}
 
 export const metadata: Metadata = { title: "Manage Products" }
 
@@ -22,14 +29,19 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
   const productsParams: ProductsParams = {
     search: getStringParam(params.search),
     status: getEnumParam(params.status, Object.values(Status)),
+    brandId: getUuidParam(params.brandId),
+    categoryId: getUuidParam(params.categoryId),
+    condition: getEnumParam(params.condition, Object.values(Condition)),
+    hasVariants: { true: true, false: false, none: undefined }[getEnumParam(params.hasVariants, ["true", "false"]) ?? "none"],
     page: getPositiveIntegerParam(params.page, 1),
     pageSize: getPositiveIntegerParam(params.pageSize, 10, MAX_PRODUCTS_PAGE_SIZE),
     sort: getSortParam(params.sort, PRODUCT_SORT_FIELDS),
     order: getOrderParam(params.order),
   }
 
-  const result = await getProductsForTable(productsParams)
+  const [result, filterOptions] = await Promise.all([getProductsForTable(productsParams), getProductFilterOptions()])
   if (!result.success) throw new Error(result.error)
+  if (!filterOptions.success) throw new Error(filterOptions.error)
 
   return (
     <main className="flex flex-col gap-y-6">
@@ -41,7 +53,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
 
         <AddButton label="Add Product" url="/catalogue/products/add" />
       </div>
-      <ProductsTable data={result.data} />
+      <ProductsTable data={result.data} filterOptions={filterOptions.data} />
     </main>
   )
 }

@@ -6,10 +6,9 @@ import { Checkbox } from "@workspace/ui/components/checkbox"
 import { ColumnHeader, RowLink } from "@workspace/tables"
 import Link from "next/link"
 import { capitalizeWord } from "@workspace/utils/text"
-import type { Status, Condition } from "@workspace/db/enums"
+import type { Status } from "@workspace/db/enums"
 import type { ProductListItem } from "@/types"
 import { formatCurrency } from "@workspace/utils/currency"
-import { CONDITION_LABELS } from "@/constants"
 
 // Archived is a normal end state, not an error, so it's muted rather than red
 const statusBadgeVariants: Record<Status, "outline" | "success" | "secondary"> = {
@@ -18,22 +17,7 @@ const statusBadgeVariants: Record<Status, "outline" | "success" | "secondary"> =
   ARCHIVED: "secondary",
 }
 
-// Badge has too few variants for five conditions, so each gets its own tint in the style of the success variant.
-// Condition isn't an error state, so none of them is red.
-const conditionBadgeClasses: Record<Condition, string> = {
-  NEW: "bg-green-600/10 text-green-700 dark:bg-green-400/10 dark:text-green-400",
-  USED_LIKE_NEW: "bg-teal-600/10 text-teal-700 dark:bg-teal-400/10 dark:text-teal-400",
-  REFURBISHED: "bg-blue-600/10 text-blue-700 dark:bg-blue-400/10 dark:text-blue-400",
-  USED_GOOD: "bg-amber-600/10 text-amber-700 dark:bg-amber-400/10 dark:text-amber-400",
-  USED_FAIR: "bg-orange-600/10 text-orange-700 dark:bg-orange-400/10 dark:text-orange-400",
-}
-
 const genStatusBadge = (status: Status) => <Badge variant={statusBadgeVariants[status]}>{capitalizeWord(status)}</Badge>
-const genConditionBadge = (condition: Condition) => (
-  <Badge variant="secondary" className={conditionBadgeClasses[condition]}>
-    {CONDITION_LABELS[condition]}
-  </Badge>
-)
 
 // A dash for an empty value, with the meaning spelt out for screen readers
 const emptyCell = (label: string) => (
@@ -121,11 +105,6 @@ export const columns: ColumnDef<ProductListItem, unknown>[] = [
     // How many stores sell it, which is also how many lose it if it's archived
     header: () => <ColumnHeader title="Stores" />,
     cell: ({ row }) => (row.original.storeCount > 0 ? <span>{row.original.storeCount}</span> : emptyCell("Not listed in any store")),
-  },
-  {
-    accessorKey: "condition",
-    header: () => <ColumnHeader title="Condition" sortKey="condition" />,
-    cell: ({ row }) => genConditionBadge(row.original.condition),
   },
   {
     accessorKey: "status",
