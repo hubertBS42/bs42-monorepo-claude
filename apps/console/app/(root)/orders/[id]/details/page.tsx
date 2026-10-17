@@ -11,10 +11,11 @@ import { OrderStatusBadge, PaymentStatusBadge } from "@/components/order-badges"
 import { Detail, ghs, OrderCustomerCard, OrderLinesTable, OrderNotesCard, OrderTimelineCard, OrderTotalsSummary } from "@/components/orders/order-details"
 import { EditOrderCustomer, EditOrderDelivery, EditOrderNotes } from "@/components/orders/order-edits"
 import RecordPayment from "@/components/orders/record-payment"
+import OrderRefunds from "@/components/orders/refund-order"
 import UpdateOrderStatus from "@/components/orders/update-order-status"
 import { requireSystemPermission } from "@/lib/auth-guard"
 import { getOrderDetails } from "@/lib/data/orders.data"
-import { ORDER_STATUS_LABELS, PAYMENT_METHOD_LABELS } from "@/lib/order-status"
+import { isPaid, nextOrderStatuses, ORDER_STATUS_LABELS, PAYMENT_METHOD_LABELS } from "@/lib/order-status"
 
 export const metadata: Metadata = {
   title: "Order Details",
@@ -112,6 +113,17 @@ export default async function OrderDetailsPage({ params }: OrderDetailsPageProps
                 {hasRefunds && <Detail label="Refunded">{ghs(order.refundedGhs)}</Detail>}
               </div>
               {canBePaid && <RecordPayment storeId={null} orderId={order.id} totalGhs={order.totals.totalGhs} defaultMethod={order.paymentMethod} />}
+              {/* Money the order still holds can go back; the buttons check for superAdmin themselves */}
+              {isPaid(order.paymentStatus) && (
+                <OrderRefunds
+                  orderId={order.id}
+                  refundedGhs={order.refundedGhs}
+                  refundableGhs={order.refundableGhs}
+                  paymentMethod={order.paymentMethod}
+                  status={order.status}
+                  canCancel={nextOrderStatuses(order.status, order.shippingMethod).includes(OrderStatus.CANCELLED)}
+                />
+              )}
             </CardContent>
           </Card>
 

@@ -169,3 +169,27 @@ const orderEditTarget = { orderId: z.uuid("Invalid order ID") }
 export const updateOrderCustomerSchema = orderCustomerFormSchema.extend(orderEditTarget)
 export const updateOrderDeliverySchema = z.object(deliveryFields).extend(orderEditTarget).superRefine(checkDelivery)
 export const updateOrderNotesSchema = orderNotesFormSchema.extend(orderEditTarget)
+
+// Refunds are the platform's, for superAdmins. The page sends the refunded total it showed: the action refuses if
+// someone refunded the order since (REFUNDS_CHANGED), so the same money can't go back twice.
+const refundFields = {
+  method: z.enum(PaymentMethod, "Choose how the money goes back"),
+  reason: z.string().trim().min(1, "Give a reason, which the customer is told").max(500, "Keep the reason under 500 characters"),
+}
+const refundTarget = {
+  orderId: z.uuid("Invalid order ID"),
+  refundedGhs: z.string().regex(/^\d+(\.\d{1,2})?$/, "Invalid amount"),
+}
+
+// The amount starts empty, so a refund is always typed, never the whole order by default
+export const refundOrderFormSchema = z.object({
+  amountGhs: z
+    .union([decimalSchema, z.literal("")])
+    .refine((value) => value !== "" && value > 0, "Enter an amount above zero")
+    .transform((value) => value as number),
+  ...refundFields,
+})
+export const refundOrderSchema = refundOrderFormSchema.extend(refundTarget)
+
+export const cancelAndRefundFormSchema = z.object(refundFields)
+export const cancelAndRefundOrderSchema = cancelAndRefundFormSchema.extend({ ...refundTarget, currentStatus: z.enum(OrderStatus) })
