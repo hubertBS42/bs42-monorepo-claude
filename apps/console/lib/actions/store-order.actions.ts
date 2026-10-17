@@ -6,32 +6,29 @@ import { formatError } from "@workspace/auth/format-error"
 import { ActionResponse, DataResponse } from "@workspace/contracts"
 import { prisma } from "@workspace/db"
 import { Prisma } from "@workspace/db/client"
-import { OrderStatus, PaymentStatus, ShippingMethod, Status } from "@workspace/db/enums"
+import { ShippingMethod, Status } from "@workspace/db/enums"
 import { hasStorePermission, requireConsoleAccess } from "@/lib/auth-guard"
 import { getLatestExchangeRate, type ExchangeRateInfo } from "@/lib/data/exchange-rates.data"
-import { sendOrderEmail, statusEmailEvent } from "@/lib/order-emails"
+import { sendOrderEmail } from "@/lib/order-emails"
 import { priceOrder, type PricedOrder } from "@/lib/order-pricing"
-import { isPaid, nextOrderStatuses } from "@/lib/order-status"
+import { editPendingOrder, orderForUpdateSelect, recordOrderPayment, updateOrderStatus, type Failure } from "@/lib/order-updates"
 import {
   createStoreOrderSchema,
   findOrderCustomerSchema,
   previewStoreOrderSchema,
   recordStorePaymentSchema,
   searchOrderableListingsSchema,
-  updateOrderCustomerSchema,
-  updateOrderDeliverySchema,
-  updateOrderNotesSchema,
+  updateStoreOrderCustomerSchema,
+  updateStoreOrderDeliverySchema,
+  updateStoreOrderNotesSchema,
   updateStoreOrderStatusSchema,
 } from "@/lib/schemas/order.schemas"
-import { changeOrderStatus, createStoreOrder, OrderItemError, resolveOrderLines, StatusChangedError, type ResolvedLine } from "@/lib/store-order-writes"
+import { createStoreOrder, OrderItemError, resolveOrderLines, type ResolvedLine } from "@/lib/store-order-writes"
 import type { OrderableListing, OrderCustomer, OrderPreview } from "@/types"
 
 // Every export here is a public endpoint, so every input is validated, and each one calls requireConsoleAccess
 // before its try block (its redirect throws, which the catch would swallow). A store manages only orders made up
 // entirely of its own items; an order spanning stores is the platform's (the global orders pages).
-
-// An error reply, which fits both ActionResponse and DataResponse
-type Failure = Extract<ActionResponse, { success: false }>
 
 function invalidInput(error: z.ZodError): Failure {
   return { success: false, error: error.issues[0]?.message ?? "Invalid input", code: "INVALID" }
@@ -40,30 +37,13 @@ function invalidInput(error: z.ZodError): Failure {
 const FORBIDDEN: Failure = { success: false, error: "Your role in this store can't manage orders.", code: "FORBIDDEN" }
 const NOT_FOUND: Failure = { success: false, error: "Order not found.", code: "NOT_FOUND" }
 const MULTI_STORE: Failure = { success: false, error: "This order has items from other stores, so the platform manages it.", code: "MULTI_STORE" }
-const STATUS_CHANGED: Failure = { success: false, error: "This order's status was changed by someone else. Refresh the page to see it.", code: "STATUS_CHANGED" }
+const PAID_ORDER: Failure = { success: false, error: "This order has been paid, so cancelling it needs a refund. Ask the platform to cancel and refund it.", code: "PAID_ORDER" }
 
 const TRANSACTION_OPTIONS = { maxWait: 10_000, timeout: 30_000 }
 
-// The order with what the actions need, or a response when the store can't manage it
+// The order with what the updates need, or a response when the store can't manage it
 async function loadManageableOrder(orderId: string, storeId: string) {
-  const order = await prisma.order.findFirst({
-    where: { id: orderId, orderItems: { some: { organizationId: storeId } } },
-    select: {
-      status: true,
-      paymentStatus: true,
-      shippingMethod: true,
-      orderItems: {
-        select: {
-          organizationId: true,
-          quantity: true,
-          storeListingId: true,
-          storeListingVariantId: true,
-          storeListing: { select: { trackInventory: true } },
-          storeListingVariant: { select: { trackInventory: true } },
-        },
-      },
-    },
-  })
+  const order = await prisma.order.findFirst({ where: { id: orderId, orderItems: { some: { organizationId: storeId } } }, select: orderForUpdateSelect })
   if (!order) return { problem: NOT_FOUND }
   if (order.orderItems.some((item) => item.organizationId !== storeId)) return { problem: MULTI_STORE }
   return { order }
@@ -75,40 +55,15 @@ export async function updateStoreOrderStatusAction(input: z.input<typeof updateS
   try {
     const parsed = updateStoreOrderStatusSchema.safeParse(input)
     if (!parsed.success) return invalidInput(parsed.error)
-    const { storeId, orderId, status, currentStatus, note } = parsed.data
+    const { storeId, orderId, ...change } = parsed.data
 
     if (!(await hasStorePermission(session.user.id, storeId, { order: ["update"] }))) return FORBIDDEN
 
     const { order, problem } = await loadManageableOrder(orderId, storeId)
     if (problem) return problem
-    if (order.status !== currentStatus) return STATUS_CHANGED
 
-    if (!nextOrderStatuses(currentStatus, order.shippingMethod).includes(status)) {
-      return { success: false, error: "The order can't move to that status from where it is.", code: "INVALID_TRANSITION" }
-    }
-    if (status === OrderStatus.CANCELLED && isPaid(order.paymentStatus)) {
-      return { success: false, error: "This order has been paid, so cancelling it needs a refund. Ask the platform to cancel and refund it.", code: "PAID_ORDER" }
-    }
-    if (status === OrderStatus.COMPLETED && order.paymentStatus !== PaymentStatus.PAID) {
-      return { success: false, error: "Record the payment before completing the order.", code: "UNPAID" }
-    }
-
-    const items = order.orderItems.map((item) => ({
-      quantity: item.quantity,
-      storeListingId: item.storeListingId,
-      storeListingVariantId: item.storeListingVariantId,
-      listingTracks: item.storeListing.trackInventory,
-      variantTracks: item.storeListingVariant?.trackInventory ?? false,
-    }))
-    await prisma.$transaction((tx) => changeOrderStatus(tx, { orderId, from: currentStatus, to: status, note: note || null, changedById: session.user.id, items }), TRANSACTION_OPTIONS)
-
-    // Only once the change is saved: after() also runs when an action fails
-    const event = statusEmailEvent(status)
-    if (event) after(() => sendOrderEmail(orderId, event, note || null))
-
-    return { success: true }
+    return await updateOrderStatus(order, { ...change, orderId, changedById: session.user.id }, PAID_ORDER)
   } catch (error) {
-    if (error instanceof StatusChangedError) return STATUS_CHANGED
     return { success: false, error: formatError(error) }
   }
 }
@@ -126,19 +81,8 @@ export async function recordStorePaymentAction(input: z.input<typeof recordStore
 
     const { order, problem } = await loadManageableOrder(orderId, storeId)
     if (problem) return problem
-    if (order.status === OrderStatus.CANCELLED) return { success: false, error: "This order was cancelled, so it can't be paid.", code: "CANCELLED" }
 
-    // Only an unpaid order, so a payment can't be recorded twice
-    const { count } = await prisma.order.updateMany({
-      where: { id: orderId, paymentStatus: { in: [PaymentStatus.PENDING, PaymentStatus.FAILED] }, status: { not: OrderStatus.CANCELLED } },
-      data: { paymentStatus: PaymentStatus.PAID, paymentMethod, paidAt: new Date(), paymentRecordedById: session.user.id },
-    })
-    if (count === 0) return { success: false, error: "This order's payment was already recorded, or it was cancelled. Refresh the page.", code: "PAYMENT_CHANGED" }
-
-    // Only once the payment is saved: after() also runs when an action fails
-    after(() => sendOrderEmail(orderId, "PAYMENT_RECEIVED"))
-
-    return { success: true }
+    return await recordOrderPayment(order, { orderId, paymentMethod, recordedById: session.user.id })
   } catch (error) {
     return { success: false, error: formatError(error) }
   }
@@ -432,28 +376,25 @@ export async function searchOrderableListingsAction(input: z.input<typeof search
 // EDITING A PENDING ORDER
 // ============================================
 
-const NOT_PENDING: Failure = { success: false, error: "Only a pending order can be edited, and this one has moved on. Refresh the page.", code: "NOT_PENDING" }
-
-// Every edit needs order:update, an order of the store's own items, and the order still pending when it's written
-async function editPendingOrder(userId: string, storeId: string, orderId: string, data: Prisma.OrderUpdateManyMutationInput): Promise<ActionResponse> {
+// Every edit needs order:update and an order of the store's own items; editPendingOrder writes only while it's pending
+async function editStorePendingOrder(userId: string, storeId: string, orderId: string, data: Prisma.OrderUpdateManyMutationInput): Promise<ActionResponse> {
   if (!(await hasStorePermission(userId, storeId, { order: ["update"] }))) return FORBIDDEN
 
   const { problem } = await loadManageableOrder(orderId, storeId)
   if (problem) return problem
 
-  const { count } = await prisma.order.updateMany({ where: { id: orderId, status: OrderStatus.PENDING }, data })
-  return count === 0 ? NOT_PENDING : { success: true }
+  return editPendingOrder(orderId, data)
 }
 
-export async function updateOrderCustomerAction(input: z.input<typeof updateOrderCustomerSchema>): Promise<ActionResponse> {
+export async function updateStoreOrderCustomerAction(input: z.input<typeof updateStoreOrderCustomerSchema>): Promise<ActionResponse> {
   const session = await requireConsoleAccess()
 
   try {
-    const parsed = updateOrderCustomerSchema.safeParse(input)
+    const parsed = updateStoreOrderCustomerSchema.safeParse(input)
     if (!parsed.success) return invalidInput(parsed.error)
     const { storeId, orderId, customerName, customerEmail, customerPhone } = parsed.data
 
-    return await editPendingOrder(session.user.id, storeId, orderId, {
+    return await editStorePendingOrder(session.user.id, storeId, orderId, {
       customerName,
       customerEmail: customerEmail.toLowerCase() || null,
       customerPhone: customerPhone || null,
@@ -464,18 +405,18 @@ export async function updateOrderCustomerAction(input: z.input<typeof updateOrde
 }
 
 // The address only: switching between delivery and pickup would change the shipping fee, so it isn't offered
-export async function updateOrderDeliveryAction(input: z.input<typeof updateOrderDeliverySchema>): Promise<ActionResponse> {
+export async function updateStoreOrderDeliveryAction(input: z.input<typeof updateStoreOrderDeliverySchema>): Promise<ActionResponse> {
   const session = await requireConsoleAccess()
 
   try {
-    const parsed = updateOrderDeliverySchema.safeParse(input)
+    const parsed = updateStoreOrderDeliverySchema.safeParse(input)
     if (!parsed.success) return invalidInput(parsed.error)
     const { storeId, orderId, shippingName, shippingPhone, shippingLine1, shippingLine2, shippingRegion, shippingTown } = parsed.data
 
     const order = await prisma.order.findUnique({ where: { id: orderId }, select: { shippingMethod: true } })
     if (order?.shippingMethod !== ShippingMethod.DELIVERY) return { success: false, error: "This order is a pickup, so it has no delivery address.", code: "NOT_DELIVERY" }
 
-    return await editPendingOrder(session.user.id, storeId, orderId, {
+    return await editStorePendingOrder(session.user.id, storeId, orderId, {
       shippingName,
       shippingPhone,
       shippingLine1,
@@ -488,15 +429,15 @@ export async function updateOrderDeliveryAction(input: z.input<typeof updateOrde
   }
 }
 
-export async function updateOrderNotesAction(input: z.input<typeof updateOrderNotesSchema>): Promise<ActionResponse> {
+export async function updateStoreOrderNotesAction(input: z.input<typeof updateStoreOrderNotesSchema>): Promise<ActionResponse> {
   const session = await requireConsoleAccess()
 
   try {
-    const parsed = updateOrderNotesSchema.safeParse(input)
+    const parsed = updateStoreOrderNotesSchema.safeParse(input)
     if (!parsed.success) return invalidInput(parsed.error)
     const { storeId, orderId, notes } = parsed.data
 
-    return await editPendingOrder(session.user.id, storeId, orderId, { notes: notes || null })
+    return await editStorePendingOrder(session.user.id, storeId, orderId, { notes: notes || null })
   } catch (error) {
     return { success: false, error: formatError(error) }
   }

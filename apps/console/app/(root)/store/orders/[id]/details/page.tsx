@@ -1,4 +1,3 @@
-/* eslint-disable @next/next/no-img-element -- next/image would need the storage host in images.remotePatterns */
 import type { Metadata } from "next"
 import { notFound, redirect } from "next/navigation"
 import z from "zod"
@@ -7,17 +6,16 @@ import { OrderStatus, PaymentStatus } from "@workspace/db/enums"
 import { Badge } from "@workspace/ui/components/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@workspace/ui/components/card"
 import { Separator } from "@workspace/ui/components/separator"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@workspace/ui/components/table"
-import { formatCurrency } from "@workspace/utils/currency"
 import { formatDate } from "@workspace/utils/date"
 import BackButton from "@/components/back-button"
 import { OrderStatusBadge, PaymentStatusBadge } from "@/components/order-badges"
+import { Detail, ghs, OrderCustomerCard, OrderLinesTable, OrderNotesCard, OrderTimelineCard, OrderTotalsSummary, TotalRow } from "@/components/orders/order-details"
+import { EditOrderCustomer, EditOrderDelivery, EditOrderNotes } from "@/components/orders/order-edits"
+import RecordPayment from "@/components/orders/record-payment"
+import UpdateOrderStatus from "@/components/orders/update-order-status"
 import { requireActiveStoreMember } from "@/lib/auth-guard"
 import { getStoreOrderDetails } from "@/lib/data/store-orders.data"
 import { ORDER_STATUS_LABELS, PAYMENT_METHOD_LABELS } from "@/lib/order-status"
-import { EditOrderCustomer, EditOrderDelivery, EditOrderNotes } from "./_components/order-edits"
-import RecordPayment from "./_components/record-payment"
-import UpdateOrderStatus from "./_components/update-order-status"
 
 export const metadata: Metadata = {
   title: "Order Details",
@@ -26,23 +24,6 @@ export const metadata: Metadata = {
 type OrderDetailsPageProps = {
   params: Promise<{ id: string }>
 }
-
-const ghs = (amount: string) => formatCurrency(amount, "GHS", "en-GH")
-
-// A label and value pair, as on the other details pages
-const Detail = ({ label, children }: { label: string; children: React.ReactNode }) => (
-  <div className="grid gap-1">
-    <p className="text-xs text-muted-foreground">{label}</p>
-    <div className="text-sm font-medium">{children}</div>
-  </div>
-)
-
-const TotalRow = ({ label, amount, strong }: { label: string; amount: string; strong?: boolean }) => (
-  <div className={strong ? "flex justify-between font-semibold" : "flex justify-between text-sm"}>
-    <span className={strong ? undefined : "text-muted-foreground"}>{label}</span>
-    <span>{amount}</span>
-  </div>
-)
 
 export default async function StoreOrderDetailsPage({ params }: OrderDetailsPageProps) {
   const { storeId, role } = await requireActiveStoreMember()
@@ -90,55 +71,10 @@ export default async function StoreOrderDetailsPage({ params }: OrderDetailsPage
               </CardDescription>
             </CardHeader>
             <CardContent className="grid gap-4">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Item</TableHead>
-                    <TableHead className="text-right">Qty</TableHead>
-                    <TableHead className="text-right">Unit price</TableHead>
-                    <TableHead className="text-right">Total</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {order.lines.map((line) => (
-                    <TableRow key={line.id}>
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <div className="size-10 shrink-0 overflow-hidden rounded bg-muted">{line.productImage && <img alt="" src={line.productImage} className="size-full object-cover" />}</div>
-                          <div className="grid gap-0.5">
-                            <span>{line.productName}</span>
-                            {line.variantDescription && <span className="text-xs text-muted-foreground">{line.variantDescription}</span>}
-                            {line.sku && <span className="font-mono text-[11px] text-muted-foreground">{line.sku}</span>}
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right">{line.quantity}</TableCell>
-                      <TableCell className="text-right">{ghs(line.unitPriceGhs)}</TableCell>
-                      <TableCell className="text-right">{ghs(line.totalPriceGhs)}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-
+              <OrderLinesTable lines={order.lines} />
               <Separator />
-
               {totals ? (
-                <div className="ml-auto grid w-full max-w-xs gap-1.5">
-                  <TotalRow label="Subtotal" amount={ghs(totals.subtotalGhs)} />
-                  {/* A zero discount isn't one */}
-                  {totals.discountAmountGhs && Number(totals.discountAmountGhs) > 0 && (
-                    <TotalRow
-                      label={`Discount${totals.discountType === "PERCENTAGE" && totals.discountValue ? ` (${Number(totals.discountValue)}%)` : ""}`}
-                      amount={`−${ghs(totals.discountAmountGhs)}`}
-                    />
-                  )}
-                  {totals.discountReason && <p className="text-right text-xs text-muted-foreground">{totals.discountReason}</p>}
-                  <TotalRow label="Shipping" amount={ghs(totals.shippingGhs)} />
-                  <TotalRow label={`Tax${Number(totals.taxRate) ? ` (${(Number(totals.taxRate) * 100).toFixed(2).replace(/\.?0+$/, "")}%)` : ""}`} amount={ghs(totals.taxGhs)} />
-                  <Separator className="my-1" />
-                  <TotalRow label="Total" amount={ghs(totals.totalGhs)} strong />
-                  <p className="text-right text-xs text-muted-foreground">{`At GH₵${Number(order.exchangeRate)} per $1`}</p>
-                </div>
+                <OrderTotalsSummary totals={totals} exchangeRate={order.exchangeRate} />
               ) : (
                 <div className="ml-auto grid w-full max-w-xs gap-1.5">
                   {/* Shipping and the order total cover other stores' items too */}
@@ -149,29 +85,7 @@ export default async function StoreOrderDetailsPage({ params }: OrderDetailsPage
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Timeline</CardTitle>
-              <CardDescription>Every status change, newest first.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {order.timeline.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No status changes yet.</p>
-              ) : (
-                <ol className="grid gap-4">
-                  {order.timeline.map((entry) => (
-                    <li key={entry.id} className="grid gap-0.5 border-l-2 pl-4">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-sm font-medium">{entry.title}</span>
-                        <span className="text-xs text-muted-foreground">{`${formatDate(entry.createdAt, "MMM d, yyyy, h:mm a")}${entry.changedBy ? ` · ${entry.changedBy}` : ""}`}</span>
-                      </div>
-                      {entry.note && <p className="text-sm text-muted-foreground">{entry.note}</p>}
-                    </li>
-                  ))}
-                </ol>
-              )}
-            </CardContent>
-          </Card>
+          <OrderTimelineCard timeline={order.timeline} />
         </div>
 
         {/* Right column */}
@@ -209,45 +123,20 @@ export default async function StoreOrderDetailsPage({ params }: OrderDetailsPage
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Customer</CardTitle>
-              <CardDescription>{`${order.customer.isRegistered ? "Has an account" : "Walk-in, without an account"} · ${order.shipping ? "Delivery" : "Pickup"}`}</CardDescription>
-            </CardHeader>
-            <CardContent className="grid gap-4">
-              <Detail label="Name">{order.customer.name}</Detail>
-              <Detail label="Email">{order.customer.email ?? <span className="text-muted-foreground">Not given</span>}</Detail>
-              <Detail label="Phone">{order.customer.phone ?? <span className="text-muted-foreground">Not given</span>}</Detail>
-              <Separator />
-              {order.shipping ? (
+          <OrderCustomerCard
+            customer={order.customer}
+            shipping={order.shipping}
+            actions={
+              isEditable && (
                 <>
-                  <Detail label="Deliver to">{[order.shipping.name, order.shipping.phone].filter(Boolean).join(" · ") || "—"}</Detail>
-                  <Detail label="Address">{[order.shipping.line1, order.shipping.line2, order.shipping.town, order.shipping.region].filter(Boolean).join(", ") || "—"}</Detail>
-                </>
-              ) : (
-                <Detail label="Pickup">The customer collects the order from the store.</Detail>
-              )}
-              {isEditable && (
-                <div className="flex flex-wrap gap-1">
                   <EditOrderCustomer storeId={storeId} orderId={order.id} customer={order.customer} />
                   {order.shipping && <EditOrderDelivery storeId={storeId} orderId={order.id} shipping={order.shipping} />}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                </>
+              )
+            }
+          />
 
-          {(order.notes || isEditable) && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Notes</CardTitle>
-                <CardDescription>For the store, not the customer.</CardDescription>
-              </CardHeader>
-              <CardContent className="grid gap-2">
-                {order.notes ? <p className="text-sm whitespace-pre-line">{order.notes}</p> : <p className="text-sm text-muted-foreground">No notes.</p>}
-                {isEditable && <EditOrderNotes storeId={storeId} orderId={order.id} notes={order.notes} />}
-              </CardContent>
-            </Card>
-          )}
+          <OrderNotesCard notes={order.notes} actions={isEditable && <EditOrderNotes storeId={storeId} orderId={order.id} notes={order.notes} />} />
         </div>
       </div>
     </main>

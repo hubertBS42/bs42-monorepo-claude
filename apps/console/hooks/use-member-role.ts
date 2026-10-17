@@ -8,12 +8,14 @@ import { toast } from "@workspace/ui/components/toast"
 /**
  * The current user's role in the given store, or null when they aren't a member.
  * The result is keyed by organization id, so changing the id counts as loading
- * again and a stale role is never used for the wrong store.
+ * again and a stale role is never used for the wrong store. A null id (a component
+ * shared with the platform's pages) skips the request: no role, nothing loading.
  */
-export function useMemberRole(organizationId: string) {
+export function useMemberRole(organizationId: string | null) {
   const [result, setResult] = useState<{ organizationId: string; role: OrgRole | null } | null>(null)
 
   useEffect(() => {
+    if (!organizationId) return
     let isCurrent = true
 
     const fail = (message: string) => {
@@ -35,6 +37,7 @@ export function useMemberRole(organizationId: string) {
     }
   }, [organizationId])
 
+  if (!organizationId) return { role: null, isLoading: false }
   const current = result?.organizationId === organizationId ? result : null
   return { role: current?.role ?? null, isLoading: current === null }
 }

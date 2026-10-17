@@ -6,31 +6,37 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { SubmitHandler, useForm, useWatch } from "react-hook-form"
 import { z } from "zod"
 import { consoleAuthClient } from "@workspace/auth/console-client"
-import { OrderStatus, PaymentStatus, type ShippingMethod } from "@workspace/db/enums"
+import { hasSystemPermission } from "@workspace/auth/system-permissions"
+import { OrderStatus, type PaymentStatus, type ShippingMethod } from "@workspace/db/enums"
 import { SelectField, TextareaField } from "@workspace/forms"
 import { Button } from "@workspace/ui/components/button"
 import { Skeleton } from "@workspace/ui/components/skeleton"
 import { Spinner } from "@workspace/ui/components/spinner"
 import { toast } from "@workspace/ui/components/toast"
-import { useMemberRole } from "@/hooks/use-member-role"
+import { useCanUpdateOrders } from "@/hooks/use-can-update-orders"
+import { updateOrderStatusAction } from "@/lib/actions/order.actions"
 import { updateStoreOrderStatusAction } from "@/lib/actions/store-order.actions"
-import { isPaid, nextOrderStatuses, ORDER_STATUS_LABELS } from "@/lib/order-status"
+import { hasBeenPaid, isPaid, nextOrderStatuses, ORDER_STATUS_LABELS } from "@/lib/order-status"
 import { orderStatusFormSchema } from "@/lib/schemas/order.schemas"
 
 type FormInput = z.input<typeof orderStatusFormSchema>
 type FormOutput = z.output<typeof orderStatusFormSchema>
 
 interface UpdateOrderStatusProps {
-  storeId: string
+  // The store whose page this is, or null on the platform's pages
+  storeId: string | null
   order: { id: string; status: OrderStatus; paymentStatus: PaymentStatus; shippingMethod: ShippingMethod }
-  // Other stores' items too: the platform manages the order
+  // Other stores' items too: on a store's page, the platform manages the order
   isMultiStore: boolean
 }
 
 export default function UpdateOrderStatus({ storeId, order, isMultiStore }: UpdateOrderStatusProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
-  const { role, isLoading } = useMemberRole(storeId)
+  const { canUpdate, isLoading } = useCanUpdateOrders(storeId)
+  // Cancelling a paid order needs a refund, which only superAdmins give
+  const { data: session } = consoleAuthClient.useSession()
+  const canRefund = hasSystemPermission(session?.user.role, { order: ["refund"] })
 
   const options = nextOrderStatuses(order.status, order.shippingMethod).map((status) => ({ label: ORDER_STATUS_LABELS[status], value: status }))
   const form = useForm<FormInput, unknown, FormOutput>({
@@ -41,22 +47,23 @@ export default function UpdateOrderStatus({ storeId, order, isMultiStore }: Upda
 
   if (isLoading) return <Skeleton className="h-24 rounded-md" />
 
-  // checkRolePermission mirrors the store role; updateStoreOrderStatusAction checks again on the server
-  const canUpdate = role !== null && consoleAuthClient.organization.checkRolePermission({ role, permissions: { order: ["update"] } })
-
   // Shown as text because a disabled button never shows its title tooltip, and screen readers skip it
-  const blockedReason = isMultiStore
-    ? "This order has items from other stores, so the platform manages its status."
-    : !canUpdate
-      ? "Your role in this store can't change order statuses."
-      : options.length === 0
-        ? "This order is finished: its status can't change any more."
-        : null
+  const blockedReason =
+    storeId && isMultiStore
+      ? "This order has items from other stores, so the platform manages its status."
+      : !canUpdate
+        ? storeId
+          ? "Your role in this store can't change order statuses."
+          : "Your role can't change order statuses."
+        : options.length === 0
+          ? "This order is finished: its status can't change any more."
+          : null
   if (blockedReason) return <p className="text-sm text-muted-foreground">{blockedReason}</p>
 
   const onSubmit: SubmitHandler<FormOutput> = ({ status, note }) => {
     startTransition(async () => {
-      const response = await updateStoreOrderStatusAction({ storeId, orderId: order.id, status, note, currentStatus: order.status })
+      const change = { orderId: order.id, status, note, currentStatus: order.status }
+      const response = storeId ? await updateStoreOrderStatusAction({ ...change, storeId }) : await updateOrderStatusAction(change)
 
       if (!response.success) {
         toast.add({ title: "Unable to update the order", description: response.error, type: "error" })
@@ -71,11 +78,15 @@ export default function UpdateOrderStatus({ storeId, order, isMultiStore }: Upda
   }
 
   const cancelling = selected === OrderStatus.CANCELLED
-  // updateStoreOrderStatusAction refuses both; saying so here saves a round trip
+  // The actions refuse both; saying so here saves a round trip
   const blockedChoice =
     cancelling && isPaid(order.paymentStatus)
-      ? "This order has been paid, so only the platform can cancel it, with a refund."
-      : selected === OrderStatus.COMPLETED && order.paymentStatus !== PaymentStatus.PAID
+      ? storeId
+        ? "This order has been paid, so only the platform can cancel it, with a refund."
+        : canRefund
+          ? "This order has been paid, so cancelling it needs a refund. Use Cancel and refund instead."
+          : "This order has been paid, so cancelling it needs a refund. Ask a superAdmin to cancel and refund it."
+      : selected === OrderStatus.COMPLETED && !hasBeenPaid(order.paymentStatus)
         ? "Record the payment before completing the order."
         : null
 

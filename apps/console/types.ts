@@ -311,12 +311,14 @@ export interface OrderListItem {
 }
 export type OrdersData = PaginatedResult<OrderListItem>
 
-export interface StoreOrderLine {
+export interface OrderLine {
   id: string
   productName: string
   variantDescription: string | null
   sku: string | null
   productImage: string | null
+  // The store's name when the order was placed
+  storeName: string
   quantity: number
   unitPriceGhs: string
   totalPriceGhs: string
@@ -324,7 +326,29 @@ export interface StoreOrderLine {
   taxGhs: string
 }
 
-export interface StoreOrderDetails {
+// The whole order's amounts
+export interface OrderTotals {
+  subtotalGhs: string
+  discountType: DiscountType | null
+  discountValue: string | null
+  discountAmountGhs: string | null
+  discountReason: string | null
+  shippingGhs: string
+  taxRate: string
+  taxGhs: string
+  totalGhs: string
+}
+
+export interface OrderTimelineEntry {
+  id: string
+  title: string
+  note: string | null
+  changedBy: string | null
+  createdAt: Date
+}
+
+// What the store's and the platform's order pages both show
+interface OrderDetailsBase {
   id: string
   reference: string
   status: OrderStatus
@@ -336,28 +360,29 @@ export interface StoreOrderDetails {
   // Null for a pickup order
   shipping: { name: string | null; phone: string | null; line1: string | null; line2: string | null; region: string | null; town: string | null } | null
   notes: string | null
-  // This store's lines only
-  lines: StoreOrderLine[]
+  lines: OrderLine[]
   isMultiStore: boolean
-  // The whole order's amounts, only when every line is this store's
-  totals: {
-    subtotalGhs: string
-    discountType: DiscountType | null
-    discountValue: string | null
-    discountAmountGhs: string | null
-    discountReason: string | null
-    shippingGhs: string
-    taxRate: string
-    taxGhs: string
-    totalGhs: string
-  } | null
-  // This store's lines after their share of the discount, with their tax
-  storeTotalGhs: string
   exchangeRate: string
   createdBy: string | null
   createdAt: Date
-  // Status changes and a recorded payment, newest first
-  timeline: { id: string; title: string; note: string | null; changedBy: string | null; createdAt: Date }[]
+  // Status changes, a recorded payment and refunds, newest first
+  timeline: OrderTimelineEntry[]
+}
+
+export interface StoreOrderDetails extends OrderDetailsBase {
+  // Only when every line is this store's; lines holds this store's lines only
+  totals: OrderTotals | null
+  // This store's lines after their share of the discount, with their tax
+  storeTotalGhs: string
+}
+
+// The platform's view: every line, from every store
+export interface OrderDetails extends OrderDetailsBase {
+  totals: OrderTotals
+  storeNames: string[]
+  // The sum of the order's refunds so far, and what's left to refund (the total less that)
+  refundedGhs: string
+  refundableGhs: string
 }
 
 // A store listing as the create order wizard offers it: one row per way to buy it (the listing, or each variant)

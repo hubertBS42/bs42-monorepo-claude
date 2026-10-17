@@ -8,9 +8,8 @@ import { prisma } from "@workspace/db"
 import { Prisma } from "@workspace/db/client"
 import type { DataResponse } from "@workspace/contracts"
 import { getPaginationError } from "@workspace/utils/pagination"
-import { formatCurrency } from "@workspace/utils/currency"
 import { hasStorePermission } from "@/lib/auth-guard"
-import { ORDER_STATUS_LABELS, PAYMENT_METHOD_LABELS } from "@/lib/order-status"
+import { orderDetailsInclude, sumLines, toOrderDetailsBase, toOrderTotals } from "@/lib/order-details"
 
 export const MAX_STORE_ORDERS_PAGE_SIZE = 100
 // Not the total: for an order with other stores' items the table shows this store's share, which a sort can't follow
@@ -21,20 +20,6 @@ async function checkOrderAccess(storeId: string): Promise<DataResponse<never> | 
   if (!session) return { success: false, error: "Unauthorized" }
   if (!(await hasStorePermission(session.user.id, storeId, { order: ["read"] }))) return { success: false, error: "Forbidden" }
   return undefined
-}
-
-// Staff of other stores and the platform can appear on an order, so a missing name never falls back to their email
-function staffName(user: { name: string | null } | null) {
-  return user ? (user.name ?? "Staff") : null
-}
-
-// A line as the customer pays for it: after its share of the discount, with its tax
-function lineTotal(line: { totalPriceGhs: Prisma.Decimal; discountGhs: Prisma.Decimal; taxGhs: Prisma.Decimal }) {
-  return line.totalPriceGhs.minus(line.discountGhs).plus(line.taxGhs)
-}
-
-function sumLines(lines: { totalPriceGhs: Prisma.Decimal; discountGhs: Prisma.Decimal; taxGhs: Prisma.Decimal }[]) {
-  return lines.reduce((sum, line) => sum.plus(lineTotal(line)), new Prisma.Decimal(0))
 }
 
 // Orders with at least one of the store's items
@@ -116,12 +101,7 @@ export const getStoreOrderDetails = async (storeId: string, orderId: string): Pr
 
     const order = await prisma.order.findFirst({
       where: { id: orderId, orderItems: { some: { organizationId: storeId } } },
-      include: {
-        orderItems: { orderBy: { id: "asc" } },
-        statusHistory: { orderBy: { createdAt: "desc" }, include: { changedBy: { select: { name: true } } } },
-        createdBy: { select: { name: true } },
-        paymentRecordedBy: { select: { name: true } },
-      },
+      include: orderDetailsInclude,
     })
     if (!order) return { success: false, error: "Order not found", code: "NOT_FOUND" }
 
@@ -131,73 +111,10 @@ export const getStoreOrderDetails = async (storeId: string, orderId: string): Pr
     return {
       success: true,
       data: {
-        id: order.id,
-        reference: order.reference,
-        status: order.status,
-        paymentStatus: order.paymentStatus,
-        paymentMethod: order.paymentMethod,
-        paidAt: order.paidAt,
-        shippingMethod: order.shippingMethod,
-        customer: { name: order.customerName, email: order.customerEmail, phone: order.customerPhone, isRegistered: !!order.userId },
-        shipping:
-          order.shippingMethod === "DELIVERY"
-            ? { name: order.shippingName, phone: order.shippingPhone, line1: order.shippingLine1, line2: order.shippingLine2, region: order.shippingRegion, town: order.shippingTown }
-            : null,
-        notes: order.notes,
-        lines: ownLines.map((line) => ({
-          id: line.id,
-          productName: line.productName,
-          variantDescription: line.variantDescription,
-          sku: line.sku,
-          productImage: line.productImage,
-          quantity: line.quantity,
-          unitPriceGhs: line.unitPriceGhs.toString(),
-          totalPriceGhs: line.totalPriceGhs.toString(),
-          discountGhs: line.discountGhs.toString(),
-          taxGhs: line.taxGhs.toString(),
-        })),
-        isMultiStore,
-        // Shipping and the order's totals cover other stores' items too, so a store sees them only for its own orders
-        totals: isMultiStore
-          ? null
-          : {
-              subtotalGhs: order.subtotalGhs.toString(),
-              discountType: order.discountType,
-              discountValue: order.discountValue?.toString() ?? null,
-              discountAmountGhs: order.discountAmountGhs?.toString() ?? null,
-              discountReason: order.discountReason,
-              shippingGhs: order.shippingGhs.toString(),
-              taxRate: order.taxRate.toString(),
-              taxGhs: order.taxGhs.toString(),
-              totalGhs: order.totalGhs.toString(),
-            },
+        // The order's total and refunds cover other stores' items too, so a store sees them only for its own orders
+        ...toOrderDetailsBase(order, ownLines, !isMultiStore),
+        totals: isMultiStore ? null : toOrderTotals(order),
         storeTotalGhs: sumLines(ownLines).toString(),
-        exchangeRate: order.exchangeRate.toString(),
-        createdBy: staffName(order.createdBy),
-        createdAt: order.createdAt,
-        timeline: [
-          ...order.statusHistory.map((entry) => ({
-            id: entry.id,
-            title: ORDER_STATUS_LABELS[entry.status],
-            note: entry.note,
-            changedBy: staffName(entry.changedBy),
-            createdAt: entry.createdAt,
-          })),
-          // The order's total covers other stores' items too, so a store sees the amount only for its own orders
-          ...(order.paidAt
-            ? [
-                {
-                  id: "payment",
-                  title: "Payment recorded",
-                  note: isMultiStore
-                    ? PAYMENT_METHOD_LABELS[order.paymentMethod]
-                    : `${formatCurrency(order.totalGhs.toString(), "GHS", "en-GH")} by ${PAYMENT_METHOD_LABELS[order.paymentMethod].toLowerCase()}`,
-                  changedBy: staffName(order.paymentRecordedBy),
-                  createdAt: order.paidAt,
-                },
-              ]
-            : []),
-        ].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()),
       },
     }
   } catch (error) {

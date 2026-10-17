@@ -51,3 +51,8 @@ export function nextOrderStatuses(status: OrderStatus, shippingMethod: ShippingM
 export function isPaid(paymentStatus: PaymentStatus) {
   return paymentStatus === PaymentStatus.PAID || paymentStatus === PaymentStatus.PARTIALLY_REFUNDED
 }
+
+// Payment was taken at some point, whether or not any of it was refunded since: completing an order needs this
+export function hasBeenPaid(paymentStatus: PaymentStatus) {
+  return paymentStatus !== PaymentStatus.PENDING && paymentStatus !== PaymentStatus.FAILED
+}

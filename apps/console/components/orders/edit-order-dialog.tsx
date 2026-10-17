@@ -6,16 +6,16 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm, type DefaultValues, type FieldValues, type UseFormReturn } from "react-hook-form"
 import type { z } from "zod"
 import { Pencil } from "lucide-react"
-import { consoleAuthClient } from "@workspace/auth/console-client"
 import type { ActionResponse } from "@workspace/contracts"
 import { Button } from "@workspace/ui/components/button"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@workspace/ui/components/dialog"
 import { Spinner } from "@workspace/ui/components/spinner"
 import { toast } from "@workspace/ui/components/toast"
-import { useMemberRole } from "@/hooks/use-member-role"
+import { useCanUpdateOrders } from "@/hooks/use-can-update-orders"
 
 interface EditOrderDialogProps<T extends FieldValues> {
-  storeId: string
+  // The store whose page this is, or null on the platform's pages
+  storeId: string | null
   // "Edit customer"
   label: string
   title: string
@@ -26,18 +26,16 @@ interface EditOrderDialogProps<T extends FieldValues> {
   children: (form: UseFormReturn<T>, isPending: boolean) => ReactNode
 }
 
-// An edit of a pending order the store manages; the page only renders it for one. Hidden from roles that can't
+// An edit of a pending order; the page only renders it for one the viewer manages. Hidden from roles that can't
 // update orders, and the actions check again.
 export default function EditOrderDialog<T extends FieldValues>({ storeId, label, title, description, schema, values, save, children }: EditOrderDialogProps<T>) {
   const router = useRouter()
   const [isOpen, setIsOpen] = useState(false)
   const [isPending, startTransition] = useTransition()
-  const { role, isLoading } = useMemberRole(storeId)
+  const { canUpdate, isLoading } = useCanUpdateOrders(storeId)
   const form = useForm<T>({ resolver: zodResolver(schema), defaultValues: values as DefaultValues<T> })
 
-  if (isLoading) return null
-  const canUpdate = role !== null && consoleAuthClient.organization.checkRolePermission({ role, permissions: { order: ["update"] } })
-  if (!canUpdate) return null
+  if (isLoading || !canUpdate) return null
 
   const onSubmit = (submitted: T) => {
     startTransition(async () => {

@@ -1,6 +1,6 @@
 import "server-only"
 
-import type { OrdersData, OrdersParams } from "@/types"
+import type { OrderDetails, OrdersData, OrdersParams } from "@/types"
 import { formatError } from "@workspace/auth/format-error"
 import { consoleAuth } from "@workspace/auth/console"
 import { hasSystemPermission } from "@workspace/auth/system-permissions"
@@ -12,6 +12,7 @@ import { dayStart } from "@workspace/utils/date"
 import { getPaginationError } from "@workspace/utils/pagination"
 import { toPhoneSearch } from "@workspace/utils/phone"
 import { z } from "zod"
+import { orderDetailsInclude, toOrderDetailsBase, toOrderTotals } from "@/lib/order-details"
 
 // The platform's orders: every order, whichever stores' items it has. Stores see theirs in store-orders.data.ts.
 
@@ -112,6 +113,30 @@ export const getOrders = async (filters: OrdersParams = {}): Promise<DataRespons
         page,
         pageSize,
         totalPages: Math.ceil(total / pageSize),
+      },
+    }
+  } catch (error) {
+    return { success: false, error: formatError(error) }
+  }
+}
+
+export const getOrderDetails = async (orderId: string): Promise<DataResponse<OrderDetails>> => {
+  try {
+    const denied = await checkOrderAccess()
+    if (denied) return denied
+
+    const order = await prisma.order.findUnique({ where: { id: orderId }, include: orderDetailsInclude })
+    if (!order) return { success: false, error: "Order not found", code: "NOT_FOUND" }
+
+    const refunded = order.refunds.reduce((sum, refund) => sum.plus(refund.amountGhs), new Prisma.Decimal(0))
+    return {
+      success: true,
+      data: {
+        ...toOrderDetailsBase(order, order.orderItems, true),
+        totals: toOrderTotals(order),
+        storeNames: [...new Set(order.orderItems.map((line) => line.storeName))],
+        refundedGhs: refunded.toString(),
+        refundableGhs: order.totalGhs.minus(refunded).toString(),
       },
     }
   } catch (error) {

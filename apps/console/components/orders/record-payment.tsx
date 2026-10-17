@@ -2,7 +2,6 @@
 
 import { useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
-import { consoleAuthClient } from "@workspace/auth/console-client"
 import { PaymentMethod } from "@workspace/db/enums"
 import { Button } from "@workspace/ui/components/button"
 import { Label } from "@workspace/ui/components/label"
@@ -11,37 +10,42 @@ import { Skeleton } from "@workspace/ui/components/skeleton"
 import { Spinner } from "@workspace/ui/components/spinner"
 import { toast } from "@workspace/ui/components/toast"
 import { formatCurrency } from "@workspace/utils/currency"
-import { useMemberRole } from "@/hooks/use-member-role"
+import { useCanUpdateOrders } from "@/hooks/use-can-update-orders"
+import { recordOrderPaymentAction } from "@/lib/actions/order.actions"
 import { recordStorePaymentAction } from "@/lib/actions/store-order.actions"
 import { PAYMENT_METHOD_LABELS } from "@/lib/order-status"
 
 const methodOptions = Object.entries(PAYMENT_METHOD_LABELS).map(([value, label]) => ({ label, value: value as PaymentMethod }))
 
 interface RecordPaymentProps {
-  storeId: string
+  // The store whose page this is, or null on the platform's pages
+  storeId: string | null
   orderId: string
-  // The order's total; null when other stores' items make it the platform's
+  // The order's total; null on a store's page when other stores' items make it the platform's
   totalGhs: string | null
   defaultMethod: PaymentMethod
 }
 
-// Shown for an unpaid order the store manages; recordStorePaymentAction checks again
+// Shown for an unpaid order; the actions check again
 export default function RecordPayment({ storeId, orderId, totalGhs, defaultMethod }: RecordPaymentProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [method, setMethod] = useState<PaymentMethod>(defaultMethod)
-  const { role, isLoading } = useMemberRole(storeId)
+  const { canUpdate, isLoading } = useCanUpdateOrders(storeId)
 
   if (isLoading) return <Skeleton className="h-9 rounded-md" />
 
-  const canUpdate = role !== null && consoleAuthClient.organization.checkRolePermission({ role, permissions: { order: ["update"] } })
   if (!canUpdate || totalGhs === null) {
-    return <p className="text-sm text-muted-foreground">{totalGhs === null ? "The platform records payment for orders with other stores' items." : "Your role in this store can't record payments."}</p>
+    return (
+      <p className="text-sm text-muted-foreground">
+        {totalGhs === null ? "The platform records payment for orders with other stores' items." : storeId ? "Your role in this store can't record payments." : "Your role can't record payments."}
+      </p>
+    )
   }
 
   const handleRecord = () => {
     startTransition(async () => {
-      const response = await recordStorePaymentAction({ storeId, orderId, paymentMethod: method })
+      const response = storeId ? await recordStorePaymentAction({ storeId, orderId, paymentMethod: method }) : await recordOrderPaymentAction({ orderId, paymentMethod: method })
 
       if (!response.success) {
         toast.add({ title: "Unable to record the payment", description: response.error, type: "error" })

@@ -145,7 +145,27 @@ export const orderCustomerFormSchema = z.object(customerFields)
 export const orderDeliveryFormSchema = z.object(deliveryFields).superRefine(checkDelivery)
 export const orderNotesFormSchema = z.object({ notes: z.string().trim().max(2000, "Keep the notes under 2,000 characters") })
 
-const orderEditTarget = { storeId: z.uuid("Invalid store ID"), orderId: z.uuid("Invalid order ID") }
+const storeOrderEditTarget = { storeId: z.uuid("Invalid store ID"), orderId: z.uuid("Invalid order ID") }
+export const updateStoreOrderCustomerSchema = orderCustomerFormSchema.extend(storeOrderEditTarget)
+export const updateStoreOrderDeliverySchema = z.object(deliveryFields).extend(storeOrderEditTarget).superRefine(checkDelivery)
+export const updateStoreOrderNotesSchema = orderNotesFormSchema.extend(storeOrderEditTarget)
+
+// ============================================
+// THE PLATFORM'S ORDERS
+// ============================================
+
+// The platform manages any order, so these name only the order
+export const updateOrderStatusSchema = orderStatusFormSchema.extend({
+  orderId: z.uuid("Invalid order ID"),
+  currentStatus: z.enum(OrderStatus),
+})
+
+export const recordOrderPaymentSchema = z.object({
+  orderId: z.uuid("Invalid order ID"),
+  paymentMethod: z.enum(PaymentMethod, "Choose how the customer paid"),
+})
+
+const orderEditTarget = { orderId: z.uuid("Invalid order ID") }
 export const updateOrderCustomerSchema = orderCustomerFormSchema.extend(orderEditTarget)
 export const updateOrderDeliverySchema = z.object(deliveryFields).extend(orderEditTarget).superRefine(checkDelivery)
 export const updateOrderNotesSchema = orderNotesFormSchema.extend(orderEditTarget)

@@ -5,7 +5,8 @@ import { useWatch, type UseFormReturn } from "react-hook-form"
 import { GEODATA } from "@workspace/contracts"
 import { ComboboxField, PhoneField, TextareaField, TextInputField } from "@workspace/forms"
 import { FieldGroup } from "@workspace/ui/components/field"
-import { updateOrderCustomerAction, updateOrderDeliveryAction, updateOrderNotesAction } from "@/lib/actions/store-order.actions"
+import { updateOrderCustomerAction, updateOrderDeliveryAction, updateOrderNotesAction } from "@/lib/actions/order.actions"
+import { updateStoreOrderCustomerAction, updateStoreOrderDeliveryAction, updateStoreOrderNotesAction } from "@/lib/actions/store-order.actions"
 import { orderCustomerFormSchema, orderDeliveryFormSchema, orderNotesFormSchema } from "@/lib/schemas/order.schemas"
 import EditOrderDialog from "./edit-order-dialog"
 
@@ -14,7 +15,8 @@ import EditOrderDialog from "./edit-order-dialog"
 const regionOptions = GEODATA.map((region) => ({ label: region.name, value: region.name }))
 
 interface OrderTarget {
-  storeId: string
+  // The store whose page this is, or null on the platform's pages
+  storeId: string | null
   orderId: string
 }
 
@@ -27,7 +29,7 @@ export function EditOrderCustomer({ storeId, orderId, customer }: OrderTarget & 
       description="The details on this order. A linked account isn't changed."
       schema={orderCustomerFormSchema}
       values={{ customerName: customer.name, customerEmail: customer.email ?? "", customerPhone: customer.phone ?? "" }}
-      save={(values) => updateOrderCustomerAction({ ...values, storeId, orderId })}
+      save={(values) => (storeId ? updateStoreOrderCustomerAction({ ...values, storeId, orderId }) : updateOrderCustomerAction({ ...values, orderId }))}
     >
       {(form, isPending) => (
         <FieldGroup>
@@ -91,7 +93,7 @@ export function EditOrderDelivery({
         shippingRegion: shipping.region ?? "",
         shippingTown: shipping.town ?? "",
       }}
-      save={(values) => updateOrderDeliveryAction({ ...values, storeId, orderId })}
+      save={(values) => (storeId ? updateStoreOrderDeliveryAction({ ...values, storeId, orderId }) : updateOrderDeliveryAction({ ...values, orderId }))}
     >
       {(form, isPending) => <DeliveryFields form={form} isPending={isPending} />}
     </EditOrderDialog>
@@ -104,10 +106,10 @@ export function EditOrderNotes({ storeId, orderId, notes }: OrderTarget & { note
       storeId={storeId}
       label={notes ? "Edit notes" : "Add notes"}
       title="Order notes"
-      description="For the store, not the customer."
+      description="For staff, not the customer."
       schema={orderNotesFormSchema}
       values={{ notes: notes ?? "" }}
-      save={(values) => updateOrderNotesAction({ ...values, storeId, orderId })}
+      save={(values) => (storeId ? updateStoreOrderNotesAction({ ...values, storeId, orderId }) : updateOrderNotesAction({ ...values, orderId }))}
     >
       {(form, isPending) => <TextareaField control={form.control} name="notes" aria-label="Notes" disabled={isPending} />}
     </EditOrderDialog>
