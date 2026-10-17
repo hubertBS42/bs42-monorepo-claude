@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import { organizationRoles, ORG_ROLE_NAMES } from "@workspace/auth/organization-permissions"
+import { ORG_ROLE_NAMES } from "@workspace/auth/organization-permissions"
 import { getEnumParam, getOrderParam, getPositiveIntegerParam, getSortParam, getStringParam } from "@workspace/utils/search-params"
 import { requireActiveStoreMember } from "@/lib/auth-guard"
 import { getStoreMembers, MAX_STORE_MEMBERS_PAGE_SIZE, STORE_MEMBER_SORT_FIELDS } from "@/lib/data/members.data"
@@ -18,7 +18,7 @@ type StoreMembersPageProps = {
 }
 
 export default async function StoreMembersPage({ searchParams }: StoreMembersPageProps) {
-  const { session, storeId, role } = await requireActiveStoreMember()
+  const { storeId } = await requireActiveStoreMember()
   const params = await searchParams
 
   const membersParams: StoreMembersParams = {
@@ -34,10 +34,6 @@ export default async function StoreMembersPage({ searchParams }: StoreMembersPag
   const result = await getStoreMembers(storeId, membersParams)
   if (!result.success) throw new Error(result.error)
 
-  // The actions check again, through Better Auth
-  const canUpdateRoles = organizationRoles[role].authorize({ member: ["update"] }).success
-  const canInvite = organizationRoles[role].authorize({ invitation: ["create"] }).success
-
   return (
     <main className="flex flex-col gap-y-6">
       <div className="flex items-end justify-between">
@@ -47,9 +43,9 @@ export default async function StoreMembersPage({ searchParams }: StoreMembersPag
           <p className="text-sm text-muted-foreground">View and manage this store&apos;s members. Platform staff aren&apos;t listed.</p>
         </div>
 
-        {canInvite && <InviteMemberDialog storeId={storeId} />}
+        <InviteMemberDialog storeId={storeId} />
       </div>
-      <MembersTable data={result.data} viewerUserId={session.user.id} canUpdateRoles={canUpdateRoles} />
+      <MembersTable storeId={storeId} data={result.data} />
     </main>
   )
 }

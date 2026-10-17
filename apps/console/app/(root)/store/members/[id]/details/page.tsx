@@ -1,7 +1,6 @@
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import z from "zod"
-import { organizationRoles } from "@workspace/auth/organization-permissions"
 import { Avatar, AvatarFallback, AvatarImage } from "@workspace/ui/components/avatar"
 import { Badge } from "@workspace/ui/components/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@workspace/ui/components/card"
@@ -22,7 +21,7 @@ type MemberDetailsPageProps = {
 }
 
 export default async function MemberDetailsPage({ params }: MemberDetailsPageProps) {
-  const { session, storeId, role } = await requireActiveStoreMember()
+  const { storeId } = await requireActiveStoreMember()
 
   const { id } = await params
   // Member.id is a uuid column, so anything else would make Prisma throw instead of returning nothing
@@ -37,10 +36,6 @@ export default async function MemberDetailsPage({ params }: MemberDetailsPagePro
   const member = response.data
   const { user } = member
   const displayName = user.name ?? user.email
-
-  // Mirrors Better Auth's removeMember: it needs member:delete, and only owners can remove an owner.
-  // You leave a store from the overview page instead of removing yourself.
-  const canRemove = member.userId !== session.user.id && organizationRoles[role].authorize({ member: ["delete"] }).success && (member.role !== "owner" || role === "owner")
 
   return (
     <main className="flex flex-col gap-y-6">
@@ -101,7 +96,7 @@ export default async function MemberDetailsPage({ params }: MemberDetailsPagePro
           </CardContent>
         </Card>
 
-        {canRemove && <MemberActions member={{ id: member.id, organizationId: member.organizationId, name: displayName }} />}
+        <MemberActions storeId={storeId} member={{ id: member.id, organizationId: member.organizationId, name: displayName, userId: member.userId, role: member.role }} />
       </div>
     </main>
   )

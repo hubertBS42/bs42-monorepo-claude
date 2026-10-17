@@ -25,7 +25,8 @@ export interface RemovableMember {
   name: string
 }
 
-export default function RemoveMember({ member }: { member: RemovableMember }) {
+// disabledReason: why the viewer can't remove this member, from MemberActions; removeStoreMemberAction checks again
+export default function RemoveMember({ member, disabledReason }: { member: RemovableMember; disabledReason: string | null }) {
   const [isPending, startTransition] = useTransition()
   const [isOpen, setIsOpen] = useState(false)
   const router = useRouter()
@@ -52,34 +53,38 @@ export default function RemoveMember({ member }: { member: RemovableMember }) {
   }
 
   return (
-    <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
-      <AlertDialogTrigger
-        render={
-          <Button type="button" className="w-full" variant="destructive">
-            <BadgeMinus className="size-4" />
-            Remove Member
-          </Button>
-        }
-      />
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-          <AlertDialogDescription>{`${member.name} will be removed from this store and lose access to it.`}</AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel disabled={isPending}>Cancel</AlertDialogCancel>
-          <AlertDialogAction
-            variant="destructive"
-            onClick={(event) => {
-              event.preventDefault()
-              handleRemove()
-            }}
-            disabled={isPending}
-          >
-            {isPending ? <Spinner /> : "Remove"}
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+    <div className="grid gap-2">
+      <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
+        <AlertDialogTrigger
+          render={
+            <Button type="button" className="w-full" variant="destructive" disabled={!!disabledReason}>
+              <BadgeMinus className="size-4" />
+              Remove Member
+            </Button>
+          }
+        />
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>{`${member.name} will be removed from this store and lose access to it.`}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              onClick={(event) => {
+                event.preventDefault()
+                handleRemove()
+              }}
+              disabled={isPending}
+            >
+              {isPending ? <Spinner /> : "Remove"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      {/* Shown as text because a disabled button never shows its title tooltip, and screen readers skip it */}
+      {disabledReason && <p className="text-xs text-muted-foreground">{disabledReason}</p>}
+    </div>
   )
 }
