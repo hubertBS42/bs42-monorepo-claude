@@ -60,5 +60,5 @@ export default async function AddListingPage({ searchParams }: AddListingPagePro
     throw new Error(response.error)
   }
 
-  return <ListingForm storeId={storeId} data={response.data} canDelete={false} />
+  return <ListingForm storeId={storeId} data={response.data} />
 }

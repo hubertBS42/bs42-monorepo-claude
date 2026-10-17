@@ -28,7 +28,5 @@ export default async function EditListingPage({ params }: EditListingPageProps) 
     throw new Error(response.error)
   }
 
-  const canDelete = organizationRoles[role].authorize({ listing: ["delete"] }).success
-
-  return <ListingForm storeId={storeId} data={response.data} canDelete={canDelete} />
+  return <ListingForm storeId={storeId} data={response.data} />
 }

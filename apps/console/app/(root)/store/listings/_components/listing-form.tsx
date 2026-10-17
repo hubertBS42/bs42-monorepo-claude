@@ -26,8 +26,6 @@ type FormOutput = z.output<typeof listingFormSchema>
 interface ListingFormProps {
   storeId: string
   data: ListingFormData
-  // Decided on the server from the store role; deleteListingAction checks again
-  canDelete: boolean
 }
 
 // ActionResponse's code is a plain string, so it can't tell this reply apart by itself
@@ -36,7 +34,7 @@ function isStockChanged(response: { success: boolean; code?: string }): response
 }
 
 // One form for adding and editing, as for products
-const ListingForm = ({ storeId, data, canDelete }: ListingFormProps) => {
+const ListingForm = ({ storeId, data }: ListingFormProps) => {
   const { id, product, variants: variantRows } = data
   const isEditing = !!id
   const router = useRouter()
@@ -263,7 +261,7 @@ const ListingForm = ({ storeId, data, canDelete }: ListingFormProps) => {
                     <CardDescription>Remove this product from the store. A listing that has been ordered can only be archived.</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <DeleteListing listing={{ id, name: product.name }} storeId={storeId} canDelete={canDelete} hasOrders={data.hasOrders} />
+                    <DeleteListing listing={{ id, name: product.name }} storeId={storeId} hasOrders={data.hasOrders} />
                   </CardContent>
                 </Card>
               )}

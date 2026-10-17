@@ -13,24 +13,30 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@workspace/ui/components/alert-dialog"
+import { consoleAuthClient } from "@workspace/auth/console-client"
 import { Button } from "@workspace/ui/components/button"
+import { Skeleton } from "@workspace/ui/components/skeleton"
 import { Spinner } from "@workspace/ui/components/spinner"
 import { toast } from "@workspace/ui/components/toast"
+import { useMemberRole } from "@/hooks/use-member-role"
 import { deleteListingAction } from "@/lib/actions/listing.actions"
 
 interface DeleteListingProps {
   listing: { id: string; name: string }
   storeId: string
-  // From the store role on the server; deleteListingAction checks again
-  canDelete: boolean
   // Order lines restrict the delete, so an ordered listing can only be archived
   hasOrders: boolean
 }
 
-export default function DeleteListing({ listing, storeId, canDelete, hasOrders }: DeleteListingProps) {
+// Checks the store role itself, like the other action buttons; deleteListingAction checks again
+export default function DeleteListing({ listing, storeId, hasOrders }: DeleteListingProps) {
   const [isPending, startTransition] = useTransition()
   const [isOpen, setIsOpen] = useState(false)
   const router = useRouter()
+  const { role, isLoading } = useMemberRole(storeId)
+
+  if (isLoading) return <Skeleton className="h-9 rounded-md" />
+  const canDelete = role !== null && consoleAuthClient.organization.checkRolePermission({ role, permissions: { listing: ["delete"] } })
 
   const handleDelete = () => {
     startTransition(async () => {
