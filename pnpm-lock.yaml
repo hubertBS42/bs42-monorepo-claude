@@ -202,6 +202,9 @@ importers:
       '@workspace/db':
         specifier: workspace:*
         version: link:../../packages/database
+      '@workspace/email':
+        specifier: workspace:*
+        version: link:../../packages/email
       '@workspace/forms':
         specifier: workspace:*
         version: link:../../packages/forms

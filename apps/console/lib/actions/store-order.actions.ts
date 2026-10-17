@@ -1,5 +1,6 @@
 "use server"
 
+import { after } from "next/server"
 import z from "zod"
 import { formatError } from "@workspace/auth/format-error"
 import { ActionResponse, DataResponse } from "@workspace/contracts"
@@ -8,6 +9,7 @@ import { Prisma } from "@workspace/db/client"
 import { OrderStatus, PaymentStatus, ShippingMethod, Status } from "@workspace/db/enums"
 import { hasStorePermission, requireConsoleAccess } from "@/lib/auth-guard"
 import { getLatestExchangeRate, type ExchangeRateInfo } from "@/lib/data/exchange-rates.data"
+import { sendOrderEmail, statusEmailEvent } from "@/lib/order-emails"
 import { priceOrder, type PricedOrder } from "@/lib/order-pricing"
 import { isPaid, nextOrderStatuses } from "@/lib/order-status"
 import {
@@ -99,6 +101,10 @@ export async function updateStoreOrderStatusAction(input: z.input<typeof updateS
       variantTracks: item.storeListingVariant?.trackInventory ?? false,
     }))
     await prisma.$transaction((tx) => changeOrderStatus(tx, { orderId, from: currentStatus, to: status, note: note || null, changedById: session.user.id, items }), TRANSACTION_OPTIONS)
+
+    // Only once the change is saved: after() also runs when an action fails
+    const event = statusEmailEvent(status)
+    if (event) after(() => sendOrderEmail(orderId, event, note || null))
 
     return { success: true }
   } catch (error) {
@@ -294,6 +300,9 @@ export async function createStoreOrderAction(input: z.input<typeof createStoreOr
         }),
       TRANSACTION_OPTIONS
     )
+
+    // Only once the order is saved: after() also runs when an action fails
+    after(() => sendOrderEmail(order.id, "CREATED"))
 
     return { success: true, data: order }
   } catch (error) {

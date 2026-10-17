@@ -17,6 +17,7 @@
     "@workspace/contracts": "workspace:*",
     "@workspace/auth": "workspace:*",
     "@workspace/db": "workspace:*",
+    "@workspace/email": "workspace:*",
     "@workspace/forms": "workspace:*",
     "@workspace/storage": "workspace:*",
     "@workspace/tables": "workspace:*",
