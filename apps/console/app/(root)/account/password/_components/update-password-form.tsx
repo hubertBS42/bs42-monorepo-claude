@@ -27,6 +27,10 @@ const UpdatePasswordForm = () => {
     if (!result.success) {
       if (result.code === "INVALID_PASSWORD") {
         form.setError("currentPassword", { type: "custom", message: "Current password is incorrect." })
+      } else if (result.code === "SESSIONS_NOT_REVOKED") {
+        // The password did change, so the form is done
+        form.reset()
+        toast.add({ title: "Password updated", description: result.error, type: "warning" })
       } else {
         toast.add({ title: "Failed to update password", description: result.error, type: "error" })
       }

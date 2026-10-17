@@ -83,7 +83,9 @@ export async function revokeOtherSessionsAction(): Promise<ActionResponse> {
   }
 }
 
-// Signs out every other session, in case the old password was stolen
+// Signs out every other session, in case the old password was stolen. revokeOtherSessions on changePassword would
+// also replace the current session with a new one that has no active organization, leaving the console without a
+// workspace, so the other sessions are revoked in a second call that keeps the current one.
 export async function updatePasswordAction(input: z.input<typeof updatePasswordSchema>): Promise<ActionResponse> {
   await requireConsoleAccess()
 
@@ -91,11 +93,23 @@ export async function updatePasswordAction(input: z.input<typeof updatePasswordS
     const parsed = updatePasswordSchema.safeParse(input)
     if (!parsed.success) return invalidInput(parsed.error)
     const { currentPassword, newPassword } = parsed.data
+    const headersObj = await headers()
 
     await consoleAuth.api.changePassword({
-      body: { currentPassword, newPassword, revokeOtherSessions: true },
-      headers: await headers(),
+      body: { currentPassword, newPassword, revokeOtherSessions: false },
+      headers: headersObj,
     })
+
+    try {
+      await consoleAuth.api.revokeOtherSessions({ headers: headersObj })
+    } catch (error) {
+      console.error("Could not revoke other sessions after a password change:", error)
+      return {
+        success: false,
+        error: "Your password was changed, but your other devices are still signed in. Sign them out from the Sessions page.",
+        code: "SESSIONS_NOT_REVOKED",
+      }
+    }
 
     return { success: true }
   } catch (error) {
