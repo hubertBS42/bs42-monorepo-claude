@@ -1,7 +1,7 @@
 import { AppSettingsData } from "@workspace/contracts"
 import { prisma } from "./client"
 
-export { prisma } from "./client"
+export { prisma, generateUniqueSku } from "./client"
 export { formatPrismaError } from "./format-prisma-error"
 export { findReferencedFileUrls, sweepOrphanedFiles, type FileSweepResult } from "./file-sweep"
 

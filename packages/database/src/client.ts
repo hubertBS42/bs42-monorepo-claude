@@ -5,10 +5,11 @@ import slugify from "slugify"
 import { removeFiles } from "@workspace/storage"
 import { PLATFORM_ORGANIZATION_SLUG } from "@workspace/contracts"
 
-type ModelType = "organization" | "brand" | "category"
+type ModelType = "organization" | "brand" | "category" | "product"
 type SlugClient = PrismaClient | Prisma.TransactionClient
 
 const MAX_SLUG_RETRIES = 4
+const MAX_SKU_ATTEMPTS = 10
 
 /* -------------------------------------------------------------------------- */
 /*  Slugs                                                                      */
@@ -65,18 +66,18 @@ const generateUniqueSlug = async ({ name, id, model, client, prefix }: { name: s
           select: { id: true },
         }),
     },
-    // product: {
-    //   getById: (id) =>
-    //     client.product.findUnique({
-    //       where: { id },
-    //       select: { name: true, slug: true },
-    //     }),
-    //   getBySlug: (slug) =>
-    //     client.product.findUnique({
-    //       where: { slug },
-    //       select: { id: true },
-    //     }),
-    // },
+    product: {
+      getById: (id) =>
+        client.product.findUnique({
+          where: { id },
+          select: { name: true, slug: true },
+        }),
+      getBySlug: (slug) =>
+        client.product.findUnique({
+          where: { slug },
+          select: { id: true },
+        }),
+    },
   }
 
   const { getById, getBySlug } = modelMap[model]
@@ -142,14 +143,13 @@ async function getParentSlug(client: SlugClient, where: Prisma.CategoryWhereUniq
  * driver adapters the constraint details can live under
  * `meta.driverAdapterError` instead.
  */
-function isSlugUniqueConstraintError(error: unknown): boolean {
+function isUniqueConstraintError(error: unknown, fields: readonly string[]): boolean {
   if (!(error instanceof Prisma.PrismaClientKnownRequestError) || error.code !== "P2002") {
     return false
   }
 
-  return JSON.stringify(error.meta ?? {})
-    .toLowerCase()
-    .includes("slug")
+  const meta = JSON.stringify(error.meta ?? {}).toLowerCase()
+  return fields.some((field) => meta.includes(field))
 }
 
 async function withUniqueSlugRetry<T>({
@@ -158,6 +158,7 @@ async function withUniqueSlugRetry<T>({
   model,
   client,
   prefix,
+  retryFields = ["slug"],
   run,
 }: {
   name: string
@@ -165,6 +166,8 @@ async function withUniqueSlugRetry<T>({
   model: ModelType
   client: SlugClient
   prefix?: string
+  // Unique columns whose conflict is worth another attempt; `run` must regenerate any besides the slug
+  retryFields?: readonly string[]
   run: (slug: string) => Promise<T>
 }): Promise<T> {
   for (let attempt = 0; ; attempt++) {
@@ -173,11 +176,48 @@ async function withUniqueSlugRetry<T>({
     try {
       return await run(slug)
     } catch (error) {
-      if (!isSlugUniqueConstraintError(error) || attempt >= MAX_SLUG_RETRIES) {
+      if (!isUniqueConstraintError(error, retryFields) || attempt >= MAX_SLUG_RETRIES) {
         throw error
       }
     }
   }
+}
+
+// Just the lookups it makes, so the base client and an extended transaction client both fit
+type FindBySku = { findUnique(args: { where: { sku: string }; select: { id: true } }): PromiseLike<{ id: string } | null> }
+type SkuClient = { product: FindBySku; productVariant: FindBySku }
+
+/**
+ * A SKU such as "IPHONE15-K3ZQ" that no product or variant uses yet. Inside a
+ * transaction, pass its client so SKUs created earlier in it count as taken.
+ */
+export async function generateUniqueSku(client: SkuClient, name: string): Promise<string> {
+  const prefix =
+    name
+      .toUpperCase()
+      .replace(/[^A-Z0-9]/g, "")
+      .slice(0, 8) || "PRODUCT"
+
+  for (let attempt = 0; attempt < MAX_SKU_ATTEMPTS; attempt++) {
+    const suffix = Math.random().toString(36).slice(2, 6).toUpperCase().padEnd(4, "0")
+    const sku = `${prefix}-${suffix}`
+
+    const [product, variant] = await Promise.all([client.product.findUnique({ where: { sku }, select: { id: true } }), client.productVariant.findUnique({ where: { sku }, select: { id: true } })])
+    if (!product && !variant) return sku
+  }
+
+  throw new Error("Could not generate a unique SKU")
+}
+
+const productFilesSelect = {
+  images: true,
+  banner: true,
+  documents: { select: { url: true } },
+  variants: { select: { images: true } },
+} satisfies Prisma.ProductSelect
+
+function getProductFiles(product: Prisma.ProductGetPayload<{ select: typeof productFilesSelect }>) {
+  return [...product.images, product.banner, ...product.variants.flatMap((variant) => variant.images), ...product.documents.map((document) => document.url)]
 }
 
 /* -------------------------------------------------------------------------- */
@@ -388,6 +428,7 @@ function createPrisma() {
           return result
         },
       },
+
       category: {
         async create({ args, query }) {
           return withUniqueSlugRetry({
@@ -467,6 +508,91 @@ function createPrisma() {
           })
 
           await removeFiles(images)
+          return result
+        },
+      },
+
+      product: {
+        async create({ args, query }) {
+          // Simple products without a SKU get one; a product with variants has a SKU per variant instead
+          const generateSku = !args.data.hasVariants && !args.data.sku
+
+          return withUniqueSlugRetry({
+            name: args.data.name,
+            model: "product",
+            client: base,
+            // Only a generated SKU is retried; a conflict on one the caller chose is theirs to fix
+            retryFields: generateSku ? ["slug", "sku"] : ["slug"],
+            run: async (slug) => {
+              args.data.slug = slug
+              if (generateSku) args.data.sku = await generateUniqueSku(base, args.data.name)
+              return query(args)
+            },
+          })
+        },
+
+        async update({ args, query }) {
+          const nameUpdate = args.data.name
+          const name = typeof nameUpdate === "string" ? nameUpdate : nameUpdate?.set
+
+          // Clients can never set the slug on update
+          delete args.data.slug
+
+          if (name === undefined) {
+            return query(args)
+          }
+
+          const existing = await base.product.findUnique({
+            where: args.where,
+            select: { id: true, slug: true },
+          })
+
+          if (!existing) {
+            return query(args)
+          }
+
+          return withUniqueSlugRetry({
+            name,
+            id: existing.id,
+            model: "product",
+            client: base,
+            run: (slug) => {
+              args.data.slug = slug
+              return query(args)
+            },
+          })
+        },
+
+        // Ordered products can't be deleted: OrderItem restricts both products and variants, so the
+        // delete fails with P2003 and the caller should archive the product instead.
+        async delete({ args, query }) {
+          // Read the files first so `select`/`include` on the caller's args still apply
+          const existing = await base.product.findUnique({
+            where: args.where,
+            select: productFilesSelect,
+          })
+
+          const deleted = await query(args)
+          await removeFiles(existing ? getProductFiles(existing) : [])
+          return deleted
+        },
+
+        async deleteMany({ args }) {
+          const { result, files } = await base.$transaction(async (tx) => {
+            const products = await tx.product.findMany({
+              where: args.where,
+              select: { id: true, ...productFilesSelect },
+            })
+
+            // Variants, documents and listings cascade with the product
+            const result = await tx.product.deleteMany({
+              where: { id: { in: products.map((product) => product.id) } },
+            })
+
+            return { result, files: products.flatMap(getProductFiles) }
+          })
+
+          await removeFiles(files)
           return result
         },
       },
