@@ -16,11 +16,12 @@ interface VariantSheetProps<T extends FieldValues> {
   index: number
   control: Control<T>
   attributes: Record<string, string>
-  images: string[]
+  // Images the variant had when the form loaded: the server removes those on save, so they aren't deleted here
+  savedImages: string[]
   clearErrors: UseFormClearErrors<T>
 }
 
-const VariantSheet = <T extends FieldValues>({ open, onOpenChange, index, control, attributes, images, clearErrors }: VariantSheetProps<T>) => {
+const VariantSheet = <T extends FieldValues>({ open, onOpenChange, index, control, attributes, savedImages, clearErrors }: VariantSheetProps<T>) => {
   const handleAddImages = async (data: FileList) => {
     const formData = new FormData()
     Array.from(data).forEach((file) => formData.append("files", file))
@@ -28,8 +29,7 @@ const VariantSheet = <T extends FieldValues>({ open, onOpenChange, index, contro
   }
 
   const handleRemoveImage = async (url: string) => {
-    // Saved images are removed by the server on save; only this edit's uploads are deleted here
-    if (images.includes(url)) return
+    if (savedImages.includes(url)) return
     await deleteImages([url])
   }
 
@@ -84,7 +84,6 @@ const VariantSheet = <T extends FieldValues>({ open, onOpenChange, index, contro
               onRemove={handleRemoveImage}
               clearErrors={clearErrors}
               className="w-full"
-              defaultValues={images}
             />
           </div>
         </div>
