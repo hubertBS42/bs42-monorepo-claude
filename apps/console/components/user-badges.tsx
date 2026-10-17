@@ -13,6 +13,18 @@ const ROLE_BADGE_VARIANTS: Record<string, "default" | "secondary" | "outline"> =
   user: "outline",
 }
 
+export const STORE_ROLE_LABELS: Record<string, string> = {
+  owner: "Owner",
+  admin: "Admin",
+  member: "Member",
+}
+
+const STORE_ROLE_BADGE_VARIANTS: Record<string, "default" | "secondary" | "outline"> = {
+  owner: "default",
+  admin: "secondary",
+  member: "outline",
+}
+
 // Better Auth only clears an expired ban at the user's next sign-in, so `banned` alone can be stale
 export function isBanActive(user: { banned: boolean | null; banExpires: Date | null }) {
   return Boolean(user.banned) && (!user.banExpires || user.banExpires > new Date())
@@ -39,4 +51,8 @@ export function UserStatusBadge({ user }: { user: { banned: boolean | null; banE
   if (isBanActive(user)) return <Badge variant="destructive">Banned</Badge>
 
   return <Badge variant="success">Active</Badge>
+}
+
+export function StoreRoleBadge({ role }: { role: string }) {
+  return <Badge variant={STORE_ROLE_BADGE_VARIANTS[role] ?? "outline"}>{STORE_ROLE_LABELS[role] ?? role}</Badge>
 }

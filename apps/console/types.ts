@@ -5,6 +5,7 @@ import type { LucideIcon } from "lucide-react"
 import type { z } from "zod"
 import type { addProductFormSchema } from "@/lib/schemas/product.schemas"
 import type { SystemRole } from "@workspace/auth/system-permissions"
+import type { OrgRole } from "@workspace/auth/organization-permissions"
 
 // Minimal record shape for loaders that feed SelectField options
 export interface SelectItem {
@@ -75,6 +76,20 @@ export type UserDetails = Prisma.UserGetPayload<{
     addresses: true
   }
 }>
+
+export interface StoreMembersParams extends PaginationParams {
+  name?: string
+  email?: string
+  role?: OrgRole
+}
+
+export type StoreMember = Prisma.MemberGetPayload<{
+  include: {
+    user: true
+  }
+}>
+
+export type StoreMembersData = PaginatedResult<StoreMember>
 
 export type InvitationForTable = Prisma.InvitationGetPayload<{
   include: {

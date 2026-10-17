@@ -104,3 +104,32 @@ export async function requireOrganizationPermission(organizationId: string, perm
 
   return { session, organizationId, role }
 }
+
+// The user's role in a store, or null when they aren't a member. The platform organization isn't a store.
+export async function getStoreRole(userId: string, organizationId: string) {
+  const membership = await prisma.member.findFirst({
+    where: {
+      userId,
+      organizationId,
+      organization: { slug: { not: PLATFORM_ORGANIZATION_SLUG } },
+    },
+    select: { role: true },
+  })
+
+  return membership && isOrganizationRole(membership.role) ? membership.role : null
+}
+
+// For store workspace pages every member may see: the member role has no read permission for
+// requireOrganizationPermission to check. Without an active store, or after being removed from it
+// (the session keeps its id), the user goes to the dashboard.
+export async function requireActiveStoreMember() {
+  const session = await getConsoleSession()
+
+  const storeId = session.session.activeOrganizationId
+  const role = storeId ? await getStoreRole(session.user.id, storeId) : null
+  if (!storeId || !role) {
+    redirect("/")
+  }
+
+  return { session, storeId, role }
+}
