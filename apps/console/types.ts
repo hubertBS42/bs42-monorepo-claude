@@ -328,3 +328,44 @@ export interface StoreOrderDetails {
   // Status changes and a recorded payment, newest first
   timeline: { id: string; title: string; note: string | null; changedBy: string | null; createdAt: Date }[]
 }
+
+// A store listing as the create order wizard offers it: one row per way to buy it (the listing, or each variant)
+export interface OrderableListing {
+  listingId: string
+  productName: string
+  brandName: string
+  image: string | null
+  rows: {
+    listingVariantId: string | null
+    // "Size: M / Colour: Red"; null for a product without variants
+    variantDescription: string | null
+    sku: string | null
+    priceUsd: string
+    // At the latest rate; null without a usable rate. The order is priced on the server when it's made.
+    priceGhs: string | null
+    // Null when the row doesn't track stock
+    stock: number | null
+  }[]
+}
+
+// A customer found by exact email or phone, with their saved addresses for the delivery step
+export interface OrderCustomer {
+  id: string
+  name: string | null
+  email: string
+  phone: string | null
+  addresses: { id: string; name: string; phone: string; line1: string; line2: string | null; region: string; town: string; isDefault: boolean }[]
+}
+
+// The review step's prices, from the same code that prices the order when it's created. GHS strings.
+export interface OrderPreview {
+  lines: { listingId: string; listingVariantId: string | null; label: string; quantity: number; unitPriceGhs: string; totalPriceGhs: string; stock: number | null }[]
+  subtotalGhs: string
+  discountAmountGhs: string | null
+  shippingGhs: string
+  taxRate: string
+  taxGhs: string
+  totalGhs: string
+  exchangeRate: string
+  rateDate: string
+}
