@@ -67,6 +67,13 @@ export const consolePlugins = [
             message: "The platform organization cannot be deleted",
           })
         }
+        // Order lines restrict the delete anyway, but with a database error the console can't explain
+        if (await prisma.orderItem.findFirst({ where: { organizationId: organization.id }, select: { id: true } })) {
+          throw new APIError("BAD_REQUEST", {
+            message: "This store has orders, so it can't be deleted. Suspend it instead.",
+            code: "HAS_ORDERS",
+          })
+        }
       },
       // System admins belong to every store with a role that follows their system role. The console's own
       // flows keep that up through Prisma (store creation above, promote/demote), so these endpoints, which

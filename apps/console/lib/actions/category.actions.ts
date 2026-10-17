@@ -19,6 +19,7 @@ const categoryIdSchema = z.uuid("Invalid category ID")
 
 const NOT_FOUND: ActionResponse = { success: false, error: "Category not found.", code: "NOT_FOUND" }
 const HAS_CHILDREN: ActionResponse = { success: false, error: "This category has subcategories. Move or delete them first.", code: "HAS_CHILDREN" }
+const HAS_PRODUCTS: ActionResponse = { success: false, error: "This category has products. Move them to another category or archive it instead.", code: "HAS_PRODUCTS" }
 const NAME_EXISTS: ActionResponse = { success: false, error: "A category with this name already exists under this parent.", code: "NAME_EXISTS" }
 const PARENT_NOT_FOUND: ActionResponse = { success: false, error: "The parent category no longer exists.", code: "PARENT_NOT_FOUND" }
 const PARENT_ARCHIVED: ActionResponse = { success: false, error: "An archived category can't be a parent.", code: "PARENT_ARCHIVED" }
@@ -40,7 +41,7 @@ function isUniqueConstraintError(error: unknown) {
 }
 
 // On create or update: the parent was deleted between the check and the write.
-// On delete: a subcategory was added between the check and the delete.
+// On delete: a subcategory or product was added between the check and the delete.
 function isForeignKeyError(error: unknown) {
   return error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2003"
 }
@@ -135,8 +136,9 @@ export async function deleteCategoryAction(categoryId: string): Promise<ActionRe
     const parsed = categoryIdSchema.safeParse(categoryId)
     if (!parsed.success) return invalidInput(parsed.error)
 
-    // The foreign key would reject this anyway, but with an error the form can't explain
+    // The foreign keys would reject these anyway, but with an error the form can't explain
     if ((await prisma.category.count({ where: { parentId: parsed.data } })) > 0) return HAS_CHILDREN
+    if ((await prisma.product.count({ where: { categoryId: parsed.data } })) > 0) return HAS_PRODUCTS
 
     // The Prisma hook removes the image after the delete commits
     await prisma.category.delete({
@@ -145,7 +147,10 @@ export async function deleteCategoryAction(categoryId: string): Promise<ActionRe
     return { success: true }
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") return NOT_FOUND
-    if (isForeignKeyError(error)) return HAS_CHILDREN
+    if (isForeignKeyError(error)) {
+      const hasChildren = await prisma.category.count({ where: { parentId: categoryId } }).catch(() => 0)
+      return hasChildren > 0 ? HAS_CHILDREN : HAS_PRODUCTS
+    }
     return { success: false, error: formatError(error) }
   }
 }

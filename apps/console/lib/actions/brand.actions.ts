@@ -18,6 +18,7 @@ const brandIdSchema = z.uuid("Invalid brand ID")
 
 const NAME_EXISTS: ActionResponse = { success: false, error: "A brand with this name already exists.", code: "NAME_EXISTS" }
 const INVALID_LOGO: ActionResponse = { success: false, error: "Invalid logo URL.", code: "INVALID_FILE" }
+const HAS_PRODUCTS: ActionResponse = { success: false, error: "This brand has products. Move them to another brand or archive it instead.", code: "HAS_PRODUCTS" }
 
 // The name column is unique but case-sensitive, so "Nike" and "nike" are caught here instead
 async function isNameTaken(name: string, excludeId?: string) {
@@ -96,11 +97,20 @@ export async function deleteBrandAction(brandId: string): Promise<ActionResponse
     const parsed = brandIdSchema.safeParse(brandId)
     if (!parsed.success) return invalidInput(parsed.error)
 
+    // The foreign key would reject this anyway, but with an error the form can't explain
+    if ((await prisma.product.count({ where: { brandId: parsed.data } })) > 0) return HAS_PRODUCTS
+
+    // The Prisma hook removes the logo after the delete commits
     await prisma.brand.delete({
       where: { id: parsed.data },
     })
     return { success: true }
   } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === "P2025") return { success: false, error: "Brand not found.", code: "NOT_FOUND" }
+      // A product was added between the check and the delete
+      if (error.code === "P2003") return HAS_PRODUCTS
+    }
     return { success: false, error: formatError(error) }
   }
 }
