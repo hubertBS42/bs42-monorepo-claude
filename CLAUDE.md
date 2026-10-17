@@ -65,7 +65,7 @@ A "store" is a Better Auth organization. One special organization, slug `PLATFOR
 ### Two permission layers
 - System roles (`user`, `admin`, `superAdmin`) on `User.role`, defined in `system-permissions.ts`. Role strings can be comma-separated; always check with `hasSystemRole` / `hasSystemPermission`, never `===`.
 - Organization roles (`owner`, `admin`, `member`) on `Member.role`, defined in `organization-permissions.ts`. Besides Better Auth's defaults they have `listing` (owner/admin: create, update, delete; member: create, update) and `order` (owner/admin: read, create, update; member: read, create). Refunds are platform-only.
-- The catalogue (brands, categories, products) is global, not per store: it uses the system permissions `brand`/`category`/`product` and `/catalogue` is admin-only in the global workspace. Platform orders use the system permission `order` (`read`, `create`, `update`, `refund`).
+- The catalogue (brands, categories, products) is global, not per store: it uses the system permissions `brand`/`category`/`product` and `/catalogue` is admin-only in the global workspace. Platform orders use the system permission `order` (`read`, `create`, `update`; `refund` is superAdmin-only).
 - **SuperAdmins**:
   - Only superAdmins can manage superAdmins: console actions check `canManageUserWithRole`, and a consoleAuth `hooks.before` blocks Better Auth's admin write endpoints.
   - User loaders in `lib/data/users.data.ts` hide superAdmins from everyone else.

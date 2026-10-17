@@ -27,7 +27,8 @@ export const systemRoles = {
     brand: ["create", "update", "delete"],
     category: ["create", "update", "delete"],
     product: ["create", "update", "delete"],
-    order: ["read", "create", "update", "refund"],
+    // Refunds give money back, so they're for superAdmins only
+    order: ["read", "create", "update"],
   }),
   superAdmin: systemAccessController.newRole({
     ...adminAc.statements,
