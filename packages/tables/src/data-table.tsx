@@ -3,7 +3,7 @@
 import { flexRender, getCoreRowModel, useReactTable, type ColumnDef } from "@tanstack/react-table"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@workspace/ui/components/table"
 import { cn } from "@workspace/ui/lib/utils"
-import Link from "next/link"
+import { RowLink } from "./row-link"
 import FiltersToolbar from "./filters-toolbar"
 import Pagination from "./pagination"
 import { useRowLink } from "./use-row-link"
@@ -93,13 +93,7 @@ export function DataTable<TData, TValue>({ columns, data, filters = [], paginati
                       const content = flexRender(cell.column.columnDef.cell, cell.getContext())
                       return (
                         <TableCell key={cell.id} className={cn(idx === row.getVisibleCells().length - 1 && "w-7")}>
-                          {href && cell.column.id === linkColumnId ? (
-                            <Link href={href} className="font-medium underline-offset-4 hover:underline">
-                              {content}
-                            </Link>
-                          ) : (
-                            content
-                          )}
+                          {href && cell.column.id === linkColumnId && !cell.column.columnDef.meta?.rendersRowLink ? <RowLink href={href}>{content}</RowLink> : content}
                         </TableCell>
                       )
                     })}

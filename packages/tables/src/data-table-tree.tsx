@@ -4,7 +4,7 @@ import { flexRender, getCoreRowModel, getExpandedRowModel, useReactTable, type C
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@workspace/ui/components/table"
 import { cn } from "@workspace/ui/lib/utils"
 import { ChevronRight } from "lucide-react"
-import Link from "next/link"
+import { RowLink } from "./row-link"
 import { useRowLink } from "./use-row-link"
 
 interface DataTableTreeProps<TData extends { id: string }, TValue> {
@@ -95,13 +95,7 @@ export function DataTableTree<TData extends { id: string }, TValue>({ columns, d
                             ) : (
                               <span className="size-4 shrink-0" aria-hidden />
                             )}
-                            {href ? (
-                              <Link href={href} className="font-medium underline-offset-4 hover:underline">
-                                {content}
-                              </Link>
-                            ) : (
-                              content
-                            )}
+                            {href && !cell.column.columnDef.meta?.rendersRowLink ? <RowLink href={href}>{content}</RowLink> : content}
                           </div>
                         </TableCell>
                       )
