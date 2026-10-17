@@ -89,7 +89,7 @@ export default async function MemberDetailsPage({ params }: MemberDetailsPagePro
               </div>
               <div className="grid gap-1">
                 <p className="text-xs text-muted-foreground">Joined On</p>
-                <p className="text-sm font-medium">{formatDate(member.createdAt, "LLL dd, y")}</p>
+                <p className="text-sm font-medium">{formatDate(member.createdAt, "MMM d, yyyy, h:mm a")}</p>
               </div>
               <div className="grid gap-1">
                 <p className="text-xs text-muted-foreground">Email Verified</p>

@@ -5,7 +5,7 @@ import { requireActiveStoreMember } from "@/lib/auth-guard"
 import { getStoreInvitations, INVITATION_SORT_FIELDS, MAX_INVITATIONS_PAGE_SIZE } from "@/lib/data/invitations.data"
 import type { InvitationsParams } from "@/types"
 import InvitationsTable from "./_components/invitations-table"
-import InviteMemberDialog from "./_components/invite-member-dialog"
+import InviteMemberDialog from "../_components/invite-member-dialog"
 
 export const metadata: Metadata = {
   title: "Manage Invitations",

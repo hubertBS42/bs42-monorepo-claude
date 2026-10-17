@@ -4,6 +4,7 @@ import { getEnumParam, getOrderParam, getPositiveIntegerParam, getSortParam, get
 import { requireActiveStoreMember } from "@/lib/auth-guard"
 import { getStoreMembers, MAX_STORE_MEMBERS_PAGE_SIZE, STORE_MEMBER_SORT_FIELDS } from "@/lib/data/members.data"
 import type { StoreMembersParams } from "@/types"
+import InviteMemberDialog from "../_components/invite-member-dialog"
 import MembersTable from "./_components/members-table"
 
 export const metadata: Metadata = {
@@ -33,14 +34,20 @@ export default async function StoreMembersPage({ searchParams }: StoreMembersPag
   const result = await getStoreMembers(storeId, membersParams)
   if (!result.success) throw new Error(result.error)
 
-  // updateStoreMemberRoleAction checks again, through Better Auth
+  // The actions check again, through Better Auth
   const canUpdateRoles = organizationRoles[role].authorize({ member: ["update"] }).success
+  const canInvite = organizationRoles[role].authorize({ invitation: ["create"] }).success
 
   return (
     <main className="flex flex-col gap-y-6">
-      <div className="grid">
-        <h1 className="text-xl font-bold md:text-2xl">Manage Members</h1>
-        <p className="text-sm text-muted-foreground">View and manage this store&apos;s members.</p>
+      <div className="flex items-end justify-between">
+        <div className="grid">
+          <h1 className="text-xl font-bold md:text-2xl">Manage Members</h1>
+          {/* Otherwise a store whose only members are platform staff looks empty by mistake */}
+          <p className="text-sm text-muted-foreground">View and manage this store&apos;s members. Platform staff aren&apos;t listed.</p>
+        </div>
+
+        {canInvite && <InviteMemberDialog storeId={storeId} />}
       </div>
       <MembersTable data={result.data} viewerUserId={session.user.id} canUpdateRoles={canUpdateRoles} />
     </main>
