@@ -1,8 +1,6 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { ArrowRightIcon, Mail, ShoppingBag, Users } from "lucide-react"
-import { organizationRoles } from "@workspace/auth/organization-permissions"
-import { consoleAdminRoles, hasSystemRole } from "@workspace/auth/system-permissions"
 import { Badge } from "@workspace/ui/components/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@workspace/ui/components/card"
 import { formatDate } from "@workspace/utils/date"
@@ -37,14 +35,11 @@ const storeLinks = [
 ]
 
 const StoreOverviewPage = async () => {
-  const { session, storeId, role } = await requireActiveStoreMember()
+  const { storeId } = await requireActiveStoreMember()
 
   const response = await getStoreById(storeId)
   if (!response.success) throw new Error(response.error)
   const store = response.data
-
-  const isPlatformStaff = hasSystemRole(session.user.role, consoleAdminRoles)
-  const canDelete = organizationRoles[role].authorize({ organization: ["delete"] }).success
 
   return (
     <main className="flex flex-col gap-y-6">
@@ -105,7 +100,7 @@ const StoreOverviewPage = async () => {
           })}
         </div>
 
-        <StoreActions store={store} isPlatformStaff={isPlatformStaff} canDelete={canDelete} />
+        <StoreActions store={store} />
       </div>
     </main>
   )
