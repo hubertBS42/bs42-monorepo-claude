@@ -8,6 +8,7 @@ import {
   sendOrderConfirmationEmail,
   sendOrderConfirmedEmail,
   sendOrderDeliveredEmail,
+  sendOrderPaymentReceivedEmail,
   sendOrderShippedEmail,
   type BaseOrderEmail,
   type OrderConfirmationEmail,
@@ -17,7 +18,7 @@ import { PAYMENT_METHOD_LABELS } from "./order-status"
 // Customer emails for a store's orders. Actions schedule them with after(), once the order is saved, so a slow or
 // failed email never holds up or fails the change. Refund emails belong to the platform's refunds.
 
-export type OrderEmailEvent = "CREATED" | typeof OrderStatus.CONFIRMED | typeof OrderStatus.SHIPPED | typeof OrderStatus.DELIVERED | typeof OrderStatus.CANCELLED
+export type OrderEmailEvent = "CREATED" | "PAYMENT_RECEIVED" | typeof OrderStatus.CONFIRMED | typeof OrderStatus.SHIPPED | typeof OrderStatus.DELIVERED | typeof OrderStatus.CANCELLED
 
 const orderEmailSelect = {
   reference: true,
@@ -46,6 +47,7 @@ export type OrderForEmail = Prisma.OrderGetPayload<{ select: typeof orderEmailSe
 export type OrderEmail =
   | { kind: "CREATED"; data: OrderConfirmationEmail }
   | { kind: "CONFIRMED" | "DELIVERED"; data: BaseOrderEmail & { note: string | null } }
+  | { kind: "PAYMENT_RECEIVED"; data: BaseOrderEmail & { amountGhs: number; paymentMethod: string } }
   | { kind: "SHIPPED"; data: BaseOrderEmail & { shippingAddress: string; note: string | null } }
   | { kind: "CANCELLED"; data: BaseOrderEmail & { cancellationReason: string; totalGhs: number } }
 
@@ -82,6 +84,8 @@ export function buildOrderEmail(order: OrderForEmail, event: OrderEmailEvent, no
           paymentMethod: PAYMENT_METHOD_LABELS[order.paymentMethod],
         },
       }
+    case "PAYMENT_RECEIVED":
+      return { kind: "PAYMENT_RECEIVED", data: { ...base, amountGhs: amount(order.totalGhs), paymentMethod: PAYMENT_METHOD_LABELS[order.paymentMethod] } }
     case OrderStatus.CONFIRMED:
       return { kind: "CONFIRMED", data: { ...base, note } }
     case OrderStatus.SHIPPED:
@@ -98,6 +102,8 @@ function deliver(email: OrderEmail) {
   switch (email.kind) {
     case "CREATED":
       return sendOrderConfirmationEmail(email.data)
+    case "PAYMENT_RECEIVED":
+      return sendOrderPaymentReceivedEmail(email.data)
     case "CONFIRMED":
       return sendOrderConfirmedEmail(email.data)
     case "SHIPPED":

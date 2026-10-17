@@ -6,6 +6,7 @@ import { OrderConfirmation } from "../dist/src/templates/order/order-confirmatio
 import { OrderConfirmed } from "../dist/src/templates/order/order-confirmed.js"
 import { OrderCancelled } from "../dist/src/templates/order/order-cancelled.js"
 import { OrderDelivered } from "../dist/src/templates/order/order-delivered.js"
+import { OrderPaymentReceived } from "../dist/src/templates/order/order-payment-received.js"
 import { OrderRefunded } from "../dist/src/templates/order/order-refunded.js"
 import { OrderShipped } from "../dist/src/templates/order/order-shipped.js"
 import { PasswordUpdatedEmail } from "../dist/src/templates/password-updated-email.js"
@@ -67,6 +68,7 @@ const templates = [
     "123 Example Street",
   ],
   ["order delivered", OrderDelivered({ ...orderDetails }), "ORDER-123"],
+  ["order payment received", OrderPaymentReceived({ ...orderDetails, amountGhs: 41.33, paymentMethod: "Mobile money" }), "41.33"],
   [
     "order cancelled",
     OrderCancelled({

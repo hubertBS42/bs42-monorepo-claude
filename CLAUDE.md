@@ -123,7 +123,7 @@ Migrations: Prisma doesn't model `CHECK` constraints or triggers, so they live i
   - Status changes follow `lib/order-status.ts` (`nextOrderStatuses`: shipped is for delivery only, cancel until shipped with a reason, completed needs payment) and apply only from the status the page showed (`STATUS_CHANGED`). A store can't cancel a paid order (`PAID_ORDER`).
   - Payment is recorded separately ("Record payment", with `paymentRecordedById`), never as a side effect of a status.
   - References are `BS42-yyyyMMdd-00001` from the Postgres sequence `order_reference_seq`, created in its migration's SQL; gaps are expected.
-  - Customer emails (`lib/order-emails.ts`) are scheduled with Next's `after()` once a create or status change has committed. They're skipped when the order has no `customerEmail` or the linked account has `getOrderEmails` off, and pickups get no shipped/delivered email.
+  - Customer emails (`lib/order-emails.ts`) are scheduled with Next's `after()` once a create, status change or recorded payment has committed (created, confirmed, shipped, delivered, cancelled, payment received; processing and completed send none). They're skipped when the order has no `customerEmail` or the linked account has `getOrderEmails` off, and pickups get no shipped/delivered email.
 
 ### Console app conventions
 - Routes are grouped: `(auth)` pages are public, `(root)` is the authenticated shell, and `(misc)` holds `no-stores` and `accept-invitation`. Route-specific components live in `_components/` next to the page.

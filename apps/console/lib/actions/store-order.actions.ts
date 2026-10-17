@@ -135,6 +135,9 @@ export async function recordStorePaymentAction(input: z.input<typeof recordStore
     })
     if (count === 0) return { success: false, error: "This order's payment was already recorded, or it was cancelled. Refresh the page.", code: "PAYMENT_CHANGED" }
 
+    // Only once the payment is saved: after() also runs when an action fails
+    after(() => sendOrderEmail(orderId, "PAYMENT_RECEIVED"))
+
     return { success: true }
   } catch (error) {
     return { success: false, error: formatError(error) }

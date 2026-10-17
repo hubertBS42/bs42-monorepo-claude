@@ -5,5 +5,13 @@ export { ResetPasswordEmail } from "./templates/reset-password-email.js"
 export { SetPasswordEmail } from "./templates/set-password-email.js"
 export { PasswordUpdatedEmail } from "./templates/password-updated-email.js"
 export { InviteMemberEmail } from "./templates/invite-member-email.js"
-export { sendOrderConfirmationEmail, sendOrderShippedEmail, sendOrderDeliveredEmail, sendOrderCancelledEmail, sendOrderConfirmedEmail, sendOrderRefundedEmail } from "./order-notifications.js"
+export {
+  sendOrderConfirmationEmail,
+  sendOrderShippedEmail,
+  sendOrderDeliveredEmail,
+  sendOrderCancelledEmail,
+  sendOrderConfirmedEmail,
+  sendOrderPaymentReceivedEmail,
+  sendOrderRefundedEmail,
+} from "./order-notifications.js"
 export type { BaseOrderEmail, OrderConfirmationEmail } from "./order-notifications.js"

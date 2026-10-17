@@ -5,6 +5,7 @@ import { OrderShipped } from "./templates/order/order-shipped.js"
 import { OrderDelivered } from "./templates/order/order-delivered.js"
 import { OrderCancelled } from "./templates/order/order-cancelled.js"
 import { OrderRefunded } from "./templates/order/order-refunded.js"
+import { OrderPaymentReceived } from "./templates/order/order-payment-received.js"
 import type { OrderSummaryItem } from "./templates/order/components/order-summary.js"
 
 export interface BaseOrderEmail {
@@ -67,6 +68,23 @@ export async function sendOrderConfirmedEmail(data: BaseOrderEmail & { note?: st
       customerName: data.customerName,
       reference: data.reference,
       note: data.note,
+      appName: data.appName,
+      logoUrl: data.logoUrl,
+    }),
+  })
+}
+
+// amountGhs is the order total that was paid; paymentMethod is a label for display ("Mobile money")
+export async function sendOrderPaymentReceivedEmail(data: BaseOrderEmail & { amountGhs: number; paymentMethod: string }) {
+  return sendEmail({
+    to: data.to,
+    fromName: data.appName,
+    subject: `Payment Received — ${data.reference}`,
+    reactTemplate: OrderPaymentReceived({
+      customerName: data.customerName,
+      reference: data.reference,
+      amountGhs: data.amountGhs,
+      paymentMethod: data.paymentMethod,
       appName: data.appName,
       logoUrl: data.logoUrl,
     }),
