@@ -35,8 +35,13 @@ export default function RemoveMember({ member }: { member: RemovableMember }) {
       const response = await removeStoreMemberAction({ memberId: member.id, storeId: member.organizationId })
 
       if (!response.success) {
-        // The dialog stays open so the user can retry or cancel on purpose
         toast.add({ title: "Unable to remove the member", description: response.error, type: "error" })
+        // Already gone, so there's nothing to retry: go back to the list. Otherwise the dialog stays open
+        // so the user can retry or cancel on purpose.
+        if (response.code === "NOT_FOUND") {
+          setIsOpen(false)
+          router.push("/store/members")
+        }
         return
       }
 

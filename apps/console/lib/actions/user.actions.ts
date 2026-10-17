@@ -138,7 +138,7 @@ async function updateOrgMemberships({
         })
         if (!existingMembership) return { success: false, error: "Membership not found" }
         if (existingMembership.role === storeRole) return { success: true }
-        return updateStoreMemberRoleAction({ memberId: memberId!, role: storeRole, storeId })
+        return updateStoreMemberRoleAction({ memberId: memberId!, role: storeRole, storeId, currentRole: existingMembership.role })
       }),
   ])
 

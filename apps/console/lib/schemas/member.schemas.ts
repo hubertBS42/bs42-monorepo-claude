@@ -14,6 +14,8 @@ export const removeStoreMemberSchema = z.object({
 
 export const updateStoreMemberRoleSchema = removeStoreMemberSchema.extend({
   role: z.enum(ORG_ROLE_NAMES),
+  // The role the page showed, so a change made meanwhile (another tab, another owner) isn't overwritten
+  currentRole: z.string(),
 })
 
 export const leaveStoreSchema = z.object({

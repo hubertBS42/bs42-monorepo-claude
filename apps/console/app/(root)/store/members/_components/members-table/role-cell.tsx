@@ -25,11 +25,14 @@ const RoleCell = ({ member, canChange }: { member: StoreMember; canChange: boole
     setRole(newRole)
 
     startTransition(async () => {
-      const response = await updateStoreMemberRoleAction({ memberId: member.id, storeId: member.organizationId, role: newRole })
+      // member.role is what the page loaded, not the select's optimistic value
+      const response = await updateStoreMemberRoleAction({ memberId: member.id, storeId: member.organizationId, role: newRole, currentRole: member.role })
 
       if (!response.success) {
         setRole(previousRole)
         toast.add({ title: "Unable to change the role", description: response.error, type: "error" })
+        // The row was stale: show the member's current state
+        if (response.code === "ROLE_CHANGED" || response.code === "NOT_FOUND") router.refresh()
         return
       }
 

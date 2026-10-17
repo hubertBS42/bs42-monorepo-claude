@@ -64,7 +64,18 @@ export async function addStoreMemberAction(input: { userId: string; storeId: str
   }
 }
 
-// Better Auth checks the caller's permissions on removeMember, updateMemberRole and leaveOrganization
+// Better Auth checks the caller's permissions on removeMember, updateMemberRole and leaveOrganization.
+// Remove and update look the member up in the store first, so a stale row gets a code the page can act on.
+
+const memberNotFoundResponse: ActionResponse = {
+  success: false,
+  error: "This member is no longer in the store. Refresh the page to see its current members.",
+  code: "NOT_FOUND",
+}
+
+async function findStoreMember(memberId: string, storeId: string) {
+  return prisma.member.findFirst({ where: { id: memberId, organizationId: storeId }, select: { role: true } })
+}
 
 export async function removeStoreMemberAction(input: { memberId: string; storeId: string }): Promise<ActionResponse> {
   await requireConsoleAccess()
@@ -75,6 +86,8 @@ export async function removeStoreMemberAction(input: { memberId: string; storeId
     const { memberId, storeId } = parsed.data
 
     const headersObj = await headers()
+
+    if (!(await findStoreMember(memberId, storeId))) return memberNotFoundResponse
 
     await consoleAuth.api.removeMember({
       body: {
@@ -89,22 +102,21 @@ export async function removeStoreMemberAction(input: { memberId: string; storeId
   }
 }
 
-export async function updateStoreMemberRoleAction(input: { memberId: string; storeId: string; role: OrgRole }): Promise<ActionResponse> {
+export async function updateStoreMemberRoleAction(input: { memberId: string; storeId: string; role: OrgRole; currentRole: string }): Promise<ActionResponse> {
   await requireConsoleAccess()
 
   try {
     const parsed = updateStoreMemberRoleSchema.safeParse(input)
     if (!parsed.success) return invalidInput(parsed.error)
-    const { memberId, storeId, role } = parsed.data
+    const { memberId, storeId, role, currentRole } = parsed.data
 
     const headersObj = await headers()
 
-    const member = await prisma.member.findUnique({
-      where: { id: memberId },
-      select: { id: true },
-    })
-
-    if (!member) return { success: false, error: "Member not found" }
+    const member = await findStoreMember(memberId, storeId)
+    if (!member) return memberNotFoundResponse
+    if (member.role !== currentRole) {
+      return { success: false, error: "This member's role was changed by someone else. Refresh the page to see it.", code: "ROLE_CHANGED" }
+    }
 
     await consoleAuth.api.updateMemberRole({
       body: {
