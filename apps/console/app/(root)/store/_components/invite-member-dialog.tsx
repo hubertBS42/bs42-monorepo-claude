@@ -8,12 +8,15 @@ import { SubmitHandler, useForm } from "react-hook-form"
 import { z } from "zod"
 import SelectField from "@workspace/forms/components/select-field"
 import TextInputField from "@workspace/forms/components/text-input-field"
+import { consoleAuthClient } from "@workspace/auth/console-client"
 import { Button } from "@workspace/ui/components/button"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@workspace/ui/components/dialog"
 import { FieldGroup } from "@workspace/ui/components/field"
+import { Skeleton } from "@workspace/ui/components/skeleton"
 import { Spinner } from "@workspace/ui/components/spinner"
 import { toast } from "@workspace/ui/components/toast"
 import { STORE_ROLE_LABELS } from "@/components/user-badges"
+import { useMemberRole } from "@/hooks/use-member-role"
 import { inviteMemberAction } from "@/lib/actions/invitation.actions"
 import { inviteSchema } from "@/lib/schemas/invitation.schemas"
 
@@ -21,16 +24,33 @@ const roleOptions = inviteSchema.shape.role.options.map((role) => ({ label: STOR
 
 type InviteFormValues = z.infer<typeof inviteSchema>
 
-// Rendered only for members who can invite; inviteMemberAction checks again
+// Checks the store role itself, like the other action buttons; inviteMemberAction checks again
 const InviteMemberDialog = ({ storeId }: { storeId: string }) => {
   const [isOpen, setIsOpen] = useState(false)
   const [isPending, startTransition] = useTransition()
   const router = useRouter()
+  const { role, isLoading } = useMemberRole(storeId)
 
   const form = useForm<InviteFormValues>({
     resolver: zodResolver(inviteSchema),
     defaultValues: { email: "", role: "member" },
   })
+
+  if (isLoading) return <Skeleton className="h-8 w-32 rounded-md" />
+
+  const canInvite = role !== null && consoleAuthClient.organization.checkRolePermission({ role, permissions: { invitation: ["create"] } })
+  if (!canInvite) {
+    return (
+      <div className="grid justify-items-end gap-1">
+        <Button type="button" size="sm" disabled>
+          <UserPlus className="size-4" />
+          Invite Member
+        </Button>
+        {/* Shown as text because a disabled button never shows its title tooltip, and screen readers skip it */}
+        <p className="text-xs text-muted-foreground">Your role in this store can&apos;t invite members.</p>
+      </div>
+    )
+  }
 
   const onSubmit: SubmitHandler<InviteFormValues> = (values) => {
     startTransition(async () => {

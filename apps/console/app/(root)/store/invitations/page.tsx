@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import { organizationRoles, ORG_ROLE_NAMES } from "@workspace/auth/organization-permissions"
+import { ORG_ROLE_NAMES } from "@workspace/auth/organization-permissions"
 import { getEnumParam, getOrderParam, getPositiveIntegerParam, getSortParam, getStringParam } from "@workspace/utils/search-params"
 import { requireActiveStoreMember } from "@/lib/auth-guard"
 import { getStoreInvitations, INVITATION_SORT_FIELDS, MAX_INVITATIONS_PAGE_SIZE } from "@/lib/data/invitations.data"
@@ -18,7 +18,7 @@ type StoreInvitationsPageProps = {
 }
 
 export default async function StoreInvitationsPage({ searchParams }: StoreInvitationsPageProps) {
-  const { storeId, role } = await requireActiveStoreMember()
+  const { storeId } = await requireActiveStoreMember()
   const params = await searchParams
 
   const invitationsParams: InvitationsParams = {
@@ -33,10 +33,6 @@ export default async function StoreInvitationsPage({ searchParams }: StoreInvita
   const result = await getStoreInvitations(storeId, invitationsParams)
   if (!result.success) throw new Error(result.error)
 
-  // The invitation actions check again, through Better Auth
-  const canInvite = organizationRoles[role].authorize({ invitation: ["create"] }).success
-  const canCancel = organizationRoles[role].authorize({ invitation: ["cancel"] }).success
-
   return (
     <main className="flex flex-col gap-y-6">
       <div className="flex items-end justify-between">
@@ -45,9 +41,9 @@ export default async function StoreInvitationsPage({ searchParams }: StoreInvita
           <p className="text-sm text-muted-foreground">View and manage this store&apos;s pending invitations.</p>
         </div>
 
-        {canInvite && <InviteMemberDialog storeId={storeId} />}
+        <InviteMemberDialog storeId={storeId} />
       </div>
-      <InvitationsTable data={result.data} canResend={canInvite} canCancel={canCancel} />
+      <InvitationsTable storeId={storeId} data={result.data} />
     </main>
   )
 }

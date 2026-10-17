@@ -6,10 +6,12 @@ import { StoreRoleBadge } from "@/components/user-badges"
 import type { InvitationForTable } from "@/types"
 import InvitationActions from "./actions"
 import { Checkbox } from "@workspace/ui/components/checkbox"
+import { Skeleton } from "@workspace/ui/components/skeleton"
 
 interface ColumnOptions {
-  canResend: boolean
-  canCancel: boolean
+  // Null while the store role loads
+  canResend: boolean | null
+  canCancel: boolean | null
 }
 
 export function getColumns({ canResend, canCancel }: ColumnOptions): ColumnDef<InvitationForTable, unknown>[] {
@@ -61,7 +63,8 @@ export function getColumns({ canResend, canCancel }: ColumnOptions): ColumnDef<I
     },
     {
       id: "actions",
-      cell: ({ row }) => <InvitationActions invitation={row.original} canResend={canResend} canCancel={canCancel} />,
+      cell: ({ row }) =>
+        canResend === null || canCancel === null ? <Skeleton className="ml-auto h-8 w-16 rounded-md" /> : <InvitationActions invitation={row.original} canResend={canResend} canCancel={canCancel} />,
     },
   ]
 }
