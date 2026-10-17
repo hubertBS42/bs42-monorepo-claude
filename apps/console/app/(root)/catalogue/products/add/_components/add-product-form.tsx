@@ -95,7 +95,8 @@ const AddProductForm = ({ brands, categoryOptions, disabledCategoryIds }: AddPro
     resolver: zodResolver(addProductFormSchema),
     defaultValues: {
       name: "",
-      description: "",
+      // The editor reports an empty document as null, so anything else here makes the form dirty on load
+      description: null,
       tags: [],
       documents: [],
       categoryId: "",
@@ -306,6 +307,7 @@ const AddProductForm = ({ brands, categoryOptions, disabledCategoryIds }: AddPro
                       options={categoryOptions}
                       disabledOptions={disabledCategoryIds}
                       leafOnly
+                      clearable
                       disabled={isBusy}
                       placeholder="Select a category"
                       description="Products go in the most specific category, one without subcategories."
