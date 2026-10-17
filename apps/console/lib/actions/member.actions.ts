@@ -1,31 +1,33 @@
 "use server"
 
 import { consoleAuth } from "@workspace/auth/console"
+import { APIError } from "better-auth/api"
 import { headers } from "next/headers"
 import { OrgRole } from "@workspace/auth/organization-permissions"
 import { formatError } from "@workspace/auth/format-error"
 import { prisma } from "@workspace/db"
 import { ActionResponse } from "@workspace/contracts"
-import { getOrganizationRoleWithPermission } from "@/lib/auth-guard"
+import { getOrganizationRoleWithPermission, requireConsoleAccess } from "@/lib/auth-guard"
 import { addStoreMemberSchema, leaveStoreSchema, removeStoreMemberSchema, updateStoreMemberRoleSchema } from "@/lib/schemas/member.schemas"
 import z from "zod"
 
 // Every export here is a public endpoint, so the session always comes from the request, never from the caller,
-// and every input is validated.
+// and every input is validated. Each one calls requireConsoleAccess before its try block: it redirects storefront
+// customers (who share the auth cookie) by throwing, which the catch would swallow.
 
 function invalidInput(error: z.ZodError): ActionResponse {
   return { success: false, error: error.issues[0]?.message ?? "Invalid input", code: "INVALID" }
 }
 
 export async function addStoreMemberAction(input: { userId: string; storeId: string; role: OrgRole }): Promise<ActionResponse> {
+  const session = await requireConsoleAccess()
+
   try {
     const parsed = addStoreMemberSchema.safeParse(input)
     if (!parsed.success) return invalidInput(parsed.error)
     const { userId, storeId, role } = parsed.data
 
     const headersObj = await headers()
-    const session = await consoleAuth.api.getSession({ headers: headersObj })
-    if (!session) return { success: false, error: "Unauthorized" }
 
     // Better Auth's addMember is server-only and doesn't check permissions, so check them here
     const callerRole = await getOrganizationRoleWithPermission(session.user.id, storeId, { member: ["create"] })
@@ -65,14 +67,14 @@ export async function addStoreMemberAction(input: { userId: string; storeId: str
 // Better Auth checks the caller's permissions on removeMember, updateMemberRole and leaveOrganization
 
 export async function removeStoreMemberAction(input: { memberId: string; storeId: string }): Promise<ActionResponse> {
+  await requireConsoleAccess()
+
   try {
     const parsed = removeStoreMemberSchema.safeParse(input)
     if (!parsed.success) return invalidInput(parsed.error)
     const { memberId, storeId } = parsed.data
 
     const headersObj = await headers()
-    const session = await consoleAuth.api.getSession({ headers: headersObj })
-    if (!session) return { success: false, error: "Unauthorized" }
 
     await consoleAuth.api.removeMember({
       body: {
@@ -88,14 +90,14 @@ export async function removeStoreMemberAction(input: { memberId: string; storeId
 }
 
 export async function updateStoreMemberRoleAction(input: { memberId: string; storeId: string; role: OrgRole }): Promise<ActionResponse> {
+  await requireConsoleAccess()
+
   try {
     const parsed = updateStoreMemberRoleSchema.safeParse(input)
     if (!parsed.success) return invalidInput(parsed.error)
     const { memberId, storeId, role } = parsed.data
 
     const headersObj = await headers()
-    const session = await consoleAuth.api.getSession({ headers: headersObj })
-    if (!session) return { success: false, error: "Unauthorized" }
 
     const member = await prisma.member.findUnique({
       where: { id: memberId },
@@ -121,14 +123,14 @@ export async function updateStoreMemberRoleAction(input: { memberId: string; sto
 }
 
 export async function leaveStoreAction(input: { storeId: string }): Promise<ActionResponse> {
+  await requireConsoleAccess()
+
   try {
     const parsed = leaveStoreSchema.safeParse(input)
     if (!parsed.success) return invalidInput(parsed.error)
     const { storeId } = parsed.data
 
     const headersObj = await headers()
-    const session = await consoleAuth.api.getSession({ headers: headersObj })
-    if (!session) return { success: false, error: "Unauthorized" }
 
     const store = await prisma.organization.findUnique({
       where: { id: storeId },
@@ -146,6 +148,9 @@ export async function leaveStoreAction(input: { storeId: string }): Promise<Acti
 
     return { success: true }
   } catch (error) {
+    if (error instanceof APIError && error.body?.code === "YOU_CANNOT_LEAVE_THE_ORGANIZATION_AS_THE_ONLY_OWNER") {
+      return { success: false, error: "You're the store's only owner. Make another member an owner before you leave.", code: "LAST_OWNER" }
+    }
     return { success: false, error: formatError(error) }
   }
 }
