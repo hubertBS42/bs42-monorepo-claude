@@ -5,6 +5,6 @@
     "moduleResolution": "Bundler",
     "types": ["node"]
   },
-  "include": ["src/**/*.ts", "generated/prisma/**/*.ts"],
+  "include": ["src/**/*.ts", "prisma/seed.ts", "generated/prisma/**/*.ts"],
   "exclude": ["node_modules", "dist"]
 }

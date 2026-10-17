@@ -6,24 +6,26 @@
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
+    "db:seed": "tsx --env-file=.env prisma/seed.ts",
     "typecheck": "tsc --noEmit",
     "lint": "eslint"
   },
   "devDependencies": {
     "@types/node": "^20",
-    "@workspace/typescript-config": "workspace:*",
-    "prisma": "^7.10.0",
     "@workspace/eslint-config": "workspace:*",
-    "eslint": "^10"
+    "@workspace/typescript-config": "workspace:*",
+    "eslint": "^10",
+    "prisma": "^7.10.0",
+    "tsx": "^4.23.15"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.10.0",
     "@prisma/client": "^7.10.0",
+    "@workspace/contracts": "workspace:*",
+    "@workspace/storage": "workspace:*",
     "dotenv": "^18.0.5",
     "pg": "^8.23.1",
-    "slugify": "^1.6.9",
-    "@workspace/storage": "workspace:*",
-    "@workspace/contracts": "workspace:*"
+    "slugify": "^1.6.9"
   },
   "exports": {
     ".": "./src/index.ts",
