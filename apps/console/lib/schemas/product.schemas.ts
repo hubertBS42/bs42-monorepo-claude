@@ -18,13 +18,13 @@ const optionalDecimalSchema = z
 // ============================================
 
 export const variantOptionValueSchema = z.object({
-  id: z.string().optional(),
+  id: z.uuid().optional(),
   value: z.string().min(1, "Value is required"),
   position: z.number().int(),
 })
 
 export const variantOptionSchema = z.object({
-  id: z.string().optional(),
+  id: z.uuid().optional(),
   name: z.string().min(1, "Option name is required"),
   position: z.number().int(),
   values: z.array(variantOptionValueSchema).min(1, "At least one value is required"),
@@ -35,7 +35,7 @@ export const variantOptionSchema = z.object({
 // ============================================
 
 export const productVariantSchema = z.object({
-  id: z.string().optional(),
+  id: z.uuid().optional(),
   sku: z.string().nullable().optional().or(z.literal("")),
   barcode: z.string().nullable().optional(),
   images: z.array(z.httpUrl("Invalid image URL")),
@@ -48,7 +48,7 @@ export const productVariantSchema = z.object({
 })
 
 export const productDocumentSchema = z.object({
-  id: z.string().optional(),
+  id: z.uuid().optional(),
   name: z.string().min(1, "Document name is required"),
   url: z.httpUrl("Invalid document URL"),
 })

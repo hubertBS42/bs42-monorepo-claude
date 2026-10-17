@@ -96,6 +96,11 @@ Migrations: Prisma doesn't model `CHECK` constraints or triggers, so they live i
 - The `category_prevent_cycle` trigger rejects moving a category under itself or a descendant. Under the driver adapter its `category_no_cycle` error only appears in the error's `meta`; `updateCategoryAction` maps it to `PARENT_CYCLE`.
 - `lib/data/categories.data.ts`: `getCategoryTree` (for `DataTableTree`), `getCategoryOptions(editingId?)` for the parent select (archived categories and the edited category's own subtree are disabled), `getCategoryById` (with `childCount`). Deleting a category with subcategories returns `HAS_CHILDREN`.
 
+### Products
+- One form for add and edit (`catalogue/products/_components/product-form.tsx`). Products go in leaf categories only, and a published product needs a sell price above 0.
+- `updateProductAction` updates options, values, variants and documents in place, matched by id (`lib/product-sync.ts`). Store listing variants hang off variants and cascade, so recreating a variant would wipe the stores' prices and stock for it. A removed variant that has been ordered, directly or through a store's listing, is archived instead of deleted.
+- The edit loader (`getProductForEdit`) sends plain values plus `savedFiles` (the form never deletes those; the action removes replaced ones after it commits) and each variant's usage, so the form can warn before removing a listed or ordered variant.
+
 ### Orders and money
 - Catalogue prices (products, store listings, variants) are USD. Customers are charged in GHS at the day's exchange rate (`ExchangeRate`, one row per pair per day, `rate` = units of `to` per 1 `from`). Order amounts are named after their currency (`subtotalUsd`, `subtotalGhs`, `shippingGhs`, `taxGhs`, `totalGhs`, `unitPriceUsd`/`unitPriceGhs`, ...).
 - Each order line stores its GHS amounts, its share of the discount (`discountGhs`) and its tax (`taxGhs`), each rounded once; the order's subtotal, discount and tax are their sums, so receipts add up. `totalGhs = subtotalGhs - discountAmountGhs + shippingGhs + taxGhs`. Orders copy the exchange rate and tax rate they used.

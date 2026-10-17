@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import AddProductForm from "./_components/add-product-form"
+import ProductForm from "../_components/product-form"
 import { getBrandsForSelect } from "@/lib/data/brands.data"
 import { getCategoryOptions } from "@/lib/data/categories.data"
 import { requireSystemPermission } from "@/lib/auth-guard"
@@ -15,5 +15,5 @@ export default async function AddProductPage() {
   if (!brands.success) throw new Error(brands.error)
   if (!categories.success) throw new Error(categories.error)
 
-  return <AddProductForm brands={brands.data} categoryOptions={categories.data.options} disabledCategoryIds={categories.data.disabledIds} />
+  return <ProductForm brands={brands.data} categoryOptions={categories.data.options} disabledCategoryIds={categories.data.disabledIds} />
 }

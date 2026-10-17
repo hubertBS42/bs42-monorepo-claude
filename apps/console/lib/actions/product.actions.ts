@@ -1,14 +1,15 @@
 "use server"
 import { z } from "zod"
-import { addProductFormSchema } from "@/lib/schemas/product.schemas"
+import { addProductFormSchema, updateProductFormSchema } from "@/lib/schemas/product.schemas"
 import { generateUniqueSku, prisma } from "@workspace/db"
 import { Prisma } from "@workspace/db/client"
 import { Status } from "@workspace/db/enums"
 import { formatError } from "@workspace/auth/format-error"
 import { ActionResponse } from "@workspace/contracts"
-import { isManagedFileUrl } from "@workspace/storage"
+import { isManagedFileUrl, removeFiles } from "@workspace/storage"
 import { sanitizeRichText } from "@workspace/utils/rich-text"
 import { requireSystemPermission } from "@/lib/auth-guard"
+import { loadProductForUpdate, syncProduct } from "@/lib/product-sync"
 
 // Every export here is a public endpoint, so every input is validated
 
@@ -22,13 +23,52 @@ const CATEGORY_UNAVAILABLE: ActionResponse = { success: false, error: "The categ
 const CATEGORY_NOT_LEAF: ActionResponse = { success: false, error: "Choose a category without subcategories.", code: "INVALID_CATEGORY" }
 const SKU_EXISTS: ActionResponse = { success: false, error: "A product or variant already uses this SKU.", code: "SKU_EXISTS" }
 const BARCODE_EXISTS: ActionResponse = { success: false, error: "A product or variant already uses this barcode.", code: "BARCODE_EXISTS" }
+const NOT_FOUND: ActionResponse = { success: false, error: "Product not found.", code: "NOT_FOUND" }
+const HAS_ORDERS: ActionResponse = { success: false, error: "This product has been ordered, so it can't be deleted. Archive it instead.", code: "HAS_ORDERS" }
 
-// Products and variants each have their own unique column, so a SKU or barcode is checked against both
-async function isTaken(field: "sku" | "barcode", values: string[]) {
+const productIdSchema = z.uuid("Invalid product ID")
+
+// The remote database is slow enough that the 5 s default runs out for a product with many variants
+const TRANSACTION_OPTIONS = { maxWait: 10_000, timeout: 30_000 }
+
+// Products and variants each have their own unique column, so a SKU or barcode is checked against both.
+// An edited product's own rows don't count: its variants keep their codes.
+async function isTaken(field: "sku" | "barcode", values: string[], ownProductId?: string) {
   if (values.length === 0) return false
   const where = field === "sku" ? { sku: { in: values } } : { barcode: { in: values } }
-  const [product, variant] = await Promise.all([prisma.product.findFirst({ where, select: { id: true } }), prisma.productVariant.findFirst({ where, select: { id: true } })])
+  const [product, variant] = await Promise.all([
+    prisma.product.findFirst({ where: { ...where, ...(ownProductId && { id: { not: ownProductId } }) }, select: { id: true } }),
+    prisma.productVariant.findFirst({ where: { ...where, ...(ownProductId && { productId: { not: ownProductId } }) }, select: { id: true } }),
+  ])
   return !!(product || variant)
+}
+
+type ProductInput = z.output<typeof addProductFormSchema>
+
+// What both create and update check before writing anything
+async function checkProductInput(data: ProductInput, ownProductId?: string): Promise<ActionResponse | undefined> {
+  const { documents, variants = [], sku, barcode, banner, images, brandId, categoryId, hasVariants } = data
+
+  // The client could send any URL, so only accept blobs in our own container
+  const fileUrls = [...images, ...(banner ? [banner] : []), ...documents.map((document) => document.url), ...variants.flatMap((variant) => variant.images)]
+  if (!fileUrls.every(isManagedFileUrl)) return INVALID_FILE
+
+  const [brand, category] = await Promise.all([
+    prisma.brand.findUnique({ where: { id: brandId }, select: { status: true } }),
+    prisma.category.findUnique({ where: { id: categoryId }, select: { status: true, _count: { select: { childCategories: true } } } }),
+  ])
+  if (!brand || brand.status === Status.ARCHIVED) return BRAND_UNAVAILABLE
+  if (!category || category.status === Status.ARCHIVED) return CATEGORY_UNAVAILABLE
+  // Products only go in the most specific category, so a branch like "Men" never lists them next to "Men › Shoes"
+  if (category._count.childCategories > 0) return CATEGORY_NOT_LEAF
+
+  // A product with variants keeps its SKU, barcode and shipping details per variant
+  const chosenSkus = (hasVariants ? variants.map((variant) => variant.sku) : [sku]).filter((value): value is string => !!value)
+  const chosenBarcodes = (hasVariants ? variants.map((variant) => variant.barcode) : [barcode]).filter((value): value is string => !!value)
+  if (await isTaken("sku", chosenSkus, ownProductId)) return SKU_EXISTS
+  if (await isTaken("barcode", chosenBarcodes, ownProductId)) return BARCODE_EXISTS
+
+  return undefined
 }
 
 // Slug and option conflicts are handled before they get here, so a unique violation is a SKU or barcode saved in the meantime
@@ -48,84 +88,121 @@ export async function createProductAction(input: z.input<typeof addProductFormSc
     const parsed = addProductFormSchema.safeParse(input)
     if (!parsed.success) return invalidInput(parsed.error)
 
+    const problem = await checkProductInput(parsed.data)
+    if (problem) return problem
+
     const { documents, variantOptions = [], variants = [], sku, barcode, weight, dimensions, banner, ...fields } = parsed.data
 
-    // The client could send any URL, so only accept blobs in our own container
-    const fileUrls = [...fields.images, ...(banner ? [banner] : []), ...documents.map((document) => document.url), ...variants.flatMap((variant) => variant.images)]
-    if (!fileUrls.every(isManagedFileUrl)) return INVALID_FILE
-
-    const [brand, category] = await Promise.all([
-      prisma.brand.findUnique({ where: { id: fields.brandId }, select: { status: true } }),
-      prisma.category.findUnique({ where: { id: fields.categoryId }, select: { status: true, _count: { select: { childCategories: true } } } }),
-    ])
-    if (!brand || brand.status === Status.ARCHIVED) return BRAND_UNAVAILABLE
-    if (!category || category.status === Status.ARCHIVED) return CATEGORY_UNAVAILABLE
-    // Products only go in the most specific category, so a branch like "Men" never lists them next to "Men › Shoes"
-    if (category._count.childCategories > 0) return CATEGORY_NOT_LEAF
-
-    // A product with variants keeps its SKU, barcode and shipping details per variant
-    const chosenSkus = (fields.hasVariants ? variants.map((variant) => variant.sku) : [sku]).filter((value): value is string => !!value)
-    const chosenBarcodes = (fields.hasVariants ? variants.map((variant) => variant.barcode) : [barcode]).filter((value): value is string => !!value)
-    if (await isTaken("sku", chosenSkus)) return SKU_EXISTS
-    if (await isTaken("barcode", chosenBarcodes)) return BARCODE_EXISTS
-
-    await prisma.$transaction(
-      async (tx) => {
-        const product = await tx.product.create({
-          data: {
-            ...fields,
-            // Editor JSON the storefront renders, and the client could send anything
-            description: sanitizeRichText(fields.description),
-            // Placeholder: the Prisma hook generates the real slug, and a SKU for a simple product left without one
-            slug: "",
-            banner: banner || null,
-            ...(!fields.hasVariants && { sku: sku || null, barcode: barcode || null, weight: weight ?? null, dimensions: dimensions || null }),
-            documents: { create: documents.map(({ name, url }) => ({ name, url })) },
-            variantOptions: {
-              create: variantOptions.map((option) => ({
-                name: option.name,
-                position: option.position,
-                values: { create: option.values.map(({ value, position }) => ({ value, position })) },
-              })),
-            },
+    await prisma.$transaction(async (tx) => {
+      const product = await tx.product.create({
+        data: {
+          ...fields,
+          // Editor JSON the storefront renders, and the client could send anything
+          description: sanitizeRichText(fields.description),
+          // Placeholder: the Prisma hook generates the real slug, and a SKU for a simple product left without one
+          slug: "",
+          banner: banner || null,
+          ...(!fields.hasVariants && { sku: sku || null, barcode: barcode || null, weight: weight ?? null, dimensions: dimensions || null }),
+          documents: { create: documents.map(({ name, url }) => ({ name, url })) },
+          variantOptions: {
+            create: variantOptions.map((option) => ({
+              name: option.name,
+              position: option.position,
+              values: { create: option.values.map(({ value, position }) => ({ value, position })) },
+            })),
           },
-          select: { id: true, name: true, variantOptions: { select: { name: true, values: { select: { id: true, value: true } } } } },
+        },
+        select: { id: true, name: true, variantOptions: { select: { name: true, values: { select: { id: true, value: true } } } } },
+      })
+
+      // Matched by name and value rather than position: Prisma doesn't promise the order created rows come back in
+      const valueIds = new Map(product.variantOptions.flatMap((option) => option.values.map((value) => [`${option.name}\u0000${value.value}`, value.id])))
+
+      // One at a time: tx sees the variants created before this one, so their SKUs count as taken
+      for (const variant of variants) {
+        const optionValueIds = Object.entries(variant.attributes).map(([option, value]) => {
+          const id = valueIds.get(`${option}\u0000${value}`)
+          // The schema checks every attribute against the options, so this only happens if the two disagree
+          if (!id) throw new Error(`Unknown option value ${option}: ${value}`)
+          return id
         })
 
-        // Matched by name and value rather than position: Prisma doesn't promise the order created rows come back in
-        const valueIds = new Map(product.variantOptions.flatMap((option) => option.values.map((value) => [`${option.name}\u0000${value.value}`, value.id])))
-
-        // One at a time: tx sees the variants created before this one, so their SKUs count as taken
-        for (const variant of variants) {
-          const optionValueIds = Object.entries(variant.attributes).map(([option, value]) => {
-            const id = valueIds.get(`${option}\u0000${value}`)
-            // The schema checks every attribute against the options, so this only happens if the two disagree
-            if (!id) throw new Error(`Unknown option value ${option}: ${value}`)
-            return id
-          })
-
-          await tx.productVariant.create({
-            data: {
-              productId: product.id,
-              sku: variant.sku || (await generateUniqueSku(tx, product.name)),
-              barcode: variant.barcode || null,
-              images: variant.images,
-              weight: variant.weight ?? null,
-              dimensions: variant.dimensions || null,
-              position: variant.position,
-              variantValues: { create: optionValueIds.map((optionValueId) => ({ optionValueId })) },
-            },
-          })
-        }
-      },
-      // The remote database is slow enough that the 5 s default runs out for a product with many variants
-      { maxWait: 10_000, timeout: 30_000 }
-    )
+        await tx.productVariant.create({
+          data: {
+            productId: product.id,
+            sku: variant.sku || (await generateUniqueSku(tx, product.name)),
+            barcode: variant.barcode || null,
+            images: variant.images,
+            weight: variant.weight ?? null,
+            dimensions: variant.dimensions || null,
+            position: variant.position,
+            variantValues: { create: optionValueIds.map((optionValueId) => ({ optionValueId })) },
+          },
+        })
+      }
+    }, TRANSACTION_OPTIONS)
 
     return { success: true }
   } catch (error) {
     const conflict = getUniqueConflict(error)
     if (conflict) return conflict
+    return { success: false, error: formatError(error) }
+  }
+}
+
+export async function updateProductAction(input: z.input<typeof updateProductFormSchema>): Promise<ActionResponse> {
+  // Outside the try block: redirect() works by throwing and must not be caught
+  await requireSystemPermission({ product: ["update"] })
+
+  try {
+    const parsed = updateProductFormSchema.safeParse(input)
+    if (!parsed.success) return invalidInput(parsed.error)
+
+    const saved = await loadProductForUpdate(parsed.data.id)
+    if (!saved) return NOT_FOUND
+
+    const problem = await checkProductInput(parsed.data, parsed.data.id)
+    if (problem) return problem
+
+    const unusedFiles = await prisma.$transaction(
+      // Editor JSON the storefront renders, and the client could send anything
+      (tx) => syncProduct(tx, saved, { ...parsed.data, description: sanitizeRichText(parsed.data.description) }),
+      TRANSACTION_OPTIONS
+    )
+
+    // Only the server knows which files were saved, so it removes the replaced ones once the update has committed
+    await removeFiles(unusedFiles)
+    return { success: true }
+  } catch (error) {
+    const conflict = getUniqueConflict(error)
+    if (conflict) return conflict
+    return { success: false, error: formatError(error) }
+  }
+}
+
+export async function deleteProductAction(productId: string): Promise<ActionResponse> {
+  // Outside the try block: redirect() works by throwing and must not be caught
+  await requireSystemPermission({ product: ["delete"] })
+
+  try {
+    if (!productIdSchema.safeParse(productId).success) return NOT_FOUND
+
+    // Order lines restrict deleting the product, its variants and store listings of either, so check them all first
+    const ordered = await prisma.orderItem.findFirst({
+      where: { OR: [{ productId }, { productVariant: { productId } }, { storeListing: { productId } }] },
+      select: { id: true },
+    })
+    if (ordered) return HAS_ORDERS
+
+    // Variants, documents and store listings cascade; the Prisma hook removes the files once the delete commits
+    await prisma.product.delete({ where: { id: productId } })
+    return { success: true }
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === "P2025") return NOT_FOUND
+      // Ordered between the check and the delete
+      if (error.code === "P2003") return HAS_ORDERS
+    }
     return { success: false, error: formatError(error) }
   }
 }

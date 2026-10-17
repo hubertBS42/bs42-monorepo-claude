@@ -1,6 +1,6 @@
 import "server-only"
 
-import type { ProductsData, ProductsParams } from "@/types"
+import type { ProductFormData, ProductsData, ProductsParams } from "@/types"
 import { formatError } from "@workspace/auth/format-error"
 import { consoleAuth } from "@workspace/auth/console"
 import { headers } from "next/headers"
@@ -150,6 +150,110 @@ export const getProductFilterOptions = async (): Promise<DataResponse<ProductFil
       data: {
         brands: brands.map((brand) => ({ label: archived(brand.name, brand.status), value: brand.id })),
         categories: categories.map((category) => ({ label: archived(paths.get(category.id) ?? category.name, category.status), value: category.id })).sort((a, b) => a.label.localeCompare(b.label)),
+      },
+    }
+  } catch (error) {
+    return { success: false, error: formatError(error) }
+  }
+}
+
+const PRODUCT_NOT_FOUND = { success: false as const, error: "Product not found.", code: "NOT_FOUND" }
+
+export const getProductForEdit = async (productId: string): Promise<DataResponse<ProductFormData>> => {
+  try {
+    const session = await getSession()
+    if (!session) return { success: false, error: "Unauthorized" }
+
+    // Product.id is a UUID column, so any other value would make Postgres throw instead of finding nothing
+    if (!productIdSchema.safeParse(productId).success) return PRODUCT_NOT_FOUND
+
+    const [product, order] = await Promise.all([
+      prisma.product.findUnique({
+        where: { id: productId },
+        include: {
+          brand: { select: { id: true, name: true, status: true } },
+          documents: { select: { id: true, name: true, url: true }, orderBy: { createdAt: "asc" } },
+          variantOptions: {
+            select: { id: true, name: true, position: true, values: { select: { id: true, value: true, position: true }, orderBy: { position: "asc" } } },
+            orderBy: { position: "asc" },
+          },
+          // Archived variants stay for past orders but aren't edited any more
+          variants: {
+            where: { status: { not: Status.ARCHIVED } },
+            select: {
+              id: true,
+              sku: true,
+              barcode: true,
+              images: true,
+              weight: true,
+              dimensions: true,
+              position: true,
+              variantValues: { select: { optionValue: { select: { value: true, option: { select: { name: true } } } } } },
+              _count: { select: { orderItems: true, storeListingVariants: true } },
+              storeListingVariants: { select: { _count: { select: { orderItems: true } } } },
+            },
+            orderBy: { position: "asc" },
+          },
+          _count: { select: { storeListings: true } },
+        },
+      }),
+      // An order line can point at the product, one of its variants or a store's listing of it
+      prisma.orderItem.findFirst({ where: { OR: [{ productId }, { productVariant: { productId } }, { storeListing: { productId } }] }, select: { id: true } }),
+    ])
+
+    if (!product) return PRODUCT_NOT_FOUND
+
+    const documents = product.documents.map(({ id, name, url }) => ({ id, name, url }))
+    const variants = product.variants.map((variant) => ({
+      id: variant.id,
+      sku: variant.sku,
+      barcode: variant.barcode ?? "",
+      images: variant.images,
+      weight: variant.weight?.toNumber() ?? null,
+      dimensions: variant.dimensions ?? "",
+      position: variant.position,
+      attributes: Object.fromEntries(variant.variantValues.map(({ optionValue }) => [optionValue.option.name, optionValue.value])),
+    }))
+
+    return {
+      success: true,
+      data: {
+        id: product.id,
+        name: product.name,
+        brand: { id: product.brand.id, name: product.brand.name, isArchived: product.brand.status === Status.ARCHIVED },
+        values: {
+          name: product.name,
+          description: product.description,
+          tags: product.tags,
+          documents,
+          categoryId: product.categoryId,
+          brandId: product.brandId,
+          baseSellPrice: product.baseSellPrice.toNumber(),
+          baseBuyPrice: product.baseBuyPrice.toNumber(),
+          sku: product.sku ?? "",
+          barcode: product.barcode ?? "",
+          dimensions: product.dimensions ?? "",
+          weight: product.weight?.toNumber() ?? null,
+          hasVariants: product.hasVariants,
+          status: product.status,
+          condition: product.condition,
+          images: product.images,
+          banner: product.banner ?? "",
+          variantOptions: product.variantOptions,
+          variants,
+        },
+        savedFiles: [...product.images, ...(product.banner ? [product.banner] : []), ...documents.map((document) => document.url), ...variants.flatMap((variant) => variant.images)],
+        variantUsage: Object.fromEntries(
+          product.variants.map((variant) => [
+            variant.id,
+            {
+              ordered: variant._count.orderItems > 0 || variant.storeListingVariants.some((listing) => listing._count.orderItems > 0),
+              storeCount: variant._count.storeListingVariants,
+            },
+          ])
+        ),
+        storeCount: product._count.storeListings,
+        hasOrders: !!order,
       },
     }
   } catch (error) {

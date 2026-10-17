@@ -1,5 +1,5 @@
 "use client"
-import { useMemo, useState, useTransition } from "react"
+import { useEffect, useMemo, useRef, useState, useTransition } from "react"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@workspace/ui/components/card"
 import { FieldGroup } from "@workspace/ui/components/field"
 import { CONDITION_OPTIONS, STATUS_OPTIONS } from "@/constants"
@@ -12,7 +12,7 @@ import { toast } from "@workspace/ui/components/toast"
 import SharedFormHeader from "@/components/shared-form-header"
 import SharedFormFooter from "@/components/shared-form-footer"
 import { Condition, Status } from "@workspace/db/enums"
-import { createProductAction } from "@/lib/actions/product.actions"
+import { createProductAction, updateProductAction } from "@/lib/actions/product.actions"
 import { CascaderField, ComboboxField, DocumentField, ImageField, NumberInputField, RichTextField, SelectField, SwitchField, TagsField, TextInputField, type CascaderOption } from "@workspace/forms"
 import { Button } from "@workspace/ui/components/button"
 import { Pencil, PlusCircle, Trash2, X } from "lucide-react"
@@ -29,8 +29,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@workspace/ui/components/alert-dialog"
-import type { SelectItem } from "@/types"
-import VariantSheet from "../../_components/variant-sheet"
+import type { ProductFormData, SelectItem, VariantUsage } from "@/types"
+import VariantSheet from "./variant-sheet"
+import DeleteProduct from "./delete-product"
 import { deleteDocuments, deleteFiles, deleteImages, uploadDocuments, uploadImages } from "@/lib/storage"
 
 type FormInput = z.input<typeof addProductFormSchema>
@@ -38,19 +39,45 @@ type FormOutput = z.output<typeof addProductFormSchema>
 type VariantInput = NonNullable<FormInput["variants"]>[number]
 type OptionInput = NonNullable<FormInput["variantOptions"]>[number]
 
-interface AddProductFormProps {
+interface ProductFormProps {
   brands: SelectItem[]
   // The category tree from getCategoryOptions
   categoryOptions: CascaderOption[]
   disabledCategoryIds: string[]
+  // The product being edited; without it the form adds a new one
+  product?: ProductFormData
 }
 
-// Every combination of the options' values, skipping blank ones, e.g. Size S/L × Colour Red gives two
+const EMPTY_PRODUCT: FormInput = {
+  name: "",
+  // The editor reports an empty document as null, so anything else here makes the form dirty on load
+  description: null,
+  tags: [],
+  documents: [],
+  categoryId: "",
+  brandId: "",
+  baseSellPrice: 0,
+  baseBuyPrice: 0,
+  sku: "",
+  barcode: "",
+  dimensions: "",
+  weight: null,
+  hasVariants: false,
+  status: Status.DRAFT,
+  condition: Condition.NEW,
+  images: [],
+  banner: "",
+  variantOptions: [],
+  variants: [],
+}
+
+// Every combination of the options' values, skipping blank ones, e.g. Size S/L × Colour Red gives two. Values are
+// used as typed: the schema matches attributes against the option values exactly.
 function getCombinations(options: OptionInput[]): Record<string, string>[] {
   return options
     .reduce<Record<string, string>[]>(
       (combinations, option) => {
-        const values = option.values.map((value) => value.value.trim()).filter(Boolean)
+        const values = option.values.map((value) => value.value).filter((value) => value.trim())
         if (!option.name.trim() || values.length === 0) return combinations
         return combinations.flatMap((combination) => values.map((value) => ({ ...combination, [option.name]: value })))
       },
@@ -61,6 +88,8 @@ function getCombinations(options: OptionInput[]): Record<string, string>[] {
 
 // The same attributes give the same key whatever order they were added in
 const attributesKey = (attributes: Record<string, string>) => JSON.stringify(Object.entries(attributes).sort(([a], [b]) => a.localeCompare(b)))
+
+const renameKey = (attributes: Record<string, string>, from: string, to: string) => Object.fromEntries(Object.entries(attributes).map(([key, value]) => [key === from ? to : key, value]))
 
 const newVariant = (attributes: Record<string, string>, position: number): VariantInput => ({
   sku: "",
@@ -75,46 +104,36 @@ const newVariant = (attributes: Record<string, string>, position: number): Varia
 // Field array errors land on the array itself or, from the resolver, on its root
 const arrayErrorMessage = (error: { message?: string; root?: { message?: string } } | undefined) => error?.message ?? error?.root?.message
 
-// Files uploaded during this form are only best-effort deletes: anything left behind is removed by the orphaned-file sweep
-const deleteUnsavedImages = async (urls: string[]) => {
-  if (urls.length === 0) return
-  try {
-    await deleteImages(urls)
-  } catch {
-    // Left to the sweep
-  }
+const plural = (count: number, one: string, many: string) => `${count} ${count === 1 ? one : many}`
+
+// What removing these saved variants does once the product is saved, or nothing when none of them is in use
+function describeRemoval(variants: VariantInput[], usage: Record<string, VariantUsage>): string[] {
+  const used = variants.flatMap((variant) => (variant.id && usage[variant.id] ? [usage[variant.id]!] : []))
+  const ordered = used.filter((item) => item.ordered).length
+  const listings = used.filter((item) => !item.ordered).reduce((total, item) => total + item.storeCount, 0)
+  return [
+    ...(ordered ? [`${plural(ordered, "variant has", "variants have")} been ordered, so ${ordered === 1 ? "it" : "they"} will be archived instead of deleted.`] : []),
+    ...(listings ? [`${plural(listings, "store listing loses", "store listings lose")} the price and stock set for ${ordered ? "the others" : "them"}.`] : []),
+  ]
 }
 
-const AddProductForm = ({ brands, categoryOptions, disabledCategoryIds }: AddProductFormProps) => {
+type PendingChange = { kind: "removeVariant"; index: number } | { kind: "regenerate" } | { kind: "noVariants" }
+
+const ProductForm = ({ brands, categoryOptions, disabledCategoryIds, product }: ProductFormProps) => {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [editingVariantIndex, setEditingVariantIndex] = useState<number | null>(null)
-  const [isConfirmingNoVariants, setIsConfirmingNoVariants] = useState(false)
+  const [pendingChange, setPendingChange] = useState<PendingChange | null>(null)
+
+  const isEditing = !!product
+  // Saved files are removed by the server when the update replaces them; only this form's uploads are deleted here
+  const savedFiles = useMemo(() => new Set(product?.savedFiles), [product])
+  const savedFileList = useMemo(() => [...savedFiles], [savedFiles])
+  const variantUsage = useMemo(() => product?.variantUsage ?? {}, [product])
 
   const form = useForm<FormInput, unknown, FormOutput>({
     resolver: zodResolver(addProductFormSchema),
-    defaultValues: {
-      name: "",
-      // The editor reports an empty document as null, so anything else here makes the form dirty on load
-      description: null,
-      tags: [],
-      documents: [],
-      categoryId: "",
-      brandId: "",
-      baseSellPrice: 0,
-      baseBuyPrice: 0,
-      sku: "",
-      barcode: "",
-      dimensions: "",
-      weight: null,
-      hasVariants: false,
-      status: Status.DRAFT,
-      condition: Condition.NEW,
-      images: [],
-      banner: "",
-      variantOptions: [],
-      variants: [],
-    },
+    defaultValues: product?.values ?? EMPTY_PRODUCT,
   })
 
   const { fields: optionFields, append: appendOption, remove: removeOption, replace: replaceOptions } = useFieldArray({ control: form.control, name: "variantOptions" })
@@ -128,6 +147,31 @@ const AddProductForm = ({ brands, categoryOptions, disabledCategoryIds }: AddPro
 
   const combinations = useMemo(() => getCombinations(variantOptions), [variantOptions])
 
+  // Renaming an option or a value renames it in the variants too, so they stay the same variants (with their SKUs,
+  // images and store listings) instead of going stale. Adding or removing options or values still needs a regenerate.
+  const previousOptions = useRef(variantOptions)
+  useEffect(() => {
+    const previous = previousOptions.current
+    previousOptions.current = variantOptions
+    if (previous === variantOptions || previous.length !== variantOptions.length) return
+
+    const current = form.getValues("variants") ?? []
+    let next = current.map((variant) => variant.attributes)
+    variantOptions.forEach((option, optionIndex) => {
+      const before = previous[optionIndex]
+      if (!before) return
+      if (before.name !== option.name) next = next.map((attributes) => (before.name in attributes ? renameKey(attributes, before.name, option.name) : attributes))
+      if (before.values.length !== option.values.length) return
+      option.values.forEach((value, valueIndex) => {
+        const old = before.values[valueIndex]?.value
+        if (old !== undefined && old !== value.value) next = next.map((attributes) => (attributes[option.name] === old ? { ...attributes, [option.name]: value.value } : attributes))
+      })
+    })
+    next.forEach((attributes, index) => {
+      if (attributes !== current[index]?.attributes) form.setValue(`variants.${index}.attributes`, attributes, { shouldDirty: true })
+    })
+  }, [variantOptions, form])
+
   // Editing the options after generating leaves variants that no longer match them, which the schema would reject on save
   const isStale = useMemo(() => {
     if (variants.length === 0) return false
@@ -140,17 +184,32 @@ const AddProductForm = ({ brands, categoryOptions, disabledCategoryIds }: AddPro
   const isBusy = isPending
   const { errors } = form.formState
 
-  // Combinations that already have a variant keep its SKU, images and details; only the dropped ones lose theirs
-  const handleGenerateVariants = async () => {
+  // Best effort: anything left behind is removed by the orphaned-file sweep
+  const deleteUnsavedImages = async (urls: string[]) => {
+    const unsaved = urls.filter((url) => !savedFiles.has(url))
+    if (unsaved.length === 0) return
+    try {
+      await deleteImages(unsaved)
+    } catch {
+      // Left to the sweep
+    }
+  }
+
+  // The variants a regenerate would drop: combinations that no longer exist
+  const getDroppedVariants = () => {
+    const keptKeys = new Set(combinations.map(attributesKey))
+    return (form.getValues("variants") ?? []).filter((variant) => !keptKeys.has(attributesKey(variant.attributes)))
+  }
+
+  // Combinations that already have a variant keep it (its id, SKU, images and details); only the dropped ones go
+  const generateVariants = async () => {
     const current = form.getValues("variants") ?? []
     const byKey = new Map(current.map((variant) => [attributesKey(variant.attributes), variant]))
     const next = combinations.map((attributes, position) => {
       const existing = byKey.get(attributesKey(attributes))
       return existing ? { ...existing, attributes, position } : newVariant(attributes, position)
     })
-
-    const keptKeys = new Set(combinations.map(attributesKey))
-    const droppedImages = current.filter((variant) => !keptKeys.has(attributesKey(variant.attributes))).flatMap((variant) => variant.images)
+    const droppedImages = getDroppedVariants().flatMap((variant) => variant.images)
 
     setEditingVariantIndex(null)
     replaceVariants(next)
@@ -158,11 +217,33 @@ const AddProductForm = ({ brands, categoryOptions, disabledCategoryIds }: AddPro
     await deleteUnsavedImages(droppedImages)
   }
 
-  const handleRemoveVariant = async (index: number) => {
+  const removeVariantAt = async (index: number) => {
     const images = form.getValues(`variants.${index}.images`) ?? []
     setEditingVariantIndex(null)
     removeVariant(index)
     await deleteUnsavedImages(images)
+  }
+
+  const removeAllVariants = async () => {
+    const images = (form.getValues("variants") ?? []).flatMap((variant) => variant.images)
+    setEditingVariantIndex(null)
+    replaceOptions([])
+    replaceVariants([])
+    form.setValue("hasVariants", false, { shouldDirty: true })
+    form.clearErrors(["variantOptions", "variants"])
+    await deleteUnsavedImages(images)
+  }
+
+  // Changes that would archive or unlist saved variants are confirmed first; the rest happen straight away
+  const handleGenerateVariants = () => {
+    if (describeRemoval(getDroppedVariants(), variantUsage).length) setPendingChange({ kind: "regenerate" })
+    else void generateVariants()
+  }
+
+  const handleRemoveVariant = (index: number) => {
+    const variant = form.getValues(`variants.${index}`)
+    if (variant && describeRemoval([variant], variantUsage).length) setPendingChange({ kind: "removeVariant", index })
+    else void removeVariantAt(index)
   }
 
   const handleHasVariantsChange = (checked: boolean) => {
@@ -178,20 +259,26 @@ const AddProductForm = ({ brands, categoryOptions, disabledCategoryIds }: AddPro
     // Turning variants off throws away the options and variants, so ask first when there's something to lose
     if (variantOptions.length > 0 || variants.length > 0) {
       form.setValue("hasVariants", true)
-      setIsConfirmingNoVariants(true)
+      setPendingChange({ kind: "noVariants" })
     }
   }
 
-  const handleConfirmNoVariants = async () => {
-    const images = (form.getValues("variants") ?? []).flatMap((variant) => variant.images)
-    setIsConfirmingNoVariants(false)
-    setEditingVariantIndex(null)
-    replaceOptions([])
-    replaceVariants([])
-    form.setValue("hasVariants", false, { shouldDirty: true })
-    form.clearErrors(["variantOptions", "variants"])
-    await deleteUnsavedImages(images)
+  const handleConfirmPendingChange = async () => {
+    const change = pendingChange
+    setPendingChange(null)
+    if (change?.kind === "regenerate") await generateVariants()
+    else if (change?.kind === "removeVariant") await removeVariantAt(change.index)
+    else if (change?.kind === "noVariants") await removeAllVariants()
   }
+
+  const pendingVariants = !pendingChange
+    ? []
+    : pendingChange.kind === "removeVariant"
+      ? variants.slice(pendingChange.index, pendingChange.index + 1)
+      : pendingChange.kind === "regenerate"
+        ? getDroppedVariants()
+        : variants
+  const pendingConsequences = describeRemoval(pendingVariants, variantUsage)
 
   const onSubmit: SubmitHandler<FormOutput> = (productData) => {
     // Positions follow the order on screen, whatever was added or removed along the way
@@ -206,10 +293,14 @@ const AddProductForm = ({ brands, categoryOptions, disabledCategoryIds }: AddPro
     }
 
     startTransition(async () => {
-      const response = await createProductAction(payload)
+      const response = product ? await updateProductAction({ ...payload, id: product.id }) : await createProductAction(payload)
 
       if (response.success) {
-        toast.add({ title: "Product created", description: `${productData.name} has been added to the catalogue.`, type: "success" })
+        toast.add(
+          product
+            ? { title: "Product updated", description: "Your changes have been saved.", type: "success" }
+            : { title: "Product created", description: `${productData.name} has been added to the catalogue.`, type: "success" }
+        )
         router.push("/catalogue/products")
         return
       }
@@ -236,8 +327,8 @@ const AddProductForm = ({ brands, categoryOptions, disabledCategoryIds }: AddPro
     return uploadImages(formData)
   }
 
-  // Nothing is saved yet, so every image removed here was uploaded during this form
   const handleRemoveImage = async (url: string) => {
+    if (savedFiles.has(url)) return
     await deleteImages([url])
   }
 
@@ -248,20 +339,21 @@ const AddProductForm = ({ brands, categoryOptions, disabledCategoryIds }: AddPro
   }
 
   const handleRemoveDocument = async (url: string) => {
+    if (savedFiles.has(url)) return
     await deleteDocuments([url])
   }
 
   const handleDiscard = () => {
     startTransition(async () => {
       const values = form.getValues()
-      const files = [...values.images, ...(values.variants ?? []).flatMap((variant) => variant.images), ...values.documents.map((document) => document.url)]
+      const uploads = [...values.images, ...(values.variants ?? []).flatMap((variant) => variant.images), ...values.documents.map((document) => document.url)].filter((url) => !savedFiles.has(url))
 
       try {
-        if (files.length) await deleteFiles(files)
+        if (uploads.length) await deleteFiles(uploads)
         router.push("/catalogue/products")
       } catch (error) {
         toast.add({
-          title: "Unable to discard product",
+          title: isEditing ? "Unable to discard changes" : "Unable to discard product",
           description: error instanceof Error ? error.message : "The uploaded files could not be removed. Please try again.",
           type: "error",
         })
@@ -272,7 +364,14 @@ const AddProductForm = ({ brands, categoryOptions, disabledCategoryIds }: AddPro
   return (
     <form onSubmit={form.handleSubmit(onSubmit, onInvalid)}>
       <div className="grid gap-y-6">
-        <SharedFormHeader heading="Add Product" description="Create a new product." backTo="/catalogue/products" isPending={isBusy} isDirty={form.formState.isDirty} handleDiscard={handleDiscard} />
+        <SharedFormHeader
+          heading={isEditing ? "Edit Product" : "Add Product"}
+          description={isEditing ? "Edit this product." : "Create a new product."}
+          backTo="/catalogue/products"
+          isPending={isBusy}
+          isDirty={form.formState.isDirty}
+          handleDiscard={handleDiscard}
+        />
 
         <div className="grid gap-8">
           <div className="grid items-start gap-4 lg:grid-cols-3">
@@ -285,7 +384,7 @@ const AddProductForm = ({ brands, categoryOptions, disabledCategoryIds }: AddPro
                 </CardHeader>
                 <CardContent>
                   <FieldGroup>
-                    <TextInputField control={form.control} label="Name" name="name" disabled={isBusy} autoFocus />
+                    <TextInputField control={form.control} label="Name" name="name" disabled={isBusy} autoFocus={!isEditing} />
 
                     <RichTextField control={form.control} label="Description" name="description" placeholder="Provide a description" disabled={isBusy} />
 
@@ -424,6 +523,8 @@ const AddProductForm = ({ brands, categoryOptions, disabledCategoryIds }: AddPro
                       <TableBody>
                         {variantFields.map((field, index) => {
                           const variant = variants[index]
+                          const usage = variant?.id ? variantUsage[variant.id] : undefined
+                          const usageText = [usage?.ordered && "Ordered", usage?.storeCount && `In ${plural(usage.storeCount, "store", "stores")}`].filter(Boolean).join(" · ")
                           const rowErrors = errors.variants?.[index]
                           // attributes is a record, so its error type also allows an attribute called "message"
                           const attributesMessage = rowErrors?.attributes?.message
@@ -439,6 +540,7 @@ const AddProductForm = ({ brands, categoryOptions, disabledCategoryIds }: AddPro
                                     </Badge>
                                   ))}
                                 </div>
+                                {usageText && <p className="mt-1 text-xs text-muted-foreground">{usageText}</p>}
                                 {rowError && <p className="mt-1 text-xs text-destructive">{rowError}</p>}
                               </TableCell>
                               <TableCell>
@@ -469,8 +571,7 @@ const AddProductForm = ({ brands, categoryOptions, disabledCategoryIds }: AddPro
                         index={editingVariantIndex}
                         control={form.control}
                         attributes={variants[editingVariantIndex]?.attributes ?? {}}
-                        // Nothing is saved yet, so every image in the sheet is this form's upload
-                        savedImages={[]}
+                        savedImages={savedFileList}
                         clearErrors={form.clearErrors}
                       />
                     )}
@@ -529,6 +630,18 @@ const AddProductForm = ({ brands, categoryOptions, disabledCategoryIds }: AddPro
                   />
                 </CardContent>
               </Card>
+
+              {product && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Danger Zone</CardTitle>
+                    <CardDescription>Delete this product. A product that has been ordered can only be archived.</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <DeleteProduct product={{ id: product.id, name: product.name }} storeCount={product.storeCount} hasOrders={product.hasOrders} />
+                  </CardContent>
+                </Card>
+              )}
             </div>
           </div>
 
@@ -536,15 +649,25 @@ const AddProductForm = ({ brands, categoryOptions, disabledCategoryIds }: AddPro
         </div>
       </div>
 
-      <AlertDialog open={isConfirmingNoVariants} onOpenChange={setIsConfirmingNoVariants}>
+      <AlertDialog open={pendingChange !== null} onOpenChange={(open) => !open && setPendingChange(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Remove all variants?</AlertDialogTitle>
-            <AlertDialogDescription>Turning variants off removes this product&apos;s options, variants and their images.</AlertDialogDescription>
+            <AlertDialogTitle>
+              {pendingChange?.kind === "noVariants" ? "Remove all variants?" : pendingChange?.kind === "regenerate" ? "Regenerate variants?" : "Remove this variant?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendingChange?.kind === "noVariants"
+                ? "Turning variants off removes this product's options, variants and their images."
+                : pendingChange?.kind === "regenerate"
+                  ? `${plural(pendingVariants.length, "variant no longer matches", "variants no longer match")} the options and will be removed.`
+                  : "This variant will be removed."}
+              {pendingConsequences.map((line) => ` ${line}`)}
+              {isEditing && " Nothing changes until you save."}
+            </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmNoVariants}>Remove variants</AlertDialogAction>
+            <AlertDialogAction onClick={handleConfirmPendingChange}>{pendingChange?.kind === "regenerate" ? "Regenerate" : "Remove"}</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -577,4 +700,4 @@ const OptionValues = ({ control, optionIndex, disabled, error }: { control: Cont
   )
 }
 
-export default AddProductForm
+export default ProductForm

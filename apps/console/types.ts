@@ -2,6 +2,8 @@ import { PaginationParams, PaginatedResult } from "@workspace/contracts"
 import { Brand, Category, Organization, Prisma, User } from "@workspace/db/client"
 import { Condition, OrganizationStatus, Status } from "@workspace/db/enums"
 import type { LucideIcon } from "lucide-react"
+import type { z } from "zod"
+import type { addProductFormSchema } from "@/lib/schemas/product.schemas"
 import type { SystemRole } from "@workspace/auth/system-permissions"
 
 // Minimal record shape for loaders that feed SelectField options
@@ -128,24 +130,23 @@ export interface ProductsParams extends PaginationParams {
 }
 export type ProductsData = PaginatedResult<ProductListItem>
 
-export type ProductDetails = Prisma.ProductGetPayload<{
-  include: {
-    category: { select: { name: true } }
-    variants: {
-      include: {
-        variantValues: {
-          include: {
-            optionValue: {
-              include: { option: true }
-            }
-          }
-        }
-      }
-    }
-    variantOptions: {
-      include: { values: true }
-    }
-    documents: true
-    brand: true
-  }
-}>
+// What a variant is used for, so the edit form can warn before removing it
+export interface VariantUsage {
+  // Ordered directly or through a store's listing: such a variant is archived instead of deleted
+  ordered: boolean
+  // Store listings with their own price and stock for it, which go when it's deleted
+  storeCount: number
+}
+
+// The edit form's starting point. Plain values only: Decimal can't be passed to client components
+export interface ProductFormData {
+  id: string
+  name: string
+  brand: { id: string; name: string; isArchived: boolean }
+  values: z.input<typeof addProductFormSchema>
+  // Files already saved on the product: the form never deletes these, the update action removes replaced ones
+  savedFiles: string[]
+  variantUsage: Record<string, VariantUsage>
+  storeCount: number
+  hasOrders: boolean
+}
