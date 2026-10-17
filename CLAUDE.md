@@ -70,6 +70,7 @@ A "store" is a Better Auth organization. One special organization, slug `PLATFOR
 
 ### Console access control
 - **Workspace context**: the session's `activeOrganizationId` puts the console in either the "global" workspace (the platform org is active) or the "store" workspace (any other org).
+  - Only the login form sets it (client-side `organization.setActive`, preferring the platform org). A session Better Auth creates anywhere else starts with none, and the sidebar shows nothing. So don't use `changePassword`'s `revokeOtherSessions: true`, which replaces the current session: change the password, then call `revokeOtherSessions` (as `updatePasswordAction` does).
 - **Route rules**: `apps/console/lib/route-access.ts` (`routeAccess`) is the single source of truth for which system roles and contexts may visit each path prefix.
   - `apps/console/proxy.ts` (Next's renamed middleware) enforces it.
   - The sidebar uses `checkAccess` to filter `lib/nav-config.ts`.
@@ -130,7 +131,7 @@ Migrations: Prisma doesn't model `CHECK` constraints or triggers, so they live i
 ### UI components
 Add shadcn components from the repo root with `pnpm dlx shadcn@latest add <component> -c apps/console`. They land in `packages/ui/src/components` and are imported as `@workspace/ui/components/<name>`.
 
-The primitives are built on Base UI, not Radix. Use `render={<Button />}` instead of `asChild`, and give menu items `onClick`: `onSelect` type-checks but never fires.
+The primitives are built on Base UI, not Radix. Use `render={<Button />}` instead of `asChild`, and give menu items `onClick`: `onSelect` type-checks but never fires. A menu item that navigates is a `DropdownMenuLinkItem` (Base UI's `Menu.LinkItem`, a real `<a>`) with `render={<Link href="..." />}`.
 
 ### Email
 `@workspace/email` holds React Email templates (auth flows, member invites, order lifecycle) sent via Nodemailer (`SITE_MAILER_*` env vars). The sender name and logo come from app settings.
@@ -142,3 +143,5 @@ Required: `DATABASE_URL` and `BETTER_AUTH_SECRET` (≥32 chars). Optional, with 
 ## Style
 
 Prettier: no semicolons, double quotes, `printWidth: 200`, Tailwind class sorting (`cn`, `cva`). Apps import their own code via the `@/` alias.
+
+The shadcn components in `packages/ui/src/components` keep shadcn's own formatting. Don't run prettier on one you edit: it rewrites the whole file. Match its existing style by hand.
