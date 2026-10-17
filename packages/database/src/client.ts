@@ -202,8 +202,10 @@ export async function generateUniqueSku(client: SkuClient, name: string): Promis
     const suffix = Math.random().toString(36).slice(2, 6).toUpperCase().padEnd(4, "0")
     const sku = `${prefix}-${suffix}`
 
-    const [product, variant] = await Promise.all([client.product.findUnique({ where: { sku }, select: { id: true } }), client.productVariant.findUnique({ where: { sku }, select: { id: true } })])
-    if (!product && !variant) return sku
+    // One after the other: a transaction has one connection, and pg is dropping support for overlapping queries on it
+    if (await client.product.findUnique({ where: { sku }, select: { id: true } })) continue
+    if (await client.productVariant.findUnique({ where: { sku }, select: { id: true } })) continue
+    return sku
   }
 
   throw new Error("Could not generate a unique SKU")
