@@ -1,7 +1,7 @@
 "use client"
 import { DataTable } from "@workspace/tables"
 import type { ProductsData } from "@/types"
-import { columns } from "./columns"
+import { columns, getProductHref } from "./columns"
 import { filters } from "./filters"
 
 interface ProductsTableProps {
@@ -14,7 +14,7 @@ const ProductsTable = ({ data }: ProductsTableProps) => {
       columns={columns}
       filters={filters}
       data={data.data}
-      getRowHref={(product) => `/catalogue/products/${product.id}/edit`}
+      getRowHref={getProductHref}
       pagination={{
         total: data.total,
         page: data.page,

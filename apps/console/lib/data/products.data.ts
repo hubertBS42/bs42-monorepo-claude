@@ -50,7 +50,7 @@ export const getProductsForTable = async (filters: ProductsParams = {}): Promise
           name: true,
           images: true,
           brand: {
-            select: { name: true },
+            select: { id: true, name: true },
           },
           baseSellPrice: true,
           category: {

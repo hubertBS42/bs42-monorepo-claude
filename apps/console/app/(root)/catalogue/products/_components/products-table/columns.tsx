@@ -3,7 +3,8 @@ import type { ColumnDef } from "@tanstack/react-table"
 import { formatDate } from "@workspace/utils/date"
 import { Badge } from "@workspace/ui/components/badge"
 import { Checkbox } from "@workspace/ui/components/checkbox"
-import { ColumnHeader } from "@workspace/tables"
+import { ColumnHeader, RowLink } from "@workspace/tables"
+import Link from "next/link"
 import { capitalizeWord } from "@workspace/utils/text"
 import type { Status, Condition } from "@workspace/db/enums"
 import type { ProductListItem } from "@/types"
@@ -34,6 +35,8 @@ const genConditionBadge = (condition: Condition) => (
   </Badge>
 )
 
+export const getProductHref = (product: ProductListItem) => `/catalogue/products/${product.id}/edit`
+
 export const columns: ColumnDef<ProductListItem, unknown>[] = [
   {
     id: "select",
@@ -51,14 +54,22 @@ export const columns: ColumnDef<ProductListItem, unknown>[] = [
   {
     accessorKey: "name",
     header: () => <ColumnHeader title="Name" sortKey="name" />,
+    // The brand line links to the brand, so this cell renders the product link itself
+    meta: { rendersRowLink: true },
     cell: ({ row }) => {
-      const image = row.original.images[0]
+      const product = row.original
+      const image = product.images[0]
       return (
         <div className="flex items-center gap-x-3">
-          <div className="relative size-10 overflow-hidden rounded bg-muted">{image && <img alt="" src={image} loading="lazy" className="size-full object-cover" />}</div>
+          <div className="relative size-10 shrink-0 overflow-hidden rounded bg-muted">{image && <img alt="" src={image} loading="lazy" className="size-full object-cover" />}</div>
           <div className="grid gap-y-0.5">
-            <span>{row.original.name}</span>
-            <span className="text-[11px] text-muted-foreground">{row.original.brand.name}</span>
+            {/* w-fit: a grid stretches links to its width, and clicks beside the text should open the row, not either link */}
+            <RowLink href={getProductHref(product)} className="w-fit">
+              {product.name}
+            </RowLink>
+            <Link href={`/catalogue/brands/${product.brand.id}/edit`} className="w-fit text-[11px] text-muted-foreground underline-offset-4 hover:text-foreground hover:underline">
+              {product.brand.name}
+            </Link>
           </div>
         </div>
       )

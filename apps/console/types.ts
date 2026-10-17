@@ -107,7 +107,7 @@ type ProductListRow = Prisma.ProductGetPayload<{
     name: true
     images: true
     brand: {
-      select: { name: true }
+      select: { id: true; name: true }
     }
     baseSellPrice: true
     category: {
