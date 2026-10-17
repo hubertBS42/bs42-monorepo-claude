@@ -9,6 +9,16 @@ import { APIError } from "better-auth/api"
 import { PLATFORM_ORGANIZATION_SLUG, INVITATION_EXPIRATION_SECONDS } from "@workspace/contracts"
 import { checkStoreInput } from "./store-input"
 
+async function assertNotPlatformStaff(userId: string) {
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { role: true } })
+  if (hasSystemRole(user?.role, consoleAdminRoles)) {
+    throw new APIError("FORBIDDEN", {
+      message: "Platform staff belong to every store. Manage their access from Users instead.",
+      code: "PLATFORM_STAFF",
+    })
+  }
+}
+
 export const consolePlugins = [
   admin({
     ac: systemAccessController,
@@ -57,6 +67,15 @@ export const consolePlugins = [
             message: "The platform organization cannot be deleted",
           })
         }
+      },
+      // System admins belong to every store with a role that follows their system role. The console's own
+      // flows keep that up through Prisma (store creation above, promote/demote), so these endpoints, which
+      // store owners and admins can call directly, never remove or change a system admin's membership.
+      beforeRemoveMember: async ({ member }) => {
+        await assertNotPlatformStaff(member.userId)
+      },
+      beforeUpdateMemberRole: async ({ member }) => {
+        await assertNotPlatformStaff(member.userId)
       },
       afterCreateOrganization: async ({ organization, user }) => {
         // Fix the creator's role — better-auth assigns owner by default
