@@ -83,9 +83,10 @@ export interface StoreMembersParams extends PaginationParams {
   role?: OrgRole
 }
 
+// Any store member can see these pages, so only what they show: no phone, date of birth or ban reason
 export type StoreMember = Prisma.MemberGetPayload<{
   include: {
-    user: true
+    user: { select: { name: true; email: true; image: true; emailVerified: true; banned: true; banExpires: true } }
   }
 }>
 

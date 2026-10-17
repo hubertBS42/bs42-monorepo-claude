@@ -28,6 +28,16 @@ const notPlatformStaff: Prisma.UserWhereInput = {
   },
 }
 
+// Matches StoreMember: any member can see these pages, so the user's other details stay on the server
+const storeMemberUserSelect = {
+  name: true,
+  email: true,
+  image: true,
+  emailVerified: true,
+  banned: true,
+  banExpires: true,
+} satisfies Prisma.UserSelect
+
 export const getStoreMembers = async (storeId: string, filters: StoreMembersParams = {}): Promise<DataResponse<StoreMembersData>> => {
   try {
     const session = await getSession()
@@ -61,7 +71,7 @@ export const getStoreMembers = async (storeId: string, filters: StoreMembersPara
         orderBy,
         skip: (page - 1) * pageSize,
         take: pageSize,
-        include: { user: true },
+        include: { user: { select: storeMemberUserSelect } },
       }),
       prisma.member.count({ where }),
     ])
@@ -87,10 +97,9 @@ export async function getStoreMemberById(storeId: string, memberId: string): Pro
     if (!session) return { success: false, error: "Unauthorized" }
     if (!(await getStoreRole(session.user.id, storeId))) return { success: false, error: "Forbidden" }
 
-    // Sessions are deliberately not loaded: this goes to client components, and a session row holds its token
     const member = await prisma.member.findFirst({
       where: { id: memberId, organizationId: storeId, user: notPlatformStaff },
-      include: { user: true },
+      include: { user: { select: storeMemberUserSelect } },
     })
 
     if (!member) return { success: false, error: "Member not found", code: "NOT_FOUND" }
