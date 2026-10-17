@@ -1,4 +1,5 @@
 "use client"
+import { useMemo } from "react"
 import { DataTable } from "@workspace/tables"
 import type { StoreMembersData } from "@/types"
 import { getColumns } from "./columns"
@@ -11,9 +12,11 @@ interface MembersTableProps {
 }
 
 const MembersTable = ({ data, viewerUserId, canUpdateRoles }: MembersTableProps) => {
+  const columns = useMemo(() => getColumns({ viewerUserId, canUpdateRoles }), [viewerUserId, canUpdateRoles])
+
   return (
     <DataTable
-      columns={getColumns({ viewerUserId, canUpdateRoles })}
+      columns={columns}
       filters={memberFilters}
       data={data.data}
       getRowHref={(member) => `/store/members/${member.id}/details`}
