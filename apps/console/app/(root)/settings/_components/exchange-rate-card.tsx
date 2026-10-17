@@ -1,0 +1,80 @@
+"use client"
+
+import { useTransition } from "react"
+import { useRouter } from "next/navigation"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { SubmitHandler, useForm } from "react-hook-form"
+import { z } from "zod"
+import { NumberInputField } from "@workspace/forms"
+import { Button } from "@workspace/ui/components/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@workspace/ui/components/card"
+import { Spinner } from "@workspace/ui/components/spinner"
+import { toast } from "@workspace/ui/components/toast"
+import { formatDate } from "@workspace/utils/date"
+import { setTodaysExchangeRateAction } from "@/lib/actions/exchange-rate.actions"
+import type { ExchangeRateInfo } from "@/lib/data/exchange-rates.data"
+import { exchangeRateFormSchema } from "@/lib/schemas/exchange-rate.schemas"
+
+type FormValues = z.infer<typeof exchangeRateFormSchema>
+
+// Its own form, not part of the settings form: a rate is saved per day and orders keep the one they used
+export default function ExchangeRateCard({ latest, maxAgeDays }: { latest: ExchangeRateInfo | null; maxAgeDays: number }) {
+  const router = useRouter()
+  const [isPending, startTransition] = useTransition()
+
+  const form = useForm<FormValues>({
+    resolver: zodResolver(exchangeRateFormSchema),
+    defaultValues: latest ? { rate: Number(latest.rate) } : {},
+  })
+
+  const onSubmit: SubmitHandler<FormValues> = (values) => {
+    startTransition(async () => {
+      const response = await setTodaysExchangeRateAction(values)
+
+      if (!response.success) {
+        if (response.code === "RATE_IN_USE" || response.code === "INVALID") form.setError("rate", { type: "custom", message: response.error })
+        else toast.add({ title: "Unable to save the rate", description: response.error, type: "error" })
+        return
+      }
+
+      toast.add({ title: "Exchange rate saved", description: `Today's rate is GH₵${values.rate} per $1.`, type: "success" })
+      form.reset(values)
+      router.refresh()
+    })
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Exchange Rate</CardTitle>
+        <CardDescription>
+          {`Catalogue prices are in USD and customers pay in GHS at the latest rate. Orders can't be priced with a rate more than ${maxAgeDays} days old, so set it each day until rates are fetched automatically.`}
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        {/* Rendered next to the settings form, not inside it; stopPropagation keeps a submit from reaching any form around it */}
+        <form
+          onSubmit={(e) => {
+            e.stopPropagation()
+            form.handleSubmit(onSubmit)(e)
+          }}
+          className="grid gap-4"
+        >
+          <p className={latest?.isStale || !latest ? "text-sm text-destructive" : "text-sm text-muted-foreground"}>
+            {latest
+              ? `Latest: GH₵${Number(latest.rate)} per $1, set for ${formatDate(`${latest.date}T12:00:00Z`, "MMM d, yyyy")}.${latest.isStale ? " It's too old for new orders." : ""}`
+              : "No rate has been set, so no order can be priced yet."}
+          </p>
+          <div className="flex items-end gap-2">
+            <div className="max-w-56 flex-1">
+              <NumberInputField control={form.control} label="Today's rate (GHS per $1)" name="rate" step={0.0001} min={0} prependText="GH₵" disabled={isPending} />
+            </div>
+            <Button type="submit" disabled={isPending || !form.formState.isDirty}>
+              {isPending ? <Spinner /> : "Save rate"}
+            </Button>
+          </div>
+        </form>
+      </CardContent>
+    </Card>
+  )
+}
