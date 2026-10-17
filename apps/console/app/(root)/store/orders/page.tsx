@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import { redirect } from "next/navigation"
 import { organizationRoles } from "@workspace/auth/organization-permissions"
 import { OrderStatus, PaymentStatus } from "@workspace/db/enums"
+import AddButton from "@/components/add-button"
 import { getEnumParam, getOrderParam, getPositiveIntegerParam, getSortParam, getStringParam } from "@workspace/utils/search-params"
 import { requireActiveStoreMember } from "@/lib/auth-guard"
 import { getStoreOrders, MAX_STORE_ORDERS_PAGE_SIZE, STORE_ORDER_SORT_FIELDS } from "@/lib/data/store-orders.data"
@@ -38,9 +39,14 @@ export default async function StoreOrdersPage({ searchParams }: StoreOrdersPageP
 
   return (
     <main className="flex flex-col gap-y-6">
-      <div className="grid">
-        <h1 className="text-xl font-bold md:text-2xl">Manage Orders</h1>
-        <p className="text-sm text-muted-foreground">Orders with this store&apos;s items. An order with other stores&apos; items too is managed by the platform.</p>
+      <div className="flex items-end justify-between">
+        <div className="grid">
+          <h1 className="text-xl font-bold md:text-2xl">Manage Orders</h1>
+          <p className="text-sm text-muted-foreground">Orders with this store&apos;s items. An order with other stores&apos; items too is managed by the platform.</p>
+        </div>
+
+        {/* Every store role can create orders */}
+        <AddButton label="Create Order" url="/store/orders/create" />
       </div>
       <OrdersTable data={result.data} />
     </main>

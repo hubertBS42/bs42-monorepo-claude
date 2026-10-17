@@ -15,6 +15,7 @@ import { OrderStatusBadge, PaymentStatusBadge } from "@/components/order-badges"
 import { requireActiveStoreMember } from "@/lib/auth-guard"
 import { getStoreOrderDetails } from "@/lib/data/store-orders.data"
 import { ORDER_STATUS_LABELS, PAYMENT_METHOD_LABELS } from "@/lib/order-status"
+import { EditOrderCustomer, EditOrderDelivery, EditOrderNotes } from "./_components/order-edits"
 import RecordPayment from "./_components/record-payment"
 import UpdateOrderStatus from "./_components/update-order-status"
 
@@ -59,6 +60,8 @@ export default async function StoreOrderDetailsPage({ params }: OrderDetailsPage
 
   const order = response.data
   const { totals } = order
+  // A pending order of the store's own items can still be corrected; the dialogs check the role themselves
+  const isEditable = order.status === OrderStatus.PENDING && !order.isMultiStore
   const canBePaid = (order.paymentStatus === PaymentStatus.PENDING || order.paymentStatus === PaymentStatus.FAILED) && order.status !== OrderStatus.CANCELLED
 
   return (
@@ -224,16 +227,24 @@ export default async function StoreOrderDetailsPage({ params }: OrderDetailsPage
               ) : (
                 <Detail label="Pickup">The customer collects the order from the store.</Detail>
               )}
+              {isEditable && (
+                <div className="flex flex-wrap gap-1">
+                  <EditOrderCustomer storeId={storeId} orderId={order.id} customer={order.customer} />
+                  {order.shipping && <EditOrderDelivery storeId={storeId} orderId={order.id} shipping={order.shipping} />}
+                </div>
+              )}
             </CardContent>
           </Card>
 
-          {order.notes && (
+          {(order.notes || isEditable) && (
             <Card>
               <CardHeader>
                 <CardTitle>Notes</CardTitle>
+                <CardDescription>For the store, not the customer.</CardDescription>
               </CardHeader>
-              <CardContent>
-                <p className="text-sm whitespace-pre-line">{order.notes}</p>
+              <CardContent className="grid gap-2">
+                {order.notes ? <p className="text-sm whitespace-pre-line">{order.notes}</p> : <p className="text-sm text-muted-foreground">No notes.</p>}
+                {isEditable && <EditOrderNotes storeId={storeId} orderId={order.id} notes={order.notes} />}
               </CardContent>
             </Card>
           )}
