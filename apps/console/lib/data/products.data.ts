@@ -24,7 +24,7 @@ async function getSession() {
 type CategoryRow = { id: string; name: string; parentId: string | null }
 
 // "Men / Accessories" for each category: names only have to be unique among siblings, so the path tells them apart
-function getCategoryPaths(categories: CategoryRow[]) {
+export function getCategoryPaths(categories: CategoryRow[]) {
   const byId = new Map(categories.map((category) => [category.id, category]))
   const paths = new Map<string, string>()
   for (const { id } of categories) {

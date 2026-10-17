@@ -1,14 +1,14 @@
 import { z } from "zod"
 import { Condition, Status } from "@workspace/db/enums"
 
-// Helper schema for decimal validation
-const decimalSchema = z
+// Helper schema for decimal validation. Also used by listings, which hold store prices.
+export const decimalSchema = z
   .number("Enter a numeric value")
   .min(0, { message: "Amount must be zero or positive" })
   // Compared with a tolerance: 0.29 * 100 is 28.999999999999996 in floating point
   .refine((value) => Math.abs(Math.round(value * 100) - value * 100) < 1e-6, { message: "Amount cannot have more than two decimal places" })
 // A cleared number field sends "", which means no value rather than an invalid one
-const optionalDecimalSchema = z
+export const optionalDecimalSchema = z
   .union([decimalSchema, z.literal("").transform(() => null)])
   .nullable()
   .optional()
