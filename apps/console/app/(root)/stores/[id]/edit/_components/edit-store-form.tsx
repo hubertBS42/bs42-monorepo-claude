@@ -15,7 +15,7 @@ import { SubmitHandler, useForm } from "react-hook-form"
 import z from "zod"
 import { STORE_STATUS_OPTIONS } from "@/constants"
 import ResourceFormFooter from "@/components/shared-form-footer"
-import DeleteStore from "./delete-store"
+import DeleteStore from "@/components/delete-store"
 import RichTextField from "@workspace/forms/components/rich-text-editor/rich-text-field"
 
 export default function EditStoreForm({ store }: { store: Store }) {
