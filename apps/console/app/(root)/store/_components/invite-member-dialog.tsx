@@ -37,7 +37,7 @@ const InviteMemberDialog = ({ storeId }: { storeId: string }) => {
       const response = await inviteMemberAction({ ...values, storeId })
 
       if (!response.success) {
-        if (response.code === "ALREADY_INVITED" || response.code === "ALREADY_MEMBER") {
+        if (response.code === "ALREADY_INVITED" || response.code === "ALREADY_MEMBER" || response.code === "PLATFORM_STAFF") {
           form.setError("email", { type: "custom", message: response.error })
         } else {
           toast.add({ title: "Unable to send the invitation", description: response.error, type: "error" })

@@ -72,16 +72,14 @@ export async function inviteMemberAction(input: { storeId: string; email: string
         error: "Members cannot be invited to the platform organization",
       }
 
-    // System admins must hold the admin store role in every store
+    // System admins are added to every store automatically (and kept there), so there's nothing to invite them to
     const invitee = await prisma.user.findUnique({
       where: { email: email.toLowerCase() },
       select: { role: true },
     })
-    if (hasSystemRole(invitee?.role, consoleAdminRoles) && role !== "admin")
-      return {
-        success: false,
-        error: "System admins can only be invited with the admin store role",
-      }
+    if (hasSystemRole(invitee?.role, consoleAdminRoles)) {
+      return { success: false, error: "This person is platform staff, who are already members of every store.", code: "PLATFORM_STAFF" }
+    }
 
     await consoleAuth.api.createInvitation({
       body: { email, role, organizationId: storeId },
