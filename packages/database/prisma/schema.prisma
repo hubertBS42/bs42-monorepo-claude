@@ -122,16 +122,18 @@ model User {
   banReason  String?
   banExpires DateTime?
 
-  addresses     Address[]
-  cart          Cart?
-  orders        Order[]
-  reviews       Review[]
-  sessions      Session[]
-  accounts      Account[]
-  members       Member[]
-  invitations   Invitation[]
-  createdOrders Order[]              @relation("OrderCreatedBy")
-  statusChanges OrderStatusHistory[]
+  addresses        Address[]
+  cart             Cart?
+  orders           Order[]
+  reviews          Review[]
+  sessions         Session[]
+  accounts         Account[]
+  members          Member[]
+  invitations      Invitation[]
+  createdOrders    Order[]              @relation("OrderCreatedBy")
+  // Payments they recorded by hand (cash, mobile money or a card terminal in a store)
+  recordedPayments Order[]              @relation("OrderPaymentRecordedBy")
+  statusChanges    OrderStatusHistory[]
 
   @@map("user")
 }
@@ -444,9 +446,12 @@ model Order {
   shippingLng    Float?
 
   // Payment
-  paymentMethod PaymentMethod @default(CASH)
-  paymentStatus PaymentStatus @default(PENDING)
-  paidAt        DateTime?
+  paymentMethod       PaymentMethod @default(CASH)
+  paymentStatus       PaymentStatus @default(PENDING)
+  paidAt              DateTime?
+  // Who recorded a payment taken by hand (cash, mobile money or a card terminal); null for one paid online
+  paymentRecordedById String?       @db.Uuid
+  paymentRecordedBy   User?         @relation("OrderPaymentRecordedBy", fields: [paymentRecordedById], references: [id], onDelete: SetNull)
 
   // Status
   status OrderStatus @default(PENDING)
@@ -493,6 +498,7 @@ model Order {
   // reference is @unique, which already indexes it
   @@index([userId])
   @@index([createdById])
+  @@index([paymentRecordedById])
   @@index([exchangeRateId])
   @@index([status])
   @@map("order")
