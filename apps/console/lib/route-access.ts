@@ -31,8 +31,10 @@ export const routeAccess: Record<string, RouteAccess> = {
   "/store": { roles: allRoles, contexts: ["store"] },
 
   // Both
+  "/account": { roles: allRoles, contexts: bothContexts },
   "/account/profile": { roles: allRoles, contexts: bothContexts },
   "/account/password": { roles: allRoles, contexts: bothContexts },
+  "/account/sessions": { roles: allRoles, contexts: bothContexts },
 }
 
 // Longest first so "/account/profile" wins over any shorter prefix. Computed once.
