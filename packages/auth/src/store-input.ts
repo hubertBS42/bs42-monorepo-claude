@@ -1,7 +1,7 @@
 import { APIError } from "better-auth/api"
 import { OrganizationStatus } from "@workspace/db/enums"
 import { isManagedFileUrl } from "@workspace/storage"
-import { sanitizeRichText } from "@workspace/utils/html"
+import { sanitizeRichText } from "@workspace/utils/rich-text"
 
 // Stores are created and updated through Better Auth's organization endpoints, which any store admin can call
 // directly, so the organization hooks check the input here instead of trusting the console form.

@@ -12,7 +12,7 @@
     "./search-params": "./src/search-params.ts",
     "./text": "./src/text.ts",
     "./currency": "./src/currency.ts",
-    "./html": "./src/html.ts"
+    "./rich-text": "./src/rich-text.ts"
   },
   "scripts": {
     "typecheck": "tsc --project tsconfig.json --noEmit",
@@ -23,11 +23,9 @@
     "@date-fns/tz": "^1.5.0",
     "@workspace/contracts": "workspace:*",
     "date-fns": "^4.4.0",
-    "libphonenumber-js": "^1.13.14",
-    "sanitize-html": "^2.18.1"
+    "libphonenumber-js": "^1.13.14"
   },
   "devDependencies": {
-    "@types/sanitize-html": "^2.16.2",
     "@workspace/eslint-config": "workspace:*",
     "@workspace/typescript-config": "workspace:*",
     "eslint": "^10",

@@ -7,7 +7,7 @@ import { Status } from "@workspace/db/enums"
 import { formatError } from "@workspace/auth/format-error"
 import { ActionResponse } from "@workspace/contracts"
 import { isManagedFileUrl } from "@workspace/storage"
-import { sanitizeRichText } from "@workspace/utils/html"
+import { sanitizeRichText } from "@workspace/utils/rich-text"
 import { requireSystemPermission } from "@/lib/auth-guard"
 
 // Every export here is a public endpoint, so every input is validated
@@ -74,7 +74,7 @@ export async function createProductAction(input: z.input<typeof addProductFormSc
         const product = await tx.product.create({
           data: {
             ...fields,
-            // Rendered as HTML on the storefront, and the client could send anything
+            // Editor JSON the storefront renders, and the client could send anything
             description: sanitizeRichText(fields.description),
             // Placeholder: the Prisma hook generates the real slug, and a SKU for a simple product left without one
             slug: "",

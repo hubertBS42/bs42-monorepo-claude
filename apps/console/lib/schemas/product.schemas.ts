@@ -66,7 +66,8 @@ export const addProductFormSchema = z
     categoryId: z.uuid("Select a category"),
     hasVariants: z.boolean(),
     condition: z.enum(Condition),
-    description: z.string().nullable(),
+    // Editor JSON, so the limit is on the document rather than the visible text
+    description: z.string().max(200_000, "The description is too long.").nullable(),
     images: z.array(z.httpUrl("Invalid image URL")).min(1, "You must provide at least one image."),
     status: z.enum(Status),
     banner: z.httpUrl("Invalid URL").optional().or(z.literal("")),
