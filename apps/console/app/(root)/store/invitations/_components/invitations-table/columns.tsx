@@ -5,6 +5,7 @@ import { ColumnHeader } from "@workspace/tables"
 import { StoreRoleBadge } from "@/components/user-badges"
 import type { InvitationForTable } from "@/types"
 import InvitationActions from "./actions"
+import { Checkbox } from "@workspace/ui/components/checkbox"
 
 interface ColumnOptions {
   canResend: boolean
@@ -13,6 +14,19 @@ interface ColumnOptions {
 
 export function getColumns({ canResend, canCancel }: ColumnOptions): ColumnDef<InvitationForTable, unknown>[] {
   return [
+    {
+      id: "select",
+      header: ({ table }) => (
+        <Checkbox
+          checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && "indeterminate")}
+          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+          aria-label="Select all"
+        />
+      ),
+      cell: ({ row }) => <Checkbox checked={row.getIsSelected()} onCheckedChange={(value) => row.toggleSelected(!!value)} aria-label="Select row" />,
+      enableSorting: false,
+      enableHiding: false,
+    },
     {
       accessorKey: "email",
       header: () => <ColumnHeader title="Email" sortKey="email" />,
