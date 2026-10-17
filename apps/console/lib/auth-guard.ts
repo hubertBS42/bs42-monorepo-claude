@@ -119,6 +119,13 @@ export async function getStoreRole(userId: string, organizationId: string) {
   return membership && isOrganizationRole(membership.role) ? membership.role : null
 }
 
+// For server actions on a store: whether the user's role there grants the permissions. False for the platform
+// organization, which isn't a store.
+export async function hasStorePermission(userId: string, organizationId: string, permissions: OrganizationPermission) {
+  const role = await getStoreRole(userId, organizationId)
+  return !!role && organizationRoles[role].authorize(permissions).success
+}
+
 // For store workspace pages every member may see: the member role has no read permission for
 // requireOrganizationPermission to check. Without an active store, or after being removed from it
 // (the session keeps its id), the user goes to the dashboard.

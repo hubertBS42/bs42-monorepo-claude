@@ -4,9 +4,8 @@ import { prisma } from "@workspace/db"
 import { Prisma } from "@workspace/db/client"
 import { Status } from "@workspace/db/enums"
 import { formatError } from "@workspace/auth/format-error"
-import { organizationRoles } from "@workspace/auth/organization-permissions"
 import { ActionResponse } from "@workspace/contracts"
-import { getStoreRole, requireConsoleAccess, type OrganizationPermission } from "@/lib/auth-guard"
+import { hasStorePermission, requireConsoleAccess } from "@/lib/auth-guard"
 import { ListingConflictError, ListingNotFoundError, StockChangedError, syncListing } from "@/lib/listing-sync"
 import { createListingSchema, updateListingSchema } from "@/lib/schemas/listing.schemas"
 import type { StockChangedResponse } from "@/types"
@@ -35,11 +34,6 @@ const deleteListingSchema = z.object({ id: z.uuid("Invalid listing ID"), storeId
 
 // The remote database is slow enough that the 5 s default runs out for a product with many variants
 const TRANSACTION_OPTIONS = { maxWait: 10_000, timeout: 30_000 }
-
-async function hasStorePermission(userId: string, storeId: string, permissions: OrganizationPermission) {
-  const role = await getStoreRole(userId, storeId)
-  return !!role && organizationRoles[role].authorize(permissions).success
-}
 
 // The form lists the product's variants that aren't archived, so the submitted ones must be exactly those.
 // Anything else means the product was edited after the form loaded.
