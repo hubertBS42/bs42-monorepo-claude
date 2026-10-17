@@ -4,6 +4,7 @@ import { Condition, OrganizationStatus, Status } from "@workspace/db/enums"
 import type { LucideIcon } from "lucide-react"
 import type { z } from "zod"
 import type { addProductFormSchema } from "@/lib/schemas/product.schemas"
+import type { listingSnapshotSchema } from "@/lib/schemas/listing.schemas"
 import type { SystemRole } from "@workspace/auth/system-permissions"
 import type { OrgRole } from "@workspace/auth/organization-permissions"
 
@@ -172,5 +173,84 @@ export interface ProductFormData {
   savedFiles: string[]
   variantUsage: Record<string, VariantUsage>
   storeCount: number
+  hasOrders: boolean
+}
+
+export interface ListingsParams extends PaginationParams {
+  // Matches the product's name or SKU
+  search?: string
+  status?: Status
+}
+
+// A store listings table row. Prices are strings because Decimal can't be passed to client components
+export interface ListingListItem {
+  id: string
+  product: { name: string; image: string | null; brandName: string; categoryPath: string; hasVariants: boolean }
+  sellPrice: string
+  // The lowest and highest price a customer can pay, when variants have their own prices
+  priceRange: { min: string; max: string } | null
+  // A product with variants counts the stock of its variants on sale
+  stock: number
+  trackInventory: boolean
+  // Null when stock isn't tracked or nothing is at or below the alert. For a product with variants it
+  // counts the variants on sale that are out of stock (or else low), since the alert applies to each
+  stockAlert: { kind: "out" | "low"; count: number } | null
+  isFeatured: boolean
+  status: Status
+  // Why a published listing still isn't on sale (its catalogue product, or no variant on sale); null otherwise
+  notOnSaleReason: string | null
+  updatedAt: Date
+}
+export type ListingsData = PaginatedResult<ListingListItem>
+
+// A catalogue product a store can list, for the add listing page
+export interface ListableProduct {
+  id: string
+  name: string
+  image: string | null
+  brandName: string
+  categoryPath: string
+  baseSellPrice: string
+  hasVariants: boolean
+}
+
+export type ListingSnapshot = z.infer<typeof listingSnapshotSchema>
+
+// updateListingAction's reply when stock the user changed was changed elsewhere (a sale) while the form was open.
+// It carries every row's current stock, so the form can update those fields and keep the user's other edits.
+export interface StockChangedResponse {
+  success: false
+  error: string
+  code: "STOCK_CHANGED"
+  currentStock: { listing: number; variants: Record<string, number> }
+}
+
+export interface ListingVariantRow {
+  variantId: string
+  sku: string
+  attributes: Record<string, string>
+  // False for a variant added to the product after the listing was made: saving adds it
+  inListing: boolean
+}
+
+// The listing form's starting point. Plain values only: Decimal can't be passed to client components
+export interface ListingFormData {
+  // The listing being edited; without it the form adds one
+  id?: string
+  product: {
+    id: string
+    name: string
+    image: string | null
+    brandName: string
+    categoryPath: string
+    // The catalogue's status: a listing only reaches customers while its product is published
+    status: Status
+    hasVariants: boolean
+  }
+  // The product's variants that aren't archived, in its order. values.variants follows the same order
+  variants: ListingVariantRow[]
+  // What the form starts from; an edit sends them back as `original` (see listingSnapshotSchema)
+  values: ListingSnapshot
+  // Order lines restrict deleting a listing, so an ordered one can only be archived
   hasOrders: boolean
 }

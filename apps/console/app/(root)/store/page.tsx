@@ -15,7 +15,6 @@ export const metadata: Metadata = {
   title: "Store Overview",
 }
 
-// The listings page doesn't exist yet, so that link 404s until it's built
 const storeLinks = [
   {
     href: "/store/listings",
