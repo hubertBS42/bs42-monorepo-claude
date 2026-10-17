@@ -1,6 +1,6 @@
 import { PaginationParams, PaginatedResult } from "@workspace/contracts"
 import { Brand, Category, Organization, Prisma, User } from "@workspace/db/client"
-import { Condition, OrganizationStatus, Status } from "@workspace/db/enums"
+import { Condition, DiscountType, OrderStatus, OrganizationStatus, PaymentMethod, PaymentStatus, ShippingMethod, Status } from "@workspace/db/enums"
 import type { LucideIcon } from "lucide-react"
 import type { z } from "zod"
 import type { addProductFormSchema } from "@/lib/schemas/product.schemas"
@@ -254,4 +254,77 @@ export interface ListingFormData {
   values: ListingSnapshot
   // Order lines restrict deleting a listing, so an ordered one can only be archived
   hasOrders: boolean
+}
+
+export interface StoreOrdersParams extends PaginationParams {
+  reference?: string
+  status?: OrderStatus
+  paymentStatus?: PaymentStatus
+}
+
+// Amounts are GHS strings: Decimal can't be passed to client components
+export interface StoreOrderListItem {
+  id: string
+  reference: string
+  customerName: string
+  status: OrderStatus
+  paymentStatus: PaymentStatus
+  shippingMethod: ShippingMethod
+  // The order's total when all its items are this store's; otherwise only this store's lines, after their
+  // share of the discount and with their tax
+  totalGhs: string
+  itemCount: number
+  // Some items are other stores': the platform manages the order, and this store only sees its own lines
+  isMultiStore: boolean
+  createdAt: Date
+}
+export type StoreOrdersData = PaginatedResult<StoreOrderListItem>
+
+export interface StoreOrderLine {
+  id: string
+  productName: string
+  variantDescription: string | null
+  sku: string | null
+  productImage: string | null
+  quantity: number
+  unitPriceGhs: string
+  totalPriceGhs: string
+  discountGhs: string
+  taxGhs: string
+}
+
+export interface StoreOrderDetails {
+  id: string
+  reference: string
+  status: OrderStatus
+  paymentStatus: PaymentStatus
+  paymentMethod: PaymentMethod
+  paidAt: Date | null
+  shippingMethod: ShippingMethod
+  customer: { name: string; email: string | null; phone: string | null; isRegistered: boolean }
+  // Null for a pickup order
+  shipping: { name: string | null; phone: string | null; line1: string | null; line2: string | null; region: string | null; town: string | null } | null
+  notes: string | null
+  // This store's lines only
+  lines: StoreOrderLine[]
+  isMultiStore: boolean
+  // The whole order's amounts, only when every line is this store's
+  totals: {
+    subtotalGhs: string
+    discountType: DiscountType | null
+    discountValue: string | null
+    discountAmountGhs: string | null
+    discountReason: string | null
+    shippingGhs: string
+    taxRate: string
+    taxGhs: string
+    totalGhs: string
+  } | null
+  // This store's lines after their share of the discount, with their tax
+  storeTotalGhs: string
+  exchangeRate: string
+  createdBy: string | null
+  createdAt: Date
+  // Status changes and a recorded payment, newest first
+  timeline: { id: string; title: string; note: string | null; changedBy: string | null; createdAt: Date }[]
 }
