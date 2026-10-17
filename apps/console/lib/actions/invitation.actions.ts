@@ -3,13 +3,13 @@
 import { APIError } from "better-auth/api"
 import { headers } from "next/headers"
 import { OrgRole } from "@workspace/auth/organization-permissions"
-import { PLATFORM_ORGANIZATION_SLUG } from "@workspace/contracts"
+import { INVITATION_EXPIRATION_SECONDS, PLATFORM_ORGANIZATION_SLUG } from "@workspace/contracts"
 import { formatError } from "@workspace/auth/format-error"
 import { consoleAdminRoles, hasSystemRole } from "@workspace/auth/system-permissions"
 import { prisma } from "@workspace/db"
 import { consoleAuth } from "@workspace/auth/console"
 import { consoleBootstrapAuth } from "@workspace/auth/console-bootstrap"
-import { invitedSignUpFormSchema, inviteSchema } from "@/lib/schemas/invitation.schemas"
+import { invitedSignUpFormSchema, inviteMemberSchema } from "@/lib/schemas/invitation.schemas"
 import { requireConsoleAccess } from "@/lib/auth-guard"
 import { ActionResponse } from "@workspace/contracts"
 import z from "zod"
@@ -35,25 +35,34 @@ async function getManageableInvitation(invitationId: string, userId: string) {
   return membership ? invitation : null
 }
 
+// Better Auth cancels an invitation whatever its status, and a resend of one that isn't pending
+// creates a new invitation, so both check first: the row may be stale (another tab, another admin)
+const notPendingResponse: ActionResponse = {
+  success: false,
+  error: "This invitation has already been accepted, rejected or cancelled. Refresh the page to see its current state.",
+  code: "NOT_PENDING",
+}
+
+const RESEND_COOLDOWN_MS = 60 * 1000
+
 // inviteMemberAction, cancelInvitationAction and resendInvitationAction are for store staff, so they call
 // requireConsoleAccess before their try block (its redirect throws, which the catch would swallow).
 // Accepting, rejecting and signing up are for invitees, who may have no console access yet.
 
-export async function inviteMemberAction({ email, role }: { email: string; role: OrgRole }): Promise<ActionResponse> {
+export async function inviteMemberAction(input: { storeId: string; email: string; role: OrgRole }): Promise<ActionResponse> {
   await requireConsoleAccess()
 
   try {
     const { session, headersObj } = await getSessionContext()
     if (!session) return { success: false, error: "Unauthorized" }
 
-    const parsed = inviteSchema.safeParse({ email, role })
+    const parsed = inviteMemberSchema.safeParse(input)
     if (!parsed.success) return { success: false, error: "Invalid email or role" }
+    const { storeId, email, role } = parsed.data
 
-    const activeStoreId = session.session.activeOrganizationId
-    if (!activeStoreId) return { success: false, error: "No active store" }
-
+    // Better Auth's createInvitation checks that the user is a member allowed to invite
     const store = await prisma.organization.findUnique({
-      where: { id: activeStoreId },
+      where: { id: storeId },
       select: { slug: true },
     })
     if (!store) return { success: false, error: "Store not found" }
@@ -65,17 +74,17 @@ export async function inviteMemberAction({ email, role }: { email: string; role:
 
     // System admins must hold the admin store role in every store
     const invitee = await prisma.user.findUnique({
-      where: { email: parsed.data.email.toLowerCase() },
+      where: { email: email.toLowerCase() },
       select: { role: true },
     })
-    if (hasSystemRole(invitee?.role, consoleAdminRoles) && parsed.data.role !== "admin")
+    if (hasSystemRole(invitee?.role, consoleAdminRoles) && role !== "admin")
       return {
         success: false,
         error: "System admins can only be invited with the admin store role",
       }
 
     await consoleAuth.api.createInvitation({
-      body: { ...parsed.data, organizationId: activeStoreId },
+      body: { email, role, organizationId: storeId },
       headers: headersObj,
     })
 
@@ -135,6 +144,7 @@ export async function cancelInvitationAction(invitationId: string): Promise<Acti
 
     const invitation = await getManageableInvitation(invitationId, session.user.id)
     if (!invitation) return { success: false, error: "Invitation not found" }
+    if (invitation.status !== "pending") return notPendingResponse
 
     await consoleAuth.api.cancelInvitation({
       body: { invitationId },
@@ -159,6 +169,13 @@ export async function resendInvitationAction(invitationId: string): Promise<Acti
 
     const invitation = await getManageableInvitation(invitationId, session.user.id)
     if (!invitation) return { success: false, error: "Invitation not found" }
+    if (invitation.status !== "pending") return notPendingResponse
+
+    // Every send sets expiresAt to now plus the expiry, so it dates the last email
+    const lastSentAt = invitation.expiresAt.getTime() - INVITATION_EXPIRATION_SECONDS * 1000
+    if (Date.now() - lastSentAt < RESEND_COOLDOWN_MS) {
+      return { success: false, error: "This invitation was sent less than a minute ago. Try again shortly.", code: "RECENTLY_SENT" }
+    }
 
     // resend reuses the pending invitation, so a failure can't lose it
     await consoleAuth.api.createInvitation({

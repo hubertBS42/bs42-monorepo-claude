@@ -28,18 +28,22 @@ interface InvitationActionsProps {
 }
 
 const InvitationActions = ({ invitation, canResend, canCancel }: InvitationActionsProps) => {
-  const [isPending, startTransition] = useTransition()
+  // One transition per action, so each button shows only its own progress
+  const [isResending, startResend] = useTransition()
+  const [isCancelling, startCancel] = useTransition()
   const [isCancelOpen, setIsCancelOpen] = useState(false)
   const router = useRouter()
 
   if (!canResend && !canCancel) return null
 
   const handleResend = () => {
-    startTransition(async () => {
+    startResend(async () => {
       const response = await resendInvitationAction(invitation.id)
 
       if (!response.success) {
         toast.add({ title: "Unable to resend the invitation", description: response.error, type: "error" })
+        // The row was stale: show the invitation's current state
+        if (response.code === "NOT_PENDING") router.refresh()
         return
       }
 
@@ -49,12 +53,17 @@ const InvitationActions = ({ invitation, canResend, canCancel }: InvitationActio
   }
 
   const handleCancel = () => {
-    startTransition(async () => {
+    startCancel(async () => {
       const response = await cancelInvitationAction(invitation.id)
 
       if (!response.success) {
-        // The dialog stays open so the user can retry or cancel on purpose
         toast.add({ title: "Unable to cancel the invitation", description: response.error, type: "error" })
+        // A stale row can't be retried, so close and show its current state; otherwise the dialog
+        // stays open so the user can retry or cancel on purpose
+        if (response.code === "NOT_PENDING") {
+          setIsCancelOpen(false)
+          router.refresh()
+        }
         return
       }
 
@@ -70,12 +79,19 @@ const InvitationActions = ({ invitation, canResend, canCancel }: InvitationActio
         <Tooltip>
           <TooltipTrigger
             render={
-              <Button type="button" variant="ghost" size="icon-sm" aria-label={`Resend the invitation to ${invitation.email}`} disabled={isPending} onClick={handleResend}>
-                {isPending && !isCancelOpen ? <Spinner /> : <Repeat2 className="size-4" />}
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                aria-label={`Resend the invitation email to ${invitation.email} and renew its expiry`}
+                disabled={isResending || isCancelling}
+                onClick={handleResend}
+              >
+                {isResending ? <Spinner /> : <Repeat2 className="size-4" />}
               </Button>
             }
           />
-          <TooltipContent>Resend (renews the expiry)</TooltipContent>
+          <TooltipContent>Resend email</TooltipContent>
         </Tooltip>
       )}
 
@@ -92,7 +108,7 @@ const InvitationActions = ({ invitation, canResend, canCancel }: InvitationActio
                       size="icon-sm"
                       className="text-destructive hover:text-destructive"
                       aria-label={`Cancel the invitation to ${invitation.email}`}
-                      disabled={isPending}
+                      disabled={isResending || isCancelling}
                     >
                       <CircleSlash className="size-4" />
                     </Button>
@@ -108,16 +124,16 @@ const InvitationActions = ({ invitation, canResend, canCancel }: InvitationActio
               <AlertDialogDescription>{`${invitation.email} will no longer be able to join the store with this invitation. You can invite them again later.`}</AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel disabled={isPending}>Keep</AlertDialogCancel>
+              <AlertDialogCancel disabled={isCancelling}>Keep</AlertDialogCancel>
               <AlertDialogAction
                 variant="destructive"
                 onClick={(event) => {
                   event.preventDefault()
                   handleCancel()
                 }}
-                disabled={isPending}
+                disabled={isCancelling}
               >
-                {isPending ? <Spinner /> : "Cancel Invitation"}
+                {isCancelling ? <Spinner /> : "Cancel Invitation"}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

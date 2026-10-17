@@ -1,4 +1,5 @@
 "use client"
+import { useMemo } from "react"
 import { DataTable } from "@workspace/tables"
 import type { InvitationsData } from "@/types"
 import { getColumns } from "./columns"
@@ -12,9 +13,11 @@ interface InvitationsTableProps {
 
 // No row links: an invitation has no page of its own, and the table shows all of it
 const InvitationsTable = ({ data, canResend, canCancel }: InvitationsTableProps) => {
+  const columns = useMemo(() => getColumns({ canResend, canCancel }), [canResend, canCancel])
+
   return (
     <DataTable
-      columns={getColumns({ canResend, canCancel })}
+      columns={columns}
       filters={invitationFilters}
       data={data.data}
       pagination={{

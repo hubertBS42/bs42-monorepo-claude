@@ -22,7 +22,7 @@ const roleOptions = inviteSchema.shape.role.options.map((role) => ({ label: STOR
 type InviteFormValues = z.infer<typeof inviteSchema>
 
 // Rendered only for members who can invite; inviteMemberAction checks again
-const InviteMemberDialog = () => {
+const InviteMemberDialog = ({ storeId }: { storeId: string }) => {
   const [isOpen, setIsOpen] = useState(false)
   const [isPending, startTransition] = useTransition()
   const router = useRouter()
@@ -34,7 +34,7 @@ const InviteMemberDialog = () => {
 
   const onSubmit: SubmitHandler<InviteFormValues> = (values) => {
     startTransition(async () => {
-      const response = await inviteMemberAction(values)
+      const response = await inviteMemberAction({ ...values, storeId })
 
       if (!response.success) {
         if (response.code === "ALREADY_INVITED" || response.code === "ALREADY_MEMBER") {
@@ -45,7 +45,6 @@ const InviteMemberDialog = () => {
         return
       }
 
-      form.reset()
       setIsOpen(false)
       toast.add({ title: "Invitation sent", description: `An invitation has been sent to ${values.email}.`, type: "success" })
       router.refresh()
@@ -56,8 +55,10 @@ const InviteMemberDialog = () => {
     <Dialog
       open={isOpen}
       onOpenChange={(open) => {
+        // Reset on open, not close: onOpenChange doesn't run when the Cancel button or a successful
+        // submit closes the dialog, so values and errors would otherwise carry over
+        if (open) form.reset()
         setIsOpen(open)
-        if (!open) form.reset()
       }}
     >
       <DialogTrigger

@@ -45,7 +45,7 @@ export default async function StoreInvitationsPage({ searchParams }: StoreInvita
           <p className="text-sm text-muted-foreground">View and manage this store&apos;s pending invitations.</p>
         </div>
 
-        {canInvite && <InviteMemberDialog />}
+        {canInvite && <InviteMemberDialog storeId={storeId} />}
       </div>
       <InvitationsTable data={result.data} canResend={canInvite} canCancel={canCancel} />
     </main>
