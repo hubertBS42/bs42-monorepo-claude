@@ -91,11 +91,19 @@ export type StoreMember = Prisma.MemberGetPayload<{
 
 export type StoreMembersData = PaginatedResult<StoreMember>
 
+export interface InvitationsParams extends PaginationParams {
+  email?: string
+  role?: OrgRole
+}
+
+// The inviter is only named in the table, so only their name and email are loaded
 export type InvitationForTable = Prisma.InvitationGetPayload<{
   include: {
-    inviter: true
+    inviter: { select: { name: true; email: true } }
   }
 }>
+
+export type InvitationsData = PaginatedResult<InvitationForTable>
 
 export type InvitationDetails = Prisma.InvitationGetPayload<{
   include: {

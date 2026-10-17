@@ -1,5 +1,6 @@
 "use server"
 
+import { APIError } from "better-auth/api"
 import { headers } from "next/headers"
 import { OrgRole } from "@workspace/auth/organization-permissions"
 import { PLATFORM_ORGANIZATION_SLUG } from "@workspace/contracts"
@@ -9,6 +10,7 @@ import { prisma } from "@workspace/db"
 import { consoleAuth } from "@workspace/auth/console"
 import { consoleBootstrapAuth } from "@workspace/auth/console-bootstrap"
 import { invitedSignUpFormSchema, inviteSchema } from "@/lib/schemas/invitation.schemas"
+import { requireConsoleAccess } from "@/lib/auth-guard"
 import { ActionResponse } from "@workspace/contracts"
 import z from "zod"
 
@@ -33,7 +35,13 @@ async function getManageableInvitation(invitationId: string, userId: string) {
   return membership ? invitation : null
 }
 
+// inviteMemberAction, cancelInvitationAction and resendInvitationAction are for store staff, so they call
+// requireConsoleAccess before their try block (its redirect throws, which the catch would swallow).
+// Accepting, rejecting and signing up are for invitees, who may have no console access yet.
+
 export async function inviteMemberAction({ email, role }: { email: string; role: OrgRole }): Promise<ActionResponse> {
+  await requireConsoleAccess()
+
   try {
     const { session, headersObj } = await getSessionContext()
     if (!session) return { success: false, error: "Unauthorized" }
@@ -73,6 +81,12 @@ export async function inviteMemberAction({ email, role }: { email: string; role:
 
     return { success: true }
   } catch (error) {
+    if (error instanceof APIError && error.body?.code === "USER_IS_ALREADY_INVITED_TO_THIS_ORGANIZATION") {
+      return { success: false, error: "This email already has a pending invitation. Resend it from the list instead.", code: "ALREADY_INVITED" }
+    }
+    if (error instanceof APIError && error.body?.code === "USER_IS_ALREADY_A_MEMBER_OF_THIS_ORGANIZATION") {
+      return { success: false, error: "This person is already a member of the store.", code: "ALREADY_MEMBER" }
+    }
     return { success: false, error: formatError(error) }
   }
 }
@@ -110,7 +124,12 @@ export async function rejectInvitationAction({ invitationId }: { invitationId: s
 }
 
 export async function cancelInvitationAction(invitationId: string): Promise<ActionResponse> {
+  await requireConsoleAccess()
+
   try {
+    // Invitation.id is a uuid column, so anything else would make Prisma throw instead of finding nothing
+    if (!z.uuid().safeParse(invitationId).success) return { success: false, error: "Invitation not found" }
+
     const { session, headersObj } = await getSessionContext()
     if (!session) return { success: false, error: "Unauthorized" }
 
@@ -129,7 +148,12 @@ export async function cancelInvitationAction(invitationId: string): Promise<Acti
 }
 
 export async function resendInvitationAction(invitationId: string): Promise<ActionResponse> {
+  await requireConsoleAccess()
+
   try {
+    // Invitation.id is a uuid column, so anything else would make Prisma throw instead of finding nothing
+    if (!z.uuid().safeParse(invitationId).success) return { success: false, error: "Invitation not found" }
+
     const { session, headersObj } = await getSessionContext()
     if (!session) return { success: false, error: "Unauthorized" }
 
