@@ -1,4 +1,4 @@
-export const INVITATION_EXPIRATION_SECONDS = 60 * 30 // 30 minutes
+export const INVITATION_EXPIRATION_SECONDS = 60 * 60 * 24 * 7 // 7 days: an emailed invitation may not be opened the same day
 export const RESET_PASSWORD_TOKEN_EXPIRATION_SECONDS = 60 * 30 // 30 minutes
 export const SESSION_CACHE_EXPIRATION_SECONDS = 60 // 1 minute
 export const PLATFORM_ORGANIZATION_SLUG = "global"

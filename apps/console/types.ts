@@ -107,10 +107,11 @@ export type InvitationForTable = Prisma.InvitationGetPayload<{
 
 export type InvitationsData = PaginatedResult<InvitationForTable>
 
+// The accept page goes to the invitee, so only who invited them and to which store, not the inviter's other details
 export type InvitationDetails = Prisma.InvitationGetPayload<{
   include: {
-    inviter: true
-    organization: true
+    inviter: { select: { name: true; email: true } }
+    organization: { select: { name: true } }
   }
 }>
 

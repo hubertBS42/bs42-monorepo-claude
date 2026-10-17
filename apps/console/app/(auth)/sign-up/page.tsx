@@ -24,7 +24,8 @@ export default async function SignUpPage({ searchParams }: { searchParams: Promi
     },
   })
 
-  if (!invitation || invitation.status !== "pending" || (invitation.expiresAt && invitation.expiresAt < new Date())) redirect("/login")
+  // The invitation page explains why it can't be used
+  if (!invitation || invitation.status !== "pending" || (invitation.expiresAt && invitation.expiresAt < new Date())) redirect(`/accept-invitation/${invitationId}`)
 
   return <InvitedSignUpForm invitationId={invitationId} email={invitation.email} storeName={invitation.organization.name} />
 }

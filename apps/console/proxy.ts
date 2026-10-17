@@ -5,7 +5,8 @@ import { getSessionCookie } from "better-auth/cookies"
 import { NextResponse, type NextRequest } from "next/server"
 import { checkAccess, type RouteContext } from "@/lib/route-access"
 
-const publicPaths = new Set(["/login", "/sign-up", "/reset-password", "/set-password", "/forbidden", "/setup"])
+// /accept-invitation decides for itself: a signed-out invitee goes to sign-up or login from there
+const publicPaths = new Set(["/login", "/sign-up", "/reset-password", "/set-password", "/forbidden", "/setup", "/accept-invitation"])
 
 // The platform organization's id never changes, so look it up once per server instance.
 // It is only cached after it exists, so a request made before setup doesn't pin "undefined".
