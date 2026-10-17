@@ -231,12 +231,13 @@ export interface StatusChange {
   items: { quantity: number; storeListingId: string; storeListingVariantId: string | null; listingTracks: boolean; variantTracks: boolean }[]
 }
 
-// Throws StatusChangedError when the order moved on (or, for a cancellation, was paid) since the page loaded
+// Throws StatusChangedError when the order moved on (or, for a cancellation, was paid) since the page loaded.
+// Callers that cancel a paid order refund it first in the same transaction.
 export async function changeOrderStatus(tx: Tx, { orderId, from, to, note, changedById, items }: StatusChange) {
   // Only from the status the page showed, so two people can't both move it on, and never cancelling an order
-  // that was paid in the meantime
+  // that holds money (paid, or partly refunded) in the meantime: that needs a refund first (order-refunds.ts)
   const { count } = await tx.order.updateMany({
-    where: { id: orderId, status: from, ...(to === OrderStatus.CANCELLED && { paymentStatus: { in: [PaymentStatus.PENDING, PaymentStatus.FAILED] } }) },
+    where: { id: orderId, status: from, ...(to === OrderStatus.CANCELLED && { paymentStatus: { notIn: [PaymentStatus.PAID, PaymentStatus.PARTIALLY_REFUNDED] } }) },
     data: { status: to },
   })
   if (count === 0) throw new StatusChangedError()

@@ -134,6 +134,7 @@ model User {
   // Payments they recorded by hand (cash, mobile money or a card terminal in a store)
   recordedPayments Order[]              @relation("OrderPaymentRecordedBy")
   statusChanges    OrderStatusHistory[]
+  refundsGiven     OrderRefund[]        @relation("OrderRefundedBy")
 
   @@map("user")
 }
@@ -492,6 +493,7 @@ model Order {
   notes         String?
   orderItems    OrderItem[]
   statusHistory OrderStatusHistory[]
+  refunds       OrderRefund[]
   createdAt     DateTime             @default(now())
   updatedAt     DateTime             @updatedAt
 
@@ -517,6 +519,25 @@ model OrderStatusHistory {
   @@index([orderId])
   @@index([changedById])
   @@map("order_status_history")
+}
+
+// Money given back on a paid order, by the platform. An order can have several (partial refunds); their sum never
+// exceeds Order.totalGhs, and Order.paymentStatus follows it (PARTIALLY_REFUNDED, then REFUNDED).
+model OrderRefund {
+  id           String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orderId      String        @db.Uuid
+  order        Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  amountGhs    Decimal       @db.Decimal(12, 2)
+  // How the money went back, which needn't be how it was paid
+  method       PaymentMethod
+  reason       String
+  refundedById String?       @db.Uuid
+  refundedBy   User?         @relation("OrderRefundedBy", fields: [refundedById], references: [id], onDelete: SetNull)
+  createdAt    DateTime      @default(now())
+
+  @@index([orderId])
+  @@index([refundedById])
+  @@map("order_refund")
 }
 
 model OrderItem {
