@@ -58,10 +58,12 @@ cd packages/email && pnpm build && node --test tests/formatters.test.mjs   # sin
 
 ### Stores are organizations
 A "store" is a Better Auth organization. One special organization, slug `PLATFORM_ORGANIZATION_SLUG` (from `@workspace/contracts`), represents the platform itself: it can't be deleted, has a fixed slug, and can't receive invitations. When a new store is created, `afterCreateOrganization` adds all system admins as members (superAdmin → `owner`, admin → `admin`).
+- Those memberships are the system's to keep: `beforeRemoveMember` / `beforeUpdateMemberRole` hooks refuse changes to a system admin's membership through Better Auth (`PLATFORM_STAFF`), since store owners can call its endpoints directly. The console's own flows (store creation, promote/demote) write through Prisma.
+- Store member lists (`lib/data/members.data.ts`) leave platform staff out, and inviting one is refused (`PLATFORM_STAFF`). Member loaders select only the user fields the pages show: any member can see them.
 
 ### Two permission layers
 - System roles (`user`, `admin`, `superAdmin`) on `User.role`, defined in `system-permissions.ts`. Role strings can be comma-separated; always check with `hasSystemRole` / `hasSystemPermission`, never `===`.
-- Organization roles (`owner`, `admin`, `member`) on `Member.role`, defined in `organization-permissions.ts`.
+- Organization roles (`owner`, `admin`, `member`) on `Member.role`, defined in `organization-permissions.ts`. Besides Better Auth's defaults they have `listing` (owner/admin: create, update, delete; member: create, update) and `order` (owner/admin: read, create, update; member: read, create). Refunds are platform-only.
 - The catalogue (brands, categories, products) is global, not per store: it uses the system permissions `brand`/`category`/`product` and `/catalogue` is admin-only in the global workspace. Platform orders use the system permission `order` (`read`, `create`, `update`, `refund`).
 - **SuperAdmins**:
   - Only superAdmins can manage superAdmins: console actions check `canManageUserWithRole`, and a consoleAuth `hooks.before` blocks Better Auth's admin write endpoints.
@@ -76,9 +78,10 @@ A "store" is a Better Auth organization. One special organization, slug `PLATFOR
   - The sidebar uses `checkAccess` to filter `lib/nav-config.ts`.
   - Every nav URL needs a matching entry (or parent prefix) in `routeAccess`.
   - Unlisted paths are allowed through, so they rely on page-level guards.
-- **Page/action guards**: `apps/console/lib/auth-guard.ts` provides `requireConsoleAccess`, `requireConsoleAdmin`, `requireSystemPermission` and `requireOrganizationPermission` for server components and actions.
+- **Page/action guards**: `apps/console/lib/auth-guard.ts` provides `requireConsoleAccess`, `requireConsoleAdmin`, `requireSystemPermission`, `requireOrganizationPermission` and `requireActiveStoreMember` for server components and actions, and `hasStorePermission` / `getStoreRole` for actions and loaders that must return an error rather than redirect.
   - Every page calls its own guard as its first statement; layouts do not guard (they aren't re-run on client navigation). A new page without a guard is open to any signed-in user, including storefront customers who share the auth cookie.
-  - Global admin pages: `requireSystemPermission(...)` (or `requireConsoleAdmin()` when no permission exists yet). Store workspace pages: `requireOrganizationPermission(activeStoreId, ...)`. Pages for all console users (dashboard, `/account/*`): `requireConsoleAccess()`.
+  - Global admin pages: `requireSystemPermission(...)` (or `requireConsoleAdmin()` when no permission exists yet). Pages for all console users (dashboard, `/account/*`): `requireConsoleAccess()`.
+  - Store workspace pages: `requireActiveStoreMember()`, which returns `{ session, storeId, role }` for a membership of the active store (never the platform org; a user removed from it goes to `/`). A page that needs more checks `organizationRoles[role].authorize(...)` and redirects to `/forbidden`. Store actions take the store id from the page, not the session's active org (another tab may have switched it), and check `hasStorePermission(userId, storeId, ...)`.
   - The `user` system role has no permissions, so `requireSystemPermission` can't express "store staff"; use store membership for that.
 
 ### Database client extensions
@@ -103,11 +106,23 @@ Migrations: Prisma doesn't model `CHECK` constraints or triggers, so they live i
 - `updateProductAction` updates options, values, variants and documents in place, matched by id (`lib/product-sync.ts`). Store listing variants hang off variants and cascade, so recreating a variant would wipe the stores' prices and stock for it. A removed variant that has been ordered, directly or through a store's listing, is archived instead of deleted.
 - The edit loader (`getProductForEdit`) sends plain values plus `savedFiles` (the form never deletes those; the action removes replaced ones after it commits) and each variant's usage, so the form can warn before removing a listed or ordered variant.
 
+### Store listings
+- A listing is a store's price and stock for a catalogue product, with a `StoreListingVariant` per variant on sale. A variant without its own sell price sells at the listing's.
+- `updateListingAction` runs `lib/listing-sync.ts`. The edit form sends back the values it loaded (`original`); inside a transaction that locks the listing's rows (`SELECT … FOR UPDATE`), a change someone else made returns `CONFLICT`, and stock the user changed that changed meanwhile (a sale) returns `STOCK_CHANGED` with the current stock, which the form merges in. Stock the user left alone is never written.
+
 ### Orders and money
 - Catalogue prices (products, store listings, variants) are USD. Customers are charged in GHS at the day's exchange rate (`ExchangeRate`, one row per pair per day, `rate` = units of `to` per 1 `from`). Order amounts are named after their currency (`subtotalUsd`, `subtotalGhs`, `shippingGhs`, `taxGhs`, `totalGhs`, `unitPriceUsd`/`unitPriceGhs`, ...).
 - Each order line stores its GHS amounts, its share of the discount (`discountGhs`) and its tax (`taxGhs`), each rounded once; the order's subtotal, discount and tax are their sums, so receipts add up. `totalGhs = subtotalGhs - discountAmountGhs + shippingGhs + taxGhs`. Orders copy the exchange rate and tax rate they used.
 - The platform is the seller of record: one tax rate in `AppSettings` (`taxEnabled`, `taxRate` as a fraction, `taxShipping`). Shown prices exclude tax; tax is charged after the discount. Do all money maths with `Prisma.Decimal`, never JS numbers (`AppSettingsData.taxRate` is a plain number only so it can reach client components).
 - Anything that has been ordered is archived, never deleted: `OrderItem`'s links to stores, listings, variants and products are `Restrict`, and its snapshot fields keep what was sold at the time. Delete actions should return a code ("archive it instead") rather than hit the foreign key. `PaymentStatus` is the source of truth for money; `OrderStatus` tracks fulfilment only.
+- **Exchange rate**: until a daily fetch job exists, a superAdmin sets today's USD→GHS rate in Settings (`setTodaysExchangeRateAction`). Orders refuse a rate older than `EXCHANGE_RATE_MAX_AGE_DAYS` (2) with `NO_RATE`, and a day's rate can't change once an order has used it (`RATE_IN_USE`).
+- **Pricing**: `lib/order-pricing.ts` (pure, `Decimal` only) implements the maths above. The discount is split by line totals, rounded down, with the remainder on the last line. Prices always come from the store's published listings on the server (`resolveOrderLines`), never from the browser.
+- **Store orders** (`/store/orders`): a store manages only orders made entirely of its own items; an order spanning stores is the platform's (global `/orders`, still placeholders), and the store sees only its own lines.
+  - `lib/store-order-writes.ts` creates orders and changes their status. Stock is reserved at creation with an atomic `updateMany({ stock: { gte } }, decrement)` per tracked row (`INSUFFICIENT_STOCK` rolls the whole order back) and restored when the order is cancelled.
+  - Status changes follow `lib/order-status.ts` (`nextOrderStatuses`: shipped is for delivery only, cancel until shipped with a reason, completed needs payment) and apply only from the status the page showed (`STATUS_CHANGED`). A store can't cancel a paid order (`PAID_ORDER`).
+  - Payment is recorded separately ("Record payment", with `paymentRecordedById`), never as a side effect of a status.
+  - References are `BS42-yyyyMMdd-00001` from the Postgres sequence `order_reference_seq`, created in its migration's SQL; gaps are expected.
+  - Customer emails (`lib/order-emails.ts`) are scheduled with Next's `after()` once a create or status change has committed. They're skipped when the order has no `customerEmail` or the linked account has `getOrderEmails` off, and pickups get no shipped/delivered email.
 
 ### Console app conventions
 - Routes are grouped: `(auth)` pages are public, `(root)` is the authenticated shell, and `(misc)` holds `no-stores` and `accept-invitation`. Route-specific components live in `_components/` next to the page.
@@ -118,8 +133,11 @@ Migrations: Prisma doesn't model `CHECK` constraints or triggers, so they live i
 - Zod schemas: use `z.httpUrl()` for URLs, since `z.url()` accepts `javascript:`. When a schema has transforms, type the form as `useForm<z.input<S>, unknown, z.output<S>>` and its submit handler with `z.output<S>`.
 - Images on edit forms: the action rejects URLs outside our container (`isManagedFileUrl`) and removes the replaced image only after the update succeeds (brands, app settings). The form must not delete the saved image when it's removed, only images uploaded during that edit. Stores update through Better Auth, so a replaced store logo is left to the orphaned-file sweep.
 - Toasts: `toast` from `@workspace/ui/components/toast` is Base UI's toast manager. Use `toast.add({ title, description, type })`; there is no `toast.success`/`toast.error`.
-- Action buttons (e.g. `DeleteStore`, `DeleteBrand`) check their own permission from the client session, show a skeleton while it loads and a line explaining a disabled button. The server action checks again.
+- Action buttons (e.g. `DeleteStore`, `DeleteBrand`) check their own permission from the client session (store permissions via `useMemberRole` and `checkRolePermission`), show a skeleton while it loads and a line explaining a disabled button. The server action checks again. Pages don't pass `canX` props; a table fetches the role once and hands it to its cells. Page guards stay on the server.
+- An action that changes something another person might have changed takes the value the page showed (`currentStatus`, `currentRole`, `original`) and refuses with a code (`STATUS_CHANGED`, `ROLE_CHANGED`, `NOT_PENDING`, `CONFLICT`) instead of overwriting; the UI refreshes on those codes.
+- Transaction logic worth testing lives in its own `server-only` module with relative imports (`lib/product-sync.ts`, `lib/listing-sync.ts`, `lib/store-order-writes.ts`), so a script can run it against the database. Don't use TypeScript parameter properties there: Node's type stripping rejects them.
 - Uploads go through `app/api/storage/{images,documents,files}/route.ts` → `lib/storage-api.ts` (per-route `UploadPolicy`) → `@workspace/storage` (Azure Blob via `DefaultAzureCredential`; `AZURE_STORAGE_ACCOUNT_NAME`, optional `AZURE_STORAGE_CONTAINER_NAME`). `/api` skips `proxy.ts`, so these routes check for a console user themselves, and the delete route refuses files a record still references (`findReferencedFileUrls`): the browser only deletes unsaved uploads.
+- Invitations last 7 days (`INVITATION_EXPIRATION_SECONDS`). `/accept-invitation` is a public path in `proxy.ts`: the page sends a signed-out invitee to sign-up or login, offers "Sign out and continue" to someone signed in as another account, and explains an invalid invitation instead of redirecting.
 - Store input is checked in the organization hooks (`packages/auth/src/store-input.ts`), because store admins can call Better Auth's organization endpoints directly: logos must be our own blobs, policies are cleaned with `sanitizeRichText`, and only system admins may change a store's status.
 - Rich text (`RichTextField`) is stored as TipTap JSON, not HTML; an empty editor is `null`. Actions save it through `sanitizeRichText` (`@workspace/utils/rich-text`), which keeps only the nodes, marks and attributes the editor can produce and links with http(s)/mailto/tel. Render it with TipTap's renderer and the editor's extensions, never as raw HTML.
 - Form fields come from `@workspace/forms` (react-hook-form wrappers), data tables from `@workspace/tables` (TanStack Table), and primitives from `@workspace/ui`.
@@ -134,7 +152,7 @@ Add shadcn components from the repo root with `pnpm dlx shadcn@latest add <compo
 The primitives are built on Base UI, not Radix. Use `render={<Button />}` instead of `asChild`, and give menu items `onClick`: `onSelect` type-checks but never fires. A menu item that navigates is a `DropdownMenuLinkItem` (Base UI's `Menu.LinkItem`, a real `<a>`) with `render={<Link href="..." />}`.
 
 ### Email
-`@workspace/email` holds React Email templates (auth flows, member invites, order lifecycle) sent via Nodemailer (`SITE_MAILER_*` env vars). The sender name and logo come from app settings.
+`@workspace/email` holds React Email templates (auth flows, member invites, order lifecycle) sent via Nodemailer (`SITE_MAILER_*` env vars). The sender name and logo come from app settings: the console's name for staff emails, the storefront's (`resolveStoreName`) for customer emails. The console imports it for order emails, so build its `dist/` first.
 
 ## Environment
 
