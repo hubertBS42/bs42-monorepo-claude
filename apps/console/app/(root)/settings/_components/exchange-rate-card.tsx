@@ -65,7 +65,9 @@ export default function ExchangeRateCard({ latest, maxAgeDays }: { latest: Excha
           </p>
           <div className="flex items-end gap-2">
             <div className="max-w-56 flex-1">
-              <NumberInputField control={form.control} label="Today's rate (GHS per $1)" name="rate" step={0.0001} min={0} prependText="GH₵" disabled={isPending} />
+              {/* The field rounds to its step when it loses focus, so the step matches the six decimals rates are stored
+                  (and fetched) with: a coarser one would change a fetched rate just by clicking in and out */}
+              <NumberInputField control={form.control} label="Today's rate (GHS per $1)" name="rate" step={0.000001} min={0} prependText="GH₵" disabled={isPending} />
             </div>
             <Button type="submit" disabled={isPending || !form.formState.isDirty}>
               {isPending ? <Spinner /> : "Save rate"}
