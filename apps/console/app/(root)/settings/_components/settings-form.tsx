@@ -39,6 +39,7 @@ export default function SettingsForm({ settings, version }: { settings: AppSetti
     notifyLowStock: settings.notifyLowStock,
     notifyOutOfStock: settings.notifyOutOfStock,
     notifyRateFetchFailure: settings.notifyRateFetchFailure,
+    notifyStoreRefunds: settings.notifyStoreRefunds,
     version,
   }
 
@@ -206,6 +207,14 @@ export default function SettingsForm({ settings, version }: { settings: AppSetti
                       disabled={isPending}
                     />
                     <SwitchField control={form.control} name="notifyOutOfStock" label="Out of stock" description="When a sale takes an item's stock to 0" variant="card" disabled={isPending} />
+                    <SwitchField
+                      control={form.control}
+                      name="notifyStoreRefunds"
+                      label="Refunds given by stores"
+                      description="When a store's owner or admin refunds an order, on its own or with a return"
+                      variant="card"
+                      disabled={isPending}
+                    />
                     <SwitchField
                       control={form.control}
                       name="notifyRateFetchFailure"

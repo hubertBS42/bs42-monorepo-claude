@@ -10,16 +10,19 @@ import {
   sendOrderDeliveredEmail,
   sendOrderPaymentReceivedEmail,
   sendOrderRefundedEmail,
+  sendOrderReturnedEmail,
   sendOrderShippedEmail,
   type BaseOrderEmail,
   type OrderConfirmationEmail,
+  type ReturnedItem,
 } from "@workspace/email"
 import { PAYMENT_METHOD_LABELS } from "./order-status"
 
 // Customer emails for orders. Actions schedule them with after(), once the order is saved, so a slow or failed
 // email never holds up or fails the change.
 
-export type OrderEmailEvent = "CREATED" | "PAYMENT_RECEIVED" | "REFUNDED" | typeof OrderStatus.CONFIRMED | typeof OrderStatus.SHIPPED | typeof OrderStatus.DELIVERED | typeof OrderStatus.CANCELLED
+export type OrderEmailEvent =
+  "CREATED" | "PAYMENT_RECEIVED" | "REFUNDED" | "RETURNED" | typeof OrderStatus.CONFIRMED | typeof OrderStatus.SHIPPED | typeof OrderStatus.DELIVERED | typeof OrderStatus.CANCELLED
 
 const orderEmailSelect = {
   reference: true,
@@ -50,20 +53,27 @@ export type OrderEmail =
   | { kind: "CONFIRMED" | "DELIVERED"; data: BaseOrderEmail & { note: string | null } }
   | { kind: "PAYMENT_RECEIVED"; data: BaseOrderEmail & { amountGhs: number; paymentMethod: string } }
   | { kind: "REFUNDED"; data: BaseOrderEmail & { refundReason: string; refundAmountGhs: number } }
+  | { kind: "RETURNED"; data: BaseOrderEmail & { items: ReturnedItem[]; returnReason: string; refundAmountGhs: number | null } }
   | { kind: "SHIPPED"; data: BaseOrderEmail & { shippingAddress: string; note: string | null } }
   | { kind: "CANCELLED"; data: BaseOrderEmail & { cancellationReason: string; totalGhs: number } }
 
 // The stored amounts as they are, for display: nothing here recalculates them
 const amount = (value: Prisma.Decimal) => Number(value.toFixed(2))
 
+// What a refund or a return adds to its email: the amount given back, and for a return what came back
+export interface OrderEmailExtra {
+  refundAmountGhs?: string | null
+  returnedItems?: ReturnedItem[]
+}
+
 // Which email an event sends, or null when it sends none. Pure, so it can be tested without sending anything.
-// A refund's note is its reason, and refundAmountGhs what it gave back.
+// A refund's or a return's note is its reason.
 export function buildOrderEmail(
   order: OrderForEmail,
   event: OrderEmailEvent,
   note: string | null,
   brand: { appName: string; logoUrl: string | null },
-  refundAmountGhs: string | null = null
+  { refundAmountGhs = null, returnedItems = [] }: OrderEmailExtra = {}
 ): OrderEmail | null {
   // Walk-in customers may give no email; an account can turn order emails off
   if (!order.customerEmail || order.user?.getOrderEmails === false) return null
@@ -95,6 +105,11 @@ export function buildOrderEmail(
       }
     case "REFUNDED":
       return refundAmountGhs ? { kind: "REFUNDED", data: { ...base, refundReason: note || "No reason was given.", refundAmountGhs: Number(refundAmountGhs) } } : null
+    case "RETURNED":
+      // One email for the return and its refund, if any
+      return returnedItems.length > 0
+        ? { kind: "RETURNED", data: { ...base, items: returnedItems, returnReason: note || "No reason was given.", refundAmountGhs: refundAmountGhs ? Number(refundAmountGhs) : null } }
+        : null
     case "PAYMENT_RECEIVED":
       return { kind: "PAYMENT_RECEIVED", data: { ...base, amountGhs: amount(order.totalGhs), paymentMethod: PAYMENT_METHOD_LABELS[order.paymentMethod] } }
     case OrderStatus.CONFIRMED:
@@ -117,6 +132,8 @@ function deliver(email: OrderEmail) {
       return sendOrderPaymentReceivedEmail(email.data)
     case "REFUNDED":
       return sendOrderRefundedEmail(email.data)
+    case "RETURNED":
+      return sendOrderReturnedEmail(email.data)
     case "CONFIRMED":
       return sendOrderConfirmedEmail(email.data)
     case "SHIPPED":
@@ -129,13 +146,13 @@ function deliver(email: OrderEmail) {
 }
 
 // Sends the event's email from the saved order. Never throws: it runs after the response, where nothing could catch it.
-export async function sendOrderEmail(orderId: string, event: OrderEmailEvent, note: string | null = null, refundAmountGhs: string | null = null) {
+export async function sendOrderEmail(orderId: string, event: OrderEmailEvent, note: string | null = null, extra: OrderEmailExtra = {}) {
   try {
     const [order, settings] = await Promise.all([prisma.order.findUnique({ where: { id: orderId }, select: orderEmailSelect }), readAppSettings()])
     if (!order) return
 
     // Customer emails carry the storefront's name and logo, not the console's
-    const email = buildOrderEmail(order, event, note, { appName: resolveStoreName(settings), logoUrl: settings.logoUrl }, refundAmountGhs)
+    const email = buildOrderEmail(order, event, note, { appName: resolveStoreName(settings), logoUrl: settings.logoUrl }, extra)
     if (email) await deliver(email)
   } catch (error) {
     console.error(`Could not send the ${event} email for order ${orderId}:`, error)

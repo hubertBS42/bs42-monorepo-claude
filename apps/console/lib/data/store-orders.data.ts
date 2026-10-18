@@ -9,7 +9,7 @@ import { Prisma } from "@workspace/db/client"
 import type { DataResponse } from "@workspace/contracts"
 import { getPaginationError } from "@workspace/utils/pagination"
 import { hasStorePermission } from "@/lib/auth-guard"
-import { orderDetailsInclude, sumLines, toOrderDetailsBase, toOrderTotals } from "@/lib/order-details"
+import { orderDetailsInclude, sumLines, toOrderAfterSale, toOrderDetailsBase, toOrderTotals } from "@/lib/order-details"
 
 export const MAX_STORE_ORDERS_PAGE_SIZE = 100
 // Not the total: for an order with other stores' items the table shows this store's share, which a sort can't follow
@@ -115,6 +115,7 @@ export const getStoreOrderDetails = async (storeId: string, orderId: string): Pr
         ...toOrderDetailsBase(order, ownLines, !isMultiStore),
         totals: isMultiStore ? null : toOrderTotals(order),
         storeTotalGhs: sumLines(ownLines).toString(),
+        afterSale: isMultiStore ? null : toOrderAfterSale(order),
       },
     }
   } catch (error) {

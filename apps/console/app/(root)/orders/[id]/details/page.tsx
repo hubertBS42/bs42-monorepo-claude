@@ -8,14 +8,15 @@ import { Separator } from "@workspace/ui/components/separator"
 import { formatDate } from "@workspace/utils/date"
 import BackButton from "@/components/back-button"
 import { OrderStatusBadge, PaymentStatusBadge } from "@/components/order-badges"
-import { Detail, ghs, OrderCustomerCard, OrderLinesTable, OrderNotesCard, OrderTimelineCard, OrderTotalsSummary } from "@/components/orders/order-details"
+import { Detail, ghs, OrderCustomerCard, OrderLinesTable, OrderNotesCard, OrderReturnsCard, OrderTimelineCard, OrderTotalsSummary, returnState } from "@/components/orders/order-details"
 import { EditOrderCustomer, EditOrderDelivery, EditOrderNotes } from "@/components/orders/order-edits"
 import RecordPayment from "@/components/orders/record-payment"
 import OrderRefunds from "@/components/orders/refund-order"
+import RecordReturn from "@/components/orders/return-order"
 import UpdateOrderStatus from "@/components/orders/update-order-status"
 import { requireSystemPermission } from "@/lib/auth-guard"
 import { getOrderDetails } from "@/lib/data/orders.data"
-import { isPaid, nextOrderStatuses, ORDER_STATUS_LABELS, PAYMENT_METHOD_LABELS } from "@/lib/order-status"
+import { canBeReturned, isPaid, nextOrderStatuses, ORDER_STATUS_LABELS, PAYMENT_METHOD_LABELS, returnBlockedReason } from "@/lib/order-status"
 
 export const metadata: Metadata = {
   title: "Order Details",
@@ -44,6 +45,8 @@ export default async function OrderDetailsPage({ params }: OrderDetailsPageProps
   const isEditable = order.status === OrderStatus.PENDING
   const canBePaid = (order.paymentStatus === PaymentStatus.PENDING || order.paymentStatus === PaymentStatus.FAILED) && order.status !== OrderStatus.CANCELLED
   const hasRefunds = Number(order.refundedGhs) > 0
+  const returned = returnState(order.lines)
+  const returnBlocked = returnBlockedReason(order, order.returnableLines.length)
 
   return (
     <main className="flex flex-col gap-y-6">
@@ -54,6 +57,7 @@ export default async function OrderDetailsPage({ params }: OrderDetailsPageProps
             <span>{`Placed ${formatDate(order.createdAt, "MMM d, yyyy, h:mm a")}${order.createdBy ? ` by ${order.createdBy}` : ""}`}</span>
             <OrderStatusBadge status={order.status} />
             <PaymentStatusBadge status={order.paymentStatus} />
+            {returned && <Badge variant="secondary">{returned}</Badge>}
             {order.isMultiStore && <Badge variant="outline">{`${order.storeNames.length} stores`}</Badge>}
           </div>
         </div>
@@ -76,6 +80,30 @@ export default async function OrderDetailsPage({ params }: OrderDetailsPageProps
               <OrderTotalsSummary totals={order.totals} exchangeRate={order.exchangeRate} />
             </CardContent>
           </Card>
+
+          {/* Once the customer has the order, or when something already came back */}
+          {(canBeReturned(order.status) || order.returns.length > 0) && (
+            <OrderReturnsCard
+              returns={order.returns}
+              actions={
+                returnBlocked ? (
+                  <p className="text-sm text-muted-foreground">{returnBlocked}</p>
+                ) : (
+                  <RecordReturn
+                    storeId={null}
+                    orderId={order.id}
+                    refundedGhs={order.refundedGhs}
+                    returnCount={order.returns.length}
+                    refundableGhs={order.refundableGhs}
+                    canRefund={isPaid(order.paymentStatus)}
+                    paymentMethod={order.paymentMethod}
+                    lines={order.returnableLines}
+                    showStore={order.isMultiStore}
+                  />
+                )
+              }
+            />
+          )}
 
           <OrderTimelineCard timeline={order.timeline} />
         </div>
@@ -113,9 +141,10 @@ export default async function OrderDetailsPage({ params }: OrderDetailsPageProps
                 {hasRefunds && <Detail label="Refunded">{ghs(order.refundedGhs)}</Detail>}
               </div>
               {canBePaid && <RecordPayment storeId={null} orderId={order.id} totalGhs={order.totals.totalGhs} defaultMethod={order.paymentMethod} />}
-              {/* Money the order still holds can go back; the buttons check for superAdmin themselves */}
+              {/* Money the order still holds can go back; the buttons check the permission themselves */}
               {isPaid(order.paymentStatus) && (
                 <OrderRefunds
+                  storeId={null}
                   orderId={order.id}
                   refundedGhs={order.refundedGhs}
                   refundableGhs={order.refundableGhs}

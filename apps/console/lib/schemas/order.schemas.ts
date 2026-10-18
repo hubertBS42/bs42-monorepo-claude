@@ -170,7 +170,7 @@ export const updateOrderCustomerSchema = orderCustomerFormSchema.extend(orderEdi
 export const updateOrderDeliverySchema = z.object(deliveryFields).extend(orderEditTarget).superRefine(checkDelivery)
 export const updateOrderNotesSchema = orderNotesFormSchema.extend(orderEditTarget)
 
-// Refunds are the platform's, for superAdmins. The page sends the refunded total it showed: the action refuses if
+// Refunds, by superAdmins on any order or a store's owners and admins on its own. The page sends the refunded total it showed: the action refuses if
 // someone refunded the order since (REFUNDS_CHANGED), so the same money can't go back twice.
 const refundFields = {
   method: z.enum(PaymentMethod, "Choose how the money goes back"),
@@ -193,3 +193,30 @@ export const refundOrderSchema = refundOrderFormSchema.extend(refundTarget)
 
 export const cancelAndRefundFormSchema = z.object(refundFields)
 export const cancelAndRefundOrderSchema = cancelAndRefundFormSchema.extend({ ...refundTarget, currentStatus: z.enum(OrderStatus) })
+
+// Items a customer brings back, recorded with an optional refund by whoever may give refunds. The form has a row per line that
+// can still come back (quantity 0 leaves it out); the page sends how many returns it showed (RETURNS_CHANGED).
+export const returnOrderFormSchema = z
+  .object({
+    items: z.array(
+      z.object({
+        orderItemId: z.uuid(),
+        // A cleared field is 0
+        quantity: z.union([z.number("Enter a quantity").int("Enter a whole number").min(0, "At least 0"), z.literal("")]).transform((value) => (value === "" ? 0 : value)),
+        restock: z.boolean(),
+      })
+    ),
+    reason: z.string().trim().min(1, "Give a reason, which the customer is told").max(500, "Keep the reason under 500 characters"),
+    // Empty or 0 refunds nothing
+    refundAmountGhs: z.union([decimalSchema, z.literal("")]).transform((value) => (value === "" ? 0 : value)),
+    method: z.enum(PaymentMethod, "Choose how the money goes back"),
+  })
+  .refine((data) => data.items.some((item) => item.quantity > 0), { message: "Choose at least one item coming back", path: ["items"] })
+
+export const returnOrderSchema = returnOrderFormSchema.safeExtend({ ...refundTarget, returnCount: z.int().min(0) })
+
+// The same, given by a store's owner or admin on one of its own orders. The store comes from the page.
+const storeTarget = { storeId: z.uuid("Invalid store ID") }
+export const refundStoreOrderSchema = refundOrderSchema.extend(storeTarget)
+export const cancelAndRefundStoreOrderSchema = cancelAndRefundOrderSchema.extend(storeTarget)
+export const returnStoreOrderSchema = returnOrderSchema.safeExtend(storeTarget)

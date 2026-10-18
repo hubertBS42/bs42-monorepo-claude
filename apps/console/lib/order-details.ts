@@ -1,16 +1,33 @@
 import "server-only"
 
-import type { OrderLine, OrderTimelineEntry, OrderTotals } from "@/types"
+import type { OrderAfterSale, OrderLine, OrderReturnEntry, OrderTimelineEntry, OrderTotals, ReturnableLine } from "@/types"
 import { Prisma } from "@workspace/db/client"
 import { formatCurrency } from "@workspace/utils/currency"
+import { returnedUnitsAmount } from "./order-pricing"
+import { returnedSoFar } from "./order-refunds"
 import { ORDER_STATUS_LABELS, PAYMENT_METHOD_LABELS } from "./order-status"
 
 // What the store's and the platform's order details loaders share: the query and turning its rows into page data
 
 export const orderDetailsInclude = {
-  orderItems: { orderBy: { id: "asc" } },
+  orderItems: {
+    orderBy: { id: "asc" },
+    include: {
+      returns: { select: { quantity: true } },
+      storeListing: { select: { trackInventory: true } },
+      storeListingVariant: { select: { trackInventory: true } },
+    },
+  },
   statusHistory: { orderBy: { createdAt: "desc" }, include: { changedBy: { select: { name: true } } } },
-  refunds: { orderBy: { createdAt: "desc" }, include: { refundedBy: { select: { name: true } } } },
+  refunds: { orderBy: { createdAt: "desc" }, include: { refundedBy: { select: { name: true } }, return: { select: { id: true } } } },
+  returns: {
+    orderBy: { createdAt: "desc" },
+    include: {
+      recordedBy: { select: { name: true } },
+      refund: { select: { amountGhs: true, method: true } },
+      items: { orderBy: { orderItemId: "asc" }, select: { orderItemId: true, quantity: true, restocked: true } },
+    },
+  },
   createdBy: { select: { name: true } },
   paymentRecordedBy: { select: { name: true } },
 } satisfies Prisma.OrderInclude
@@ -39,6 +56,7 @@ export function toOrderLine(line: LineRow): OrderLine {
     productImage: line.productImage,
     storeName: line.storeName,
     quantity: line.quantity,
+    returnedQuantity: returnedSoFar(line),
     unitPriceGhs: line.unitPriceGhs.toString(),
     totalPriceGhs: line.totalPriceGhs.toString(),
     discountGhs: line.discountGhs.toString(),
@@ -60,9 +78,12 @@ export function toOrderTotals(order: OrderWithDetails): OrderTotals {
   }
 }
 
-// Status changes, the recorded payment and refunds, newest first. Amounts only when the viewer may see the whole
-// order's money: a store sharing an order with others sees neither the total nor the refunds.
-export function toOrderTimeline(order: OrderWithDetails, showAmounts: boolean): OrderTimelineEntry[] {
+const units = (count: number) => (count === 1 ? "1 item" : `${count} items`)
+
+// Status changes, the recorded payment, refunds and returns, newest first. Amounts only when the viewer may see the
+// whole order's money: a store sharing an order with others sees neither the total nor the refunds. Returns count
+// only the lines the viewer sees (lineIds).
+export function toOrderTimeline(order: OrderWithDetails, showAmounts: boolean, lineIds: Set<string>): OrderTimelineEntry[] {
   const method = (value: keyof typeof PAYMENT_METHOD_LABELS) => PAYMENT_METHOD_LABELS[value].toLowerCase()
   return [
     ...order.statusHistory.map((entry) => ({
@@ -83,15 +104,33 @@ export function toOrderTimeline(order: OrderWithDetails, showAmounts: boolean): 
           },
         ]
       : []),
+    // A return's refund shows on the return's entry
     ...(showAmounts
-      ? order.refunds.map((refund) => ({
-          id: refund.id,
-          title: `Refunded ${ghs(refund.amountGhs)}`,
-          note: `By ${method(refund.method)}: ${refund.reason}`,
-          changedBy: staffName(refund.refundedBy),
-          createdAt: refund.createdAt,
-        }))
+      ? order.refunds
+          .filter((refund) => !refund.return)
+          .map((refund) => ({
+            id: refund.id,
+            title: `Refunded ${ghs(refund.amountGhs)}`,
+            note: `By ${method(refund.method)}: ${refund.reason}`,
+            changedBy: staffName(refund.refundedBy),
+            createdAt: refund.createdAt,
+          }))
       : []),
+    ...order.returns.flatMap((entry) => {
+      const items = entry.items.filter((item) => lineIds.has(item.orderItemId))
+      if (items.length === 0) return []
+      const restocked = items.filter((item) => item.restocked).reduce((sum, item) => sum + item.quantity, 0)
+      const refund = showAmounts && entry.refund ? `, ${ghs(entry.refund.amountGhs)} refunded by ${method(entry.refund.method)}` : ""
+      return [
+        {
+          id: entry.id,
+          title: `Returned ${units(items.reduce((sum, item) => sum + item.quantity, 0))}${refund}`,
+          note: `${entry.reason}${restocked ? ` (${restocked} back in stock)` : ""}`,
+          changedBy: staffName(entry.recordedBy),
+          createdAt: entry.createdAt,
+        },
+      ]
+    }),
   ].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
 }
 
@@ -116,6 +155,55 @@ export function toOrderDetailsBase(order: OrderWithDetails, lines: LineRow[], sh
     exchangeRate: order.exchangeRate.toString(),
     createdBy: staffName(order.createdBy),
     createdAt: order.createdAt,
-    timeline: toOrderTimeline(order, showAmounts),
+    timeline: toOrderTimeline(order, showAmounts, new Set(lines.map((line) => line.id))),
   }
+}
+
+// The refunds and returns side of the order, for whoever manages it (the platform, or the store for its own orders)
+export function toOrderAfterSale(order: OrderWithDetails): OrderAfterSale {
+  const refunded = order.refunds.reduce((sum, refund) => sum.plus(refund.amountGhs), new Prisma.Decimal(0))
+  return {
+    refundedGhs: refunded.toString(),
+    refundableGhs: order.totalGhs.minus(refunded).toString(),
+    returns: toOrderReturns(order),
+    returnableLines: toReturnableLines(order),
+  }
+}
+
+// Returns, newest first
+function toOrderReturns(order: OrderWithDetails): OrderReturnEntry[] {
+  const lines = new Map(order.orderItems.map((line) => [line.id, line]))
+  return order.returns.map((entry) => ({
+    id: entry.id,
+    reason: entry.reason,
+    refundGhs: entry.refund?.amountGhs.toString() ?? null,
+    recordedBy: staffName(entry.recordedBy),
+    createdAt: entry.createdAt,
+    items: entry.items.map((item) => {
+      const line = lines.get(item.orderItemId)!
+      return { productName: line.productName, variantDescription: line.variantDescription, quantity: item.quantity, restocked: item.restocked }
+    }),
+  }))
+}
+
+// The lines with units still to come back, for the return form: what each number of them is worth (the suggested
+// refund) and whether its listing tracks stock (it can be restocked)
+function toReturnableLines(order: OrderWithDetails): ReturnableLine[] {
+  return order.orderItems.flatMap((line) => {
+    const returned = returnedSoFar(line)
+    const left = line.quantity - returned
+    if (left <= 0) return []
+    const paid = line.totalPriceGhs.minus(line.discountGhs).plus(line.taxGhs)
+    return [
+      {
+        orderItemId: line.id,
+        productName: line.productName,
+        variantDescription: line.variantDescription,
+        storeName: line.storeName,
+        left,
+        tracksStock: line.storeListingVariantId ? (line.storeListingVariant?.trackInventory ?? false) : line.storeListing.trackInventory,
+        valueByQuantity: Array.from({ length: left + 1 }, (_, count) => returnedUnitsAmount(paid, line.quantity, returned, count).toString()),
+      },
+    ]
+  })
 }

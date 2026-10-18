@@ -1,6 +1,7 @@
 import type { ColumnDef } from "@tanstack/react-table"
 import { formatDate } from "@workspace/utils/date"
 import { formatCurrency } from "@workspace/utils/currency"
+import { Badge } from "@workspace/ui/components/badge"
 import { Checkbox } from "@workspace/ui/components/checkbox"
 import { ColumnHeader } from "@workspace/tables"
 import { OrderStatusBadge, PaymentStatusBadge } from "@/components/order-badges"
@@ -49,7 +50,12 @@ export const columns: ColumnDef<OrderListItem, unknown>[] = [
   {
     accessorKey: "status",
     header: () => <ColumnHeader title="Status" sortKey="status" />,
-    cell: ({ row }) => <OrderStatusBadge status={row.original.status} />,
+    cell: ({ row }) => (
+      <div className="flex flex-wrap gap-1">
+        <OrderStatusBadge status={row.original.status} />
+        {row.original.returned && <Badge variant="secondary">{row.original.returned}</Badge>}
+      </div>
+    ),
   },
   {
     accessorKey: "paymentStatus",

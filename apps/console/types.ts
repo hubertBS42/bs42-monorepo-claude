@@ -301,6 +301,8 @@ export interface OrdersParams extends PaginationParams {
   paymentStatus?: PaymentStatus
   // "true": only orders with more than one store's items; "false": only single-store orders
   multiStore?: "true" | "false"
+  // "true": only orders with items brought back; "false": only orders without
+  returned?: "true" | "false"
   // Plain yyyy-MM-dd days in the app's time zone, both inclusive
   placedStart?: string
   placedEnd?: string
@@ -318,6 +320,8 @@ export interface OrderListItem {
   itemCount: number
   // The stores whose items are on the order, by the name they had when it was placed
   storeNames: string[]
+  // "Returned" or "Partly returned" once items were brought back
+  returned: string | null
   createdAt: Date
 }
 export type OrdersData = PaginatedResult<OrderListItem>
@@ -331,6 +335,8 @@ export interface OrderLine {
   // The store's name when the order was placed
   storeName: string
   quantity: number
+  // Units the customer has brought back since
+  returnedQuantity: number
   unitPriceGhs: string
   totalPriceGhs: string
   discountGhs: string
@@ -385,15 +391,48 @@ export interface StoreOrderDetails extends OrderDetailsBase {
   totals: OrderTotals | null
   // This store's lines after their share of the discount, with their tax
   storeTotalGhs: string
+  // Refunds and returns, only when every line is this store's (otherwise the platform handles them)
+  afterSale: OrderAfterSale | null
 }
 
-// The platform's view: every line, from every store
-export interface OrderDetails extends OrderDetailsBase {
-  totals: OrderTotals
-  storeNames: string[]
+// Items a customer brought back, as the platform's order page lists them
+export interface OrderReturnEntry {
+  id: string
+  reason: string
+  // What was refunded with it; null when nothing was
+  refundGhs: string | null
+  recordedBy: string | null
+  createdAt: Date
+  items: { productName: string; variantDescription: string | null; quantity: number; restocked: boolean }[]
+}
+
+// A line the return form offers: one with units still to come back
+export interface ReturnableLine {
+  orderItemId: string
+  productName: string
+  variantDescription: string | null
+  storeName: string
+  // Units that can still come back
+  left: number
+  // Only a listing that tracks stock can have units put back
+  tracksStock: boolean
+  // What returning 0, 1, ... left of its units is worth (GHS strings): their share of what was paid for the line
+  valueByQuantity: string[]
+}
+
+// Money given back and items brought back, for whoever manages the order
+export interface OrderAfterSale {
   // The sum of the order's refunds so far, and what's left to refund (the total less that)
   refundedGhs: string
   refundableGhs: string
+  returns: OrderReturnEntry[]
+  returnableLines: ReturnableLine[]
+}
+
+// The platform's view: every line, from every store
+export interface OrderDetails extends OrderDetailsBase, OrderAfterSale {
+  totals: OrderTotals
+  storeNames: string[]
 }
 
 // A store listing as the create order wizard offers it: one row per way to buy it (the listing, or each variant)

@@ -5,7 +5,8 @@ import { Separator } from "@workspace/ui/components/separator"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@workspace/ui/components/table"
 import { formatCurrency } from "@workspace/utils/currency"
 import { formatDate } from "@workspace/utils/date"
-import type { OrderLine, OrderTimelineEntry, OrderTotals } from "@/types"
+import { returnLabel } from "@/lib/order-status"
+import type { OrderLine, OrderReturnEntry, OrderTimelineEntry, OrderTotals } from "@/types"
 
 // The parts of an order's details page that the store's and the platform's pages share
 
@@ -49,6 +50,7 @@ export function OrderLinesTable({ lines, showStore }: { lines: OrderLine[]; show
                   {line.variantDescription && <span className="text-xs text-muted-foreground">{line.variantDescription}</span>}
                   {line.sku && <span className="font-mono text-[11px] text-muted-foreground">{line.sku}</span>}
                   {showStore && <span className="text-[11px] text-muted-foreground">{`From ${line.storeName}`}</span>}
+                  {line.returnedQuantity > 0 && <span className="text-xs text-muted-foreground">{line.returnedQuantity === line.quantity ? "Returned" : `${line.returnedQuantity} returned`}</span>}
                 </div>
               </div>
             </TableCell>
@@ -85,7 +87,7 @@ export function OrderTimelineCard({ timeline }: { timeline: OrderTimelineEntry[]
     <Card>
       <CardHeader>
         <CardTitle>Timeline</CardTitle>
-        <CardDescription>Every status change and payment, newest first.</CardDescription>
+        <CardDescription>Every status change, payment and return, newest first.</CardDescription>
       </CardHeader>
       <CardContent>
         {timeline.length === 0 ? (
@@ -152,6 +154,49 @@ export function OrderNotesCard({ notes, actions }: { notes: string | null; actio
       </CardHeader>
       <CardContent className="grid gap-2">
         {notes ? <p className="text-sm whitespace-pre-line">{notes}</p> : <p className="text-sm text-muted-foreground">No notes.</p>}
+        {actions}
+      </CardContent>
+    </Card>
+  )
+}
+
+// The lines' return label for the page header
+export const returnState = (lines: OrderLine[]) =>
+  returnLabel(
+    lines.reduce((sum, line) => sum + line.quantity, 0),
+    lines.reduce((sum, line) => sum + line.returnedQuantity, 0)
+  )
+
+// The platform's record of items brought back; actions holds the Record return button
+export function OrderReturnsCard({ returns, actions }: { returns: OrderReturnEntry[]; actions?: ReactNode }) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Returns</CardTitle>
+        <CardDescription>Items the customer brought back. Shipping isn&apos;t refunded.</CardDescription>
+      </CardHeader>
+      <CardContent className="grid gap-4">
+        {returns.length === 0 ? (
+          <p className="text-sm text-muted-foreground">Nothing has been returned.</p>
+        ) : (
+          <ol className="grid gap-4">
+            {returns.map((entry) => (
+              <li key={entry.id} className="grid gap-1 border-l-2 pl-4">
+                <span className="text-xs text-muted-foreground">{`${formatDate(entry.createdAt, "MMM d, yyyy, h:mm a")}${entry.recordedBy ? ` · ${entry.recordedBy}` : ""}`}</span>
+                <ul className="grid gap-0.5 text-sm">
+                  {entry.items.map((item, index) => (
+                    <li key={index}>
+                      {`${item.quantity} × ${item.productName}${item.variantDescription ? ` (${item.variantDescription})` : ""}`}
+                      <span className="text-muted-foreground">{item.restocked ? " · back in stock" : " · not restocked"}</span>
+                    </li>
+                  ))}
+                </ul>
+                <p className="text-sm text-muted-foreground">{entry.reason}</p>
+                <p className="text-sm">{entry.refundGhs ? `Refunded ${ghs(entry.refundGhs)}` : "No refund"}</p>
+              </li>
+            ))}
+          </ol>
+        )}
         {actions}
       </CardContent>
     </Card>

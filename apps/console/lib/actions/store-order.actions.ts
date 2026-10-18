@@ -3,6 +3,7 @@
 import { after } from "next/server"
 import z from "zod"
 import { formatError } from "@workspace/auth/format-error"
+import { consoleAdminRoles, hasSystemPermission, hasSystemRole } from "@workspace/auth/system-permissions"
 import { ActionResponse, DataResponse } from "@workspace/contracts"
 import { prisma } from "@workspace/db"
 import { Prisma } from "@workspace/db/client"
@@ -12,12 +13,15 @@ import { getLatestExchangeRate, type ExchangeRateInfo } from "@/lib/data/exchang
 import { notifyNewOrder, notifyStockAlerts } from "@/lib/notifications"
 import { sendOrderEmail } from "@/lib/order-emails"
 import { priceOrder, type PricedOrder } from "@/lib/order-pricing"
-import { editPendingOrder, orderForUpdateSelect, recordOrderPayment, updateOrderStatus, type Failure } from "@/lib/order-updates"
+import { cancelWithRefund, editPendingOrder, giveRefund, orderForUpdateSelect, recordOrderPayment, recordReturn, toReturnInput, updateOrderStatus, type Failure } from "@/lib/order-updates"
 import {
+  cancelAndRefundStoreOrderSchema,
   createStoreOrderSchema,
   findOrderCustomerSchema,
   previewStoreOrderSchema,
   recordStorePaymentSchema,
+  refundStoreOrderSchema,
+  returnStoreOrderSchema,
   searchOrderableListingsSchema,
   updateStoreOrderCustomerSchema,
   updateStoreOrderDeliverySchema,
@@ -38,7 +42,8 @@ function invalidInput(error: z.ZodError): Failure {
 const FORBIDDEN: Failure = { success: false, error: "Your role in this store can't manage orders.", code: "FORBIDDEN" }
 const NOT_FOUND: Failure = { success: false, error: "Order not found.", code: "NOT_FOUND" }
 const MULTI_STORE: Failure = { success: false, error: "This order has items from other stores, so the platform manages it.", code: "MULTI_STORE" }
-const PAID_ORDER: Failure = { success: false, error: "This order has been paid, so cancelling it needs a refund. Ask the platform to cancel and refund it.", code: "PAID_ORDER" }
+const PAID_ORDER: Failure = { success: false, error: "This order has been paid, so cancelling it needs a refund: an owner or admin can use Cancel and refund.", code: "PAID_ORDER" }
+const NO_REFUNDS: Failure = { success: false, error: "Only the store's owners and admins can give refunds and record returns.", code: "FORBIDDEN" }
 
 const TRANSACTION_OPTIONS = { maxWait: 10_000, timeout: 30_000 }
 
@@ -443,6 +448,77 @@ export async function updateStoreOrderNotesAction(input: z.input<typeof updateSt
     const { storeId, orderId, notes } = parsed.data
 
     return await editStorePendingOrder(session.user.id, storeId, orderId, { notes: notes || null })
+  } catch (error) {
+    return { success: false, error: formatError(error) }
+  }
+}
+
+// ============================================
+// REFUNDS AND RETURNS (owners and admins)
+// ============================================
+
+// The same as the platform's (lib/order-updates.ts), on the store's own orders. Each one tells the platform's staff
+// when a store's staff give money back (Settings → Notifications).
+
+// The user may give refunds in the store, and the order is made only of its items; the refund code locks the order
+// and checks the rest. System admins are members of every store, but refund by their system role, as on the platform:
+// admins can't, superAdmins can. Returns the store to name in the staff notice: none for a superAdmin's refund.
+async function checkRefundable(user: { id: string; role?: string | null }, storeId: string, orderId: string): Promise<{ problem: Failure } | { notify: string | null }> {
+  const isPlatformStaff = hasSystemRole(user.role, consoleAdminRoles)
+  const allowed = isPlatformStaff ? hasSystemPermission(user.role, { order: ["refund"] }) : await hasStorePermission(user.id, storeId, { order: ["refund"] })
+  if (!allowed) return { problem: NO_REFUNDS }
+
+  const { problem } = await loadManageableOrder(orderId, storeId)
+  if (problem) return { problem }
+  return { notify: isPlatformStaff ? null : storeId }
+}
+
+export async function refundStoreOrderAction(input: z.input<typeof refundStoreOrderSchema>): Promise<ActionResponse> {
+  const session = await requireConsoleAccess()
+
+  try {
+    const parsed = refundStoreOrderSchema.safeParse(input)
+    if (!parsed.success) return invalidInput(parsed.error)
+    const { storeId, orderId, amountGhs, refundedGhs, method, reason } = parsed.data
+
+    const check = await checkRefundable(session.user, storeId, orderId)
+    if ("problem" in check) return check.problem
+
+    return await giveRefund({ orderId, amountGhs: new Prisma.Decimal(amountGhs.toFixed(2)), refundedGhs: new Prisma.Decimal(refundedGhs), method, reason, refundedById: session.user.id }, check.notify)
+  } catch (error) {
+    return { success: false, error: formatError(error) }
+  }
+}
+
+export async function cancelAndRefundStoreOrderAction(input: z.input<typeof cancelAndRefundStoreOrderSchema>): Promise<ActionResponse> {
+  const session = await requireConsoleAccess()
+
+  try {
+    const parsed = cancelAndRefundStoreOrderSchema.safeParse(input)
+    if (!parsed.success) return invalidInput(parsed.error)
+    const { storeId, orderId, refundedGhs, currentStatus, method, reason } = parsed.data
+
+    const check = await checkRefundable(session.user, storeId, orderId)
+    if ("problem" in check) return check.problem
+
+    return await cancelWithRefund({ orderId, refundedGhs: new Prisma.Decimal(refundedGhs), currentStatus, method, reason, refundedById: session.user.id }, check.notify)
+  } catch (error) {
+    return { success: false, error: formatError(error) }
+  }
+}
+
+export async function returnStoreOrderItemsAction(input: z.input<typeof returnStoreOrderSchema>): Promise<ActionResponse> {
+  const session = await requireConsoleAccess()
+
+  try {
+    const parsed = returnStoreOrderSchema.safeParse(input)
+    if (!parsed.success) return invalidInput(parsed.error)
+    const { storeId, ...values } = parsed.data
+
+    const check = await checkRefundable(session.user, storeId, values.orderId)
+    if ("problem" in check) return check.problem
+
+    return await recordReturn(toReturnInput(values, session.user.id), check.notify)
   } catch (error) {
     return { success: false, error: formatError(error) }
   }

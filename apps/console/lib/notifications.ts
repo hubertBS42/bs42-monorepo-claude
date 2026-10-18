@@ -122,6 +122,44 @@ export async function notifyStockAlerts(alerts: StockAlert[]) {
   }
 }
 
+// A store's owner or admin gave money back on one of its orders, on its own or with a return. Refunds by the
+// platform's superAdmins don't notify. Never more than one per refund, so no batching.
+export async function notifyStoreRefund(orderId: string, storeId: string, refund: { amountGhs: string; reason: string; givenById: string; kind: "refund" | "cancel" | "return" }) {
+  try {
+    const settings = await readAppSettings()
+    if (!settings.notifyStoreRefunds || settings.notificationEmails.length === 0) return
+
+    const [order, store, givenBy] = await Promise.all([
+      prisma.order.findUnique({ where: { id: orderId }, select: { reference: true, customerName: true, totalGhs: true } }),
+      prisma.organization.findUnique({ where: { id: storeId }, select: { name: true } }),
+      prisma.user.findUnique({ where: { id: refund.givenById }, select: { name: true } }),
+    ])
+    if (!order) return
+
+    const what = refund.kind === "cancel" ? "cancelled and refunded" : refund.kind === "return" ? "recorded a return and refunded" : "refunded"
+    await send(
+      settings,
+      {
+        subject: `${store?.name ?? "A store"} refunded ${ghs(refund.amountGhs)} on ${order.reference}`,
+        preview: refund.reason,
+        heading: "Refund given by a store",
+        intro: `${givenBy?.name ?? "Staff"} ${what} an order in ${store?.name ?? "a store"}.`,
+        details: [
+          { label: "Reference", value: order.reference },
+          { label: "Customer", value: order.customerName },
+          { label: "Refunded", value: ghs(refund.amountGhs) },
+          { label: "Order total", value: ghs(order.totalGhs) },
+          { label: "Reason", value: refund.reason },
+        ],
+        action: { label: "View order", url: new URL(`/orders/${orderId}/details`, authURLs.console).toString() },
+      },
+      "store refund"
+    )
+  } catch (error) {
+    console.error(`Store refund notification for ${orderId} failed:`, error)
+  }
+}
+
 // The daily exchange-rate fetch failed. The last rate stays usable for a while, then orders stop until one is set.
 export async function notifyRateFetchFailed(date: string, error: string) {
   try {

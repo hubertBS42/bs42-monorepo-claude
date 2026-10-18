@@ -51,4 +51,5 @@ export type AppSettingsData = {
   notifyLowStock: boolean
   notifyOutOfStock: boolean
   notifyRateFetchFailure: boolean
+  notifyStoreRefunds: boolean
 }

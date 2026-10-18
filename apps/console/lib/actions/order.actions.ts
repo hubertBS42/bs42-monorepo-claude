@@ -1,6 +1,5 @@
 "use server"
 
-import { after } from "next/server"
 import z from "zod"
 import { formatError } from "@workspace/auth/format-error"
 import { ActionResponse } from "@workspace/contracts"
@@ -8,19 +7,17 @@ import { prisma } from "@workspace/db"
 import { Prisma } from "@workspace/db/client"
 import { ShippingMethod } from "@workspace/db/enums"
 import { requireSystemPermission } from "@/lib/auth-guard"
-import { sendOrderEmail } from "@/lib/order-emails"
-import { cancelAndRefundOrder, refundOrder, RefundError } from "@/lib/order-refunds"
-import { editPendingOrder, orderForUpdateSelect, recordOrderPayment, STATUS_CHANGED, updateOrderStatus, type Failure } from "@/lib/order-updates"
+import { cancelWithRefund, editPendingOrder, giveRefund, orderForUpdateSelect, recordOrderPayment, recordReturn, toReturnInput, updateOrderStatus, type Failure } from "@/lib/order-updates"
 import {
   cancelAndRefundOrderSchema,
   recordOrderPaymentSchema,
   refundOrderSchema,
+  returnOrderSchema,
   updateOrderCustomerSchema,
   updateOrderDeliverySchema,
   updateOrderNotesSchema,
   updateOrderStatusSchema,
 } from "@/lib/schemas/order.schemas"
-import { StatusChangedError } from "@/lib/store-order-writes"
 
 // The platform's order actions: any order, whichever stores' items it has. Every export here is a public endpoint,
 // so every input is validated, and each one calls its guard before its try block (its redirect throws, which the
@@ -33,7 +30,7 @@ function invalidInput(error: z.ZodError): Failure {
 const NOT_FOUND: Failure = { success: false, error: "Order not found.", code: "NOT_FOUND" }
 const PAID_ORDER: Failure = {
   success: false,
-  error: "This order has been paid, so cancelling it needs a refund: a superAdmin can use Cancel and refund.",
+  error: "This order has been paid, so cancelling it needs a refund. Ask a superAdmin to cancel and refund it.",
   code: "PAID_ORDER",
 }
 
@@ -136,10 +133,8 @@ export async function updateOrderNotesAction(input: z.input<typeof updateOrderNo
 }
 
 // ============================================
-// REFUNDS (superAdmins only)
+// REFUNDS AND RETURNS (superAdmins; stores give their own in store-order.actions.ts)
 // ============================================
-
-const TRANSACTION_OPTIONS = { maxWait: 10_000, timeout: 30_000 }
 
 export async function refundOrderAction(input: z.input<typeof refundOrderSchema>): Promise<ActionResponse> {
   const session = await requireSystemPermission({ order: ["refund"] })
@@ -149,15 +144,8 @@ export async function refundOrderAction(input: z.input<typeof refundOrderSchema>
     if (!parsed.success) return invalidInput(parsed.error)
     const { orderId, amountGhs, refundedGhs, method, reason } = parsed.data
 
-    const amount = new Prisma.Decimal(amountGhs.toFixed(2))
-    await prisma.$transaction((tx) => refundOrder(tx, { orderId, amountGhs: amount, refundedGhs: new Prisma.Decimal(refundedGhs), method, reason, refundedById: session.user.id }), TRANSACTION_OPTIONS)
-
-    // Only once the refund is saved: after() also runs when an action fails
-    after(() => sendOrderEmail(orderId, "REFUNDED", reason, amount.toFixed(2)))
-
-    return { success: true }
+    return await giveRefund({ orderId, amountGhs: new Prisma.Decimal(amountGhs.toFixed(2)), refundedGhs: new Prisma.Decimal(refundedGhs), method, reason, refundedById: session.user.id }, null)
   } catch (error) {
-    if (error instanceof RefundError) return { success: false, error: error.message, code: error.code }
     return { success: false, error: formatError(error) }
   }
 }
@@ -171,21 +159,22 @@ export async function cancelAndRefundOrderAction(input: z.input<typeof cancelAnd
     if (!parsed.success) return invalidInput(parsed.error)
     const { orderId, refundedGhs, currentStatus, method, reason } = parsed.data
 
-    const result = await prisma.$transaction(
-      (tx) => cancelAndRefundOrder(tx, { orderId, refundedGhs: new Prisma.Decimal(refundedGhs), currentStatus, method, reason, refundedById: session.user.id }),
-      TRANSACTION_OPTIONS
-    )
-
-    // Only once both are saved. The customer hears of the cancellation, then of the money coming back.
-    after(async () => {
-      await sendOrderEmail(orderId, "CANCELLED", reason)
-      if (result.refundedGhs.gt(0)) await sendOrderEmail(orderId, "REFUNDED", reason, result.refundedGhs.toFixed(2))
-    })
-
-    return { success: true }
+    return await cancelWithRefund({ orderId, refundedGhs: new Prisma.Decimal(refundedGhs), currentStatus, method, reason, refundedById: session.user.id }, null)
   } catch (error) {
-    if (error instanceof StatusChangedError) return STATUS_CHANGED
-    if (error instanceof RefundError) return { success: false, error: error.message, code: error.code }
+    return { success: false, error: formatError(error) }
+  }
+}
+
+// Items a customer brought back after delivery. Shipping isn't refunded; the order's status stays as it is.
+export async function returnOrderItemsAction(input: z.input<typeof returnOrderSchema>): Promise<ActionResponse> {
+  const session = await requireSystemPermission({ order: ["refund"] })
+
+  try {
+    const parsed = returnOrderSchema.safeParse(input)
+    if (!parsed.success) return invalidInput(parsed.error)
+
+    return await recordReturn(toReturnInput(parsed.data, session.user.id), null)
+  } catch (error) {
     return { success: false, error: formatError(error) }
   }
 }

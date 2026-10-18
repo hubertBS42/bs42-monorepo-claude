@@ -90,6 +90,8 @@ model AppSettings {
   notifyOutOfStock       Boolean  @default(true)
   // The daily exchange-rate fetch failing (orders stop once the last rate is too old)
   notifyRateFetchFailure Boolean  @default(true)
+  // A store's owner or admin giving a refund (the platform keeps an eye on money going back)
+  notifyStoreRefunds     Boolean  @default(true)
 
   updatedAt DateTime @updatedAt
 
@@ -147,6 +149,7 @@ model User {
   recordedPayments Order[]              @relation("OrderPaymentRecordedBy")
   statusChanges    OrderStatusHistory[]
   refundsGiven     OrderRefund[]        @relation("OrderRefundedBy")
+  returnsRecorded  OrderReturn[]        @relation("OrderReturnRecordedBy")
 
   @@map("user")
 }
@@ -513,6 +516,7 @@ model Order {
   orderItems    OrderItem[]
   statusHistory OrderStatusHistory[]
   refunds       OrderRefund[]
+  returns       OrderReturn[]
   createdAt     DateTime             @default(now())
   updatedAt     DateTime             @updatedAt
 
@@ -552,11 +556,49 @@ model OrderRefund {
   reason       String
   refundedById String?       @db.Uuid
   refundedBy   User?         @relation("OrderRefundedBy", fields: [refundedById], references: [id], onDelete: SetNull)
+  // Set when the money went back for returned items
+  return       OrderReturn?
   createdAt    DateTime      @default(now())
 
   @@index([orderId])
   @@index([refundedById])
   @@map("order_refund")
+}
+
+// Items a customer brought back after the order reached them, recorded by the platform. The order's status stays as it
+// was (it was fulfilled); the money, if any goes back, is an OrderRefund of its own, linked here, and shipping isn't
+// refunded. A line's returned quantities never add up to more than it sold, which the return code checks with the
+// order row locked.
+model OrderReturn {
+  id           String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orderId      String            @db.Uuid
+  order        Order             @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  reason       String
+  refundId     String?           @unique @db.Uuid
+  refund       OrderRefund?      @relation(fields: [refundId], references: [id], onDelete: SetNull)
+  recordedById String?           @db.Uuid
+  recordedBy   User?             @relation("OrderReturnRecordedBy", fields: [recordedById], references: [id], onDelete: SetNull)
+  items        OrderReturnItem[]
+  createdAt    DateTime          @default(now())
+
+  @@index([orderId])
+  @@index([recordedById])
+  @@map("order_return")
+}
+
+model OrderReturnItem {
+  id          String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  returnId    String      @db.Uuid
+  return      OrderReturn @relation(fields: [returnId], references: [id], onDelete: Cascade)
+  orderItemId String      @db.Uuid
+  orderItem   OrderItem   @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+  quantity    Int
+  // Whether these units went back into the listing's stock: a faulty item doesn't
+  restocked   Boolean
+
+  @@unique([returnId, orderItemId])
+  @@index([orderItemId])
+  @@map("order_return_item")
 }
 
 model OrderItem {
@@ -600,6 +642,8 @@ model OrderItem {
   productId          String?         @db.Uuid
   productVariant     ProductVariant? @relation(fields: [productVariantId], references: [id], onDelete: Restrict)
   productVariantId   String?         @db.Uuid
+
+  returns OrderReturnItem[]
 
   @@index([orderId])
   @@index([organizationId])

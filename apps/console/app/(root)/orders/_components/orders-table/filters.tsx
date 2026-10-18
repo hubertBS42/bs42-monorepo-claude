@@ -31,6 +31,16 @@ export function getOrderFilters(stores: { label: string; value: string }[]): Fil
         { label: "One store", value: "false" },
       ],
     },
+    {
+      key: "returned",
+      label: "Returns",
+      type: "boolean",
+      placeholder: "Any",
+      options: [
+        { label: "Items returned", value: "true" },
+        { label: "Nothing returned", value: "false" },
+      ],
+    },
     { key: "placed", label: "Placed", type: "dateRange" },
   ]
 }

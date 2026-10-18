@@ -3,14 +3,16 @@ import "server-only"
 import { after } from "next/server"
 import type { ActionResponse } from "@workspace/contracts"
 import { prisma } from "@workspace/db"
-import type { Prisma } from "@workspace/db/client"
+import { Prisma } from "@workspace/db/client"
 import { OrderStatus, PaymentStatus, type PaymentMethod } from "@workspace/db/enums"
+import { notifyStoreRefund } from "./notifications"
 import { sendOrderEmail, statusEmailEvent } from "./order-emails"
+import { cancelAndRefundOrder, recordOrderReturn, refundOrder, RefundError, type RefundInput, type ReturnInput } from "./order-refunds"
 import { hasBeenPaid, isPaid, nextOrderStatuses } from "./order-status"
 import { changeOrderStatus, StatusChangedError } from "./store-order-writes"
 
-// The changes the store's and the platform's order pages both make: status, payment and edits to a pending order.
-// The actions check who may make them (store role or system permission) and then call these.
+// The changes the store's and the platform's order pages both make: status, payment, edits to a pending order,
+// refunds and returns. The actions check who may make them (store role or system permission) and then call these.
 
 // An error reply, which fits both ActionResponse and DataResponse
 export type Failure = Extract<ActionResponse, { success: false }>
@@ -48,7 +50,7 @@ export interface StatusUpdate {
 }
 
 // Moves the order on, if the rules allow it from where the page showed it. paidOrder is the reply for cancelling
-// a paid order, which needs a refund: the store asks the platform, the platform uses Cancel and refund.
+// a paid order, which needs a refund (Cancel and refund).
 export async function updateOrderStatus(order: OrderForUpdate, { orderId, status, currentStatus, note, changedById }: StatusUpdate, paidOrder: Failure): Promise<ActionResponse> {
   if (order.status !== currentStatus) return STATUS_CHANGED
 
@@ -105,4 +107,88 @@ export async function recordOrderPayment(
 export async function editPendingOrder(orderId: string, data: Prisma.OrderUpdateManyMutationInput): Promise<ActionResponse> {
   const { count } = await prisma.order.updateMany({ where: { id: orderId, status: OrderStatus.PENDING }, data })
   return count === 0 ? NOT_PENDING : { success: true }
+}
+
+// ============================================
+// REFUNDS AND RETURNS
+// ============================================
+
+// storeId is the store whose staff gave the money back (an owner or admin, through the store's actions), which tells
+// the platform; null for the platform's own, including a superAdmin's from a store's pages. The order's emails and that notice go out only once the change has committed.
+
+function refundFailure(error: unknown): Failure {
+  if (error instanceof StatusChangedError) return STATUS_CHANGED
+  if (error instanceof RefundError) return { success: false, error: error.message, code: error.code }
+  throw error
+}
+
+export async function giveRefund(input: RefundInput & { amountGhs: Prisma.Decimal }, storeId: string | null): Promise<ActionResponse> {
+  try {
+    await prisma.$transaction((tx) => refundOrder(tx, input), TRANSACTION_OPTIONS)
+  } catch (error) {
+    return refundFailure(error)
+  }
+
+  const amountGhs = input.amountGhs.toFixed(2)
+  after(async () => {
+    await sendOrderEmail(input.orderId, "REFUNDED", input.reason, { refundAmountGhs: amountGhs })
+    if (storeId) await notifyStoreRefund(input.orderId, storeId, { amountGhs, reason: input.reason, givenById: input.refundedById, kind: "refund" })
+  })
+  return { success: true }
+}
+
+// Refunds whatever is left and cancels the order, putting its stock back. For a paid order that hasn't left yet.
+export async function cancelWithRefund(input: RefundInput & { currentStatus: OrderStatus }, storeId: string | null): Promise<ActionResponse> {
+  let refunded: Prisma.Decimal
+  try {
+    refunded = (await prisma.$transaction((tx) => cancelAndRefundOrder(tx, input), TRANSACTION_OPTIONS)).refundedGhs
+  } catch (error) {
+    return refundFailure(error)
+  }
+
+  // The customer hears of the cancellation, then of the money coming back
+  after(async () => {
+    await sendOrderEmail(input.orderId, "CANCELLED", input.reason)
+    if (refunded.gt(0)) {
+      const amountGhs = refunded.toFixed(2)
+      await sendOrderEmail(input.orderId, "REFUNDED", input.reason, { refundAmountGhs: amountGhs })
+      if (storeId) await notifyStoreRefund(input.orderId, storeId, { amountGhs, reason: input.reason, givenById: input.refundedById, kind: "cancel" })
+    }
+  })
+  return { success: true }
+}
+
+// Items brought back after delivery: restocks the ones chosen and refunds the amount given, if any. One customer email
+// for both; the platform hears only when money went back.
+export async function recordReturn(input: ReturnInput, storeId: string | null): Promise<ActionResponse> {
+  let result: Awaited<ReturnType<typeof recordOrderReturn>>
+  try {
+    result = await prisma.$transaction((tx) => recordOrderReturn(tx, input), TRANSACTION_OPTIONS)
+  } catch (error) {
+    return refundFailure(error)
+  }
+
+  const amountGhs = result.refundedGhs.gt(0) ? result.refundedGhs.toFixed(2) : null
+  after(async () => {
+    await sendOrderEmail(input.orderId, "RETURNED", input.reason, { refundAmountGhs: amountGhs, returnedItems: result.items })
+    if (storeId && amountGhs) await notifyStoreRefund(input.orderId, storeId, { amountGhs, reason: input.reason, givenById: input.recordedById, kind: "return" })
+  })
+  return { success: true }
+}
+
+// The return form's values (amounts as numbers, every line with 0 for the ones not coming back) as recordReturn takes them
+export function toReturnInput(
+  values: { orderId: string; refundedGhs: string; returnCount: number; items: ReturnInput["items"]; reason: string; refundAmountGhs: number; method: PaymentMethod },
+  recordedById: string
+): ReturnInput {
+  const amountGhs = new Prisma.Decimal(values.refundAmountGhs.toFixed(2))
+  return {
+    orderId: values.orderId,
+    refundedGhs: new Prisma.Decimal(values.refundedGhs),
+    returnCount: values.returnCount,
+    items: values.items.filter((item) => item.quantity > 0),
+    reason: values.reason,
+    refund: amountGhs.gt(0) ? { amountGhs, method: values.method } : null,
+    recordedById,
+  }
 }

@@ -97,3 +97,11 @@ export function priceOrder({ lines, exchangeRate, shippingGhs, discount, tax }: 
     totalGhs: subtotalGhs.minus(discountAmount).plus(shippingGhs).plus(taxGhs),
   }
 }
+
+// What returning some of a line's units is worth: their share of what the customer paid for the line, after its share
+// of the discount and with its tax (lineAmountGhs). Worked out on the running total, so a line returned in parts adds
+// up to exactly the whole line. Shipping isn't part of it.
+export function returnedUnitsAmount(lineAmountGhs: Decimal, quantity: number, returnedBefore: number, returning: number) {
+  const upTo = (units: number) => toCents(lineAmountGhs.times(units).dividedBy(quantity))
+  return upTo(returnedBefore + returning).minus(upTo(returnedBefore))
+}

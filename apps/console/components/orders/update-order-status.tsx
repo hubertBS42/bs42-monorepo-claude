@@ -5,8 +5,6 @@ import { useRouter } from "next/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { SubmitHandler, useForm, useWatch } from "react-hook-form"
 import { z } from "zod"
-import { consoleAuthClient } from "@workspace/auth/console-client"
-import { hasSystemPermission } from "@workspace/auth/system-permissions"
 import { OrderStatus, type PaymentStatus, type ShippingMethod } from "@workspace/db/enums"
 import { SelectField, TextareaField } from "@workspace/forms"
 import { Button } from "@workspace/ui/components/button"
@@ -34,9 +32,8 @@ export default function UpdateOrderStatus({ storeId, order, isMultiStore }: Upda
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const { canUpdate, isLoading } = useCanUpdateOrders(storeId)
-  // Cancelling a paid order needs a refund, which only superAdmins give
-  const { data: session } = consoleAuthClient.useSession()
-  const canRefund = hasSystemPermission(session?.user.role, { order: ["refund"] })
+  // Cancelling a paid order needs a refund: superAdmins, or a store's owners and admins
+  const { canUpdate: canRefund, bySystemRole: refundsBySystemRole } = useCanUpdateOrders(storeId, "refund")
 
   const options = nextOrderStatuses(order.status, order.shippingMethod).map((status) => ({ label: ORDER_STATUS_LABELS[status], value: status }))
   const form = useForm<FormInput, unknown, FormOutput>({
@@ -81,11 +78,9 @@ export default function UpdateOrderStatus({ storeId, order, isMultiStore }: Upda
   // The actions refuse both; saying so here saves a round trip
   const blockedChoice =
     cancelling && isPaid(order.paymentStatus)
-      ? storeId
-        ? "This order has been paid, so only the platform can cancel it, with a refund."
-        : canRefund
-          ? "This order has been paid, so cancelling it needs a refund. Use Cancel and refund instead."
-          : "This order has been paid, so cancelling it needs a refund. Ask a superAdmin to cancel and refund it."
+      ? canRefund
+        ? "This order has been paid, so cancelling it needs a refund. Use Cancel and refund instead."
+        : `This order has been paid, so cancelling it needs a refund. Ask ${refundsBySystemRole ? "a superAdmin" : "an owner or admin of the store"} to cancel and refund it.`
       : selected === OrderStatus.COMPLETED && !hasBeenPaid(order.paymentStatus)
         ? "Record the payment before completing the order."
         : null

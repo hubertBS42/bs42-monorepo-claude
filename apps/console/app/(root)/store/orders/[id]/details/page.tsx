@@ -9,13 +9,15 @@ import { Separator } from "@workspace/ui/components/separator"
 import { formatDate } from "@workspace/utils/date"
 import BackButton from "@/components/back-button"
 import { OrderStatusBadge, PaymentStatusBadge } from "@/components/order-badges"
-import { Detail, ghs, OrderCustomerCard, OrderLinesTable, OrderNotesCard, OrderTimelineCard, OrderTotalsSummary, TotalRow } from "@/components/orders/order-details"
+import { Detail, ghs, OrderCustomerCard, OrderLinesTable, OrderNotesCard, OrderReturnsCard, OrderTimelineCard, OrderTotalsSummary, returnState, TotalRow } from "@/components/orders/order-details"
 import { EditOrderCustomer, EditOrderDelivery, EditOrderNotes } from "@/components/orders/order-edits"
 import RecordPayment from "@/components/orders/record-payment"
+import OrderRefunds from "@/components/orders/refund-order"
+import RecordReturn from "@/components/orders/return-order"
 import UpdateOrderStatus from "@/components/orders/update-order-status"
 import { requireActiveStoreMember } from "@/lib/auth-guard"
 import { getStoreOrderDetails } from "@/lib/data/store-orders.data"
-import { ORDER_STATUS_LABELS, PAYMENT_METHOD_LABELS } from "@/lib/order-status"
+import { canBeReturned, isPaid, nextOrderStatuses, ORDER_STATUS_LABELS, PAYMENT_METHOD_LABELS, returnBlockedReason } from "@/lib/order-status"
 
 export const metadata: Metadata = {
   title: "Order Details",
@@ -40,10 +42,12 @@ export default async function StoreOrderDetailsPage({ params }: OrderDetailsPage
   }
 
   const order = response.data
-  const { totals } = order
+  const { totals, afterSale } = order
   // A pending order of the store's own items can still be corrected; the dialogs check the role themselves
   const isEditable = order.status === OrderStatus.PENDING && !order.isMultiStore
   const canBePaid = (order.paymentStatus === PaymentStatus.PENDING || order.paymentStatus === PaymentStatus.FAILED) && order.status !== OrderStatus.CANCELLED
+  const returned = returnState(order.lines)
+  const returnBlocked = afterSale && returnBlockedReason(order, afterSale.returnableLines.length)
 
   return (
     <main className="flex flex-col gap-y-6">
@@ -54,6 +58,7 @@ export default async function StoreOrderDetailsPage({ params }: OrderDetailsPage
             <span>{`Placed ${formatDate(order.createdAt, "MMM d, yyyy, h:mm a")}${order.createdBy ? ` by ${order.createdBy}` : ""}`}</span>
             <OrderStatusBadge status={order.status} />
             <PaymentStatusBadge status={order.paymentStatus} />
+            {returned && <Badge variant="secondary">{returned}</Badge>}
             {order.isMultiStore && <Badge variant="outline">With other stores</Badge>}
           </div>
         </div>
@@ -84,6 +89,30 @@ export default async function StoreOrderDetailsPage({ params }: OrderDetailsPage
               )}
             </CardContent>
           </Card>
+
+          {/* The store's own orders only: the platform handles refunds and returns on an order shared with other stores */}
+          {afterSale && (canBeReturned(order.status) || afterSale.returns.length > 0) && (
+            <OrderReturnsCard
+              returns={afterSale.returns}
+              actions={
+                returnBlocked ? (
+                  <p className="text-sm text-muted-foreground">{returnBlocked}</p>
+                ) : (
+                  <RecordReturn
+                    storeId={storeId}
+                    orderId={order.id}
+                    refundedGhs={afterSale.refundedGhs}
+                    returnCount={afterSale.returns.length}
+                    refundableGhs={afterSale.refundableGhs}
+                    canRefund={isPaid(order.paymentStatus)}
+                    paymentMethod={order.paymentMethod}
+                    lines={afterSale.returnableLines}
+                    showStore={false}
+                  />
+                )
+              }
+            />
+          )}
 
           <OrderTimelineCard timeline={order.timeline} />
         </div>
@@ -118,8 +147,22 @@ export default async function StoreOrderDetailsPage({ params }: OrderDetailsPage
                 </Detail>
                 <Detail label="Method">{PAYMENT_METHOD_LABELS[order.paymentMethod]}</Detail>
                 {order.paidAt && <Detail label="Paid on">{formatDate(order.paidAt, "MMM d, yyyy, h:mm a")}</Detail>}
+                {afterSale && Number(afterSale.refundedGhs) > 0 && <Detail label="Refunded">{ghs(afterSale.refundedGhs)}</Detail>}
               </div>
               {canBePaid && <RecordPayment storeId={storeId} orderId={order.id} totalGhs={totals?.totalGhs ?? null} defaultMethod={order.paymentMethod} />}
+              {/* Money the order still holds can go back; the buttons check the role themselves */}
+              {afterSale && isPaid(order.paymentStatus) && (
+                <OrderRefunds
+                  storeId={storeId}
+                  orderId={order.id}
+                  refundedGhs={afterSale.refundedGhs}
+                  refundableGhs={afterSale.refundableGhs}
+                  paymentMethod={order.paymentMethod}
+                  status={order.status}
+                  canCancel={nextOrderStatuses(order.status, order.shippingMethod).includes(OrderStatus.CANCELLED)}
+                />
+              )}
+              {order.isMultiStore && <p className="text-sm text-muted-foreground">The platform handles refunds and returns on orders shared with other stores.</p>}
             </CardContent>
           </Card>
 

@@ -28,6 +28,7 @@ export default async function OrdersPage({ searchParams }: OrdersPageProps) {
     status: getEnumParam(params.status, Object.values(OrderStatus)),
     paymentStatus: getEnumParam(params.paymentStatus, Object.values(PaymentStatus)),
     multiStore: getEnumParam(params.multiStore, ["true", "false"]),
+    returned: getEnumParam(params.returned, ["true", "false"]),
     placedStart: getDayParam(params.placedStart),
     placedEnd: getDayParam(params.placedEnd),
     page: getPositiveIntegerParam(params.page, 1),
@@ -44,7 +45,9 @@ export default async function OrdersPage({ searchParams }: OrdersPageProps) {
     <main className="flex flex-col gap-y-6">
       <div className="grid">
         <h1 className="text-xl font-bold md:text-2xl">Orders</h1>
-        <p className="text-sm text-muted-foreground">Every order from every store, including those with more than one store&apos;s items. Refunds are given here.</p>
+        <p className="text-sm text-muted-foreground">
+          Every order from every store, including those with more than one store&apos;s items. Refunds and returns can be given on any order here; stores handle those on their own orders.
+        </p>
       </div>
       <OrdersTable data={result.data} stores={stores.data.map((store) => ({ label: store.name, value: store.id }))} />
     </main>

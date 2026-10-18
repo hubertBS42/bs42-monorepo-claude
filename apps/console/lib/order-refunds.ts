@@ -3,15 +3,16 @@ import "server-only"
 import type { prisma } from "@workspace/db"
 import { Prisma } from "@workspace/db/client"
 import { OrderStatus, PaymentStatus, type PaymentMethod } from "@workspace/db/enums"
-import { isPaid, nextOrderStatuses } from "./order-status"
+import { canBeReturned, hasBeenPaid, isPaid, nextOrderStatuses } from "./order-status"
 import { changeOrderStatus, StatusChangedError } from "./store-order-writes"
 
-// The platform's refunds: giving money back on a paid order, and cancelling a paid order with a refund of whatever
-// is left. In their own module (like store-order-writes.ts) so they can be tested against the database without a session.
+// Refunds, by the platform on any order or by a store's owners and admins on its own: giving money back on a paid order, cancelling a paid order with a refund of whatever is
+// left, and recording items a customer brought back. In their own module (like store-order-writes.ts) so they can be
+// tested against the database without a session.
 
 type Tx = Parameters<Parameters<typeof prisma.$transaction>[0]>[0]
 
-export type RefundErrorCode = "NOT_FOUND" | "NOT_PAID" | "REFUNDS_CHANGED" | "TOO_MUCH" | "NOT_CANCELLABLE"
+export type RefundErrorCode = "NOT_FOUND" | "NOT_PAID" | "REFUNDS_CHANGED" | "TOO_MUCH" | "NOT_CANCELLABLE" | "NOT_RETURNABLE" | "RETURNS_CHANGED" | "TOO_MANY"
 
 export class RefundError extends Error {
   readonly code: RefundErrorCode
@@ -44,8 +45,16 @@ async function lockOrderForRefund(tx: Tx, orderId: string, refundedGhs: Prisma.D
       shippingMethod: true,
       totalGhs: true,
       refunds: { select: { amountGhs: true } },
+      returns: { select: { id: true } },
       orderItems: {
         select: {
+          id: true,
+          productName: true,
+          variantDescription: true,
+          totalPriceGhs: true,
+          discountGhs: true,
+          taxGhs: true,
+          returns: { select: { quantity: true } },
           quantity: true,
           storeListingId: true,
           storeListingVariantId: true,
@@ -66,12 +75,13 @@ async function lockOrderForRefund(tx: Tx, orderId: string, refundedGhs: Prisma.D
 }
 
 async function writeRefund(tx: Tx, input: RefundInput, amountGhs: Prisma.Decimal, total: Prisma.Decimal, refundedAfter: Prisma.Decimal) {
-  await tx.orderRefund.create({
+  const refund = await tx.orderRefund.create({
     data: { orderId: input.orderId, amountGhs, method: input.method, reason: input.reason, refundedById: input.refundedById },
+    select: { id: true },
   })
   const paymentStatus = refundedAfter.gte(total) ? PaymentStatus.REFUNDED : PaymentStatus.PARTIALLY_REFUNDED
   await tx.order.update({ where: { id: input.orderId }, data: { paymentStatus } })
-  return paymentStatus
+  return { paymentStatus, refundId: refund.id }
 }
 
 // Gives back part or all of what's left on a paid order. The order's status doesn't change: a refund is money only,
@@ -83,7 +93,7 @@ export async function refundOrder(tx: Tx, input: RefundInput & { amountGhs: Pris
     throw new RefundError("TOO_MUCH", `Only GHS ${remaining.toFixed(2)} of this order is left to refund.`)
   }
 
-  const paymentStatus = await writeRefund(tx, input, input.amountGhs, order.totalGhs, refunded.plus(input.amountGhs))
+  const { paymentStatus } = await writeRefund(tx, input, input.amountGhs, order.totalGhs, refunded.plus(input.amountGhs))
   return { paymentStatus }
 }
 
@@ -116,4 +126,78 @@ export async function cancelAndRefundOrder(tx: Tx, input: RefundInput & { curren
   })
 
   return { refundedGhs: remaining }
+}
+
+export interface ReturnInput {
+  orderId: string
+  // What the page showed: the refunded total and how many returns the order had, so the same items can't come back twice
+  refundedGhs: Prisma.Decimal
+  returnCount: number
+  // One entry per line coming back. restock puts the units back on sale, where the line's listing tracks stock.
+  items: { orderItemId: string; quantity: number; restock: boolean }[]
+  reason: string
+  // Null, or a zero amount, when no money goes back (an exchange, or nothing was paid)
+  refund: { amountGhs: Prisma.Decimal; method: PaymentMethod } | null
+  recordedById: string
+}
+
+// How many of a line's units have come back so far
+export function returnedSoFar(item: { returns: { quantity: number }[] }) {
+  return item.returns.reduce((sum, row) => sum + row.quantity, 0)
+}
+
+// Records items brought back after the order reached the customer: puts the restocked ones back on sale and, when
+// there's an amount, refunds it (up to what's left on the order). The order's status doesn't change. Returns the
+// amount refunded and, for the customer email, what came back.
+export async function recordOrderReturn(tx: Tx, input: ReturnInput) {
+  const { order, refunded, remaining } = await lockOrderForRefund(tx, input.orderId, input.refundedGhs)
+  if (order.returns.length !== input.returnCount) {
+    throw new RefundError("RETURNS_CHANGED", "Someone else recorded a return on this order since the page loaded. Refresh the page to see it.")
+  }
+  if (!canBeReturned(order.status)) throw new RefundError("NOT_RETURNABLE", "Items can only be returned once the order has been delivered. Cancel it instead.")
+  // Otherwise a later "Record payment" would count the returned items as paid for
+  if (!hasBeenPaid(order.paymentStatus)) throw new RefundError("NOT_PAID", "Record the payment before recording a return, then refund what came back.")
+
+  const lines = new Map(order.orderItems.map((item) => [item.id, item]))
+  const returning = input.items.map((entry) => {
+    const line = lines.get(entry.orderItemId)
+    if (!line) throw new RefundError("NOT_FOUND", "An item being returned isn't on this order.")
+    const left = line.quantity - returnedSoFar(line)
+    if (entry.quantity > left) {
+      throw new RefundError("TOO_MANY", `Only ${left} of ${line.productName}${line.variantDescription ? ` (${line.variantDescription})` : ""} can still be returned.`)
+    }
+    // Stock goes back only to a row that tracks it, as a cancellation does
+    const tracks = line.storeListingVariantId ? (line.storeListingVariant?.trackInventory ?? false) : line.storeListing.trackInventory
+    return { line, quantity: entry.quantity, restocked: entry.restock && tracks }
+  })
+
+  const amount = input.refund?.amountGhs ?? new Prisma.Decimal(0)
+  let refundId: string | null = null
+  if (amount.gt(0)) {
+    if (!isPaid(order.paymentStatus)) throw new RefundError("NOT_PAID", "Nothing is left to refund on this order, so record the return without a refund.")
+    if (amount.gt(remaining)) throw new RefundError("TOO_MUCH", `Only GHS ${remaining.toFixed(2)} of this order is left to refund.`)
+    const refund = { orderId: input.orderId, refundedGhs: input.refundedGhs, method: input.refund!.method, reason: input.reason, refundedById: input.recordedById }
+    refundId = (await writeRefund(tx, refund, amount, order.totalGhs, refunded.plus(amount))).refundId
+  }
+
+  await tx.orderReturn.create({
+    data: {
+      orderId: input.orderId,
+      reason: input.reason,
+      refundId,
+      recordedById: input.recordedById,
+      items: { create: returning.map(({ line, quantity, restocked }) => ({ orderItemId: line.id, quantity, restocked })) },
+    },
+  })
+
+  for (const { line, quantity, restocked } of returning) {
+    if (!restocked) continue
+    if (line.storeListingVariantId) await tx.storeListingVariant.update({ where: { id: line.storeListingVariantId }, data: { stock: { increment: quantity } } })
+    else await tx.storeListing.update({ where: { id: line.storeListingId }, data: { stock: { increment: quantity } } })
+  }
+
+  return {
+    refundedGhs: amount,
+    items: returning.map(({ line, quantity }) => ({ productName: line.productName, variantDescription: line.variantDescription, quantity })),
+  }
 }

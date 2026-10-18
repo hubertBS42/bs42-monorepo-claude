@@ -5,8 +5,6 @@ import { useRouter } from "next/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm, type DefaultValues, type FieldValues, type UseFormReturn } from "react-hook-form"
 import type { z } from "zod"
-import { consoleAuthClient } from "@workspace/auth/console-client"
-import { hasSystemPermission } from "@workspace/auth/system-permissions"
 import type { ActionResponse } from "@workspace/contracts"
 import type { OrderStatus, PaymentMethod } from "@workspace/db/enums"
 import { NumberInputField, SelectField, TextareaField } from "@workspace/forms"
@@ -17,18 +15,23 @@ import { Skeleton } from "@workspace/ui/components/skeleton"
 import { Spinner } from "@workspace/ui/components/spinner"
 import { toast } from "@workspace/ui/components/toast"
 import { formatCurrency } from "@workspace/utils/currency"
+import { useCanUpdateOrders } from "@/hooks/use-can-update-orders"
 import { cancelAndRefundOrderAction, refundOrderAction } from "@/lib/actions/order.actions"
+import { cancelAndRefundStoreOrderAction, refundStoreOrderAction } from "@/lib/actions/store-order.actions"
 import { PAYMENT_METHOD_LABELS } from "@/lib/order-status"
 import { cancelAndRefundFormSchema, refundOrderFormSchema } from "@/lib/schemas/order.schemas"
 
-// The platform's refunds, for superAdmins: part or all of what's left, or cancelling the order with a refund of the
-// rest. The page shows these only for an order that holds money (paid, or partly refunded), so there's always some
-// left; the actions check the permission and the amounts again.
+// Refunds, for superAdmins on the platform's pages and owners and admins on a store's own orders (storeId): part or
+// all of what's left, or cancelling the order with a refund of the rest. The page shows these only for an order that
+// holds money (paid, or partly refunded), so there's always some left; the actions check the permission and the
+// amounts again.
 
 const methodOptions = Object.entries(PAYMENT_METHOD_LABELS).map(([value, label]) => ({ label, value }))
 const ghs = (amount: string | number) => formatCurrency(String(amount), "GHS", "en-GH")
 
 interface RefundTarget {
+  // The store whose order it is, or null on the platform's pages
+  storeId: string | null
   orderId: string
   // What the page showed as refunded so far, and what's left
   refundedGhs: string
@@ -37,13 +40,16 @@ interface RefundTarget {
   paymentMethod: PaymentMethod
 }
 
-// The form holds the schema's input (an amount field can be empty) and submits its output
+// The form holds the schema's input (an amount field can be empty) and submits its output. Returns use it too.
 interface RefundDialogProps<In extends FieldValues, Out extends FieldValues> {
   trigger: ReactElement
   title: string
   description: string
   submitLabel: string
+  // The error toast's title
+  failureTitle?: string
   destructive?: boolean
+  className?: string
   schema: z.ZodType<Out, In>
   values: In
   save: (values: Out) => Promise<ActionResponse>
@@ -51,7 +57,20 @@ interface RefundDialogProps<In extends FieldValues, Out extends FieldValues> {
   children: (form: UseFormReturn<In, unknown, Out>, isPending: boolean) => ReactNode
 }
 
-function RefundDialog<In extends FieldValues, Out extends FieldValues>({ trigger, title, description, submitLabel, destructive, schema, values, save, success, children }: RefundDialogProps<In, Out>) {
+export function RefundDialog<In extends FieldValues, Out extends FieldValues>({
+  trigger,
+  title,
+  description,
+  submitLabel,
+  failureTitle = "Unable to refund",
+  destructive,
+  className,
+  schema,
+  values,
+  save,
+  success,
+  children,
+}: RefundDialogProps<In, Out>) {
   const router = useRouter()
   const [isOpen, setIsOpen] = useState(false)
   const [isPending, startTransition] = useTransition()
@@ -61,9 +80,9 @@ function RefundDialog<In extends FieldValues, Out extends FieldValues>({ trigger
     startTransition(async () => {
       const response = await save(submitted)
       if (!response.success) {
-        toast.add({ title: "Unable to refund", description: response.error, type: "error" })
+        toast.add({ title: failureTitle, description: response.error, type: "error" })
         // The order changed under the page: show it as it is now
-        if (response.code === "REFUNDS_CHANGED" || response.code === "STATUS_CHANGED" || response.code === "NOT_PAID") {
+        if (response.code === "REFUNDS_CHANGED" || response.code === "STATUS_CHANGED" || response.code === "NOT_PAID" || response.code === "RETURNS_CHANGED" || response.code === "NOT_RETURNABLE") {
           setIsOpen(false)
           router.refresh()
         }
@@ -85,7 +104,7 @@ function RefundDialog<In extends FieldValues, Out extends FieldValues>({ trigger
       }}
     >
       <DialogTrigger render={trigger} />
-      <DialogContent>
+      <DialogContent className={className}>
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>
@@ -130,15 +149,15 @@ interface OrderRefundsProps extends RefundTarget {
   canCancel: boolean
 }
 
-export default function OrderRefunds({ orderId, refundedGhs, refundableGhs, paymentMethod, status, canCancel }: OrderRefundsProps) {
-  const { data: session, isPending: isSessionLoading } = consoleAuthClient.useSession()
+// Who may refund, for the line shown to everyone else: platform staff are told about superAdmins, even in a store
+export const refundersLabel = (bySystemRole: boolean) => (bySystemRole ? "superAdmins" : "the store's owners and admins")
 
-  if (isSessionLoading) return <Skeleton className="h-9 rounded-md" />
+export default function OrderRefunds({ storeId, orderId, refundedGhs, refundableGhs, paymentMethod, status, canCancel }: OrderRefundsProps) {
+  const { canUpdate: canRefund, isLoading, bySystemRole } = useCanUpdateOrders(storeId, "refund")
 
-  // hasSystemPermission, not checkRolePermission: roles can be comma-separated
-  if (!hasSystemPermission(session?.user.role, { order: ["refund"] })) {
-    return <p className="text-sm text-muted-foreground">Only superAdmins can give refunds.</p>
-  }
+  if (isLoading) return <Skeleton className="h-9 rounded-md" />
+
+  if (!canRefund) return <p className="text-sm text-muted-foreground">{`Only ${refundersLabel(bySystemRole)} can give refunds.`}</p>
 
   const target = { orderId, refundedGhs }
   const refundable = Number(refundableGhs)
@@ -152,11 +171,11 @@ export default function OrderRefunds({ orderId, refundedGhs, refundableGhs, paym
           </Button>
         }
         title="Refund"
-        description={`Up to ${ghs(refundableGhs)} is left to refund. The order's status stays as it is, and no stock comes back.`}
+        description={`Up to ${ghs(refundableGhs)} is left to refund. The order's status stays as it is, and no stock comes back: for items brought back, use Record return.`}
         submitLabel="Refund"
         schema={refundOrderFormSchema}
         values={{ amountGhs: "", method: paymentMethod, reason: "" }}
-        save={(values) => refundOrderAction({ ...values, ...target })}
+        save={(values) => (storeId ? refundStoreOrderAction({ ...values, ...target, storeId }) : refundOrderAction({ ...values, ...target }))}
         success={(values) => ({ title: "Refunded", description: `${ghs(values.amountGhs)} refunded.` })}
       >
         {(form, isPending) => (
@@ -180,7 +199,9 @@ export default function OrderRefunds({ orderId, refundedGhs, refundableGhs, paym
           destructive
           schema={cancelAndRefundFormSchema}
           values={{ method: paymentMethod, reason: "" }}
-          save={(values) => cancelAndRefundOrderAction({ ...values, ...target, currentStatus: status })}
+          save={(values) =>
+            storeId ? cancelAndRefundStoreOrderAction({ ...values, ...target, currentStatus: status, storeId }) : cancelAndRefundOrderAction({ ...values, ...target, currentStatus: status })
+          }
           success={() => ({ title: "Order cancelled", description: `${ghs(refundableGhs)} refunded.` })}
         >
           {(form, isPending) => <MethodAndReason form={form} isPending={isPending} />}

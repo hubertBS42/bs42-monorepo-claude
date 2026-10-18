@@ -47,7 +47,7 @@ export function nextOrderStatuses(status: OrderStatus, shippingMethod: ShippingM
   }
 }
 
-// Money has changed hands, so cancelling needs a refund, which is the platform's to give
+// Money has changed hands, so cancelling needs a refund (Cancel and refund)
 export function isPaid(paymentStatus: PaymentStatus) {
   return paymentStatus === PaymentStatus.PAID || paymentStatus === PaymentStatus.PARTIALLY_REFUNDED
 }
@@ -55,4 +55,24 @@ export function isPaid(paymentStatus: PaymentStatus) {
 // Payment was taken at some point, whether or not any of it was refunded since: completing an order needs this
 export function hasBeenPaid(paymentStatus: PaymentStatus) {
   return paymentStatus !== PaymentStatus.PENDING && paymentStatus !== PaymentStatus.FAILED
+}
+
+// Items come back only once the customer has them: before that, the order is cancelled instead
+export function canBeReturned(status: OrderStatus) {
+  return status === OrderStatus.DELIVERED || status === OrderStatus.COMPLETED
+}
+
+// Why the Returns card offers no Record return button, or null when it does. A return needs a recorded payment, so
+// staff record the payment and then refund what came back, and the amounts add up.
+export function returnBlockedReason(order: { status: OrderStatus; paymentStatus: PaymentStatus }, returnableLineCount: number) {
+  if (!canBeReturned(order.status)) return "Items can be returned once the order has been delivered."
+  if (!hasBeenPaid(order.paymentStatus)) return "Record the payment before recording a return, then refund what came back."
+  if (returnableLineCount === 0) return "Everything on this order has been returned."
+  return null
+}
+
+// "Returned" when every unit came back, "Partly returned" when some did, else null
+export function returnLabel(sold: number, returned: number) {
+  if (returned === 0) return null
+  return returned >= sold ? "Returned" : "Partly returned"
 }

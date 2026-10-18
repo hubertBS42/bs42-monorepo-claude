@@ -12,7 +12,8 @@ import { dayStart } from "@workspace/utils/date"
 import { getPaginationError } from "@workspace/utils/pagination"
 import { toPhoneSearch } from "@workspace/utils/phone"
 import { z } from "zod"
-import { orderDetailsInclude, toOrderDetailsBase, toOrderTotals } from "@/lib/order-details"
+import { orderDetailsInclude, toOrderAfterSale, toOrderDetailsBase, toOrderTotals } from "@/lib/order-details"
+import { returnLabel } from "@/lib/order-status"
 
 // The platform's orders: every order, whichever stores' items it has. Stores see theirs in store-orders.data.ts.
 
@@ -47,7 +48,7 @@ export const getOrders = async (filters: OrdersParams = {}): Promise<DataRespons
       return { success: false, error: paginationError }
     }
 
-    const { reference, customer, storeId, status, paymentStatus, multiStore, placedStart, placedEnd, page = 1, pageSize = 10, sort, order } = filters
+    const { reference, customer, storeId, status, paymentStatus, multiStore, returned, placedStart, placedEnd, page = 1, pageSize = 10, sort, order } = filters
 
     // The store id is a uuid column, so a malformed one (a hand-edited URL) would make Prisma throw: it matches nothing
     if (storeId && !z.uuid().safeParse(storeId).success) return { success: true, data: { data: [], total: 0, page, pageSize, totalPages: 0 } }
@@ -66,6 +67,7 @@ export const getOrders = async (filters: OrdersParams = {}): Promise<DataRespons
       ...(status && { status }),
       ...(paymentStatus && { paymentStatus }),
       ...(multiStore && { id: multiStore === "true" ? { in: multiStoreIds } : { notIn: multiStoreIds } }),
+      ...(returned && { returns: returned === "true" ? { some: {} } : { none: {} } }),
       ...((placedStart || placedEnd) && {
         createdAt: {
           ...(placedStart && { gte: dayStart(placedStart) }),
@@ -94,7 +96,7 @@ export const getOrders = async (filters: OrdersParams = {}): Promise<DataRespons
           shippingMethod: true,
           totalGhs: true,
           createdAt: true,
-          orderItems: { orderBy: { id: "asc" }, select: { quantity: true, storeName: true } },
+          orderItems: { orderBy: { id: "asc" }, select: { quantity: true, storeName: true, returns: { select: { quantity: true } } } },
         },
       }),
       prisma.order.count({ where }),
@@ -103,12 +105,17 @@ export const getOrders = async (filters: OrdersParams = {}): Promise<DataRespons
     return {
       success: true,
       data: {
-        data: orders.map(({ orderItems, totalGhs, ...order }) => ({
-          ...order,
-          totalGhs: totalGhs.toString(),
-          itemCount: orderItems.reduce((sum, line) => sum + line.quantity, 0),
-          storeNames: [...new Set(orderItems.map((line) => line.storeName))],
-        })),
+        data: orders.map(({ orderItems, totalGhs, ...order }) => {
+          const itemCount = orderItems.reduce((sum, line) => sum + line.quantity, 0)
+          const returned = orderItems.reduce((sum, line) => sum + line.returns.reduce((total, row) => total + row.quantity, 0), 0)
+          return {
+            ...order,
+            totalGhs: totalGhs.toString(),
+            itemCount,
+            storeNames: [...new Set(orderItems.map((line) => line.storeName))],
+            returned: returnLabel(itemCount, returned),
+          }
+        }),
         total,
         page,
         pageSize,
@@ -128,15 +135,13 @@ export const getOrderDetails = async (orderId: string): Promise<DataResponse<Ord
     const order = await prisma.order.findUnique({ where: { id: orderId }, include: orderDetailsInclude })
     if (!order) return { success: false, error: "Order not found", code: "NOT_FOUND" }
 
-    const refunded = order.refunds.reduce((sum, refund) => sum.plus(refund.amountGhs), new Prisma.Decimal(0))
     return {
       success: true,
       data: {
         ...toOrderDetailsBase(order, order.orderItems, true),
         totals: toOrderTotals(order),
         storeNames: [...new Set(order.orderItems.map((line) => line.storeName))],
-        refundedGhs: refunded.toString(),
-        refundableGhs: order.totalGhs.minus(refunded).toString(),
+        ...toOrderAfterSale(order),
       },
     }
   } catch (error) {
