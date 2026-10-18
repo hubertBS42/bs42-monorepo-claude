@@ -148,12 +148,14 @@ export default function CreateOrderForm({ storeId }: { storeId: string }) {
               Back
             </Button>
           )}
+          {/* Separate keys: reusing one element would turn the clicked Next into a submit button before
+              the click's default action runs, so leaving the Delivery step would create the order */}
           {isLast ? (
-            <Button type="submit" disabled={isPending}>
+            <Button key="submit" type="submit" disabled={isPending}>
               {isPending ? <Spinner /> : "Create order"}
             </Button>
           ) : (
-            <Button type="button" onClick={() => void goNext()} disabled={isPending}>
+            <Button key="next" type="button" onClick={() => void goNext()} disabled={isPending}>
               Next
             </Button>
           )}
