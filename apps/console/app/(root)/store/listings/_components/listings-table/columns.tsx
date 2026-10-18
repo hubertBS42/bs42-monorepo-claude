@@ -8,6 +8,7 @@ import { Badge } from "@workspace/ui/components/badge"
 import { ColumnHeader } from "@workspace/tables"
 import type { Status } from "@workspace/db/enums"
 import type { ListingListItem } from "@/types"
+import { Checkbox } from "@workspace/ui/components/checkbox"
 
 // Archived is a normal end state, not an error, so it's muted rather than red (as on the products table)
 const statusBadgeVariants: Record<Status, "outline" | "success" | "secondary"> = {
@@ -17,6 +18,19 @@ const statusBadgeVariants: Record<Status, "outline" | "success" | "secondary"> =
 }
 
 export const columns: ColumnDef<ListingListItem, unknown>[] = [
+  {
+      id: "select",
+      header: ({ table }) => (
+        <Checkbox
+          checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && "indeterminate")}
+          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+          aria-label="Select all"
+        />
+      ),
+      cell: ({ row }) => <Checkbox checked={row.getIsSelected()} onCheckedChange={(value) => row.toggleSelected(!!value)} aria-label="Select row" />,
+      enableSorting: false,
+      enableHiding: false,
+    },
   {
     id: "name",
     header: () => <ColumnHeader title="Product" sortKey="name" />,
