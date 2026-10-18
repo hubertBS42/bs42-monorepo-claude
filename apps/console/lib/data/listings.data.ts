@@ -1,6 +1,6 @@
 import "server-only"
 
-import type { ListableProduct, ListingFormData, ListingsData, ListingsParams, ListingVariantRow } from "@/types"
+import type { ListableProduct, ListingFormData, ListingsData, ListingsParams, ListingStockState, ListingVariantRow } from "@/types"
 import { formatError } from "@workspace/auth/format-error"
 import { consoleAuth } from "@workspace/auth/console"
 import { headers } from "next/headers"
@@ -9,8 +9,9 @@ import { Prisma } from "@workspace/db/client"
 import { Status } from "@workspace/db/enums"
 import type { DataResponse } from "@workspace/contracts"
 import { getPaginationError } from "@workspace/utils/pagination"
+import { z } from "zod"
 import { getStoreRole } from "@/lib/auth-guard"
-import { getCategoryPaths } from "@/lib/data/products.data"
+import { getCategoryPaths, getSubtreeIds } from "@/lib/data/products.data"
 
 export const MAX_LISTINGS_PAGE_SIZE = 100
 export const LISTING_SORT_FIELDS = ["name", "sellPrice", "status", "createdAt", "updatedAt"] as const
@@ -48,6 +49,47 @@ const sellableVariants = {
   },
 }
 
+// Customers can buy it: published, its product published, and, for a product with variants, at least one variant on sale.
+// The same rule as the table's "not on sale" note.
+const visibleToCustomers: Prisma.StoreListingWhereInput = {
+  status: Status.PUBLISHED,
+  product: { status: Status.PUBLISHED },
+  OR: [{ product: { hasVariants: false } }, { storeListingVariants: { some: { status: Status.PUBLISHED, variant: { status: { not: Status.ARCHIVED } } } } }],
+}
+
+// The store's listings in a stock state, worked out as the table's stock badge does: from the variants on sale (or
+// the listing itself, without variants), against the listing's low-stock threshold. That compares across tables,
+// which Prisma's filters can't, so the ids come from SQL; a store's listings number in the hundreds.
+async function getListingIdsInStockState(storeId: string, state: ListingStockState) {
+  const rows = await prisma.$queryRaw<{ id: string }[]>`
+    WITH items AS (
+      SELECT l."id" AS "listingId", l."stock", l."lowStockThreshold"
+      FROM "store_listing" l JOIN "product" p ON p."id" = l."productId"
+      WHERE l."organizationId" = ${storeId}::uuid AND NOT p."hasVariants"
+      UNION ALL
+      SELECT l."id", v."stock", l."lowStockThreshold"
+      FROM "store_listing" l
+      JOIN "product" p ON p."id" = l."productId"
+      JOIN "store_listing_variant" v ON v."storeListingId" = l."id"
+      JOIN "product_variant" pv ON pv."id" = v."variantId"
+      WHERE l."organizationId" = ${storeId}::uuid AND p."hasVariants" AND v."status" = 'PUBLISHED' AND pv."status" <> 'ARCHIVED'
+    ),
+    states AS (
+      SELECT l."id",
+        CASE
+          WHEN NOT l."trackInventory" THEN 'untracked'
+          WHEN bool_or(i."stock" = 0) THEN 'out'
+          WHEN bool_or(i."stock" > 0 AND i."stock" <= i."lowStockThreshold") THEN 'low'
+          ELSE 'in'
+        END AS "state"
+      FROM "store_listing" l LEFT JOIN items i ON i."listingId" = l."id"
+      WHERE l."organizationId" = ${storeId}::uuid
+      GROUP BY l."id", l."trackInventory"
+    )
+    SELECT "id" FROM states WHERE "state" = ${state}`
+  return rows.map((row) => row.id)
+}
+
 type SellableVariant = Prisma.ProductVariantGetPayload<{ select: typeof sellableVariants.select }>
 
 function toVariantRow(variant: SellableVariant, inListing: boolean): ListingVariantRow {
@@ -73,20 +115,36 @@ export const getStoreListings = async (storeId: string, filters: ListingsParams 
       return { success: false, error: paginationError }
     }
 
-    const { search, status, page = 1, pageSize = 10, sort, order } = filters
+    const { search, status, stock, brandId, categoryId, visible, page = 1, pageSize = 10, sort, order } = filters
+
+    // Brand and category ids are uuid columns, so a malformed one (a hand-edited URL) would make Prisma throw: it matches nothing
+    const isUuid = (value: string | undefined) => !value || z.uuid().safeParse(value).success
+    if (!isUuid(brandId) || !isUuid(categoryId)) return { success: true, data: { data: [], total: 0, page, pageSize, totalPages: 0 } }
+
+    // The whole tree is small: one read gives every row's path and the category filter's subtree
+    const categories = await prisma.category.findMany({ select: { id: true, name: true, parentId: true } })
+    const stockIds = stock ? await getListingIdsInStockState(storeId, stock) : null
 
     const contains = search ? { contains: search, mode: "insensitive" as const } : undefined
+    // AND, so filters on the same relation (product) don't overwrite each other
     const where: Prisma.StoreListingWhereInput = {
       organizationId: storeId,
-      ...(contains && { product: { OR: [{ name: contains }, { sku: contains }, { variants: { some: { sku: contains } } }] } }),
-      ...(status && { status }),
+      AND: [
+        ...(contains ? [{ product: { OR: [{ name: contains }, { sku: contains }, { variants: { some: { sku: contains } } }] } }] : []),
+        ...(status ? [{ status }] : []),
+        ...(stockIds ? [{ id: { in: stockIds } }] : []),
+        ...(brandId ? [{ product: { brandId } }] : []),
+        ...(categoryId ? [{ product: { categoryId: { in: getSubtreeIds(categories, categoryId) } } }] : []),
+        ...(visible ? [visible === "true" ? visibleToCustomers : { NOT: visibleToCustomers }] : []),
+      ],
     }
 
     const direction = order === "desc" ? "desc" : "asc"
     // id breaks ties so rows with equal sort values keep their order across pages
     const orderBy: Prisma.StoreListingOrderByWithRelationInput[] = [sort === "name" ? { product: { name: direction } } : sort ? { [sort]: direction } : { updatedAt: "desc" }, { id: "asc" }]
 
-    const [listings, total, categoryPaths] = await Promise.all([
+    const categoryPaths = getCategoryPaths(categories)
+    const [listings, total] = await Promise.all([
       prisma.storeListing.findMany({
         where,
         orderBy,
@@ -110,7 +168,6 @@ export const getStoreListings = async (storeId: string, filters: ListingsParams 
         },
       }),
       prisma.storeListing.count({ where }),
-      getCategoryPathMap(),
     ])
 
     return {

@@ -39,7 +39,7 @@ export function getCategoryPaths(categories: CategoryRow[]) {
 }
 
 // A category and everything under it, so filtering on "Men" includes "Men / Shoes"
-function getSubtreeIds(categories: CategoryRow[], rootId: string) {
+export function getSubtreeIds(categories: CategoryRow[], rootId: string) {
   const ids = [rootId]
   for (let index = 0; index < ids.length; index++) {
     for (const category of categories) if (category.parentId === ids[index]) ids.push(category.id)

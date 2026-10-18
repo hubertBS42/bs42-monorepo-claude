@@ -1,5 +1,5 @@
 import { Condition, Status } from "@workspace/db/enums"
-import { BreadcrumbConfig, StoreStatus, UserStatusFilter } from "./types"
+import { BreadcrumbConfig, StoreStatus, UserStatusFilter, type ListingStockState } from "./types"
 import { capitalizeWord } from "@workspace/utils/text"
 
 export const BREADCRUMB_DATA: BreadcrumbConfig[] = [
@@ -314,3 +314,11 @@ export const CONDITION_OPTIONS = Object.values(Condition).map((value) => ({
 }))
 
 export const USER_STATUS_FILTERS: readonly UserStatusFilter[] = ["active", "banned"]
+
+// The listings table's stock filter, in the words of its stock badges
+export const LISTING_STOCK_OPTIONS: { label: string; value: ListingStockState }[] = [
+  { label: "In stock", value: "in" },
+  { label: "Low stock", value: "low" },
+  { label: "Out of stock", value: "out" },
+  { label: "Not tracked", value: "untracked" },
+]

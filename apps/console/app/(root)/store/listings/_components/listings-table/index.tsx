@@ -1,14 +1,20 @@
 "use client"
 import { DataTable } from "@workspace/tables"
 import type { ListingsData } from "@/types"
+import type { ProductFilterOptions } from "@/lib/data/products.data"
 import { columns } from "./columns"
-import { listingFilters } from "./filters"
+import { getListingFilters } from "./filters"
 
-const ListingsTable = ({ data }: { data: ListingsData }) => {
+interface ListingsTableProps {
+  data: ListingsData
+  filterOptions: ProductFilterOptions
+}
+
+const ListingsTable = ({ data, filterOptions }: ListingsTableProps) => {
   return (
     <DataTable
       columns={columns}
-      filters={listingFilters}
+      filters={getListingFilters(filterOptions)}
       data={data.data}
       getRowHref={(listing) => `/store/listings/${listing.id}/edit`}
       pagination={{

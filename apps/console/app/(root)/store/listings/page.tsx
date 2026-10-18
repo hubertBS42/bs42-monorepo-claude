@@ -3,7 +3,8 @@ import { Status } from "@workspace/db/enums"
 import { getEnumParam, getOrderParam, getPositiveIntegerParam, getSortParam, getStringParam } from "@workspace/utils/search-params"
 import { requireActiveStoreMember } from "@/lib/auth-guard"
 import { getStoreListings, LISTING_SORT_FIELDS, MAX_LISTINGS_PAGE_SIZE } from "@/lib/data/listings.data"
-import type { ListingsParams } from "@/types"
+import { getProductFilterOptions } from "@/lib/data/products.data"
+import { LISTING_STOCK_STATES, type ListingsParams } from "@/types"
 import AddListingButton from "./_components/add-listing-button"
 import ListingsTable from "./_components/listings-table"
 
@@ -24,14 +25,19 @@ export default async function StoreListingsPage({ searchParams }: StoreListingsP
   const listingsParams: ListingsParams = {
     search: getStringParam(params.search),
     status: getEnumParam(params.status, Object.values(Status)),
+    stock: getEnumParam(params.stock, LISTING_STOCK_STATES),
+    brandId: getStringParam(params.brandId),
+    categoryId: getStringParam(params.categoryId),
+    visible: getEnumParam(params.visible, ["true", "false"]),
     page: getPositiveIntegerParam(params.page, 1),
     pageSize: getPositiveIntegerParam(params.pageSize, 10, MAX_LISTINGS_PAGE_SIZE),
     sort: getSortParam(params.sort, LISTING_SORT_FIELDS),
     order: getOrderParam(params.order),
   }
 
-  const result = await getStoreListings(storeId, listingsParams)
+  const [result, filterOptions] = await Promise.all([getStoreListings(storeId, listingsParams), getProductFilterOptions()])
   if (!result.success) throw new Error(result.error)
+  if (!filterOptions.success) throw new Error(filterOptions.error)
 
   return (
     <main className="flex flex-col gap-y-6">
@@ -43,7 +49,7 @@ export default async function StoreListingsPage({ searchParams }: StoreListingsP
 
         <AddListingButton storeId={storeId} />
       </div>
-      <ListingsTable data={result.data} />
+      <ListingsTable data={result.data} filterOptions={filterOptions.data} />
     </main>
   )
 }

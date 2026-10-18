@@ -177,10 +177,20 @@ export interface ProductFormData {
   hasOrders: boolean
 }
 
+// What a listings row's stock badge shows: any item sold out, else any at or below the low-stock threshold
+export const LISTING_STOCK_STATES = ["in", "low", "out", "untracked"] as const
+export type ListingStockState = (typeof LISTING_STOCK_STATES)[number]
+
 export interface ListingsParams extends PaginationParams {
   // Matches the product's name or SKU
   search?: string
   status?: Status
+  stock?: ListingStockState
+  brandId?: string
+  // Includes its subcategories
+  categoryId?: string
+  // "true": customers can buy it; "false": they can't (a draft, or published but its product or every variant isn't)
+  visible?: "true" | "false"
 }
 
 // A store listings table row. Prices are strings because Decimal can't be passed to client components
