@@ -12,7 +12,7 @@ import { dayStart } from "@workspace/utils/date"
 import { getPaginationError } from "@workspace/utils/pagination"
 import { toPhoneSearch } from "@workspace/utils/phone"
 import { z } from "zod"
-import { orderDetailsInclude, toOrderAfterSale, toOrderDetailsBase, toOrderTotals } from "@/lib/order-details"
+import { orderDetailsInclude, toOrderAfterSale, toOrderDetailsBase, toOrderTotals, type OrderWithDetails } from "@/lib/order-details"
 import { returnLabel } from "@/lib/order-status"
 
 // The platform's orders: every order, whichever stores' items it has. Stores see theirs in store-orders.data.ts.
@@ -127,6 +127,15 @@ export const getOrders = async (filters: OrdersParams = {}): Promise<DataRespons
   }
 }
 
+function toOrderDetails(order: OrderWithDetails): OrderDetails {
+  return {
+    ...toOrderDetailsBase(order, order.orderItems, true),
+    totals: toOrderTotals(order),
+    storeNames: [...new Set(order.orderItems.map((line) => line.storeName))],
+    ...toOrderAfterSale(order),
+  }
+}
+
 export const getOrderDetails = async (orderId: string): Promise<DataResponse<OrderDetails>> => {
   try {
     const denied = await checkOrderAccess()
@@ -135,15 +144,21 @@ export const getOrderDetails = async (orderId: string): Promise<DataResponse<Ord
     const order = await prisma.order.findUnique({ where: { id: orderId }, include: orderDetailsInclude })
     if (!order) return { success: false, error: "Order not found", code: "NOT_FOUND" }
 
-    return {
-      success: true,
-      data: {
-        ...toOrderDetailsBase(order, order.orderItems, true),
-        totals: toOrderTotals(order),
-        storeNames: [...new Set(order.orderItems.map((line) => line.storeName))],
-        ...toOrderAfterSale(order),
-      },
-    }
+    return { success: true, data: toOrderDetails(order) }
+  } catch (error) {
+    return { success: false, error: formatError(error) }
+  }
+}
+
+// The latest orders, newest first, as the orders list sorts them
+export const getRecentOrderDetails = async (take: number): Promise<DataResponse<OrderDetails[]>> => {
+  try {
+    const denied = await checkOrderAccess()
+    if (denied) return denied
+
+    const orders = await prisma.order.findMany({ orderBy: [{ createdAt: "desc" }, { id: "asc" }], take, include: orderDetailsInclude })
+
+    return { success: true, data: orders.map(toOrderDetails) }
   } catch (error) {
     return { success: false, error: formatError(error) }
   }

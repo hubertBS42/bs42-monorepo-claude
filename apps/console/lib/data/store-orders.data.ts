@@ -9,7 +9,7 @@ import { Prisma } from "@workspace/db/client"
 import type { DataResponse } from "@workspace/contracts"
 import { getPaginationError } from "@workspace/utils/pagination"
 import { hasStorePermission } from "@/lib/auth-guard"
-import { orderDetailsInclude, sumLines, toOrderAfterSale, toOrderDetailsBase, toOrderTotals } from "@/lib/order-details"
+import { orderDetailsInclude, sumLines, toOrderAfterSale, toOrderDetailsBase, toOrderTotals, type OrderWithDetails } from "@/lib/order-details"
 
 export const MAX_STORE_ORDERS_PAGE_SIZE = 100
 // Not the total: for an order with other stores' items the table shows this store's share, which a sort can't follow
@@ -94,6 +94,19 @@ export const getStoreOrders = async (storeId: string, filters: StoreOrdersParams
   }
 }
 
+// Only this store's lines. The order's total and refunds cover other stores' items too, so a store sees them only for
+// its own orders.
+function toStoreOrderDetails(order: OrderWithDetails, storeId: string): StoreOrderDetails {
+  const ownLines = order.orderItems.filter((line) => line.organizationId === storeId)
+  const isMultiStore = ownLines.length < order.orderItems.length
+  return {
+    ...toOrderDetailsBase(order, ownLines, !isMultiStore),
+    totals: isMultiStore ? null : toOrderTotals(order),
+    storeTotalGhs: sumLines(ownLines).toString(),
+    afterSale: isMultiStore ? null : toOrderAfterSale(order),
+  }
+}
+
 export const getStoreOrderDetails = async (storeId: string, orderId: string): Promise<DataResponse<StoreOrderDetails>> => {
   try {
     const denied = await checkOrderAccess(storeId)
@@ -105,19 +118,26 @@ export const getStoreOrderDetails = async (storeId: string, orderId: string): Pr
     })
     if (!order) return { success: false, error: "Order not found", code: "NOT_FOUND" }
 
-    const ownLines = order.orderItems.filter((line) => line.organizationId === storeId)
-    const isMultiStore = ownLines.length < order.orderItems.length
+    return { success: true, data: toStoreOrderDetails(order, storeId) }
+  } catch (error) {
+    return { success: false, error: formatError(error) }
+  }
+}
 
-    return {
-      success: true,
-      data: {
-        // The order's total and refunds cover other stores' items too, so a store sees them only for its own orders
-        ...toOrderDetailsBase(order, ownLines, !isMultiStore),
-        totals: isMultiStore ? null : toOrderTotals(order),
-        storeTotalGhs: sumLines(ownLines).toString(),
-        afterSale: isMultiStore ? null : toOrderAfterSale(order),
-      },
-    }
+// The latest orders with the store's items, newest first, as the orders list sorts them
+export const getRecentStoreOrderDetails = async (storeId: string, take: number): Promise<DataResponse<StoreOrderDetails[]>> => {
+  try {
+    const denied = await checkOrderAccess(storeId)
+    if (denied) return denied
+
+    const orders = await prisma.order.findMany({
+      where: { orderItems: { some: { organizationId: storeId } } },
+      orderBy: [{ createdAt: "desc" }, { id: "asc" }],
+      take,
+      include: orderDetailsInclude,
+    })
+
+    return { success: true, data: orders.map((order) => toStoreOrderDetails(order, storeId)) }
   } catch (error) {
     return { success: false, error: formatError(error) }
   }
