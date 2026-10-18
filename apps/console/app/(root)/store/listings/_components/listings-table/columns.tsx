@@ -10,6 +10,7 @@ import type { Status } from "@workspace/db/enums"
 import type { ListingListItem } from "@/types"
 import { Checkbox } from "@workspace/ui/components/checkbox"
 import CategoryPath from "@/components/category-path"
+import GlobalWorkspaceLink from "@/components/global-workspace-link"
 
 // Archived is a normal end state, not an error, so it's muted rather than red (as on the products table)
 const statusBadgeVariants: Record<Status, "outline" | "success" | "secondary"> = {
@@ -49,7 +50,15 @@ export const columns: ColumnDef<ListingListItem, unknown>[] = [
             <RowLink href={getListingHref(row.original)} className="w-fit">
               {product.name}
             </RowLink>
-            <span className="text-[11px] text-muted-foreground">{product.brandName}</span>
+            {/* The catalogue is global: these switch workspace for system admins, and are plain text for store staff */}
+            <div className="flex flex-wrap gap-x-2 text-[11px] text-muted-foreground">
+              <GlobalWorkspaceLink href={`/catalogue/brands/${product.brandId}/edit`} className="w-fit">
+                {product.brandName}
+              </GlobalWorkspaceLink>
+              <GlobalWorkspaceLink href={`/catalogue/products/${product.id}/edit`} className="w-fit" hideWithoutAccess>
+                View in catalogue
+              </GlobalWorkspaceLink>
+            </div>
           </div>
         </div>
       )

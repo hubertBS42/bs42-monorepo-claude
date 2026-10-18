@@ -196,7 +196,8 @@ export interface ListingsParams extends PaginationParams {
 // A store listings table row. Prices are strings because Decimal can't be passed to client components
 export interface ListingListItem {
   id: string
-  product: { name: string; image: string | null; brandName: string; categoryPath: string; hasVariants: boolean }
+  // The ids open the catalogue's product and brand pages, for system admins
+  product: { id: string; name: string; image: string | null; brandId: string; brandName: string; categoryPath: string; hasVariants: boolean }
   sellPrice: string
   // The lowest and highest price a customer can pay, when variants have their own prices
   priceRange: { min: string; max: string } | null

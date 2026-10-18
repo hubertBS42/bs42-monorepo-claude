@@ -159,7 +159,7 @@ export const getStoreListings = async (storeId: string, filters: ListingsParams 
           isFeatured: true,
           status: true,
           updatedAt: true,
-          product: { select: { name: true, images: true, status: true, hasVariants: true, categoryId: true, brand: { select: { name: true } } } },
+          product: { select: { id: true, name: true, images: true, status: true, hasVariants: true, categoryId: true, brand: { select: { id: true, name: true } } } },
           // The variants on sale: published in the store, and not archived in the catalogue
           storeListingVariants: {
             where: { status: Status.PUBLISHED, variant: { status: { not: Status.ARCHIVED } } },
@@ -202,8 +202,10 @@ export const getStoreListings = async (storeId: string, filters: ListingsParams 
           return {
             id: listing.id,
             product: {
+              id: product.id,
               name: product.name,
               image: product.images[0] ?? null,
+              brandId: product.brand.id,
               brandName: product.brand.name,
               categoryPath: categoryPaths.get(product.categoryId) ?? "",
               hasVariants: product.hasVariants,

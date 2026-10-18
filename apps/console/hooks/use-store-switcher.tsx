@@ -2,8 +2,9 @@ import { consoleAuthClient } from "@workspace/auth/console-client"
 import { useState } from "react"
 import { toast } from "@workspace/ui/components/toast"
 
-type SwitchByIdParams = { storeId: string; storeSlug?: never }
-type SwitchBySlugParams = { storeSlug: string; storeId?: never }
+// to: the page to open once switched, the dashboard by default
+type SwitchByIdParams = { storeId: string; storeSlug?: never; to?: string }
+type SwitchBySlugParams = { storeSlug: string; storeId?: never; to?: string }
 type SwitchParams = SwitchByIdParams | SwitchBySlugParams
 
 interface UseStoreSwitcherReturn {
@@ -32,8 +33,7 @@ export function useStoreSwitcher(): UseStoreSwitcherReturn {
 
       // A full page load on purpose: the active store changes the shared (root) layout
       // (sidebar, nav, store switcher), which a client-side push would not re-render.
-      // eslint-disable-next-line @next/next/no-location-assign-relative-destination
-      window.location.href = "/"
+      window.location.href = params.to ?? "/"
     } catch (error) {
       console.error("Failed to switch console organization:", error)
       const message = error instanceof Error ? error.message : "An unknown error occurred"
