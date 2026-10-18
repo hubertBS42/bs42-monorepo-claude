@@ -6,6 +6,7 @@ import { OrderDelivered } from "./templates/order/order-delivered.js"
 import { OrderCancelled } from "./templates/order/order-cancelled.js"
 import { OrderRefunded } from "./templates/order/order-refunded.js"
 import { OrderPaymentReceived } from "./templates/order/order-payment-received.js"
+import { OrderReturned, type ReturnedItem } from "./templates/order/order-returned.js"
 import type { OrderSummaryItem } from "./templates/order/components/order-summary.js"
 
 export interface BaseOrderEmail {
@@ -148,6 +149,24 @@ export async function sendOrderRefundedEmail(data: BaseOrderEmail & { refundReas
       customerName: data.customerName,
       reference: data.reference,
       refundReason: data.refundReason,
+      refundAmountGhs: data.refundAmountGhs,
+      appName: data.appName,
+      logoUrl: data.logoUrl,
+    }),
+  })
+}
+
+// Items the customer brought back, with what was refunded for them (null when nothing was)
+export async function sendOrderReturnedEmail(data: BaseOrderEmail & { items: ReturnedItem[]; returnReason: string; refundAmountGhs: number | null }) {
+  return sendEmail({
+    to: data.to,
+    fromName: data.appName,
+    subject: `Return Received — ${data.reference}`,
+    reactTemplate: OrderReturned({
+      customerName: data.customerName,
+      reference: data.reference,
+      items: data.items,
+      returnReason: data.returnReason,
       refundAmountGhs: data.refundAmountGhs,
       appName: data.appName,
       logoUrl: data.logoUrl,

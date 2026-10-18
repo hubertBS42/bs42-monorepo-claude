@@ -14,5 +14,7 @@ export {
   sendOrderConfirmedEmail,
   sendOrderPaymentReceivedEmail,
   sendOrderRefundedEmail,
+  sendOrderReturnedEmail,
 } from "./order-notifications.js"
 export type { BaseOrderEmail, OrderConfirmationEmail } from "./order-notifications.js"
+export type { ReturnedItem } from "./templates/order/order-returned.js"

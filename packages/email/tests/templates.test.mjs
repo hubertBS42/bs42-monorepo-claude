@@ -8,6 +8,7 @@ import { OrderCancelled } from "../dist/src/templates/order/order-cancelled.js"
 import { OrderDelivered } from "../dist/src/templates/order/order-delivered.js"
 import { OrderPaymentReceived } from "../dist/src/templates/order/order-payment-received.js"
 import { OrderRefunded } from "../dist/src/templates/order/order-refunded.js"
+import { OrderReturned } from "../dist/src/templates/order/order-returned.js"
 import { OrderShipped } from "../dist/src/templates/order/order-shipped.js"
 import { PasswordUpdatedEmail } from "../dist/src/templates/password-updated-email.js"
 import { ResetPasswordEmail } from "../dist/src/templates/reset-password-email.js"
@@ -99,6 +100,16 @@ const templates = [
       refundAmountGhs: 10,
     }),
     "Customer request",
+  ],
+  [
+    "order returned",
+    OrderReturned({
+      ...orderDetails,
+      items: [{ productName: "Running shoe", variantDescription: "Size: 42", quantity: 1 }],
+      returnReason: "Sole came loose",
+      refundAmountGhs: 25.5,
+    }),
+    "Sole came loose",
   ],
 ]
 
