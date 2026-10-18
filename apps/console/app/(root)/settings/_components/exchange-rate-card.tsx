@@ -47,7 +47,7 @@ export default function ExchangeRateCard({ latest, maxAgeDays }: { latest: Excha
     <Card>
       <CardHeader>
         <CardTitle>Exchange Rate</CardTitle>
-        <CardDescription>{`Customers pay in GHS at this rate. Set it daily: orders refuse one over ${maxAgeDays} days old.`}</CardDescription>
+        <CardDescription>{`Customers pay in GHS at this rate, fetched daily. Set it here to override today's. Orders refuse one over ${maxAgeDays} days old.`}</CardDescription>
       </CardHeader>
       <CardContent>
         {/* Rendered next to the settings form, not inside it; stopPropagation keeps a submit from reaching any form around it */}
@@ -60,7 +60,7 @@ export default function ExchangeRateCard({ latest, maxAgeDays }: { latest: Excha
         >
           <p className={latest?.isStale || !latest ? "text-sm text-destructive" : "text-sm text-muted-foreground"}>
             {latest
-              ? `Latest: GH₵${Number(latest.rate)} per $1, set for ${formatDate(`${latest.date}T12:00:00Z`, "MMM d, yyyy")}.${latest.isStale ? " It's too old for new orders." : ""}`
+              ? `Latest: GH₵${Number(latest.rate)} per $1 for ${formatDate(`${latest.date}T12:00:00Z`, "MMM d, yyyy")}, ${latest.source === "MANUAL" ? "set by hand" : "fetched from Open Exchange Rates"}.${latest.isStale ? " It's too old for new orders." : ""}`
               : "No rate has been set, so no order can be priced yet."}
           </p>
           <div className="flex items-end gap-2">

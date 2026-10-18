@@ -4,11 +4,13 @@ import z from "zod"
 import { formatError } from "@workspace/auth/format-error"
 import { ActionResponse } from "@workspace/contracts"
 import { prisma } from "@workspace/db"
+import { ExchangeRateSource } from "@workspace/db/enums"
 import { requireSystemPermission } from "@/lib/auth-guard"
 import { getRateDate } from "@/lib/data/exchange-rates.data"
 import { exchangeRateFormSchema } from "@/lib/schemas/exchange-rate.schemas"
 
-// Sets today's USD→GHS rate. A stopgap until a daily fetch job keeps rates current.
+// Sets today's USD→GHS rate by hand: for a day the daily fetch failed, or to override the fetched rate.
+// The fetch never overwrites a rate set here.
 export async function setTodaysExchangeRateAction(input: z.input<typeof exchangeRateFormSchema>): Promise<ActionResponse> {
   // Outside the try block: redirect() works by throwing and must not be caught
   await requireSystemPermission({ appSettings: ["update"] })
@@ -28,8 +30,8 @@ export async function setTodaysExchangeRateAction(input: z.input<typeof exchange
 
     await prisma.exchangeRate.upsert({
       where: key,
-      create: { from: "USD", to: "GHS", date, rate: parsed.data.rate },
-      update: { rate: parsed.data.rate, fetchedAt: new Date() },
+      create: { from: "USD", to: "GHS", date, rate: parsed.data.rate, source: ExchangeRateSource.MANUAL },
+      update: { rate: parsed.data.rate, source: ExchangeRateSource.MANUAL, fetchedAt: new Date() },
     })
 
     return { success: true }

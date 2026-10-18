@@ -1,6 +1,7 @@
 import "server-only"
 
 import { prisma } from "@workspace/db"
+import type { ExchangeRateSource } from "@workspace/db/enums"
 import { formatDate } from "@workspace/utils/date"
 
 // Orders refuse a rate older than this, so prices never go out at a rate nobody has checked in days
@@ -12,6 +13,8 @@ export interface ExchangeRateInfo {
   rate: string
   // The day it applies to (yyyy-MM-dd)
   date: string
+  // Fetched daily, or set by hand in Settings
+  source: ExchangeRateSource
   isStale: boolean
 }
 
@@ -20,12 +23,12 @@ export function getRateDate(now = new Date()) {
   return formatDate(now, "yyyy-MM-dd")
 }
 
-// The most recent USD→GHS rate. Until a daily fetch job exists, a superAdmin sets it in Settings.
+// The most recent USD→GHS rate: fetched daily (lib/exchange-rate-fetch.ts), or set by a superAdmin in Settings
 export async function getLatestExchangeRate(): Promise<ExchangeRateInfo | null> {
   const latest = await prisma.exchangeRate.findFirst({
     where: { from: "USD", to: "GHS" },
     orderBy: { date: "desc" },
-    select: { id: true, rate: true, date: true },
+    select: { id: true, rate: true, date: true, source: true },
   })
   if (!latest) return null
 
@@ -34,5 +37,5 @@ export async function getLatestExchangeRate(): Promise<ExchangeRateInfo | null> 
   const oldestUsable = new Date(`${getRateDate()}T00:00:00Z`)
   oldestUsable.setUTCDate(oldestUsable.getUTCDate() - EXCHANGE_RATE_MAX_AGE_DAYS)
 
-  return { id: latest.id, rate: latest.rate.toString(), date, isStale: latest.date < oldestUsable }
+  return { id: latest.id, rate: latest.rate.toString(), date, source: latest.source, isStale: latest.date < oldestUsable }
 }

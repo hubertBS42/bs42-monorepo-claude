@@ -16,7 +16,8 @@
     "NODE_ENV",
     "AZURE_STORAGE_ACCOUNT_NAME",
     "AZURE_STORAGE_CONTAINER_NAME",
-    "CRON_SECRET"
+    "CRON_SECRET",
+    "OPEN_EXCHANGE_RATES_API_KEY"
   ],
   "tasks": {
     "build": {

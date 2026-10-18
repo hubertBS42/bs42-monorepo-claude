@@ -139,14 +139,21 @@ model User {
   @@map("user")
 }
 
+enum ExchangeRateSource {
+  MANUAL
+  OPEN_EXCHANGE_RATES
+}
+
 model ExchangeRate {
-  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id        String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   from      String // "USD"
   to        String // "GHS"
   // Units of `to` per 1 `from`: for USD→GHS, 15.5 means $1 = GH₵15.50
-  rate      Decimal  @db.Decimal(12, 6)
-  date      DateTime @db.Date // the date this rate applies to
-  fetchedAt DateTime @default(now())
+  rate      Decimal            @db.Decimal(12, 6)
+  date      DateTime           @db.Date // the date this rate applies to
+  // Where it came from: the daily fetch, or a superAdmin in Settings (which overrides a fetched one)
+  source    ExchangeRateSource @default(MANUAL)
+  fetchedAt DateTime           @default(now())
   orders    Order[]
 
   // One rate per currency pair per day. It also serves lookups by pair, so no separate [from, to] index is needed.
