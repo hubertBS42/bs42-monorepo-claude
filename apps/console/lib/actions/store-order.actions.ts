@@ -9,6 +9,7 @@ import { Prisma } from "@workspace/db/client"
 import { ShippingMethod, Status } from "@workspace/db/enums"
 import { hasStorePermission, requireConsoleAccess } from "@/lib/auth-guard"
 import { getLatestExchangeRate, type ExchangeRateInfo } from "@/lib/data/exchange-rates.data"
+import { notifyNewOrder, notifyStockAlerts } from "@/lib/notifications"
 import { sendOrderEmail } from "@/lib/order-emails"
 import { priceOrder, type PricedOrder } from "@/lib/order-pricing"
 import { editPendingOrder, orderForUpdateSelect, recordOrderPayment, updateOrderStatus, type Failure } from "@/lib/order-updates"
@@ -222,7 +223,7 @@ export async function createStoreOrderAction(input: z.input<typeof createStoreOr
     if (!result.ok) return result.problem
 
     const isDelivery = data.shippingMethod === ShippingMethod.DELIVERY
-    const order = await prisma.$transaction(
+    const { stockAlerts, ...order } = await prisma.$transaction(
       (tx) =>
         createStoreOrder(tx, {
           storeId: data.storeId,
@@ -249,7 +250,11 @@ export async function createStoreOrderAction(input: z.input<typeof createStoreOr
     )
 
     // Only once the order is saved: after() also runs when an action fails
-    after(() => sendOrderEmail(order.id, "CREATED"))
+    after(async () => {
+      await sendOrderEmail(order.id, "CREATED")
+      await notifyNewOrder(order.id, "staff")
+      await notifyStockAlerts(stockAlerts)
+    })
 
     return { success: true, data: order }
   } catch (error) {

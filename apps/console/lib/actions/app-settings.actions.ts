@@ -46,6 +46,8 @@ export async function saveAppSettings(input: unknown): Promise<SaveAppSettingsRe
     consoleDescription: parsed.data.consoleDescription || null,
     logoUrl: parsed.data.logoUrl || null,
     faviconUrl: parsed.data.faviconUrl || null,
+    // Lowercased by the schema, so "A@x.com" and "a@x.com" are one address
+    notificationEmails: [...new Set(parsed.data.notificationEmails)],
   }
   const { logoUrl, faviconUrl } = data
 

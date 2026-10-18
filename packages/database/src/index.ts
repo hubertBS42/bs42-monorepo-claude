@@ -15,6 +15,12 @@ export const DEFAULT_APP_SETTINGS: AppSettingsData = {
   taxEnabled: false,
   taxRate: 0,
   taxShipping: false,
+  notificationEmails: [],
+  notifyStorefrontOrders: true,
+  notifyStaffOrders: false,
+  notifyLowStock: true,
+  notifyOutOfStock: true,
+  notifyRateFetchFailure: true,
 }
 
 export const resolveConsoleName = (s: AppSettingsData) => s.consoleName ?? s.storeName
@@ -33,6 +39,12 @@ export async function readAppSettings(): Promise<AppSettingsData> {
         taxEnabled: row.taxEnabled,
         taxRate: row.taxRate.toNumber(),
         taxShipping: row.taxShipping,
+        notificationEmails: row.notificationEmails,
+        notifyStorefrontOrders: row.notifyStorefrontOrders,
+        notifyStaffOrders: row.notifyStaffOrders,
+        notifyLowStock: row.notifyLowStock,
+        notifyOutOfStock: row.notifyOutOfStock,
+        notifyRateFetchFailure: row.notifyRateFetchFailure,
       }
     : DEFAULT_APP_SETTINGS
 }

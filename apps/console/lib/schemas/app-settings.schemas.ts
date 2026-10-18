@@ -12,6 +12,19 @@ export const appSettingsSchema = z
     // A percentage (15 = 15%), stored as a fraction. "" is an emptied number field.
     taxRatePercent: z.number().or(z.literal("")),
     taxShipping: z.boolean(),
+    // Reported on the field as a whole: the tags input shows the field's error, not each tag's
+    notificationEmails: z
+      .array(z.string().trim().toLowerCase())
+      .max(10, "Add up to 10 addresses.")
+      .superRefine((emails, ctx) => {
+        const invalid = emails.find((email) => !z.email().safeParse(email).success)
+        if (invalid) ctx.addIssue({ code: "custom", message: `"${invalid}" isn't a valid email address.` })
+      }),
+    notifyStorefrontOrders: z.boolean(),
+    notifyStaffOrders: z.boolean(),
+    notifyLowStock: z.boolean(),
+    notifyOutOfStock: z.boolean(),
+    notifyRateFetchFailure: z.boolean(),
     // The version the form was opened with (getAppSettingsVersion); not a field the user sees
     version: z.string(),
   })

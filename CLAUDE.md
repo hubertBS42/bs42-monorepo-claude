@@ -128,6 +128,12 @@ Migrations: Prisma doesn't model `CHECK` constraints or triggers, so they live i
   - Refunds (`OrderRefund`, superAdmins only, `lib/order-refunds.ts`): any amount up to what's left, which sets `PARTIALLY_REFUNDED`/`REFUNDED`; money only, stock comes back only on cancellation. "Cancel and refund" refunds the rest and cancels in one transaction, until the order has shipped. Both lock the order row and take the refunded total the page showed (`REFUNDS_CHANGED`).
   - Customer emails (`lib/order-emails.ts`) are scheduled with Next's `after()` once a create, status change or recorded payment has committed (created, confirmed, shipped, delivered, cancelled, payment received, refunded; processing and completed send none). They're skipped when the order has no `customerEmail` or the linked account has `getOrderEmails` off, and pickups get no shipped/delivered email.
 
+### Staff notifications
+Settings → Notifications holds a list of email addresses (`AppSettings.notificationEmails`, not necessarily console users) and a switch per event. `lib/notifications.ts` sends them with the `StaffAlertEmail` template; callers schedule them with `after()` once the change has committed, and they never throw.
+- New orders: `notifyNewOrder(orderId, "storefront" | "staff")`. `createStoreOrderAction` sends "staff"; the storefront's checkout should send "storefront".
+- Stock: `createStoreOrder` returns `stockAlerts` for the items a sale took to their low-stock threshold (crossing it, so no repeats while it stays low) or to 0, which `notifyStockAlerts` sends as one email. Stock edits by staff don't alert.
+- The exchange-rate cron route calls `notifyRateFetchFailed` when the fetch fails.
+
 ### Console app conventions
 - Routes are grouped: `(auth)` pages are public, `(root)` is the authenticated shell, and `(misc)` holds `no-stores` and `accept-invitation`. Route-specific components live in `_components/` next to the page.
 - Server actions live in `lib/actions/*.actions.ts` (`"use server"`), validate input with zod schemas from `lib/schemas/*.schemas.ts`, and return `ActionResponse` from `@workspace/contracts`. Data loaders live in `lib/data/`.

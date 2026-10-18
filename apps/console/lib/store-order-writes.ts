@@ -5,6 +5,7 @@ import { Prisma } from "@workspace/db/client"
 import { OrderStatus, PaymentStatus, ShippingMethod, Status } from "@workspace/db/enums"
 import { formatDate } from "@workspace/utils/date"
 import type { z } from "zod"
+import type { StockAlert } from "./notifications"
 import type { PricedOrder } from "./order-pricing"
 import type { orderItemInputSchema } from "./schemas/order.schemas"
 
@@ -32,9 +33,10 @@ export interface ResolvedLine {
   listingVariantId: string | null
   quantity: number
   unitPriceUsd: Prisma.Decimal
-  // What the stock check and reservation need
+  // What the stock check and reservation need. The threshold is the listing's: saving a listing copies it to its variants.
   stock: number
   trackInventory: boolean
+  lowStockThreshold: number
   // The snapshot kept on the order line
   productId: string
   productVariantId: string | null
@@ -59,6 +61,7 @@ export async function resolveOrderLines(client: Client, storeId: string, items: 
       sellPrice: true,
       stock: true,
       trackInventory: true,
+      lowStockThreshold: true,
       organization: { select: { name: true } },
       product: { select: { id: true, name: true, slug: true, sku: true, images: true, status: true, hasVariants: true } },
       storeListingVariants: {
@@ -114,6 +117,7 @@ export async function resolveOrderLines(client: Client, storeId: string, items: 
       unitPriceUsd,
       stock: row?.stock ?? listing.stock,
       trackInventory: row?.trackInventory ?? listing.trackInventory,
+      lowStockThreshold: listing.lowStockThreshold,
       productId: product.id,
       productVariantId: row?.variant.id ?? null,
       productName: product.name,
@@ -142,7 +146,10 @@ export interface NewStoreOrder {
 }
 
 // Writes the order in the caller's transaction. Throws OrderItemError when a line's stock ran out, which rolls it back.
+// Returns the items this sale took down to their low-stock threshold or to 0, for the stock notification.
 export async function createStoreOrder(tx: Tx, order: NewStoreOrder) {
+  const stockAlerts: StockAlert[] = []
+
   // Reserved now, so two orders can't sell the same last item. Only rows that track stock, as a cancellation restores.
   for (const line of order.lines) {
     if (!line.trackInventory) continue
@@ -151,6 +158,15 @@ export async function createStoreOrder(tx: Tx, order: NewStoreOrder) {
       ? await tx.storeListingVariant.updateMany({ ...reserve, where: { ...reserve.where, id: line.listingVariantId } })
       : await tx.storeListing.updateMany({ ...reserve, where: { ...reserve.where, id: line.listingId } })
     if (count === 0) throw new OrderItemError("INSUFFICIENT_STOCK", line.label)
+
+    // Read back inside the transaction, which now holds the row: an alert fires only on the sale that crosses the line
+    const after = line.listingVariantId
+      ? (await tx.storeListingVariant.findUniqueOrThrow({ where: { id: line.listingVariantId }, select: { stock: true } })).stock
+      : (await tx.storeListing.findUniqueOrThrow({ where: { id: line.listingId }, select: { stock: true } })).stock
+    const before = after + line.quantity
+    const alert = { storeName: line.storeName, label: line.label, stock: after, threshold: line.lowStockThreshold }
+    if (after === 0) stockAlerts.push({ kind: "out", ...alert })
+    else if (after <= line.lowStockThreshold && before > line.lowStockThreshold) stockAlerts.push({ kind: "low", ...alert })
   }
 
   // BS42-20261017-00042, numbered by a sequence (see its migration)
@@ -158,7 +174,7 @@ export async function createStoreOrder(tx: Tx, order: NewStoreOrder) {
   const reference = `BS42-${formatDate(new Date(), "yyyyMMdd")}-${String(nextval).padStart(5, "0")}`
 
   const { priced } = order
-  return tx.order.create({
+  const created = await tx.order.create({
     data: {
       reference,
       userId: order.customer.userId,
@@ -216,6 +232,7 @@ export async function createStoreOrder(tx: Tx, order: NewStoreOrder) {
     },
     select: { id: true, reference: true },
   })
+  return { ...created, stockAlerts }
 }
 
 export class StatusChangedError extends Error {}

@@ -64,7 +64,7 @@ enum DiscountType {
 }
 
 model AppSettings {
-  id                 String   @id @default("singleton")
+  id                 String  @id @default("singleton")
   storeName          String
   storeDescription   String?
   consoleName        String?
@@ -75,11 +75,23 @@ model AppSettings {
   // Shown prices exclude tax: it's added on top at checkout (see Order.taxGhs).
   // Each order copies it (Order.taxRate), so changing it never alters past orders.
   // When taxEnabled is off, orders are charged no tax and copy a taxRate of 0.
-  taxEnabled         Boolean  @default(false)
-  taxRate            Decimal  @default(0) @db.Decimal(5, 4)
+  taxEnabled         Boolean @default(false)
+  taxRate            Decimal @default(0) @db.Decimal(5, 4)
   // Whether the delivery fee is taxed too
-  taxShipping        Boolean  @default(false)
-  updatedAt          DateTime @updatedAt
+  taxShipping        Boolean @default(false)
+
+  // Staff notifications, emailed to these addresses (not necessarily console users), one switch per event
+  notificationEmails     String[] @default([])
+  // Orders customers place on the storefront, and orders staff create in a store's workspace
+  notifyStorefrontOrders Boolean  @default(true)
+  notifyStaffOrders      Boolean  @default(false)
+  // A sale taking a listing (or variant) to its low-stock threshold, or to 0
+  notifyLowStock         Boolean  @default(true)
+  notifyOutOfStock       Boolean  @default(true)
+  // The daily exchange-rate fetch failing (orders stop once the last rate is too old)
+  notifyRateFetchFailure Boolean  @default(true)
+
+  updatedAt DateTime @updatedAt
 
   @@map("app_settings")
 }

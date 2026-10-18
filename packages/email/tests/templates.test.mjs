@@ -12,6 +12,7 @@ import { OrderShipped } from "../dist/src/templates/order/order-shipped.js"
 import { PasswordUpdatedEmail } from "../dist/src/templates/password-updated-email.js"
 import { ResetPasswordEmail } from "../dist/src/templates/reset-password-email.js"
 import { SetPasswordEmail } from "../dist/src/templates/set-password-email.js"
+import { StaffAlertEmail } from "../dist/src/templates/staff-alert-email.js"
 
 const orderDetails = {
   customerName: "Alex Morgan",
@@ -68,6 +69,18 @@ const templates = [
     "123 Example Street",
   ],
   ["order delivered", OrderDelivered({ ...orderDetails }), "ORDER-123"],
+  [
+    "staff alert",
+    StaffAlertEmail({
+      preview: "New order",
+      heading: "New order",
+      intro: "A customer placed an order.",
+      details: [{ label: "Total", value: "GH₵41.33" }],
+      action: { label: "View order", url: "https://example.com/orders/1" },
+      appName: "BS42",
+    }),
+    "https://example.com/orders/1",
+  ],
   ["order payment received", OrderPaymentReceived({ ...orderDetails, amountGhs: 41.33, paymentMethod: "Mobile money" }), "41.33"],
   [
     "order cancelled",

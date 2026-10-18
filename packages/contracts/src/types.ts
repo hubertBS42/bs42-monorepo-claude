@@ -44,4 +44,11 @@ export type AppSettingsData = {
   taxEnabled: boolean
   taxRate: number
   taxShipping: boolean
+  // Staff notifications: who gets them, and which events send one
+  notificationEmails: string[]
+  notifyStorefrontOrders: boolean
+  notifyStaffOrders: boolean
+  notifyLowStock: boolean
+  notifyOutOfStock: boolean
+  notifyRateFetchFailure: boolean
 }

@@ -6,7 +6,7 @@ import { useState } from "react"
 import { SubmitHandler, useForm, useWatch } from "react-hook-form"
 import z from "zod"
 import type { AppSettingsData } from "@workspace/contracts"
-import { ImageField, NumberInputField, SwitchField, TextareaField, TextInputField } from "@workspace/forms"
+import { ImageField, NumberInputField, SwitchField, TagsField, TextareaField, TextInputField } from "@workspace/forms"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@workspace/ui/components/card"
 import { FieldGroup } from "@workspace/ui/components/field"
 import { toast } from "@workspace/ui/components/toast"
@@ -33,6 +33,12 @@ export default function SettingsForm({ settings, version }: { settings: AppSetti
     // Rounded, because a fraction times 100 can come out as 15.000000000000002
     taxRatePercent: Math.round(settings.taxRate * 10000) / 100,
     taxShipping: settings.taxShipping,
+    notificationEmails: settings.notificationEmails,
+    notifyStorefrontOrders: settings.notifyStorefrontOrders,
+    notifyStaffOrders: settings.notifyStaffOrders,
+    notifyLowStock: settings.notifyLowStock,
+    notifyOutOfStock: settings.notifyOutOfStock,
+    notifyRateFetchFailure: settings.notifyRateFetchFailure,
     version,
   }
 
@@ -101,7 +107,7 @@ export default function SettingsForm({ settings, version }: { settings: AppSetti
       <div className="grid gap-y-6">
         <ResourceFormHeader
           heading="Platform Settings"
-          description="Manage the names, descriptions, branding and tax of the storefront and the console."
+          description="Manage the names, descriptions, branding, tax and notifications of the storefront and the console."
           backTo="/"
           isPending={isPending}
           isDirty={form.formState.isDirty}
@@ -154,6 +160,59 @@ export default function SettingsForm({ settings, version }: { settings: AppSetti
                       description="Charge tax on the delivery fee too"
                       variant="card"
                       disabled={isPending || !taxEnabled}
+                    />
+                  </FieldGroup>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Notifications</CardTitle>
+                  <CardDescription>Emails to staff when something needs attention. Nothing is sent until at least one address is added.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <FieldGroup>
+                    <TagsField
+                      control={form.control}
+                      name="notificationEmails"
+                      label="Send to"
+                      description="Press Enter or a comma after each address. Up to 10."
+                      placeholder="orders@example.com"
+                      maxTags={10}
+                      disabled={isPending}
+                    />
+                    <SwitchField
+                      control={form.control}
+                      name="notifyStorefrontOrders"
+                      label="Storefront orders"
+                      description="When a customer places an order on the storefront"
+                      variant="card"
+                      disabled={isPending}
+                    />
+                    <SwitchField
+                      control={form.control}
+                      name="notifyStaffOrders"
+                      label="Orders created by staff"
+                      description="When staff create an order in a store's workspace"
+                      variant="card"
+                      disabled={isPending}
+                    />
+                    <SwitchField
+                      control={form.control}
+                      name="notifyLowStock"
+                      label="Low stock"
+                      description="When a sale takes an item down to its low-stock threshold"
+                      variant="card"
+                      disabled={isPending}
+                    />
+                    <SwitchField control={form.control} name="notifyOutOfStock" label="Out of stock" description="When a sale takes an item's stock to 0" variant="card" disabled={isPending} />
+                    <SwitchField
+                      control={form.control}
+                      name="notifyRateFetchFailure"
+                      label="Exchange rate fetch failed"
+                      description="When the daily rate couldn't be fetched, so today's needs setting by hand"
+                      variant="card"
+                      disabled={isPending}
                     />
                   </FieldGroup>
                 </CardContent>
