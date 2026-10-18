@@ -12,6 +12,7 @@ import { getPaginationError } from "@workspace/utils/pagination"
 import { z } from "zod"
 import { getStoreRole } from "@/lib/auth-guard"
 import { getCategoryPaths, getSubtreeIds } from "@/lib/data/products.data"
+import { stockStatesSql } from "@/lib/stock-states"
 
 export const MAX_LISTINGS_PAGE_SIZE = 100
 export const LISTING_SORT_FIELDS = ["name", "sellPrice", "status", "createdAt", "updatedAt"] as const
@@ -57,36 +58,9 @@ const visibleToCustomers: Prisma.StoreListingWhereInput = {
   OR: [{ product: { hasVariants: false } }, { storeListingVariants: { some: { status: Status.PUBLISHED, variant: { status: { not: Status.ARCHIVED } } } } }],
 }
 
-// The store's listings in a stock state, worked out as the table's stock badge does: from the variants on sale (or
-// the listing itself, without variants), against the listing's low-stock threshold. That compares across tables,
-// which Prisma's filters can't, so the ids come from SQL; a store's listings number in the hundreds.
+// The store's listings in a stock state, as the stock column's badges show it
 async function getListingIdsInStockState(storeId: string, state: ListingStockState) {
-  const rows = await prisma.$queryRaw<{ id: string }[]>`
-    WITH items AS (
-      SELECT l."id" AS "listingId", l."stock", l."lowStockThreshold"
-      FROM "store_listing" l JOIN "product" p ON p."id" = l."productId"
-      WHERE l."organizationId" = ${storeId}::uuid AND NOT p."hasVariants"
-      UNION ALL
-      SELECT l."id", v."stock", l."lowStockThreshold"
-      FROM "store_listing" l
-      JOIN "product" p ON p."id" = l."productId"
-      JOIN "store_listing_variant" v ON v."storeListingId" = l."id"
-      JOIN "product_variant" pv ON pv."id" = v."variantId"
-      WHERE l."organizationId" = ${storeId}::uuid AND p."hasVariants" AND v."status" = 'PUBLISHED' AND pv."status" <> 'ARCHIVED'
-    ),
-    states AS (
-      SELECT l."id",
-        CASE
-          WHEN NOT l."trackInventory" THEN 'untracked'
-          WHEN bool_or(i."stock" = 0) THEN 'out'
-          WHEN bool_or(i."stock" > 0 AND i."stock" <= i."lowStockThreshold") THEN 'low'
-          ELSE 'in'
-        END AS "state"
-      FROM "store_listing" l LEFT JOIN items i ON i."listingId" = l."id"
-      WHERE l."organizationId" = ${storeId}::uuid
-      GROUP BY l."id", l."trackInventory"
-    )
-    SELECT "id" FROM states WHERE "state" = ${state}`
+  const rows = await prisma.$queryRaw<{ id: string }[]>`${stockStatesSql(storeId)} SELECT "id" FROM states WHERE "state" = ${state}`
   return rows.map((row) => row.id)
 }
 
