@@ -5,7 +5,7 @@ import { formatDate } from "@workspace/utils/date"
 import { formatCurrency } from "@workspace/utils/currency"
 import { capitalizeWord } from "@workspace/utils/text"
 import { Badge } from "@workspace/ui/components/badge"
-import { ColumnHeader } from "@workspace/tables"
+import { ColumnHeader, RowLink } from "@workspace/tables"
 import type { Status } from "@workspace/db/enums"
 import type { ListingListItem } from "@/types"
 import { Checkbox } from "@workspace/ui/components/checkbox"
@@ -17,6 +17,8 @@ const statusBadgeVariants: Record<Status, "outline" | "success" | "secondary"> =
   PUBLISHED: "success",
   ARCHIVED: "secondary",
 }
+
+export const getListingHref = (listing: ListingListItem) => `/store/listings/${listing.id}/edit`
 
 export const columns: ColumnDef<ListingListItem, unknown>[] = [
   {
@@ -35,13 +37,18 @@ export const columns: ColumnDef<ListingListItem, unknown>[] = [
   {
     id: "name",
     header: () => <ColumnHeader title="Product" sortKey="name" />,
+    // Only the name is the row's link, as on the products table, so the brand line isn't part of it
+    meta: { rendersRowLink: true },
     cell: ({ row }) => {
       const { product } = row.original
       return (
         <div className="flex items-center gap-x-3">
           <div className="relative size-10 shrink-0 overflow-hidden rounded bg-muted">{product.image && <img alt="" src={product.image} loading="lazy" className="size-full object-cover" />}</div>
           <div className="grid gap-y-0.5">
-            <span>{product.name}</span>
+            {/* w-fit: a grid stretches links to its width, and clicks beside the text should open the row */}
+            <RowLink href={getListingHref(row.original)} className="w-fit">
+              {product.name}
+            </RowLink>
             <span className="text-[11px] text-muted-foreground">{product.brandName}</span>
           </div>
         </div>

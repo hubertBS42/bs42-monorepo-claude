@@ -2,7 +2,7 @@
 import { DataTable } from "@workspace/tables"
 import type { ListingsData } from "@/types"
 import type { ProductFilterOptions } from "@/lib/data/products.data"
-import { columns } from "./columns"
+import { columns, getListingHref } from "./columns"
 import { getListingFilters } from "./filters"
 
 interface ListingsTableProps {
@@ -16,7 +16,7 @@ const ListingsTable = ({ data, filterOptions }: ListingsTableProps) => {
       columns={columns}
       filters={getListingFilters(filterOptions)}
       data={data.data}
-      getRowHref={(listing) => `/store/listings/${listing.id}/edit`}
+      getRowHref={getListingHref}
       pagination={{
         total: data.total,
         page: data.page,
