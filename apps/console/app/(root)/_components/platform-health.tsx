@@ -65,14 +65,14 @@ export default function PlatformHealth({ rate, taxEnabled, mailerConfigured, not
           )}
         </CardDescription>
       </CardHeader>
-      <CardContent className="grid gap-3">
+      <CardContent className="grid gap-4 @xl/main:grid-cols-2 @5xl/main:grid-cols-4">
         {checks.map((check) => (
-          <div key={check.label} className="flex items-start justify-between gap-3">
-            <div className="grid">
+          <div key={check.label} className="grid content-start gap-1">
+            <div className="flex items-center justify-between gap-3">
               <span className="text-sm font-medium">{check.label}</span>
-              <span className="text-xs text-muted-foreground">{check.detail}</span>
+              <Badge variant={STATE_BADGES[check.state].variant}>{STATE_BADGES[check.state].label}</Badge>
             </div>
-            <Badge variant={STATE_BADGES[check.state].variant}>{STATE_BADGES[check.state].label}</Badge>
+            <span className="text-xs text-muted-foreground">{check.detail}</span>
           </div>
         ))}
       </CardContent>

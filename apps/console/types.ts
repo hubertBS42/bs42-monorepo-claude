@@ -476,8 +476,9 @@ export interface OrderPreview {
   rateDate: string
 }
 
-// The dashboard's sales period: today, or the last 7 or 30 days including today, in the app's time zone
-export const DASHBOARD_PERIODS = ["today", "7d", "30d"] as const
+// The dashboard's period: the last 7, 30 or 90 days including today, in the app's time zone. Each is compared with
+// the same number of days before it.
+export const DASHBOARD_PERIODS = ["7d", "30d", "90d"] as const
 export type DashboardPeriod = (typeof DASHBOARD_PERIODS)[number]
 
 // Money is counted when it moves: payments by the day they were recorded, refunds by the day they were given
@@ -490,6 +491,21 @@ export interface DashboardSales {
   refundedGhs: string
   refunds: number
   returns: number
+}
+
+// The change from the previous period, as a percentage rounded to one decimal; null when the previous period had none
+export interface DashboardChanges {
+  netSales: number | null
+  paidOrders: number | null
+  averageOrder: number | null
+  refunded: number | null
+}
+
+export interface DashboardSalesTrend {
+  current: DashboardSales
+  changes: DashboardChanges
+  // One per day of the current period, oldest first, for the chart
+  days: { date: string; netSalesGhs: string }[]
 }
 
 // Orders waiting on someone, each with the list filter that shows them
@@ -506,7 +522,7 @@ export interface StoreDashboard {
   // Listings at or under their low-stock threshold, and out of stock
   lowStock: number
   outOfStock: number
-  sales: DashboardSales
+  sales: DashboardSalesTrend
 }
 
 export interface PlatformDashboard {
@@ -516,5 +532,5 @@ export interface PlatformDashboard {
   }
   // Stores with listings low on or out of stock, most out of stock first
   stockAlerts: { storeId: string; storeName: string; low: number; out: number }[]
-  sales: DashboardSales
+  sales: DashboardSalesTrend
 }

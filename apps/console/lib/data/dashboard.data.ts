@@ -8,7 +8,7 @@ import { headers } from "next/headers"
 import { prisma } from "@workspace/db"
 import type { DataResponse } from "@workspace/contracts"
 import { hasStorePermission } from "@/lib/auth-guard"
-import { getPlatformStats, getStoreStats, periodStart } from "@/lib/dashboard-stats"
+import { getPlatformStats, getStoreStats } from "@/lib/dashboard-stats"
 
 export const getStoreDashboard = async (storeId: string, period: DashboardPeriod): Promise<DataResponse<StoreDashboard>> => {
   try {
@@ -16,7 +16,7 @@ export const getStoreDashboard = async (storeId: string, period: DashboardPeriod
     if (!session) return { success: false, error: "Unauthorized" }
     if (!(await hasStorePermission(session.user.id, storeId, { order: ["read"] }))) return { success: false, error: "Forbidden" }
 
-    return { success: true, data: await getStoreStats(prisma, storeId, periodStart(period)) }
+    return { success: true, data: await getStoreStats(prisma, storeId, period) }
   } catch (error) {
     return { success: false, error: formatError(error) }
   }
@@ -28,7 +28,7 @@ export const getPlatformDashboard = async (period: DashboardPeriod): Promise<Dat
     if (!session) return { success: false, error: "Unauthorized" }
     if (!hasSystemPermission(session.user.role, { order: ["read"] })) return { success: false, error: "Forbidden" }
 
-    return { success: true, data: await getPlatformStats(prisma, periodStart(period)) }
+    return { success: true, data: await getPlatformStats(prisma, period) }
   } catch (error) {
     return { success: false, error: formatError(error) }
   }

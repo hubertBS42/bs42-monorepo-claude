@@ -1,20 +1,26 @@
 import { getStoreDashboard } from "@/lib/data/dashboard.data"
-import { getStoreOrders } from "@/lib/data/store-orders.data"
+import { getRecentStoreOrderDetails } from "@/lib/data/store-orders.data"
 import type { DashboardPeriod } from "@/types"
 import AttentionCard from "./attention-card"
+import { toOrderSummary } from "./order-summary"
 import RecentOrders from "./recent-orders"
-import SalesCards from "./sales-cards"
+import SalesChart from "./sales-chart"
+import SectionCards from "./section-cards"
+
+// The orders the table lists and the card browses
+const RECENT_ORDERS = 10
 
 export default async function StoreDashboard({ storeId, period }: { storeId: string; period: DashboardPeriod }) {
-  const [dashboard, recent] = await Promise.all([getStoreDashboard(storeId, period), getStoreOrders(storeId, { pageSize: 5 })])
+  const [dashboard, recent] = await Promise.all([getStoreDashboard(storeId, period), getRecentStoreOrderDetails(storeId, RECENT_ORDERS)])
   if (!dashboard.success) throw new Error(dashboard.error)
   if (!recent.success) throw new Error(recent.error)
   const { orders, lowStock, outOfStock, sales } = dashboard.data
 
   return (
-    <div className="grid gap-4">
-      <SalesCards sales={sales} />
-      <div className="grid items-start gap-4 @4xl/main:grid-cols-[2fr_3fr]">
+    <div className="flex flex-col gap-4 md:gap-6">
+      <SectionCards sales={sales} period={period} />
+      <div className="grid gap-4 md:gap-6 @5xl/main:grid-cols-[2fr_1fr]">
+        <SalesChart days={sales.days} period={period} />
         <AttentionCard
           items={[
             { label: "Waiting to be confirmed", hint: "Pending orders", count: orders.pending, href: "/store/orders?status=PENDING" },
@@ -25,12 +31,18 @@ export default async function StoreDashboard({ storeId, period }: { storeId: str
             { label: "Low on stock", hint: "At or under their low-stock threshold", count: lowStock, href: "/store/listings?stock=low" },
           ]}
         />
-        <RecentOrders
-          listHref="/store/orders"
-          description="The latest orders with this store's items."
-          orders={recent.data.data.map((order) => ({ ...order, note: order.isMultiStore ? "with other stores' items" : undefined }))}
-        />
       </div>
+      <RecentOrders
+        listHref="/store/orders"
+        description="The latest orders with this store's items."
+        orders={recent.data.map((order) =>
+          toOrderSummary(order, {
+            href: `/store/orders/${order.id}/details`,
+            totalGhs: order.totals?.totalGhs ?? order.storeTotalGhs,
+            note: order.isMultiStore ? "With other stores' items" : undefined,
+          })
+        )}
+      />
     </div>
   )
 }

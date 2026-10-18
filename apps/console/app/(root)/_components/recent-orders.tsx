@@ -1,64 +1,84 @@
+"use client"
+
+import { useState } from "react"
 import Link from "next/link"
-import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@workspace/ui/components/card"
 import { buttonVariants } from "@workspace/ui/components/button"
-import { formatDate } from "@workspace/utils/date"
-import type { OrderStatus, PaymentStatus } from "@workspace/db/enums"
-import { OrderStatusBadge, PaymentStatusBadge } from "@/components/order-badges"
-import { ghs } from "@/components/orders/order-details"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@workspace/ui/components/table"
+import { formatCurrency } from "@workspace/utils/currency"
+import { OrderStatusBadge } from "@/components/order-badges"
+import type { OrderSummary } from "./order-summary"
+import OrderSummaryCard from "./order-summary-card"
 
-export interface RecentOrder {
-  id: string
-  reference: string
-  customerName: string
-  status: OrderStatus
-  paymentStatus: PaymentStatus
-  totalGhs: string
-  createdAt: Date
-  // The stores' names on the platform's dashboard, or a note on the store's
-  note?: string
-}
+// The latest orders in a table, with the selected one summed up in a card beside it. Clicking a row, or the card's
+// previous and next buttons, picks the order the card shows. The table only has what picking one needs; the card has
+// the rest (payment, date, items, customer details).
+export default function RecentOrders({ orders, listHref, description }: { orders: OrderSummary[]; listHref: string; description: string }) {
+  const [selected, setSelected] = useState(0)
+  const order = orders[selected]
 
-export default function RecentOrders({ orders, listHref, description }: { orders: RecentOrder[]; listHref: string; description: string }) {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Recent orders</CardTitle>
-        <CardDescription>{description}</CardDescription>
-        <CardAction>
+    <div className="grid items-start gap-4 md:gap-6 @5xl/main:grid-cols-[3fr_2fr]">
+      <section className="grid gap-3">
+        <div className="flex items-end justify-between gap-4">
+          <div className="grid">
+            <h2 className="font-semibold">Recent orders</h2>
+            <p className="text-sm text-muted-foreground">{description}</p>
+          </div>
           <Link href={listHref} className={buttonVariants({ variant: "outline", size: "sm" })}>
             View all
           </Link>
-        </CardAction>
-      </CardHeader>
-      <CardContent>
-        {orders.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No orders yet.</p>
-        ) : (
-          <ul className="grid divide-y">
-            {orders.map((order) => (
-              <li key={order.id}>
-                <Link
-                  href={`${listHref}/${order.id}/details`}
-                  className="-mx-2 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-md px-2 py-2.5 hover:bg-accent/50 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
-                >
-                  <div className="grid min-w-0 flex-1">
-                    <span className="truncate text-sm font-medium">{order.customerName}</span>
-                    <span className="truncate text-xs text-muted-foreground">
-                      <span className="font-mono">{order.reference}</span> · {formatDate(order.createdAt, "LLL dd, HH:mm")}
-                      {order.note && ` · ${order.note}`}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <OrderStatusBadge status={order.status} />
-                    <PaymentStatusBadge status={order.paymentStatus} />
-                    <span className="w-24 text-right text-sm tabular-nums">{ghs(order.totalGhs)}</span>
-                  </div>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        )}
-      </CardContent>
-    </Card>
+        </div>
+        <div className="overflow-hidden rounded-lg border">
+          <Table>
+            <TableHeader className="bg-muted">
+              <TableRow>
+                <TableHead>Reference</TableHead>
+                <TableHead>Customer</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Total</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {orders.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
+                    No orders yet.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                orders.map((row, index) => (
+                  <TableRow key={row.id} data-state={index === selected ? "selected" : undefined} onClick={() => setSelected(index)} className="cursor-pointer">
+                    <TableCell>
+                      <Link href={row.href} className="font-mono underline-offset-4 hover:underline">
+                        {row.reference}
+                      </Link>
+                    </TableCell>
+                    <TableCell>
+                      <div className="grid">
+                        <span>{row.customer.name}</span>
+                        {row.note && <span className="text-xs text-muted-foreground">{row.note}</span>}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <OrderStatusBadge status={row.status} />
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums">{formatCurrency(row.totalGhs, "GHS", "en-GH")}</TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      </section>
+      {order && (
+        <OrderSummaryCard
+          order={order}
+          position={selected}
+          count={orders.length}
+          onPrevious={() => setSelected((index) => Math.max(index - 1, 0))}
+          onNext={() => setSelected((index) => Math.min(index + 1, orders.length - 1))}
+        />
+      )}
+    </div>
   )
 }
