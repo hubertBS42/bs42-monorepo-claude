@@ -17,7 +17,12 @@ export default async function SettingsPage() {
   return (
     <div className="grid gap-6">
       <SettingsForm settings={settings} version={version} />
-      <ExchangeRateCard latest={latestRate} maxAgeDays={EXCHANGE_RATE_MAX_AGE_DAYS} />
+      {/* On the settings form's grid, as wide as its left column. Outside the form: the rate saves on its own, per day */}
+      <div className="grid items-start gap-4 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          <ExchangeRateCard latest={latestRate} maxAgeDays={EXCHANGE_RATE_MAX_AGE_DAYS} />
+        </div>
+      </div>
     </div>
   )
 }

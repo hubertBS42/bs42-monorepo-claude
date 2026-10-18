@@ -47,9 +47,7 @@ export default function ExchangeRateCard({ latest, maxAgeDays }: { latest: Excha
     <Card>
       <CardHeader>
         <CardTitle>Exchange Rate</CardTitle>
-        <CardDescription>
-          {`Catalogue prices are in USD and customers pay in GHS at the latest rate. Orders can't be priced with a rate more than ${maxAgeDays} days old, so set it each day until rates are fetched automatically.`}
-        </CardDescription>
+        <CardDescription>{`Customers pay in GHS at this rate. Set it daily: orders refuse one over ${maxAgeDays} days old.`}</CardDescription>
       </CardHeader>
       <CardContent>
         {/* Rendered next to the settings form, not inside it; stopPropagation keeps a submit from reaching any form around it */}
