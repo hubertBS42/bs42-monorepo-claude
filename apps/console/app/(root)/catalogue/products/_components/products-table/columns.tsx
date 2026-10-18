@@ -9,6 +9,7 @@ import { capitalizeWord } from "@workspace/utils/text"
 import type { Status } from "@workspace/db/enums"
 import type { ProductListItem } from "@/types"
 import { formatCurrency } from "@workspace/utils/currency"
+import CategoryPath from "@/components/category-path"
 
 // Archived is a normal end state, not an error, so it's muted rather than red
 const statusBadgeVariants: Record<Status, "outline" | "success" | "secondary"> = {
@@ -81,16 +82,7 @@ export const columns: ColumnDef<ProductListItem, unknown>[] = [
   {
     accessorKey: "categoryPath",
     header: () => <ColumnHeader title="Category" />,
-    cell: ({ row }) => {
-      const segments = row.original.categoryPath.split(" / ")
-      const leaf = segments.pop()
-      return (
-        <span className="text-sm">
-          {segments.length > 0 && <span className="text-muted-foreground">{segments.join(" / ")} / </span>}
-          {leaf}
-        </span>
-      )
-    },
+    cell: ({ row }) => <CategoryPath path={row.original.categoryPath} />,
   },
   {
     accessorKey: "variantCount",

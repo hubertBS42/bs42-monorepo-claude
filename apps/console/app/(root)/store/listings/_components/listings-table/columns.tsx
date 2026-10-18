@@ -9,6 +9,7 @@ import { ColumnHeader } from "@workspace/tables"
 import type { Status } from "@workspace/db/enums"
 import type { ListingListItem } from "@/types"
 import { Checkbox } from "@workspace/ui/components/checkbox"
+import CategoryPath from "@/components/category-path"
 
 // Archived is a normal end state, not an error, so it's muted rather than red (as on the products table)
 const statusBadgeVariants: Record<Status, "outline" | "success" | "secondary"> = {
@@ -92,7 +93,7 @@ export const columns: ColumnDef<ListingListItem, unknown>[] = [
   {
     id: "category",
     header: () => <ColumnHeader title="Category" />,
-    cell: ({ row }) => <span className="text-muted-foreground">{row.original.product.categoryPath}</span>,
+    cell: ({ row }) => <CategoryPath path={row.original.product.categoryPath} />,
   },
   {
     accessorKey: "status",
