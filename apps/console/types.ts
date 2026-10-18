@@ -475,3 +475,46 @@ export interface OrderPreview {
   exchangeRate: string
   rateDate: string
 }
+
+// The dashboard's sales period: today, or the last 7 or 30 days including today, in the app's time zone
+export const DASHBOARD_PERIODS = ["today", "7d", "30d"] as const
+export type DashboardPeriod = (typeof DASHBOARD_PERIODS)[number]
+
+// Money is counted when it moves: payments by the day they were recorded, refunds by the day they were given
+export interface DashboardSales {
+  // Payments recorded in the period, less the refunds given in it
+  netSalesGhs: string
+  paidOrders: number
+  // The paid orders' average, before refunds; null without any
+  averageOrderGhs: string | null
+  refundedGhs: string
+  refunds: number
+  returns: number
+}
+
+// Orders waiting on someone, each with the list filter that shows them
+export interface DashboardOrderCounts {
+  pending: number
+  confirmed: number
+  processing: number
+  // Delivered with no payment recorded yet
+  unpaidDelivered: number
+}
+
+export interface StoreDashboard {
+  orders: DashboardOrderCounts
+  // Listings at or under their low-stock threshold, and out of stock
+  lowStock: number
+  outOfStock: number
+  sales: DashboardSales
+}
+
+export interface PlatformDashboard {
+  orders: DashboardOrderCounts & {
+    // Pending orders with more than one store's items, which only the platform can confirm
+    multiStorePending: number
+  }
+  // Stores with listings low on or out of stock, most out of stock first
+  stockAlerts: { storeId: string; storeName: string; low: number; out: number }[]
+  sales: DashboardSales
+}
