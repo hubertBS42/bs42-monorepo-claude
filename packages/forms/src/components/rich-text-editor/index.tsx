@@ -95,7 +95,10 @@ const RichTextEditor = ({
       return
     }
 
-    editor.commands.setContent(nextContent)
+    // The value came from outside, so it isn't an edit. TipTap 3 emits an update by default, which would call
+    // onChange and mark the form dirty: the editor's JSON adds default attributes (textAlign: null) that a
+    // stored document can leave out, so the comparison above fails even when nothing changed.
+    editor.commands.setContent(nextContent, { emitUpdate: false })
   }, [value, editor])
 
   // Keep the editable state in sync when `disabled` changes after mount.
