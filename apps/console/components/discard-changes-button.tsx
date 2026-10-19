@@ -13,7 +13,7 @@ import {
   AlertDialogTrigger,
 } from "@workspace/ui/components/alert-dialog"
 import { Button } from "@workspace/ui/components/button"
-import { useState } from "react"
+import { useState, useTransition } from "react"
 import { Spinner } from "@workspace/ui/components/spinner"
 
 const DiscardChangesButton = ({
@@ -26,6 +26,10 @@ const DiscardChangesButton = ({
   handleDiscard: () => Promise<void> | void
 }) => {
   const [isOpen, setIsOpen] = useState(false)
+  // Discarding can remove uploads before it leaves, and router.push in a transition stays pending until the next page
+  // has rendered, so the spinner shows for all of it, not only while the form is saving
+  const [isDiscarding, startTransition] = useTransition()
+  const isBusy = isLoading || isDiscarding
   return (
     <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
       <AlertDialogTrigger
@@ -49,15 +53,17 @@ const DiscardChangesButton = ({
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={isLoading}>Cancel</AlertDialogCancel>
+          <AlertDialogCancel disabled={isBusy}>Cancel</AlertDialogCancel>
           <AlertDialogAction
             onClick={(e) => {
               e.preventDefault()
-              handleDiscard()
+              startTransition(async () => {
+                await handleDiscard()
+              })
             }}
-            disabled={isLoading}
+            disabled={isBusy}
           >
-            {isLoading ? <Spinner /> : "Continue"}
+            {isBusy ? <Spinner /> : "Continue"}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
