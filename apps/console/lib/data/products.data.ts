@@ -167,7 +167,7 @@ export const getProductForEdit = async (productId: string): Promise<DataResponse
     // Product.id is a UUID column, so any other value would make Postgres throw instead of finding nothing
     if (!productIdSchema.safeParse(productId).success) return PRODUCT_NOT_FOUND
 
-    const [product, order] = await Promise.all([
+    const [product, order, purchased] = await Promise.all([
       prisma.product.findUnique({
         where: { id: productId },
         include: {
@@ -190,7 +190,7 @@ export const getProductForEdit = async (productId: string): Promise<DataResponse
               position: true,
               variantValues: { select: { optionValue: { select: { value: true, option: { select: { name: true } } } } } },
               _count: { select: { orderItems: true, storeListingVariants: true } },
-              storeListingVariants: { select: { _count: { select: { orderItems: true } } } },
+              storeListingVariants: { select: { _count: { select: { orderItems: true, purchaseOrderItems: true } } } },
             },
             orderBy: { position: "asc" },
           },
@@ -199,6 +199,8 @@ export const getProductForEdit = async (productId: string): Promise<DataResponse
       }),
       // An order line can point at the product, one of its variants or a store's listing of it
       prisma.orderItem.findFirst({ where: { OR: [{ productId }, { productVariant: { productId } }, { storeListing: { productId } }] }, select: { id: true } }),
+      // A purchase order line restricts deleting the product just the same
+      prisma.purchaseOrderItem.findFirst({ where: { storeListing: { productId } }, select: { id: true } }),
     ])
 
     if (!product) return PRODUCT_NOT_FOUND
@@ -247,13 +249,14 @@ export const getProductForEdit = async (productId: string): Promise<DataResponse
           product.variants.map((variant) => [
             variant.id,
             {
-              ordered: variant._count.orderItems > 0 || variant.storeListingVariants.some((listing) => listing._count.orderItems > 0),
+              // Bought in on a purchase order counts too: its lines restrict deleting the variant the same way
+              ordered: variant._count.orderItems > 0 || variant.storeListingVariants.some((listing) => listing._count.orderItems > 0 || listing._count.purchaseOrderItems > 0),
               storeCount: variant._count.storeListingVariants,
             },
           ])
         ),
         storeCount: product._count.storeListings,
-        hasOrders: !!order,
+        hasOrders: !!order || !!purchased,
       },
     }
   } catch (error) {

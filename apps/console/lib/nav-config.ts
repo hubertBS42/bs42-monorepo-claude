@@ -35,6 +35,8 @@ export const navConfig: NavItem[] = [
     items: [
       { title: "Listings", url: "/store/listings" },
       { title: "Orders", url: "/store/orders" },
+      { title: "Purchase Orders", url: "/store/purchase-orders" },
+      { title: "Suppliers", url: "/store/suppliers" },
       { title: "Members", url: "/store/members" },
       { title: "Invitations", url: "/store/invitations" },
     ],

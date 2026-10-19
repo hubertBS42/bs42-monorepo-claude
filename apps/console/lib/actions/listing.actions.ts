@@ -28,7 +28,7 @@ const CONFLICT: ActionResponse = {
   error: "Someone else changed this listing while you were editing. Refresh the page to see their changes, then make yours again.",
   code: "CONFLICT",
 }
-const HAS_ORDERS: ActionResponse = { success: false, error: "This listing has been ordered, so it can't be deleted. Archive it instead.", code: "HAS_ORDERS" }
+const HAS_ORDERS: ActionResponse = { success: false, error: "This listing has been ordered or bought in, so it can't be deleted. Archive it instead.", code: "HAS_ORDERS" }
 
 const deleteListingSchema = z.object({ id: z.uuid("Invalid listing ID"), storeId: z.uuid("Invalid store ID") })
 
@@ -147,9 +147,12 @@ export async function deleteListingAction(input: z.input<typeof deleteListingSch
     const listing = await prisma.storeListing.findFirst({ where: { id, organizationId: storeId }, select: { id: true } })
     if (!listing) return NOT_FOUND
 
-    // Order lines restrict the delete, so an ordered listing can only be archived
-    const ordered = await prisma.orderItem.findFirst({ where: { storeListingId: id }, select: { id: true } })
-    if (ordered) return HAS_ORDERS
+    // Order and purchase order lines restrict the delete, so a listing that has been ordered or bought in can only be archived
+    const [ordered, purchased] = await Promise.all([
+      prisma.orderItem.findFirst({ where: { storeListingId: id }, select: { id: true } }),
+      prisma.purchaseOrderItem.findFirst({ where: { storeListingId: id }, select: { id: true } }),
+    ])
+    if (ordered || purchased) return HAS_ORDERS
 
     // Its variants, cart items and reviews cascade
     await prisma.storeListing.delete({ where: { id } })

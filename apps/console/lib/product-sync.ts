@@ -32,7 +32,7 @@ export async function loadProductForUpdate(productId: string) {
           position: true,
           variantValues: { select: { optionValueId: true } },
           _count: { select: { orderItems: true } },
-          storeListingVariants: { select: { _count: { select: { orderItems: true } } } },
+          storeListingVariants: { select: { _count: { select: { orderItems: true, purchaseOrderItems: true } } } },
         },
       },
     },
@@ -44,8 +44,8 @@ type SavedProduct = NonNullable<Awaited<ReturnType<typeof loadProductForUpdate>>
 /**
  * Updates a product and its options, values, variants and documents in place, inside the caller's transaction.
  * Rows are matched by id so store listings keep their prices and stock: a renamed value stays the same row. A
- * removed variant that has been ordered (directly or through a store's listing) is archived, since order lines
- * restrict deleting it; any other is deleted, along with its store listing variants. Returns the files nothing
+ * removed variant that has been ordered (directly or through a store's listing) or bought in on a store's purchase
+ * order is archived, since order and purchase order lines restrict deleting it; any other is deleted, along with its store listing variants. Returns the files nothing
  * refers to any more, for the caller to remove once the transaction has committed.
  */
 export async function syncProduct(tx: Tx, saved: SavedProduct, data: ProductUpdate & { description: string | null }): Promise<string[]> {
@@ -57,7 +57,8 @@ export async function syncProduct(tx: Tx, saved: SavedProduct, data: ProductUpda
   const savedVariantIds = new Set(saved.variants.map((variant) => variant.id))
   const keptVariantIds = new Set(nextVariants.flatMap((variant) => (variant.id && savedVariantIds.has(variant.id) ? [variant.id] : [])))
   const removed = saved.variants.filter((variant) => !keptVariantIds.has(variant.id))
-  const isOrdered = (variant: SavedProduct["variants"][number]) => variant._count.orderItems > 0 || variant.storeListingVariants.some((listing) => listing._count.orderItems > 0)
+  const isOrdered = (variant: SavedProduct["variants"][number]) =>
+    variant._count.orderItems > 0 || variant.storeListingVariants.some((listing) => listing._count.orderItems > 0 || listing._count.purchaseOrderItems > 0)
   const toArchive = removed.filter(isOrdered).map((variant) => variant.id)
   const toDelete = removed.filter((variant) => !isOrdered(variant)).map((variant) => variant.id)
   if (toArchive.length) await tx.productVariant.updateMany({ where: { id: { in: toArchive } }, data: { status: Status.ARCHIVED } })

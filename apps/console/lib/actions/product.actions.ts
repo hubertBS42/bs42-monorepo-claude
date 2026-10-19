@@ -24,7 +24,7 @@ const CATEGORY_NOT_LEAF: ActionResponse = { success: false, error: "Choose a cat
 const SKU_EXISTS: ActionResponse = { success: false, error: "A product or variant already uses this SKU.", code: "SKU_EXISTS" }
 const BARCODE_EXISTS: ActionResponse = { success: false, error: "A product or variant already uses this barcode.", code: "BARCODE_EXISTS" }
 const NOT_FOUND: ActionResponse = { success: false, error: "Product not found.", code: "NOT_FOUND" }
-const HAS_ORDERS: ActionResponse = { success: false, error: "This product has been ordered, so it can't be deleted. Archive it instead.", code: "HAS_ORDERS" }
+const HAS_ORDERS: ActionResponse = { success: false, error: "This product has been ordered or bought in by a store, so it can't be deleted. Archive it instead.", code: "HAS_ORDERS" }
 
 const productIdSchema = z.uuid("Invalid product ID")
 
@@ -193,6 +193,8 @@ export async function deleteProductAction(productId: string): Promise<ActionResp
       select: { id: true },
     })
     if (ordered) return HAS_ORDERS
+    // So do stores' purchase order lines, through their listings
+    if (await prisma.purchaseOrderItem.findFirst({ where: { storeListing: { productId } }, select: { id: true } })) return HAS_ORDERS
 
     // Variants, documents and store listings cascade; the Prisma hook removes the files once the delete commits
     await prisma.product.delete({ where: { id: productId } })

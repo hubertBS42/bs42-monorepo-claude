@@ -1,6 +1,6 @@
 import { PaginationParams, PaginatedResult } from "@workspace/contracts"
 import { Brand, Category, Organization, Prisma, User } from "@workspace/db/client"
-import { Condition, DiscountType, OrderStatus, OrganizationStatus, PaymentMethod, PaymentStatus, ShippingMethod, Status } from "@workspace/db/enums"
+import { Condition, Currency, DiscountType, OrderStatus, OrganizationStatus, PaymentMethod, PaymentStatus, PurchaseOrderStatus, ShippingMethod, Status } from "@workspace/db/enums"
 import type { LucideIcon } from "lucide-react"
 import type { z } from "zod"
 import type { addProductFormSchema } from "@/lib/schemas/product.schemas"
@@ -207,6 +207,8 @@ export interface ListingListItem {
   // Null when stock isn't tracked or nothing is at or below the alert. For a product with variants it
   // counts the variants on sale that are out of stock (or else low), since the alert applies to each
   stockAlert: { kind: "out" | "low"; count: number } | null
+  // Still to come on the store's open purchase orders, across the listing and its variants
+  incoming: number
   isFeatured: boolean
   status: Status
   // Why a published listing still isn't on sale (its catalogue product, or no variant on sale); null otherwise
@@ -534,3 +536,134 @@ export interface PlatformDashboard {
   stockAlerts: { storeId: string; storeName: string; low: number; out: number }[]
   sales: DashboardSalesTrend
 }
+
+// ============================================
+// PURCHASING
+// ============================================
+
+export interface SuppliersParams extends PaginationParams {
+  name?: string
+  archived?: boolean
+}
+
+export interface SupplierListItem {
+  id: string
+  name: string
+  contactName: string | null
+  email: string | null
+  phone: string | null
+  isArchived: boolean
+  purchaseOrderCount: number
+}
+
+export type SuppliersData = PaginatedResult<SupplierListItem>
+
+export interface SupplierDetails {
+  id: string
+  name: string
+  contactName: string | null
+  email: string | null
+  phone: string | null
+  address: string | null
+  notes: string | null
+  isArchived: boolean
+  purchaseOrderCount: number
+}
+
+export interface PurchaseOrdersParams extends PaginationParams {
+  reference?: string
+  status?: PurchaseOrderStatus
+  supplierId?: string
+}
+
+export interface PurchaseOrderListItem {
+  id: string
+  reference: string
+  supplierName: string
+  status: PurchaseOrderStatus
+  currency: Currency
+  // In the order's currency, with shipping
+  total: string
+  quantityOrdered: number
+  quantityReceived: number
+  // yyyy-MM-dd
+  expectedOn: string | null
+  // Still open and past its expected day
+  isOverdue: boolean
+  createdAt: Date
+}
+
+export type PurchaseOrdersData = PaginatedResult<PurchaseOrderListItem>
+
+export interface PurchaseOrderLine {
+  id: string
+  listingId: string
+  listingVariantId: string | null
+  productName: string
+  variantDescription: string | null
+  sku: string | null
+  quantityOrdered: number
+  quantityReceived: number
+  // In the order's currency, and in USD
+  unitCost: string
+  unitCostUsd: string
+  total: string
+  // The listing (or variant) row now: null stock when it doesn't track it
+  stock: number | null
+}
+
+export interface PurchaseOrderReceiptEntry {
+  id: string
+  createdAt: Date
+  receivedBy: string | null
+  note: string | null
+  updatedBuyPrices: boolean
+  items: { label: string; quantity: number }[]
+}
+
+export interface PurchaseOrderDetails {
+  id: string
+  reference: string
+  status: PurchaseOrderStatus
+  supplier: { id: string; name: string; contactName: string | null; email: string | null; phone: string | null; isArchived: boolean }
+  currency: Currency
+  // GHS per 1 USD, for an order in GHS
+  exchangeRate: string | null
+  shippingCost: string
+  subtotal: string
+  total: string
+  // yyyy-MM-dd
+  expectedOn: string | null
+  isOverdue: boolean
+  notes: string | null
+  createdAt: Date
+  createdBy: string | null
+  orderedAt: Date | null
+  orderedBy: string | null
+  closedAt: Date | null
+  closedBy: string | null
+  closeReason: string | null
+  // updatedAt as ISO: the version an edit form sends back
+  version: string
+  lines: PurchaseOrderLine[]
+  receipts: PurchaseOrderReceiptEntry[]
+}
+
+// A store listing as the purchase order form offers it: one row per thing to buy (the listing, or each variant)
+export interface PurchasableListing {
+  listingId: string
+  productName: string
+  brandName: string
+  image: string | null
+  rows: {
+    listingVariantId: string | null
+    variantDescription: string | null
+    sku: string | null
+    // The last buy price (the variant's, the listing's or the catalogue's), in USD, as a starting cost
+    buyPriceUsd: string | null
+    // Null when the row doesn't track stock
+    stock: number | null
+    incoming: number
+  }[]
+}
+

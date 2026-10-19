@@ -5,7 +5,7 @@ import { requireActiveStoreMember } from "@/lib/auth-guard"
 import { getStoreListings, LISTING_SORT_FIELDS, MAX_LISTINGS_PAGE_SIZE } from "@/lib/data/listings.data"
 import { getProductFilterOptions } from "@/lib/data/products.data"
 import { LISTING_STOCK_STATES, type ListingsParams } from "@/types"
-import AddListingButton from "./_components/add-listing-button"
+import StoreAddButton from "@/components/store-add-button"
 import ListingsTable from "./_components/listings-table"
 
 export const metadata: Metadata = {
@@ -47,7 +47,7 @@ export default async function StoreListingsPage({ searchParams }: StoreListingsP
           <p className="text-sm text-muted-foreground">The catalogue products this store sells, with its own prices and stock.</p>
         </div>
 
-        <AddListingButton storeId={storeId} />
+        <StoreAddButton storeId={storeId} label="Add Listing" url="/store/listings/add" permission={{ listing: ["create"] }} deniedText="Your role in this store can't add listings." />
       </div>
       <ListingsTable data={result.data} filterOptions={filterOptions.data} />
     </main>

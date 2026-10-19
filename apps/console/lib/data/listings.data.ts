@@ -13,6 +13,7 @@ import { z } from "zod"
 import { getStoreRole } from "@/lib/auth-guard"
 import { getCategoryPaths, getSubtreeIds } from "@/lib/data/products.data"
 import { stockStatesSql } from "@/lib/stock-states"
+import { getIncomingByListing } from "@/lib/data/purchase-orders.data"
 
 export const MAX_LISTINGS_PAGE_SIZE = 100
 export const LISTING_SORT_FIELDS = ["name", "sellPrice", "status", "createdAt", "updatedAt"] as const
@@ -143,6 +144,10 @@ export const getStoreListings = async (storeId: string, filters: ListingsParams 
       }),
       prisma.storeListing.count({ where }),
     ])
+    const incoming = await getIncomingByListing(
+      prisma,
+      listings.map((listing) => listing.id)
+    )
 
     return {
       success: true,
@@ -189,6 +194,7 @@ export const getStoreListings = async (storeId: string, filters: ListingsParams 
             stock,
             trackInventory: listing.trackInventory,
             stockAlert,
+            incoming: incoming.get(listing.id) ?? 0,
             isFeatured: listing.isFeatured,
             status: listing.status,
             notOnSaleReason,
@@ -346,6 +352,8 @@ export const getListingFormData = async (storeId: string, listingId: string): Pr
           status: true,
           product: { select: listingProductSelect },
           storeListingVariants: { select: { variantId: true, sellPrice: true, stock: true, status: true } },
+          // Purchase order lines restrict the delete like order lines
+          _count: { select: { purchaseOrderItems: true } },
         },
       }),
       prisma.orderItem.findFirst({ where: { storeListingId: listingId }, select: { id: true } }),
@@ -379,7 +387,7 @@ export const getListingFormData = async (storeId: string, listingId: string): Pr
               : { variantId, sellPrice: null, stock: 0, status: Status.PUBLISHED }
           }),
         },
-        hasOrders: !!ordered,
+        hasOrders: !!ordered || listing._count.purchaseOrderItems > 0,
       },
     }
   } catch (error) {

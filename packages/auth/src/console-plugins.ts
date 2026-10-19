@@ -74,6 +74,13 @@ export const consolePlugins = [
             code: "HAS_ORDERS",
           })
         }
+        // Purchase order lines restrict deleting its listings in the same way
+        if (await prisma.purchaseOrder.findFirst({ where: { organizationId: organization.id }, select: { id: true } })) {
+          throw new APIError("BAD_REQUEST", {
+            message: "This store has purchase orders, so it can't be deleted. Suspend it instead.",
+            code: "HAS_ORDERS",
+          })
+        }
       },
       // System admins belong to every store with a role that follows their system role. The console's own
       // flows keep that up through Prisma (store creation above, promote/demote), so these endpoints, which

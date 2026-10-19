@@ -25,7 +25,7 @@ interface DeleteProductProps {
   product: { id: string; name: string }
   // Store listings cascade with the product, so the dialog says how many stores lose it
   storeCount: number
-  // Order lines restrict the delete, so an ordered product can only be archived
+  // Order lines (and stores' purchase order lines) restrict the delete, so an ordered product can only be archived
   hasOrders: boolean
 }
 
@@ -91,7 +91,9 @@ export default function DeleteProduct({ product, storeCount, hasOrders }: Delete
 
       {/* Shown as text because a disabled button never shows its title tooltip, and screen readers skip it */}
       {!canDelete && <p className="text-xs text-muted-foreground">Your role cannot delete products.</p>}
-      {canDelete && hasOrders && <p className="text-xs text-muted-foreground">This product has been ordered, so it can&apos;t be deleted. Set its status to Archived instead.</p>}
+      {canDelete && hasOrders && (
+        <p className="text-xs text-muted-foreground">This product has been ordered or bought in by a store, so it can&apos;t be deleted. Set its status to Archived instead.</p>
+      )}
     </div>
   )
 }

@@ -83,7 +83,7 @@ export const columns: ColumnDef<ListingListItem, unknown>[] = [
     id: "stock",
     header: () => <ColumnHeader title="Stock" />,
     cell: ({ row }) => {
-      const { stock, trackInventory, stockAlert, product } = row.original
+      const { stock, trackInventory, stockAlert, incoming, product } = row.original
       if (!trackInventory) return <span className="text-muted-foreground">Not tracked</span>
 
       // A product with variants is judged per variant, as its alert is
@@ -102,6 +102,7 @@ export const columns: ColumnDef<ListingListItem, unknown>[] = [
             {alertText && <Badge variant={stockAlert?.kind === "out" ? "destructive" : "outline"}>{alertText}</Badge>}
           </div>
           {product.hasVariants && <span className="text-[11px] text-muted-foreground">Across variants on sale</span>}
+          {incoming > 0 && <span className="text-[11px] text-muted-foreground">{`${incoming} incoming`}</span>}
         </div>
       )
     },

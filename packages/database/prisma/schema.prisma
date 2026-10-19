@@ -151,6 +151,11 @@ model User {
   refundsGiven     OrderRefund[]        @relation("OrderRefundedBy")
   returnsRecorded  OrderReturn[]        @relation("OrderReturnRecordedBy")
 
+  purchaseOrdersCreated  PurchaseOrder[]        @relation("PurchaseOrderCreatedBy")
+  purchaseOrdersPlaced   PurchaseOrder[]        @relation("PurchaseOrderOrderedBy")
+  purchaseOrdersClosed   PurchaseOrder[]        @relation("PurchaseOrderClosedBy")
+  purchaseOrdersReceived PurchaseOrderReceipt[]
+
   @@map("user")
 }
 
@@ -361,6 +366,7 @@ model StoreListing {
   cartItems            CartItem[]
   storeListingVariants StoreListingVariant[]
   reviews              Review[]
+  purchaseOrderItems   PurchaseOrderItem[]
 
   trackInventory    Boolean @default(true)
   lowStockThreshold Int     @default(0)
@@ -383,23 +389,24 @@ model StoreListing {
 }
 
 model StoreListingVariant {
-  id                String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  storeListingId    String         @db.Uuid
-  storeListing      StoreListing   @relation(fields: [storeListingId], references: [id], onDelete: Cascade)
-  variantId         String         @db.Uuid
-  variant           ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  id                 String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  storeListingId     String              @db.Uuid
+  storeListing       StoreListing        @relation(fields: [storeListingId], references: [id], onDelete: Cascade)
+  variantId          String              @db.Uuid
+  variant            ProductVariant      @relation(fields: [variantId], references: [id], onDelete: Cascade)
   // Prices in USD. Null falls back to the store listing's price.
-  buyPrice          Decimal?       @db.Decimal(12, 2)
-  sellPrice         Decimal?       @db.Decimal(12, 2)
-  compareAtPrice    Decimal?       @db.Decimal(12, 2) // Original price for discounts
-  trackInventory    Boolean        @default(true)
-  lowStockThreshold Int            @default(0)
-  stock             Int            @default(0)
-  cartItems         CartItem[]
-  orderItems        OrderItem[]
-  status            Status         @default(DRAFT)
-  createdAt         DateTime       @default(now())
-  updatedAt         DateTime       @updatedAt
+  buyPrice           Decimal?            @db.Decimal(12, 2)
+  sellPrice          Decimal?            @db.Decimal(12, 2)
+  compareAtPrice     Decimal?            @db.Decimal(12, 2) // Original price for discounts
+  trackInventory     Boolean             @default(true)
+  lowStockThreshold  Int                 @default(0)
+  stock              Int                 @default(0)
+  cartItems          CartItem[]
+  orderItems         OrderItem[]
+  purchaseOrderItems PurchaseOrderItem[]
+  status             Status              @default(DRAFT)
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
 
   @@unique([storeListingId, variantId])
   @@index([variantId])
@@ -654,6 +661,163 @@ model OrderItem {
   @@map("order_item")
 }
 
+// ============================================
+// PURCHASING
+// ============================================
+
+// Who a store buys its stock from. Each store keeps its own. One that has been used on a purchase order is archived,
+// never deleted, so the order keeps its supplier.
+model Supplier {
+  id             String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String          @db.Uuid
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  name           String
+  contactName    String?
+  email          String?
+  phone          String?
+  address        String?
+  notes          String?
+  isArchived     Boolean         @default(false)
+  purchaseOrders PurchaseOrder[]
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  // Also serves lookups by organizationId
+  @@unique([organizationId, name])
+  @@map("supplier")
+}
+
+// DRAFT changes nothing. ORDERED makes the lines' remaining quantities incoming stock, and receiving them adds them to
+// stock (PARTIALLY_RECEIVED, then RECEIVED). CLOSED ends a partly received order whose rest isn't coming; CANCELLED
+// ends one before anything arrived.
+enum PurchaseOrderStatus {
+  DRAFT
+  ORDERED
+  PARTIALLY_RECEIVED
+  RECEIVED
+  CLOSED
+  CANCELLED
+}
+
+enum Currency {
+  USD
+  GHS
+}
+
+// A store's order of stock from a supplier. Costs are in the supplier's currency, as invoiced; each line also keeps its
+// cost in USD (the catalogue's currency), which is what a listing's buy price is set to when the goods are received.
+model PurchaseOrder {
+  id             String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  // The store whose order it is. Restrict: a store that has had stock bought in is suspended, never deleted
+  // (beforeDeleteOrganization says so first).
+  organizationId String              @db.Uuid
+  organization   Organization        @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  // A supplier that has been used can't be deleted, only archived
+  supplierId     String              @db.Uuid
+  supplier       Supplier            @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+  // PO-20261019-00001, numbered by a sequence (see its migration)
+  reference      String              @unique
+  status         PurchaseOrderStatus @default(DRAFT)
+
+  currency     Currency
+  // USD→GHS (GHS per 1 USD), copied from the day's rate when costs in GHS were converted to USD; null for USD
+  exchangeRate Decimal? @db.Decimal(12, 6)
+  // In the order's currency. Shown in its totals; it isn't spread over the lines' costs.
+  shippingCost Decimal  @default(0) @db.Decimal(12, 2)
+
+  // The day the supplier said it would arrive
+  expectedOn DateTime? @db.Date
+  notes      String?
+
+  createdById String?   @db.Uuid
+  createdBy   User?     @relation("PurchaseOrderCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  orderedAt   DateTime?
+  orderedById String?   @db.Uuid
+  orderedBy   User?     @relation("PurchaseOrderOrderedBy", fields: [orderedById], references: [id], onDelete: SetNull)
+  // When it was closed or cancelled, by whom and why
+  closedAt    DateTime?
+  closedById  String?   @db.Uuid
+  closedBy    User?     @relation("PurchaseOrderClosedBy", fields: [closedById], references: [id], onDelete: SetNull)
+  closeReason String?
+
+  items     PurchaseOrderItem[]
+  receipts  PurchaseOrderReceipt[]
+  createdAt DateTime               @default(now())
+  // The version an edit form loaded: a save from a stale form is refused
+  updatedAt DateTime               @updatedAt
+
+  @@index([organizationId, status])
+  @@index([supplierId])
+  @@index([createdById])
+  @@index([orderedById])
+  @@index([closedById])
+  @@map("purchase_order")
+}
+
+model PurchaseOrderItem {
+  id              String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  purchaseOrderId String        @db.Uuid
+  purchaseOrder   PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+
+  // Restrict like OrderItem: a listing (or variant) that has been bought in is archived, never deleted, and so is the
+  // store (beforeDeleteOrganization refuses a store with purchase orders)
+  storeListingId        String               @db.Uuid
+  storeListing          StoreListing         @relation(fields: [storeListingId], references: [id], onDelete: Restrict)
+  storeListingVariantId String?              @db.Uuid
+  storeListingVariant   StoreListingVariant? @relation(fields: [storeListingVariantId], references: [id], onDelete: Restrict)
+
+  // Snapshot, refreshed whenever a draft is saved
+  productName        String
+  variantDescription String?
+  sku                String?
+
+  quantityOrdered  Int
+  // Kept up by each receipt (the sum of its PurchaseOrderReceiptItem rows), never more than ordered
+  quantityReceived Int     @default(0)
+  // In the order's currency, as invoiced
+  unitCost         Decimal @db.Decimal(12, 2)
+  // The same cost in USD: unitCost itself for an order in USD, else unitCost / exchangeRate, rounded once
+  unitCostUsd      Decimal @db.Decimal(12, 2)
+  position         Int     @default(0)
+
+  receipts PurchaseOrderReceiptItem[]
+
+  @@index([purchaseOrderId])
+  @@index([storeListingId])
+  @@index([storeListingVariantId])
+  @@map("purchase_order_item")
+}
+
+// One delivery: what came in, who checked it in, and whether the listings' buy prices were set to these costs
+model PurchaseOrderReceipt {
+  id               String                     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  purchaseOrderId  String                     @db.Uuid
+  purchaseOrder    PurchaseOrder              @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+  receivedById     String?                    @db.Uuid
+  receivedBy       User?                      @relation(fields: [receivedById], references: [id], onDelete: SetNull)
+  note             String?
+  updatedBuyPrices Boolean
+  items            PurchaseOrderReceiptItem[]
+  createdAt        DateTime                   @default(now())
+
+  @@index([purchaseOrderId])
+  @@index([receivedById])
+  @@map("purchase_order_receipt")
+}
+
+model PurchaseOrderReceiptItem {
+  id                  String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  receiptId           String               @db.Uuid
+  receipt             PurchaseOrderReceipt @relation(fields: [receiptId], references: [id], onDelete: Cascade)
+  purchaseOrderItemId String               @db.Uuid
+  purchaseOrderItem   PurchaseOrderItem    @relation(fields: [purchaseOrderItemId], references: [id], onDelete: Cascade)
+  quantity            Int
+
+  @@unique([receiptId, purchaseOrderItemId])
+  @@index([purchaseOrderItemId])
+  @@map("purchase_order_receipt_item")
+}
+
 model Review {
   id                 String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   userId             String       @db.Uuid
@@ -743,6 +907,8 @@ model Organization {
   invitations    Invitation[]
   listings       StoreListing[]
   orderItems     OrderItem[]
+  suppliers      Supplier[]
+  purchaseOrders PurchaseOrder[]
 
   @@unique([slug])
   @@map("organization")

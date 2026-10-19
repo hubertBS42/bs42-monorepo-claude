@@ -112,7 +112,7 @@ function describeRemoval(variants: VariantInput[], usage: Record<string, Variant
   const ordered = used.filter((item) => item.ordered).length
   const listings = used.filter((item) => !item.ordered).reduce((total, item) => total + item.storeCount, 0)
   return [
-    ...(ordered ? [`${plural(ordered, "variant has", "variants have")} been ordered, so ${ordered === 1 ? "it" : "they"} will be archived instead of deleted.`] : []),
+    ...(ordered ? [`${plural(ordered, "variant has", "variants have")} been ordered or bought in, so ${ordered === 1 ? "it" : "they"} will be archived instead of deleted.`] : []),
     ...(listings ? [`${plural(listings, "store listing loses", "store listings lose")} the price and stock set for ${ordered ? "the others" : "them"}.`] : []),
   ]
 }

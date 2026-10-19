@@ -24,7 +24,7 @@ import { deleteListingAction } from "@/lib/actions/listing.actions"
 interface DeleteListingProps {
   listing: { id: string; name: string }
   storeId: string
-  // Order lines restrict the delete, so an ordered listing can only be archived
+  // Order and purchase order lines restrict the delete, so a listing that has been ordered or bought in can only be archived
   hasOrders: boolean
 }
 
@@ -91,7 +91,7 @@ export default function DeleteListing({ listing, storeId, hasOrders }: DeleteLis
 
       {/* Shown as text because a disabled button never shows its title tooltip, and screen readers skip it */}
       {!canDelete && <p className="text-xs text-muted-foreground">Your role in this store cannot remove listings.</p>}
-      {canDelete && hasOrders && <p className="text-xs text-muted-foreground">This listing has been ordered, so it can&apos;t be removed. Set its status to Archived instead.</p>}
+      {canDelete && hasOrders && <p className="text-xs text-muted-foreground">This listing has been ordered or bought in, so it can&apos;t be removed. Set its status to Archived instead.</p>}
     </div>
   )
 }
