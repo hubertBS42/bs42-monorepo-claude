@@ -102,9 +102,10 @@ const RichTextEditor = ({
   }, [value, editor])
 
   // Keep the editable state in sync when `disabled` changes after mount.
+  // Without emitting an update: this runs on mount too, and an update calls onChange (see above).
   useEffect(() => {
     if (!editor) return
-    editor.setEditable(!disabled)
+    editor.setEditable(!disabled, false)
   }, [disabled, editor])
 
   useEffect(() => {
