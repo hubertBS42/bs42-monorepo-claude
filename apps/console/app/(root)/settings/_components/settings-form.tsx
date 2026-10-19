@@ -182,47 +182,49 @@ export default function SettingsForm({ settings, version }: { settings: AppSetti
                       maxTags={10}
                       disabled={isPending}
                     />
-                    <SwitchField
-                      control={form.control}
-                      name="notifyStorefrontOrders"
-                      label="Storefront orders"
-                      description="When a customer places an order on the storefront"
-                      variant="card"
-                      disabled={isPending}
-                    />
-                    <SwitchField
-                      control={form.control}
-                      name="notifyStaffOrders"
-                      label="Orders created by staff"
-                      description="When staff create an order in a store's workspace"
-                      variant="card"
-                      disabled={isPending}
-                    />
-                    <SwitchField
-                      control={form.control}
-                      name="notifyLowStock"
-                      label="Low stock"
-                      description="When a sale takes an item down to its low-stock threshold"
-                      variant="card"
-                      disabled={isPending}
-                    />
-                    <SwitchField control={form.control} name="notifyOutOfStock" label="Out of stock" description="When a sale takes an item's stock to 0" variant="card" disabled={isPending} />
-                    <SwitchField
-                      control={form.control}
-                      name="notifyStoreRefunds"
-                      label="Refunds given by stores"
-                      description="When a store's owner or admin refunds an order, on its own or with a return"
-                      variant="card"
-                      disabled={isPending}
-                    />
-                    <SwitchField
-                      control={form.control}
-                      name="notifyRateFetchFailure"
-                      label="Exchange rate fetch failed"
-                      description="When the daily rate couldn't be fetched, so today's needs setting by hand"
-                      variant="card"
-                      disabled={isPending}
-                    />
+                    <FieldGroup className="gap-3">
+                      <SwitchField
+                        control={form.control}
+                        name="notifyStorefrontOrders"
+                        label="Storefront orders"
+                        description="When a customer places an order on the storefront"
+                        variant="card"
+                        disabled={isPending}
+                      />
+                      <SwitchField
+                        control={form.control}
+                        name="notifyStaffOrders"
+                        label="Orders created by staff"
+                        description="When staff create an order in a store's workspace"
+                        variant="card"
+                        disabled={isPending}
+                      />
+                      <SwitchField
+                        control={form.control}
+                        name="notifyLowStock"
+                        label="Low stock"
+                        description="When a sale takes an item down to its low-stock threshold"
+                        variant="card"
+                        disabled={isPending}
+                      />
+                      <SwitchField control={form.control} name="notifyOutOfStock" label="Out of stock" description="When a sale takes an item's stock to 0" variant="card" disabled={isPending} />
+                      <SwitchField
+                        control={form.control}
+                        name="notifyStoreRefunds"
+                        label="Refunds given by stores"
+                        description="When a store's owner or admin refunds an order, on its own or with a return"
+                        variant="card"
+                        disabled={isPending}
+                      />
+                      <SwitchField
+                        control={form.control}
+                        name="notifyRateFetchFailure"
+                        label="Exchange rate fetch failed"
+                        description="When the daily rate couldn't be fetched, so today's needs setting by hand"
+                        variant="card"
+                        disabled={isPending}
+                      />
+                    </FieldGroup>
                   </FieldGroup>
                 </CardContent>
               </Card>
