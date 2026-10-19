@@ -6,8 +6,10 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { SubmitHandler, useForm, useWatch } from "react-hook-form"
 import { z } from "zod"
 import { Status } from "@workspace/db/enums"
-import { NumberInputField, SelectField, SwitchField } from "@workspace/forms"
+import { NumberInputField, SelectField, SwitchField, TextareaField } from "@workspace/forms"
+import Link from "next/link"
 import { Badge } from "@workspace/ui/components/badge"
+import { buttonVariants } from "@workspace/ui/components/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@workspace/ui/components/card"
 import { FieldGroup } from "@workspace/ui/components/field"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@workspace/ui/components/table"
@@ -17,6 +19,7 @@ import SharedFormHeader from "@/components/shared-form-header"
 import { STATUS_OPTIONS } from "@/constants"
 import { createListingAction, updateListingAction } from "@/lib/actions/listing.actions"
 import { listingFormSchema } from "@/lib/schemas/listing.schemas"
+import { MANUAL_STOCK_REASONS, STOCK_MOVEMENT_REASON_LABELS } from "@/lib/stock-reasons"
 import type { ListingFormData, ListingSnapshot, StockChangedResponse } from "@/types"
 import DeleteListing from "./delete-listing"
 
@@ -33,6 +36,8 @@ function isStockChanged(response: { success: boolean; code?: string }): response
   return !response.success && response.code === "STOCK_CHANGED" && "currentStock" in response
 }
 
+const stockReasonOptions = MANUAL_STOCK_REASONS.map((reason) => ({ value: reason, label: STOCK_MOVEMENT_REASON_LABELS[reason] }))
+
 // One form for adding and editing, as for products
 const ListingForm = ({ storeId, data }: ListingFormProps) => {
   const { id, product, variants: variantRows } = data
@@ -42,15 +47,22 @@ const ListingForm = ({ storeId, data }: ListingFormProps) => {
 
   const form = useForm<FormInput, unknown, FormOutput>({
     resolver: zodResolver(listingFormSchema),
-    defaultValues: data.values,
+    defaultValues: { ...data.values, stockReason: null, stockNote: "" },
   })
 
   const trackInventory = useWatch({ control: form.control, name: "trackInventory" })
+  const stock = useWatch({ control: form.control, name: "stock" })
+  const variantValues = useWatch({ control: form.control, name: "variants" })
+  const stockReason = useWatch({ control: form.control, name: "stockReason" })
   const sellPrice = useWatch({ control: form.control, name: "sellPrice" })
 
   // What the form loaded, sent with an edit so the action can tell the user's changes from changes made elsewhere.
   // A stock conflict replaces its stock, so the next save starts from the current stock.
   const [original, setOriginal] = useState<ListingSnapshot>(data.values)
+
+  // Stock changed by hand on an existing listing (or a variant already on it) needs a reason for the stock history. A
+  // variant new to the listing starts with its initial stock, which needs none.
+  const hasStockEdits = isEditing && (stock !== original.stock || variantRows.some((row, index) => row.inListing && variantValues?.[index]?.stock !== original.variants[index]?.stock))
 
   // From a STOCK_CHANGED reply: stock the user left alone just updates; stock they changed is marked for them to check
   const applyCurrentStock = ({ listing, variants: current }: StockChangedResponse["currentStock"]) => {
@@ -72,12 +84,22 @@ const ListingForm = ({ storeId, data }: ListingFormProps) => {
   }
 
   const onSubmit: SubmitHandler<FormOutput> = (values) => {
+    if (hasStockEdits && !values.stockReason) {
+      form.setError("stockReason", { type: "custom", message: "Choose why the stock changed" })
+      return
+    }
+
     startTransition(async () => {
       const response = id ? await updateListingAction({ ...values, id, storeId, original }) : await createListingAction({ ...values, productId: product.id, storeId })
 
       if (isStockChanged(response)) {
         applyCurrentStock(response.currentStock)
         toast.add({ title: "Stock changed", description: response.error, type: "error" })
+        return
+      }
+
+      if (!response.success && response.code === "STOCK_REASON_REQUIRED") {
+        form.setError("stockReason", { type: "custom", message: response.error })
         return
       }
 
@@ -239,6 +261,21 @@ const ListingForm = ({ storeId, data }: ListingFormProps) => {
                   </CardContent>
                 </Card>
               )}
+
+              {hasStockEdits && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Stock change</CardTitle>
+                    <CardDescription>Why the stock was changed by hand. It goes into the stock history.</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <FieldGroup>
+                      <SelectField control={form.control} label="Reason" name="stockReason" placeholder="Choose a reason" options={stockReasonOptions} disabled={isPending} />
+                      <TextareaField control={form.control} label="Note" name="stockNote" placeholder={stockReason === "OTHER" ? "What happened" : "Optional"} disabled={isPending} />
+                    </FieldGroup>
+                  </CardContent>
+                </Card>
+              )}
             </div>
 
             {/* Right column */}
@@ -253,6 +290,20 @@ const ListingForm = ({ storeId, data }: ListingFormProps) => {
                   <SwitchField control={form.control} variant="card" label="Featured" name="isFeatured" disabled={isPending} description="Show this listing in the store's featured sections" />
                 </CardContent>
               </Card>
+
+              {id && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Stock history</CardTitle>
+                    <CardDescription>Every change to this listing&apos;s stock: sales, returns, deliveries and changes made here.</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Link href={`/store/listings/${id}/stock-history`} className={buttonVariants({ variant: "outline", className: "w-full" })}>
+                      View stock history
+                    </Link>
+                  </CardContent>
+                </Card>
+              )}
 
               {id && (
                 <Card>

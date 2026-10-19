@@ -2,8 +2,9 @@ import "server-only"
 
 import type { prisma } from "@workspace/db"
 import { Prisma } from "@workspace/db/client"
-import { OrderStatus, PaymentStatus, type PaymentMethod } from "@workspace/db/enums"
+import { OrderStatus, PaymentStatus, StockMovementReason, type PaymentMethod } from "@workspace/db/enums"
 import { canBeReturned, hasBeenPaid, isPaid, nextOrderStatuses } from "./order-status"
+import { addStock } from "./stock-movements"
 import { changeOrderStatus, StatusChangedError } from "./store-order-writes"
 
 // Refunds, by the platform on any order or by a store's owners and admins on its own: giving money back on a paid order, cancelling a paid order with a refund of whatever is
@@ -180,7 +181,7 @@ export async function recordOrderReturn(tx: Tx, input: ReturnInput) {
     refundId = (await writeRefund(tx, refund, amount, order.totalGhs, refunded.plus(amount))).refundId
   }
 
-  await tx.orderReturn.create({
+  const orderReturn = await tx.orderReturn.create({
     data: {
       orderId: input.orderId,
       reason: input.reason,
@@ -188,12 +189,17 @@ export async function recordOrderReturn(tx: Tx, input: ReturnInput) {
       recordedById: input.recordedById,
       items: { create: returning.map(({ line, quantity, restocked }) => ({ orderItemId: line.id, quantity, restocked })) },
     },
+    select: { id: true },
   })
 
   for (const { line, quantity, restocked } of returning) {
     if (!restocked) continue
-    if (line.storeListingVariantId) await tx.storeListingVariant.update({ where: { id: line.storeListingVariantId }, data: { stock: { increment: quantity } } })
-    else await tx.storeListing.update({ where: { id: line.storeListingId }, data: { stock: { increment: quantity } } })
+    await addStock(tx, { listingId: line.storeListingId, listingVariantId: line.storeListingVariantId }, quantity, {
+      reason: StockMovementReason.RETURN,
+      createdById: input.recordedById,
+      orderId: input.orderId,
+      orderReturnId: orderReturn.id,
+    })
   }
 
   return {

@@ -2,9 +2,10 @@ import "server-only"
 
 import type { prisma } from "@workspace/db"
 import { Prisma } from "@workspace/db/client"
-import { Currency, PurchaseOrderStatus, Status } from "@workspace/db/enums"
+import { Currency, PurchaseOrderStatus, Status, StockMovementReason } from "@workspace/db/enums"
 import { formatDate } from "@workspace/utils/date"
 import { cancelTarget, isEditablePurchaseOrder, isOpenPurchaseOrder } from "./purchase-order-status"
+import { addStock } from "./stock-movements"
 
 // A store's purchase orders: saving one, marking it ordered, receiving deliveries into stock, and cancelling or
 // closing it. In their own module (like store-order-writes.ts) so they can be tested against the database without a
@@ -318,7 +319,8 @@ export async function receivePurchaseOrder(tx: Tx, input: ReceiptInput) {
     return { line, quantity: entry.quantity }
   })
 
-  await tx.purchaseOrderReceipt.create({
+  const receipt = await tx.purchaseOrderReceipt.create({
+    select: { id: true },
     data: {
       purchaseOrderId: input.id,
       receivedById: input.receivedById,
@@ -331,15 +333,19 @@ export async function receivePurchaseOrder(tx: Tx, input: ReceiptInput) {
   for (const { line, quantity } of receiving) {
     await tx.purchaseOrderItem.update({ where: { id: line.id }, data: { quantityReceived: { increment: quantity } } })
 
+    if (input.updateBuyPrices) {
+      if (line.storeListingVariantId) await tx.storeListingVariant.update({ where: { id: line.storeListingVariantId }, data: { buyPrice: line.unitCostUsd } })
+      else await tx.storeListing.update({ where: { id: line.storeListingId }, data: { buyPrice: line.unitCostUsd } })
+    }
+
     // Stock goes up only on a row that tracks it, as sales take it down only there
-    const buyPrice = input.updateBuyPrices ? { buyPrice: line.unitCostUsd } : {}
-    if (line.storeListingVariantId) {
-      const tracks = line.storeListingVariant?.trackInventory ?? false
-      if (tracks || input.updateBuyPrices) {
-        await tx.storeListingVariant.update({ where: { id: line.storeListingVariantId }, data: { ...buyPrice, ...(tracks && { stock: { increment: quantity } }) } })
-      }
-    } else if (line.storeListing.trackInventory || input.updateBuyPrices) {
-      await tx.storeListing.update({ where: { id: line.storeListingId }, data: { ...buyPrice, ...(line.storeListing.trackInventory && { stock: { increment: quantity } }) } })
+    const tracks = line.storeListingVariantId ? (line.storeListingVariant?.trackInventory ?? false) : line.storeListing.trackInventory
+    if (tracks) {
+      await addStock(tx, { listingId: line.storeListingId, listingVariantId: line.storeListingVariantId }, quantity, {
+        reason: StockMovementReason.PURCHASE_RECEIVED,
+        createdById: input.receivedById,
+        purchaseOrderReceiptId: receipt.id,
+      })
     }
   }
 

@@ -2,8 +2,10 @@ import "server-only"
 
 import type { prisma } from "@workspace/db"
 import type { Prisma } from "@workspace/db/client"
+import { StockMovementReason } from "@workspace/db/enums"
 import type { z } from "zod"
 import type { updateListingSchema } from "./schemas/listing.schemas"
+import { recordStockMovement, type StockMovementSource } from "./stock-movements"
 import type { ListingSnapshot, StockChangedResponse } from "../types"
 
 // Updating a listing in place, in its own module (like product-sync.ts) so the logic can be tested against the
@@ -14,6 +16,8 @@ type Tx = Parameters<Parameters<typeof prisma.$transaction>[0]>[0]
 
 export class ListingConflictError extends Error {}
 export class ListingNotFoundError extends Error {}
+// Stock was changed by hand without saying why, which the stock history needs
+export class StockReasonRequiredError extends Error {}
 export class StockChangedError extends Error {
   readonly currentStock: StockChangedResponse["currentStock"]
 
@@ -61,9 +65,10 @@ function changedElsewhere(saved: SavedListing, original: ListingSnapshot) {
   })
 }
 
-// Throws ListingNotFoundError, ListingConflictError (changed elsewhere) or StockChangedError (stock the user
-// changed was changed elsewhere), so the transaction rolls back
-export async function syncListing(tx: Tx, { id, original, variants, stock, buyPrice, compareAtPrice, ...fields }: Omit<ListingUpdate, "storeId">) {
+// Throws ListingNotFoundError, ListingConflictError (changed elsewhere), StockChangedError (stock the user changed was
+// changed elsewhere) or StockReasonRequiredError, so the transaction rolls back. Stock the user changed goes into the
+// stock history with their reason; a variant new to the listing starts it with its initial stock.
+export async function syncListing(tx: Tx, { id, original, variants, stock, buyPrice, compareAtPrice, stockReason, stockNote, ...fields }: Omit<ListingUpdate, "storeId">, changedById: string) {
   // Lock the listing and its variants until the transaction ends, so a sale can't change stock between
   // the checks below and the writes (it waits instead)
   await tx.$queryRaw`SELECT 1 FROM "store_listing" WHERE "id" = ${id}::uuid FOR UPDATE`
@@ -86,15 +91,22 @@ export async function syncListing(tx: Tx, { id, original, variants, stock, buyPr
     throw new StockChangedError({ listing: saved.stock, variants: Object.fromEntries(saved.storeListingVariants.map((variant) => [variant.variantId, variant.stock])) })
   }
 
+  // Past the check above, any stock the user changed still holds what they loaded, so the change is new minus saved
+  const userChangedVariants = variants.filter((variant) => savedVariants.has(variant.variantId) && variant.stock !== originalVariants.get(variant.variantId)?.stock)
+  if ((stock !== original.stock || userChangedVariants.length) && !stockReason) throw new StockReasonRequiredError()
+  const byHand: StockMovementSource = { reason: stockReason ?? StockMovementReason.OTHER, note: stockNote, createdById: changedById }
+
   await tx.storeListing.update({
     where: { id },
     data: { ...fields, buyPrice: buyPrice ?? null, compareAtPrice: compareAtPrice ?? null, ...(stock !== original.stock && { stock }) },
   })
+  if (stock !== original.stock) await recordStockMovement(tx, { listingId: id, listingVariantId: null }, stock - saved.stock, stock, byHand)
 
   // Variants added to the product since the listing was made
   const added = variants.filter((variant) => !savedVariants.has(variant.variantId))
   if (added.length) {
-    await tx.storeListingVariant.createMany({
+    const created = await tx.storeListingVariant.createManyAndReturn({
+      select: { id: true, stock: true },
       data: added.map((variant) => ({
         storeListingId: id,
         variantId: variant.variantId,
@@ -105,6 +117,9 @@ export async function syncListing(tx: Tx, { id, original, variants, stock, buyPr
         lowStockThreshold: fields.lowStockThreshold,
       })),
     })
+    for (const row of created) {
+      await recordStockMovement(tx, { listingId: id, listingVariantId: row.id }, row.stock, row.stock, { reason: StockMovementReason.INITIAL, createdById: changedById })
+    }
   }
 
   // Only rows that changed: each statement is a round trip to a slow database
@@ -130,6 +145,7 @@ export async function syncListing(tx: Tx, { id, original, variants, stock, buyPr
           ...(stockChanged && { stock: variant.stock }),
         },
       })
+      if (stockChanged) await recordStockMovement(tx, { listingId: id, listingVariantId: row.id }, variant.stock - row.stock, variant.stock, byHand)
     }
   }
 }

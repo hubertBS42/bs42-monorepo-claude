@@ -2,12 +2,13 @@
 import { z } from "zod"
 import { prisma } from "@workspace/db"
 import { Prisma } from "@workspace/db/client"
-import { Status } from "@workspace/db/enums"
+import { Status, StockMovementReason } from "@workspace/db/enums"
 import { formatError } from "@workspace/auth/format-error"
 import { ActionResponse } from "@workspace/contracts"
 import { hasStorePermission, requireConsoleAccess } from "@/lib/auth-guard"
-import { ListingConflictError, ListingNotFoundError, StockChangedError, syncListing } from "@/lib/listing-sync"
+import { ListingConflictError, ListingNotFoundError, StockChangedError, StockReasonRequiredError, syncListing } from "@/lib/listing-sync"
 import { createListingSchema, updateListingSchema } from "@/lib/schemas/listing.schemas"
+import { recordStockMovement } from "@/lib/stock-movements"
 import type { StockChangedResponse } from "@/types"
 
 // Every export here is a public endpoint, so every input is validated, and each one calls requireConsoleAccess
@@ -28,6 +29,7 @@ const CONFLICT: ActionResponse = {
   error: "Someone else changed this listing while you were editing. Refresh the page to see their changes, then make yours again.",
   code: "CONFLICT",
 }
+const STOCK_REASON_REQUIRED: ActionResponse = { success: false, error: "Choose why the stock changed.", code: "STOCK_REASON_REQUIRED" }
 const HAS_ORDERS: ActionResponse = { success: false, error: "This listing has been ordered or bought in, so it can't be deleted. Archive it instead.", code: "HAS_ORDERS" }
 
 const deleteListingSchema = z.object({ id: z.uuid("Invalid listing ID"), storeId: z.uuid("Invalid store ID") })
@@ -47,6 +49,7 @@ async function hasCurrentVariants(productId: string, hasVariants: boolean, submi
 
 function mapWriteError(error: unknown): ActionResponse | undefined {
   if (error instanceof ListingConflictError) return CONFLICT
+  if (error instanceof StockReasonRequiredError) return STOCK_REASON_REQUIRED
   if (error instanceof ListingNotFoundError) return NOT_FOUND
   if (!(error instanceof Prisma.PrismaClientKnownRequestError)) return undefined
   if (error.code === "P2002") return ALREADY_LISTED
@@ -70,32 +73,38 @@ export async function createListingAction(input: z.input<typeof createListingSch
     if (!product) return PRODUCT_UNAVAILABLE
     if (!(await hasCurrentVariants(productId, product.hasVariants, variants))) return VARIANTS_CHANGED
 
-    // One statement with its variants, so it can't be half created
-    await prisma.storeListing.create({
-      data: {
-        organizationId: storeId,
-        productId,
-        sellPrice,
-        buyPrice: buyPrice ?? null,
-        compareAtPrice: compareAtPrice ?? null,
-        stock,
-        lowStockThreshold,
-        trackInventory,
-        isFeatured,
-        status,
-        storeListingVariants: {
-          create: variants.map((variant) => ({
-            variantId: variant.variantId,
-            sellPrice: variant.sellPrice ?? null,
-            stock: variant.stock,
-            status: variant.status,
-            // Tracking and the alert are set on the listing and apply to its variants
-            trackInventory,
-            lowStockThreshold,
-          })),
+    // The listing with its variants, and the stock history's first entries: their initial stock
+    await prisma.$transaction(async (tx) => {
+      const listing = await tx.storeListing.create({
+        select: { id: true, stock: true, storeListingVariants: { select: { id: true, stock: true } } },
+        data: {
+          organizationId: storeId,
+          productId,
+          sellPrice,
+          buyPrice: buyPrice ?? null,
+          compareAtPrice: compareAtPrice ?? null,
+          stock,
+          lowStockThreshold,
+          trackInventory,
+          isFeatured,
+          status,
+          storeListingVariants: {
+            create: variants.map((variant) => ({
+              variantId: variant.variantId,
+              sellPrice: variant.sellPrice ?? null,
+              stock: variant.stock,
+              status: variant.status,
+              // Tracking and the alert are set on the listing and apply to its variants
+              trackInventory,
+              lowStockThreshold,
+            })),
+          },
         },
-      },
-    })
+      })
+      const initial = { reason: StockMovementReason.INITIAL, createdById: session.user.id }
+      await recordStockMovement(tx, { listingId: listing.id, listingVariantId: null }, listing.stock, listing.stock, initial)
+      for (const row of listing.storeListingVariants) await recordStockMovement(tx, { listingId: listing.id, listingVariantId: row.id }, row.stock, row.stock, initial)
+    }, TRANSACTION_OPTIONS)
 
     return { success: true }
   } catch (error) {
@@ -118,7 +127,7 @@ export async function updateListingAction(input: z.input<typeof updateListingSch
     // A listing stays editable whatever its product's status, so it can be archived when the product goes
     if (!(await hasCurrentVariants(listing.productId, listing.product.hasVariants, variants))) return VARIANTS_CHANGED
 
-    await prisma.$transaction((tx) => syncListing(tx, { id, original, variants, ...fields }), TRANSACTION_OPTIONS)
+    await prisma.$transaction((tx) => syncListing(tx, { id, original, variants, ...fields }, session.user.id), TRANSACTION_OPTIONS)
 
     return { success: true }
   } catch (error) {

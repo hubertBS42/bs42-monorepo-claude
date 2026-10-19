@@ -2,12 +2,13 @@ import "server-only"
 
 import type { prisma } from "@workspace/db"
 import { Prisma } from "@workspace/db/client"
-import { OrderStatus, PaymentStatus, ShippingMethod, Status } from "@workspace/db/enums"
+import { OrderStatus, PaymentStatus, ShippingMethod, Status, StockMovementReason } from "@workspace/db/enums"
 import { formatDate } from "@workspace/utils/date"
 import type { z } from "zod"
 import type { StockAlert } from "./notifications"
 import type { PricedOrder } from "./order-pricing"
 import type { orderItemInputSchema } from "./schemas/order.schemas"
+import { addStock, recordStockMovements } from "./stock-movements"
 
 // A store's order writes: creating one (lines priced from the store's listings, stock reserved) and moving its
 // status on. In their own module (like listing-sync.ts) so they can be tested against the database without a session.
@@ -149,6 +150,8 @@ export interface NewStoreOrder {
 // Returns the items this sale took down to their low-stock threshold or to 0, for the stock notification.
 export async function createStoreOrder(tx: Tx, order: NewStoreOrder) {
   const stockAlerts: StockAlert[] = []
+  // For the stock history, written once the order exists to link to
+  const sold: { line: ResolvedLine; stockAfter: number }[] = []
 
   // Reserved now, so two orders can't sell the same last item. Only rows that track stock, as a cancellation restores.
   for (const line of order.lines) {
@@ -164,6 +167,7 @@ export async function createStoreOrder(tx: Tx, order: NewStoreOrder) {
       ? (await tx.storeListingVariant.findUniqueOrThrow({ where: { id: line.listingVariantId }, select: { stock: true } })).stock
       : (await tx.storeListing.findUniqueOrThrow({ where: { id: line.listingId }, select: { stock: true } })).stock
     const before = after + line.quantity
+    sold.push({ line, stockAfter: after })
     const alert = { storeName: line.storeName, label: line.label, stock: after, threshold: line.lowStockThreshold }
     if (after === 0) stockAlerts.push({ kind: "out", ...alert })
     else if (after <= line.lowStockThreshold && before > line.lowStockThreshold) stockAlerts.push({ kind: "low", ...alert })
@@ -232,6 +236,17 @@ export async function createStoreOrder(tx: Tx, order: NewStoreOrder) {
     },
     select: { id: true, reference: true },
   })
+
+  // One statement for all the lines: each is a round trip to a slow database
+  await recordStockMovements(
+    tx,
+    sold.map(({ line, stockAfter }) => ({
+      row: { listingId: line.listingId, listingVariantId: line.listingVariantId },
+      change: -line.quantity,
+      stockAfter,
+      source: { reason: StockMovementReason.SALE, createdById: order.createdById, orderId: created.id },
+    }))
+  )
   return { ...created, stockAlerts }
 }
 
@@ -264,11 +279,13 @@ export async function changeOrderStatus(tx: Tx, { orderId, from, to, note, chang
   // Stock was reserved when the order was made, for the rows that track it, so a cancellation puts it back
   if (to === OrderStatus.CANCELLED) {
     for (const item of items) {
-      if (item.storeListingVariantId) {
-        if (item.variantTracks) await tx.storeListingVariant.update({ where: { id: item.storeListingVariantId }, data: { stock: { increment: item.quantity } } })
-      } else if (item.listingTracks) {
-        await tx.storeListing.update({ where: { id: item.storeListingId }, data: { stock: { increment: item.quantity } } })
-      }
+      const tracks = item.storeListingVariantId ? item.variantTracks : item.listingTracks
+      if (!tracks) continue
+      await addStock(tx, { listingId: item.storeListingId, listingVariantId: item.storeListingVariantId }, item.quantity, {
+        reason: StockMovementReason.CANCELLATION,
+        createdById: changedById,
+        orderId,
+      })
     }
   }
 }

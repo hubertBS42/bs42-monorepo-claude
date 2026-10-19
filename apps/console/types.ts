@@ -1,6 +1,6 @@
 import { PaginationParams, PaginatedResult } from "@workspace/contracts"
 import { Brand, Category, Organization, Prisma, User } from "@workspace/db/client"
-import { Condition, Currency, DiscountType, OrderStatus, OrganizationStatus, PaymentMethod, PaymentStatus, PurchaseOrderStatus, ShippingMethod, Status } from "@workspace/db/enums"
+import { Condition, Currency, DiscountType, OrderStatus, OrganizationStatus, PaymentMethod, PaymentStatus, PurchaseOrderStatus, ShippingMethod, Status, StockMovementReason } from "@workspace/db/enums"
 import type { LucideIcon } from "lucide-react"
 import type { z } from "zod"
 import type { addProductFormSchema } from "@/lib/schemas/product.schemas"
@@ -667,3 +667,31 @@ export interface PurchasableListing {
   }[]
 }
 
+// ============================================
+// STOCK HISTORY
+// ============================================
+
+export interface StockHistoryParams extends PaginationParams {
+  reason?: StockMovementReason
+  // A variant on the listing (StoreListingVariant.id)
+  variantId?: string
+}
+
+export interface StockMovementItem {
+  id: string
+  createdAt: Date
+  // "Size: M / Colour: Red"; null for a product without variants
+  variantDescription: string | null
+  change: number
+  stockAfter: number
+  reason: StockMovementReason
+  note: string | null
+  createdBy: string | null
+  // What caused it: the order, or the purchase order a delivery was on
+  source: { label: string; href: string } | null
+}
+
+export interface StockHistoryData {
+  listing: { id: string; productName: string; hasVariants: boolean; variants: SelectItem[] }
+  movements: PaginatedResult<StockMovementItem>
+}

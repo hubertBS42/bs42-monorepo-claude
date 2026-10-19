@@ -155,6 +155,7 @@ model User {
   purchaseOrdersPlaced   PurchaseOrder[]        @relation("PurchaseOrderOrderedBy")
   purchaseOrdersClosed   PurchaseOrder[]        @relation("PurchaseOrderClosedBy")
   purchaseOrdersReceived PurchaseOrderReceipt[]
+  stockMovements         StockMovement[]
 
   @@map("user")
 }
@@ -367,6 +368,7 @@ model StoreListing {
   storeListingVariants StoreListingVariant[]
   reviews              Review[]
   purchaseOrderItems   PurchaseOrderItem[]
+  stockMovements       StockMovement[]
 
   trackInventory    Boolean @default(true)
   lowStockThreshold Int     @default(0)
@@ -404,6 +406,7 @@ model StoreListingVariant {
   cartItems          CartItem[]
   orderItems         OrderItem[]
   purchaseOrderItems PurchaseOrderItem[]
+  stockMovements     StockMovement[]
   status             Status              @default(DRAFT)
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
@@ -519,13 +522,14 @@ model Order {
   // Reference number
   reference String @unique
 
-  notes         String?
-  orderItems    OrderItem[]
-  statusHistory OrderStatusHistory[]
-  refunds       OrderRefund[]
-  returns       OrderReturn[]
-  createdAt     DateTime             @default(now())
-  updatedAt     DateTime             @updatedAt
+  notes          String?
+  orderItems     OrderItem[]
+  statusHistory  OrderStatusHistory[]
+  refunds        OrderRefund[]
+  returns        OrderReturn[]
+  stockMovements StockMovement[]
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
 
   // reference is @unique, which already indexes it
   @@index([userId])
@@ -577,16 +581,17 @@ model OrderRefund {
 // refunded. A line's returned quantities never add up to more than it sold, which the return code checks with the
 // order row locked.
 model OrderReturn {
-  id           String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  orderId      String            @db.Uuid
-  order        Order             @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  reason       String
-  refundId     String?           @unique @db.Uuid
-  refund       OrderRefund?      @relation(fields: [refundId], references: [id], onDelete: SetNull)
-  recordedById String?           @db.Uuid
-  recordedBy   User?             @relation("OrderReturnRecordedBy", fields: [recordedById], references: [id], onDelete: SetNull)
-  items        OrderReturnItem[]
-  createdAt    DateTime          @default(now())
+  id             String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orderId        String            @db.Uuid
+  order          Order             @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  reason         String
+  refundId       String?           @unique @db.Uuid
+  refund         OrderRefund?      @relation(fields: [refundId], references: [id], onDelete: SetNull)
+  recordedById   String?           @db.Uuid
+  recordedBy     User?             @relation("OrderReturnRecordedBy", fields: [recordedById], references: [id], onDelete: SetNull)
+  items          OrderReturnItem[]
+  stockMovements StockMovement[]
+  createdAt      DateTime          @default(now())
 
   @@index([orderId])
   @@index([recordedById])
@@ -798,6 +803,7 @@ model PurchaseOrderReceipt {
   note             String?
   updatedBuyPrices Boolean
   items            PurchaseOrderReceiptItem[]
+  stockMovements   StockMovement[]
   createdAt        DateTime                   @default(now())
 
   @@index([purchaseOrderId])
@@ -816,6 +822,61 @@ model PurchaseOrderReceiptItem {
   @@unique([receiptId, purchaseOrderItemId])
   @@index([purchaseOrderItemId])
   @@map("purchase_order_receipt_item")
+}
+
+// ============================================
+// STOCK HISTORY
+// ============================================
+
+// Why a listing's (or variant's) stock changed. INITIAL is the stock a listing (or a variant added to it) starts with;
+// the last four are staff changing it by hand on the listing form, which always says why.
+enum StockMovementReason {
+  INITIAL
+  SALE
+  CANCELLATION
+  RETURN
+  PURCHASE_RECEIVED
+  COUNT_CORRECTION
+  DAMAGED
+  LOST
+  OTHER
+}
+
+// One change to a listing's stock, or to a variant's on it, written in the same transaction as the change. Together
+// they add up to the current stock. The link says what caused it: the order (a sale or a cancellation), the return,
+// or the purchase order delivery.
+model StockMovement {
+  id                    String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  storeListingId        String               @db.Uuid
+  storeListing          StoreListing         @relation(fields: [storeListingId], references: [id], onDelete: Cascade)
+  // Null for a product without variants
+  storeListingVariantId String?              @db.Uuid
+  storeListingVariant   StoreListingVariant? @relation(fields: [storeListingVariantId], references: [id], onDelete: Cascade)
+  // +5 in, -2 out
+  change                Int
+  stockAfter            Int
+  reason                StockMovementReason
+  // Staff's own words: required for OTHER, optional for the other manual reasons
+  note                  String?
+
+  orderId                String?               @db.Uuid
+  order                  Order?                @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  orderReturnId          String?               @db.Uuid
+  orderReturn            OrderReturn?          @relation(fields: [orderReturnId], references: [id], onDelete: SetNull)
+  purchaseOrderReceiptId String?               @db.Uuid
+  purchaseOrderReceipt   PurchaseOrderReceipt? @relation(fields: [purchaseOrderReceiptId], references: [id], onDelete: SetNull)
+
+  createdById String?  @db.Uuid
+  createdBy   User?    @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt   DateTime @default(now())
+
+  @@index([storeListingId, createdAt])
+  @@index([storeListingVariantId])
+  @@index([orderId])
+  @@index([orderReturnId])
+  @@index([purchaseOrderReceiptId])
+  @@index([createdById])
+  @@map("stock_movement")
 }
 
 model Review {

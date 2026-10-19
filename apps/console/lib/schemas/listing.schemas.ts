@@ -1,6 +1,7 @@
 import { z } from "zod"
-import { Status } from "@workspace/db/enums"
+import { Status, StockMovementReason } from "@workspace/db/enums"
 import { decimalSchema, optionalDecimalSchema } from "@/lib/schemas/product.schemas"
+import { MANUAL_STOCK_REASONS } from "@/lib/stock-reasons"
 
 const quantitySchema = z.number("Enter a whole number").int("Enter a whole number").min(0, "Can't be negative")
 
@@ -26,8 +27,21 @@ export const listingFormSchema = z
     isFeatured: z.boolean(),
     status: z.enum(Status),
     variants: z.array(listingVariantSchema),
+    // Why stock was changed by hand, for the stock history. An edit that changes stock must give one (the action
+    // checks, since only it knows what was saved); a new listing's stock is its initial stock.
+    stockReason: z.enum(MANUAL_STOCK_REASONS).nullable(),
+    // Null is accepted too, so the form's output can be sent to the action as it is
+    stockNote: z
+      .string()
+      .trim()
+      .max(500, "Keep the note under 500 characters")
+      .transform((value) => value || null)
+      .nullable(),
   })
   .superRefine((data, ctx) => {
+    if (data.stockReason === StockMovementReason.OTHER && !data.stockNote) {
+      ctx.addIssue({ code: "custom", message: "Say what happened", path: ["stockNote"] })
+    }
     // Drafts can be saved before the price is known, but nothing goes on sale for free by accident
     if (data.status === Status.PUBLISHED && data.sellPrice <= 0) {
       ctx.addIssue({ code: "custom", message: "A published listing needs a sell price above 0", path: ["sellPrice"] })
