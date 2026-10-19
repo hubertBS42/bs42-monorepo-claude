@@ -1,20 +1,12 @@
 "use client"
 
-import { useState, useTransition, type ReactElement, type ReactNode } from "react"
-import { useRouter } from "next/navigation"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm, type DefaultValues, type FieldValues, type UseFormReturn } from "react-hook-form"
-import type { z } from "zod"
-import type { ActionResponse } from "@workspace/contracts"
+import type { FieldValues, UseFormReturn } from "react-hook-form"
 import type { OrderStatus, PaymentMethod } from "@workspace/db/enums"
 import { NumberInputField, SelectField, TextareaField } from "@workspace/forms"
 import { Button } from "@workspace/ui/components/button"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@workspace/ui/components/dialog"
-import { FieldGroup } from "@workspace/ui/components/field"
 import { Skeleton } from "@workspace/ui/components/skeleton"
-import { Spinner } from "@workspace/ui/components/spinner"
-import { toast } from "@workspace/ui/components/toast"
 import { formatCurrency } from "@workspace/utils/currency"
+import FormDialog from "@/components/form-dialog"
 import { useCanUpdateOrders } from "@/hooks/use-can-update-orders"
 import { cancelAndRefundOrderAction, refundOrderAction } from "@/lib/actions/order.actions"
 import { cancelAndRefundStoreOrderAction, refundStoreOrderAction } from "@/lib/actions/store-order.actions"
@@ -40,97 +32,8 @@ interface RefundTarget {
   paymentMethod: PaymentMethod
 }
 
-// The form holds the schema's input (an amount field can be empty) and submits its output. Returns use it too.
-interface RefundDialogProps<In extends FieldValues, Out extends FieldValues> {
-  trigger: ReactElement
-  title: string
-  description: string
-  submitLabel: string
-  // The error toast's title
-  failureTitle?: string
-  destructive?: boolean
-  className?: string
-  schema: z.ZodType<Out, In>
-  values: In
-  save: (values: Out) => Promise<ActionResponse>
-  success: (values: Out) => { title: string; description: string }
-  children: (form: UseFormReturn<In, unknown, Out>, isPending: boolean) => ReactNode
-}
-
-export function RefundDialog<In extends FieldValues, Out extends FieldValues>({
-  trigger,
-  title,
-  description,
-  submitLabel,
-  failureTitle = "Unable to refund",
-  destructive,
-  className,
-  schema,
-  values,
-  save,
-  success,
-  children,
-}: RefundDialogProps<In, Out>) {
-  const router = useRouter()
-  const [isOpen, setIsOpen] = useState(false)
-  const [isPending, startTransition] = useTransition()
-  const form = useForm<In, unknown, Out>({ resolver: zodResolver(schema), defaultValues: values as DefaultValues<In> })
-
-  const onSubmit = (submitted: Out) => {
-    startTransition(async () => {
-      const response = await save(submitted)
-      if (!response.success) {
-        toast.add({ title: failureTitle, description: response.error, type: "error" })
-        // The order changed under the page: show it as it is now
-        if (response.code === "REFUNDS_CHANGED" || response.code === "STATUS_CHANGED" || response.code === "NOT_PAID" || response.code === "RETURNS_CHANGED" || response.code === "NOT_RETURNABLE") {
-          setIsOpen(false)
-          router.refresh()
-        }
-        return
-      }
-      setIsOpen(false)
-      toast.add({ ...success(submitted), type: "success" })
-      router.refresh()
-    })
-  }
-
-  return (
-    <Dialog
-      open={isOpen}
-      onOpenChange={(open) => {
-        // Reset on open: onOpenChange doesn't run when a save closes the dialog
-        if (open) form.reset(values)
-        setIsOpen(open)
-      }}
-    >
-      <DialogTrigger render={trigger} />
-      <DialogContent className={className}>
-        <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>{description}</DialogDescription>
-        </DialogHeader>
-        {/* The dialog is portaled, but React events still bubble to any form it's rendered inside */}
-        <form
-          onSubmit={(e) => {
-            e.stopPropagation()
-            form.handleSubmit(onSubmit)(e)
-          }}
-          className="grid gap-6"
-        >
-          <FieldGroup>{children(form, isPending)}</FieldGroup>
-          <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" disabled={isPending} onClick={() => setIsOpen(false)}>
-              Back
-            </Button>
-            <Button type="submit" variant={destructive ? "destructive" : "default"} disabled={isPending}>
-              {isPending ? <Spinner /> : submitLabel}
-            </Button>
-          </div>
-        </form>
-      </DialogContent>
-    </Dialog>
-  )
-}
+// What the refund and return dialogs refresh on: the order changed under the page, so show it as it is now
+export const REFUND_REFRESH_CODES = ["REFUNDS_CHANGED", "STATUS_CHANGED", "NOT_PAID", "RETURNS_CHANGED", "NOT_RETURNABLE"]
 
 function MethodAndReason<In extends FieldValues, Out extends FieldValues>({ form, isPending }: { form: UseFormReturn<In, unknown, Out>; isPending: boolean }) {
   // Both refund forms have these two fields; the casts only name them for react-hook-form
@@ -164,7 +67,7 @@ export default function OrderRefunds({ storeId, orderId, refundedGhs, refundable
 
   return (
     <div className="grid gap-2">
-      <RefundDialog
+      <FormDialog
         trigger={
           <Button type="button" variant="outline">
             Refund
@@ -173,6 +76,8 @@ export default function OrderRefunds({ storeId, orderId, refundedGhs, refundable
         title="Refund"
         description={`Up to ${ghs(refundableGhs)} is left to refund. The order's status stays as it is, and no stock comes back: for items brought back, use Record return.`}
         submitLabel="Refund"
+        failureTitle="Unable to refund"
+        refreshOn={REFUND_REFRESH_CODES}
         schema={refundOrderFormSchema}
         values={{ amountGhs: "", method: paymentMethod, reason: "" }}
         save={(values) => (storeId ? refundStoreOrderAction({ ...values, ...target, storeId }) : refundOrderAction({ ...values, ...target }))}
@@ -184,10 +89,10 @@ export default function OrderRefunds({ storeId, orderId, refundedGhs, refundable
             <MethodAndReason form={form} isPending={isPending} />
           </>
         )}
-      </RefundDialog>
+      </FormDialog>
 
       {canCancel && (
-        <RefundDialog
+        <FormDialog
           trigger={
             <Button type="button" variant="destructive">
               Cancel and refund
@@ -196,6 +101,8 @@ export default function OrderRefunds({ storeId, orderId, refundedGhs, refundable
           title="Cancel and refund"
           description={`The order is cancelled, its stock goes back on sale, and the ${ghs(refundableGhs)} left is refunded.`}
           submitLabel="Cancel and refund"
+          failureTitle="Unable to refund"
+          refreshOn={REFUND_REFRESH_CODES}
           destructive
           schema={cancelAndRefundFormSchema}
           values={{ method: paymentMethod, reason: "" }}
@@ -205,7 +112,7 @@ export default function OrderRefunds({ storeId, orderId, refundedGhs, refundable
           success={() => ({ title: "Order cancelled", description: `${ghs(refundableGhs)} refunded.` })}
         >
           {(form, isPending) => <MethodAndReason form={form} isPending={isPending} />}
-        </RefundDialog>
+        </FormDialog>
       )}
     </div>
   )

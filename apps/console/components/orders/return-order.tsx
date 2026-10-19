@@ -15,7 +15,8 @@ import { returnStoreOrderItemsAction } from "@/lib/actions/store-order.actions"
 import { PAYMENT_METHOD_LABELS } from "@/lib/order-status"
 import { returnOrderFormSchema } from "@/lib/schemas/order.schemas"
 import type { ReturnableLine } from "@/types"
-import { RefundDialog, refundersLabel } from "./refund-order"
+import FormDialog from "@/components/form-dialog"
+import { REFUND_REFRESH_CODES, refundersLabel } from "./refund-order"
 
 // Items a customer brings back once the order reached them, for whoever may give refunds (superAdmins, or a store's
 // owners and admins on its own orders): how many of each line, whether they go
@@ -155,7 +156,7 @@ export default function RecordReturn({ storeId, orderId, refundedGhs, returnCoun
   const refundable = canRefund ? Number(refundableGhs) : 0
 
   return (
-    <RefundDialog
+    <FormDialog
       trigger={
         <Button type="button" variant="outline">
           Record return
@@ -165,6 +166,7 @@ export default function RecordReturn({ storeId, orderId, refundedGhs, returnCoun
       description="Choose what the customer brought back. The order's status stays as it is."
       submitLabel="Record return"
       failureTitle="Unable to record the return"
+      refreshOn={REFUND_REFRESH_CODES}
       className="max-h-[90vh] overflow-y-auto sm:max-w-xl"
       schema={returnOrderFormSchema}
       values={{
@@ -184,6 +186,6 @@ export default function RecordReturn({ storeId, orderId, refundedGhs, returnCoun
       }}
     >
       {(form, isPending) => <ReturnFields form={form} isPending={isPending} lines={lines} refundable={refundable} canRefund={canRefund} showStore={showStore} />}
-    </RefundDialog>
+    </FormDialog>
   )
 }
