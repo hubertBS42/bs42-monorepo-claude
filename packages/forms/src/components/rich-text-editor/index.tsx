@@ -5,9 +5,7 @@ import { EditorContent, useEditor, type Editor, type JSONContent } from "@tiptap
 import { Placeholder } from "@tiptap/extensions"
 import { cn } from "@workspace/ui/lib/utils"
 import MenuBar from "./menu-bar"
-import StarterKit from "@tiptap/starter-kit"
-import TextAlign from "@tiptap/extension-text-align"
-import { TableKit } from "@tiptap/extension-table"
+import { richTextExtensions } from "../../rich-text-extensions"
 
 interface RichTextEditorProps {
   onChange: (data: string | null) => void
@@ -52,16 +50,10 @@ const RichTextEditor = ({
 
   const editor = useEditor({
     extensions: [
-      StarterKit.configure({
-        heading: { levels: [1, 2, 3] },
-      }),
-      TextAlign.configure({
-        types: ["heading", "paragraph"],
-      }),
+      ...richTextExtensions,
       Placeholder.configure({
         placeholder,
       }),
-      TableKit.configure({ table: { resizable: true } }),
     ],
     editorProps: {
       attributes: {
