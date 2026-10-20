@@ -13,6 +13,7 @@ import { z } from "zod"
 import { getStoreRole } from "@/lib/auth-guard"
 import { getCategoryPaths, getSubtreeIds } from "@/lib/data/products.data"
 import { stockStatesSql } from "@/lib/stock-states"
+import { customerVisibleListingWhere, getVisibleCategoryIds, hiddenReason, variantOnSaleWhere } from "@workspace/commerce/visibility"
 import { getIncomingByListing } from "@/lib/data/purchase-orders.data"
 
 export const MAX_LISTINGS_PAGE_SIZE = 100
@@ -49,14 +50,6 @@ const sellableVariants = {
     sku: true,
     variantValues: { select: { optionValue: { select: { value: true, option: { select: { name: true, position: true } } } } } },
   },
-}
-
-// Customers can buy it: published, its product published, and, for a product with variants, at least one variant on sale.
-// The same rule as the table's "not on sale" note.
-const visibleToCustomers: Prisma.StoreListingWhereInput = {
-  status: Status.PUBLISHED,
-  product: { status: Status.PUBLISHED },
-  OR: [{ product: { hasVariants: false } }, { storeListingVariants: { some: { status: Status.PUBLISHED, variant: { status: { not: Status.ARCHIVED } } } } }],
 }
 
 // The store's listings in a stock state, as the stock column's badges show it
@@ -97,7 +90,10 @@ export const getStoreListings = async (storeId: string, filters: ListingsParams 
     if (!isUuid(brandId) || !isUuid(categoryId)) return { success: true, data: { data: [], total: 0, page, pageSize, totalPages: 0 } }
 
     // The whole tree is small: one read gives every row's path and the category filter's subtree
-    const categories = await prisma.category.findMany({ select: { id: true, name: true, parentId: true } })
+    const categories = await prisma.category.findMany({ select: { id: true, name: true, parentId: true, status: true } })
+    // What customers can see, the storefront's rule, for the visible filter and the "Not on sale" note
+    const visibleCategoryIds = getVisibleCategoryIds(categories)
+    const visibleToCustomers = customerVisibleListingWhere(visibleCategoryIds)
     const stockIds = stock ? await getListingIdsInStockState(storeId, stock) : null
 
     const contains = search ? { contains: search, mode: "insensitive" as const } : undefined
@@ -134,12 +130,10 @@ export const getStoreListings = async (storeId: string, filters: ListingsParams 
           isFeatured: true,
           status: true,
           updatedAt: true,
-          product: { select: { id: true, name: true, images: true, status: true, hasVariants: true, categoryId: true, brand: { select: { id: true, name: true } } } },
+          organization: { select: { status: true } },
+          product: { select: { id: true, name: true, images: true, status: true, hasVariants: true, categoryId: true, brand: { select: { id: true, name: true, status: true } } } },
           // The variants on sale: published in the store, and not archived in the catalogue
-          storeListingVariants: {
-            where: { status: Status.PUBLISHED, variant: { status: { not: Status.ARCHIVED } } },
-            select: { sellPrice: true, stock: true },
-          },
+          storeListingVariants: { where: variantOnSaleWhere, select: { sellPrice: true, stock: true } },
         },
       }),
       prisma.storeListing.count({ where }),
@@ -163,14 +157,8 @@ export const getStoreListings = async (storeId: string, filters: ListingsParams 
           const lowCount = stocks.filter((value) => value > 0 && value <= listing.lowStockThreshold).length
           const stockAlert = !listing.trackInventory ? null : outCount ? { kind: "out" as const, count: outCount } : lowCount ? { kind: "low" as const, count: lowCount } : null
 
-          const notOnSaleReason =
-            listing.status !== Status.PUBLISHED
-              ? null
-              : product.status !== Status.PUBLISHED
-                ? `The catalogue product is ${product.status.toLowerCase()}.`
-                : product.hasVariants && variants.length === 0
-                  ? "No variant is published."
-                  : null
+          // Only for a published listing: the status column already shows a draft or archived one
+          const notOnSaleReason = listing.status === Status.PUBLISHED ? hiddenReason(listing, visibleCategoryIds, variants) : null
 
           // A variant without its own price sells at the listing's
           const prices = variants.map((variant) => variant.sellPrice ?? listing.sellPrice)

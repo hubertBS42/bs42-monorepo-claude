@@ -7,6 +7,7 @@ import { formatDate } from "@workspace/utils/date"
 import type { StockAlert } from "./notifications"
 import type { PricedOrder } from "./pricing"
 import { addStock, recordStockMovements } from "./stock-movements"
+import { hiddenReason, loadVisibleCategoryIds } from "./visibility"
 
 // Order writes: creating one (lines priced from the stores' listings, stock reserved) and moving its status on. Staff
 // create orders in one store's workspace; a storefront order can take each line from a different store. In their own
@@ -58,9 +59,11 @@ export interface ResolvedLine {
 }
 
 // Looks up each line in the published listings, at their stores' prices: only the given store's for staff, or any
-// store's (null) for the storefront. Throws OrderItemError for a line that isn't on sale; stock is only checked when
-// it's reserved.
+// store's (null) for the storefront, which also needs customers to be able to see it (visibility.ts: brand, category
+// and store too). Throws OrderItemError for a line that isn't on sale; stock is only checked when it's reserved.
 export async function resolveOrderLines(client: Client, storeId: string | null, items: OrderItemInput[]): Promise<ResolvedLine[]> {
+  // One after the other: a transaction has one connection
+  const visibleCategoryIds = storeId ? null : await loadVisibleCategoryIds(client)
   const listings = await client.storeListing.findMany({
     where: { id: { in: items.map((item) => item.listingId) }, ...(storeId && { organizationId: storeId }) },
     select: {
@@ -71,8 +74,10 @@ export async function resolveOrderLines(client: Client, storeId: string | null, 
       stock: true,
       trackInventory: true,
       lowStockThreshold: true,
-      organization: { select: { name: true } },
-      product: { select: { id: true, name: true, slug: true, sku: true, images: true, status: true, hasVariants: true } },
+      organization: { select: { name: true, status: true } },
+      product: {
+        select: { id: true, name: true, slug: true, sku: true, images: true, status: true, hasVariants: true, categoryId: true, brand: { select: { name: true, status: true } } },
+      },
       storeListingVariants: {
         where: { id: { in: items.flatMap((item) => (item.listingVariantId ? [item.listingVariantId] : [])) } },
         select: {
@@ -98,7 +103,7 @@ export async function resolveOrderLines(client: Client, storeId: string | null, 
 
   return items.map((item) => {
     const listing = byId.get(item.listingId)
-    if (!listing || listing.status !== Status.PUBLISHED || listing.product.status !== Status.PUBLISHED) {
+    if (!listing || listing.status !== Status.PUBLISHED || listing.product.status !== Status.PUBLISHED || (visibleCategoryIds && hiddenReason(listing, visibleCategoryIds))) {
       throw new OrderItemError("ITEM_UNAVAILABLE", listing?.product.name ?? "An item")
     }
     const { product } = listing

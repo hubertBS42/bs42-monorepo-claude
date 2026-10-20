@@ -30,6 +30,7 @@
     "./order-status": "./src/order-status.ts",
     "./order-writes": "./src/order-writes.ts",
     "./pricing": "./src/pricing.ts",
-    "./stock-movements": "./src/stock-movements.ts"
+    "./stock-movements": "./src/stock-movements.ts",
+    "./visibility": "./src/visibility.ts"
   }
 }
