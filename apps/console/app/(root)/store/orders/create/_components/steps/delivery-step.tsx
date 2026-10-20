@@ -1,7 +1,8 @@
 "use client"
 
-import { useEffect, useMemo } from "react"
+import { useEffect, useMemo, useRef } from "react"
 import { useWatch, type UseFormReturn } from "react-hook-form"
+import { findDeliveryRate } from "@workspace/commerce/delivery-rates"
 import { GEODATA } from "@workspace/contracts"
 import { ShippingMethod } from "@workspace/db/enums"
 import { ComboboxField, NumberInputField, PhoneField, SelectField, TextareaField, TextInputField } from "@workspace/forms"
@@ -9,6 +10,7 @@ import { Button } from "@workspace/ui/components/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@workspace/ui/components/card"
 import { FieldGroup } from "@workspace/ui/components/field"
 import type { OrderCustomer } from "@/types"
+import type { DeliverySettingsView } from "@/lib/data/delivery.data"
 import type { OrderFormInput, OrderFormOutput } from "../create-order-form"
 
 const methodOptions = [
@@ -21,11 +23,14 @@ interface DeliveryStepProps {
   form: UseFormReturn<OrderFormInput, unknown, OrderFormOutput>
   // The looked-up customer, whose saved addresses can fill the delivery in
   customer: OrderCustomer | null
+  // The platform's delivery fees (Settings → Delivery)
+  delivery: DeliverySettingsView
 }
 
-export default function DeliveryStep({ form, customer }: DeliveryStepProps) {
+export default function DeliveryStep({ form, customer, delivery }: DeliveryStepProps) {
   const method = useWatch({ control: form.control, name: "shippingMethod" })
   const region = useWatch({ control: form.control, name: "shippingRegion" })
+  const town = useWatch({ control: form.control, name: "shippingTown" })
   const townOptions = useMemo(() => (GEODATA.find((item) => item.name === region)?.towns ?? []).map((town) => ({ label: town, value: town })), [region])
   const isDelivery = method === ShippingMethod.DELIVERY
 
@@ -33,6 +38,19 @@ export default function DeliveryStep({ form, customer }: DeliveryStepProps) {
   useEffect(() => {
     if (!isDelivery) form.setValue("shippingGhs", 0)
   }, [isDelivery, form])
+
+  // The fee for the address: its town's, else its region's
+  const rate = region ? findDeliveryRate(delivery.rates, region, town) : undefined
+
+  // Choosing another area fills its fee in; staff can still change it. Only on a change, not when the step opens
+  // again, so a fee typed by hand survives going back and forth between steps.
+  const area = `${region}\u0000${town}`
+  const shownArea = useRef(area)
+  useEffect(() => {
+    if (shownArea.current === area) return
+    shownArea.current = area
+    if (isDelivery && rate) form.setValue("shippingGhs", Number(rate.feeGhs), { shouldDirty: true })
+  }, [area, rate, isDelivery, form])
 
   const applyAddress = (address: OrderCustomer["addresses"][number]) => {
     const options = { shouldDirty: true }
@@ -91,6 +109,12 @@ export default function DeliveryStep({ form, customer }: DeliveryStepProps) {
                 <div className="max-w-56">
                   <NumberInputField control={form.control} label="Shipping fee" name="shippingGhs" step={0.01} min={0} prependText="GH₵" />
                 </div>
+                {region && (
+                  <p className="text-sm text-muted-foreground">
+                    {rate ? `The delivery fee for ${rate.town ?? region} is GH₵${rate.feeGhs}.` : `There's no delivery fee set for ${town || region}, so the storefront doesn't deliver there.`}
+                    {delivery.freeDeliveryFromGhs !== null && ` Orders of GH₵${delivery.freeDeliveryFromGhs} or more after any discount deliver free, so set 0 if this one does.`}
+                  </p>
+                )}
               </>
             )}
           </FieldGroup>

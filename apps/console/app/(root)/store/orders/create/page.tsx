@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@work
 import { requireActiveStoreMember } from "@/lib/auth-guard"
 import { EXCHANGE_RATE_MAX_AGE_DAYS, getLatestExchangeRate } from "@workspace/commerce/exchange-rates"
 import CreateOrderForm from "./_components/create-order-form"
+import { getDeliverySettings } from "@/lib/data/delivery.data"
 
 export const metadata: Metadata = {
   title: "Create Order",
@@ -17,7 +18,7 @@ export default async function CreateStoreOrderPage() {
   if (!organizationRoles[role].authorize({ order: ["create"] }).success) redirect("/forbidden")
 
   // The actions check again when pricing; this only saves filling in a form that can't be saved
-  const rate = await getLatestExchangeRate()
+  const [rate, delivery] = await Promise.all([getLatestExchangeRate(), getDeliverySettings()])
 
   return (
     <main className="flex flex-col gap-y-6">
@@ -41,7 +42,7 @@ export default async function CreateStoreOrderPage() {
           </CardContent>
         </Card>
       ) : (
-        <CreateOrderForm storeId={storeId} />
+        <CreateOrderForm storeId={storeId} delivery={delivery} />
       )}
     </main>
   )

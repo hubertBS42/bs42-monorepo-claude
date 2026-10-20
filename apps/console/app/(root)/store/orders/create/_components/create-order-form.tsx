@@ -14,6 +14,7 @@ import { cn } from "@workspace/ui/lib/utils"
 import { createStoreOrderAction } from "@/lib/actions/store-order.actions"
 import { createStoreOrderFormSchema } from "@/lib/schemas/order.schemas"
 import type { OrderCustomer } from "@/types"
+import type { DeliverySettingsView } from "@/lib/data/delivery.data"
 import CustomerStep from "./steps/customer-step"
 import DeliveryStep from "./steps/delivery-step"
 import ItemsStep from "./steps/items-step"
@@ -63,7 +64,8 @@ const DEFAULT_VALUES: OrderFormInput = {
   notes: "",
 }
 
-export default function CreateOrderForm({ storeId }: { storeId: string }) {
+// delivery: the platform's delivery fees, which fill the shipping fee in
+export default function CreateOrderForm({ storeId, delivery }: { storeId: string; delivery: DeliverySettingsView }) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [step, setStep] = useState(0)
@@ -135,7 +137,7 @@ export default function CreateOrderForm({ storeId }: { storeId: string }) {
 
       {step === 0 && <CustomerStep storeId={storeId} form={form} customer={customer} onCustomerChange={setCustomer} />}
       {step === 1 && <ItemsStep storeId={storeId} form={form} chosen={chosen} onChosenChange={setChosen} />}
-      {step === 2 && <DeliveryStep form={form} customer={customer} />}
+      {step === 2 && <DeliveryStep form={form} customer={customer} delivery={delivery} />}
       {step === 3 && <ReviewStep storeId={storeId} form={form} />}
 
       <div className="flex flex-wrap items-center justify-between gap-2">

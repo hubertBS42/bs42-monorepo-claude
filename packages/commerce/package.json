@@ -24,6 +24,8 @@
     "typescript": "^5"
   },
   "exports": {
+    "./delivery": "./src/delivery.ts",
+    "./delivery-rates": "./src/delivery-rates.ts",
     "./exchange-rates": "./src/exchange-rates.ts",
     "./notifications": "./src/notifications.ts",
     "./order-emails": "./src/order-emails.ts",

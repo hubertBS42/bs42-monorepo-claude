@@ -165,6 +165,31 @@ enum ExchangeRateSource {
   OPEN_EXCHANGE_RATES
 }
 
+// Delivery fees are GHS: couriers charge in cedis, so a fee doesn't move with the exchange rate. This row holds what
+// applies to every delivery; its updatedAt is the version the Delivery card in Settings saves against (CONFLICT).
+model DeliverySettings {
+  id                  String   @id @default("singleton")
+  // An order whose subtotal after its discount reaches this delivers free; null: never free
+  freeDeliveryFromGhs Decimal? @db.Decimal(12, 2)
+  updatedAt           DateTime @updatedAt
+
+  @@map("delivery_settings")
+}
+
+// A region's delivery fee (town null), or a town's, which overrides its region's. An address in a region with neither
+// isn't delivered to. Region and town names are GEODATA's (@workspace/contracts), as addresses store them.
+model DeliveryRate {
+  id     String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  region String
+  town   String?
+  feeGhs Decimal @db.Decimal(12, 2)
+
+  // Postgres treats NULLs as distinct, so each region's own fee needs its own partial index
+  @@unique([region, town])
+  @@unique([region], map: "delivery_rate_region_key", where: { town: null })
+  @@map("delivery_rate")
+}
+
 model ExchangeRate {
   id        String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   from      String // "USD"
