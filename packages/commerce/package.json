@@ -28,9 +28,11 @@
     "./delivery-rates": "./src/delivery-rates.ts",
     "./exchange-rates": "./src/exchange-rates.ts",
     "./notifications": "./src/notifications.ts",
+    "./online-payments": "./src/online-payments.ts",
     "./order-emails": "./src/order-emails.ts",
     "./order-status": "./src/order-status.ts",
     "./order-writes": "./src/order-writes.ts",
+    "./paystack": "./src/paystack.ts",
     "./pricing": "./src/pricing.ts",
     "./stock-movements": "./src/stock-movements.ts",
     "./visibility": "./src/visibility.ts"

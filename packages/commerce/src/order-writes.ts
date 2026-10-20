@@ -2,7 +2,7 @@ import "server-only"
 
 import type { prisma } from "@workspace/db"
 import { Prisma } from "@workspace/db/client"
-import { OrderStatus, PaymentStatus, ShippingMethod, Status, StockMovementReason } from "@workspace/db/enums"
+import { OrderStatus, PaymentMethod, PaymentStatus, ShippingMethod, Status, StockMovementReason } from "@workspace/db/enums"
 import { formatDate } from "@workspace/utils/date"
 import type { StockAlert } from "./notifications"
 import type { PricedOrder } from "./pricing"
@@ -154,10 +154,15 @@ export async function resolveOrderLines(client: Client, storeId: string | null, 
 export interface NewOrder {
   // Null for an order the customer placed on the storefront
   createdById: string | null
+  // Where a storefront order was placed from, for the limit on unpaid orders (apps/store/lib/checkout.ts)
+  placedFromIp?: string | null
   // The first entry in the order's status history, e.g. "Created in the store"
   statusNote: string
   customer: { userId: string | null; name: string; email: string | null; phone: string | null }
   shippingMethod: ShippingMethod
+  // How the customer means to pay; staff record how they did. A storefront order pays online, and its payment sets
+  // card or mobile money (online-payments.ts). Cash when left out.
+  paymentMethod?: PaymentMethod
   // Null for a pickup
   shipping: { name: string; phone: string; line1: string; line2: string | null; region: string; town: string } | null
   notes: string | null
@@ -207,6 +212,7 @@ export async function createOrder(tx: Tx, order: NewOrder) {
       customerEmail: order.customer.email,
       customerPhone: order.customer.phone,
       shippingMethod: order.shippingMethod,
+      paymentMethod: order.paymentMethod ?? PaymentMethod.CASH,
       shippingName: order.shipping?.name ?? null,
       shippingPhone: order.shipping?.phone ?? null,
       shippingLine1: order.shipping?.line1 ?? null,
@@ -227,6 +233,7 @@ export async function createOrder(tx: Tx, order: NewOrder) {
       exchangeRate: order.rate.value,
       exchangeRateId: order.rate.id,
       createdById: order.createdById,
+      placedFromIp: order.placedFromIp ?? null,
       notes: order.notes,
       orderItems: {
         create: order.lines.map((line, index) => {

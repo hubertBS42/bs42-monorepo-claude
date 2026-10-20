@@ -10,6 +10,7 @@ import { z } from "zod"
 import { MAX_LINE_QUANTITY } from "@/lib/basket-limits"
 import { addCartItem, CartError, countCartItems, removeCartItem, setCartItemQuantity, type AddToCartInput } from "@/lib/cart"
 import { ensureCartId, readCartId } from "@/lib/cart-cookie"
+import { isOrderKey } from "@/lib/order-access"
 
 // The basket's actions. Anyone can call them: the cookie is the only key to a basket, and every line is checked again
 // when the basket is shown and when the order is placed.
@@ -79,3 +80,29 @@ export async function removeFromBasketAction(lineId: string): Promise<DataRespon
   }
 }
 
+// "Put these items back in your basket" on a cancelled order's page. Each line goes in as if added again, at today's
+// stores and stock; what can't be bought any more is named.
+export async function reorderAction(orderId: string, key: string): Promise<DataResponse<{ count: number; missed: string[] }>> {
+  try {
+    if (!isOrderKey(orderId, key)) return { success: false, error: "We can't find that order.", code: "NOT_FOUND" }
+    const items = await prisma.orderItem.findMany({
+      where: { orderId },
+      orderBy: { id: "asc" },
+      select: { storeListingId: true, storeListingVariantId: true, quantity: true, productName: true, variantDescription: true },
+    })
+
+    const cartId = await ensureCartId()
+    const missed: string[] = []
+    for (const item of items) {
+      try {
+        await addOnce(cartId, { listingId: item.storeListingId, listingVariantId: item.storeListingVariantId, quantity: Math.min(item.quantity, MAX_LINE_QUANTITY) })
+      } catch (error) {
+        if (!(error instanceof CartError)) throw error
+        missed.push(item.variantDescription ? `${item.productName} (${item.variantDescription})` : item.productName)
+      }
+    }
+    return { success: true, data: { count: await countCartItems(prisma, cartId), missed } }
+  } catch (error) {
+    return failure(error)
+  }
+}

@@ -606,6 +606,10 @@ model Order {
   exchangeRateId String?       @db.Uuid
   rateSource     ExchangeRate? @relation(fields: [exchangeRateId], references: [id], onDelete: Restrict)
 
+  // Where a storefront order was placed from (the first X-Forwarded-For address), so one visitor can only hold so
+  // many unpaid orders (and their stock) at a time. Null for staff orders.
+  placedFromIp String?
+
   // POS
   createdById String? @db.Uuid
   createdBy   User?   @relation("OrderCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
@@ -613,18 +617,20 @@ model Order {
   // Reference number
   reference String @unique
 
-  notes          String?
-  orderItems     OrderItem[]
-  statusHistory  OrderStatusHistory[]
-  refunds        OrderRefund[]
-  returns        OrderReturn[]
-  stockMovements StockMovement[]
-  createdAt      DateTime             @default(now())
-  updatedAt      DateTime             @updatedAt
+  notes           String?
+  orderItems      OrderItem[]
+  statusHistory   OrderStatusHistory[]
+  refunds         OrderRefund[]
+  paymentAttempts PaymentAttempt[]
+  returns         OrderReturn[]
+  stockMovements  StockMovement[]
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
 
   // reference is @unique, which already indexes it
   @@index([userId])
   @@index([createdById])
+  @@index([placedFromIp])
   @@index([paymentRecordedById])
   @@index([exchangeRateId])
   @@index([status])
@@ -644,6 +650,37 @@ model OrderStatusHistory {
   @@index([orderId])
   @@index([changedById])
   @@map("order_status_history")
+}
+
+enum PaymentAttemptStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  ABANDONED
+}
+
+// One go at paying a storefront order online through Paystack. Paystack takes each reference once, so every "Pay now"
+// is a new attempt; a success on any of them pays the order, and a second success (paid twice, or after the order was
+// cancelled for going unpaid) is kept here for staff to refund. Written by @workspace/commerce/online-payments.
+model PaymentAttempt {
+  id              String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orderId         String               @db.Uuid
+  order           Order                @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  // Sent to Paystack: the order's reference and a random suffix
+  reference       String               @unique
+  // What Paystack was asked to take: the order's totalGhs when the attempt began
+  amountGhs       Decimal              @db.Decimal(12, 2)
+  status          PaymentAttemptStatus @default(PENDING)
+  // Paystack's channel once paid: card, mobile_money, ...
+  channel         String?
+  // Paystack's own message, e.g. "Approved" or "Declined"
+  gatewayResponse String?
+  paidAt          DateTime?
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+
+  @@index([orderId])
+  @@map("payment_attempt")
 }
 
 // Money given back on a paid order, by the platform. An order can have several (partial refunds); their sum never

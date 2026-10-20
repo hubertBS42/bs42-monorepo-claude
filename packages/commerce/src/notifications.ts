@@ -185,3 +185,56 @@ export async function notifyRateFetchFailed(date: string, error: string) {
     console.error("Exchange rate notification failed:", failure)
   }
 }
+
+// Money Paystack took that an order couldn't simply take. Always sent (no switch): someone has to give it back.
+export type PaymentProblem = "ORDER_CANCELLED" | "PAID_TWICE" | "AMOUNT_MISMATCH"
+
+const PAYMENT_PROBLEMS: Record<PaymentProblem, { heading: string; intro: string }> = {
+  ORDER_CANCELLED: {
+    heading: "Payment for a cancelled order",
+    intro:
+      "A customer paid for an order after it was cancelled for going unpaid, and its stock was put back. The payment is recorded on the order: refund it in Paystack, then record the refund on the order.",
+  },
+  PAID_TWICE: {
+    heading: "Order paid twice",
+    intro: "A customer paid for an order that was already paid. Refund this payment in Paystack. The order only counts the first payment, so don't record this refund on it.",
+  },
+  AMOUNT_MISMATCH: {
+    heading: "Payment doesn't match the order",
+    intro: "Paystack took an amount that isn't the order's total, so the order wasn't marked as paid. Check the payment in Paystack, then refund it or record the payment on the order by hand.",
+  },
+}
+
+export async function notifyPaymentProblem(orderId: string, problem: PaymentProblem, paystackReference: string, amountGhs: string) {
+  try {
+    const settings = await readAppSettings()
+    if (settings.notificationEmails.length === 0) {
+      console.error(`Payment problem (${problem}) on order ${orderId}, Paystack reference ${paystackReference}, and no one to tell`)
+      return
+    }
+    const order = await prisma.order.findUnique({ where: { id: orderId }, select: { reference: true, customerName: true, totalGhs: true } })
+    if (!order) return
+
+    const { heading, intro } = PAYMENT_PROBLEMS[problem]
+    await send(
+      settings,
+      {
+        subject: `${heading}: ${order.reference}`,
+        preview: `${order.customerName} · ${ghs(amountGhs)}`,
+        heading,
+        intro,
+        details: [
+          { label: "Order", value: order.reference },
+          { label: "Customer", value: order.customerName },
+          { label: "Order total", value: ghs(order.totalGhs) },
+          { label: "Paid", value: ghs(amountGhs) },
+          { label: "Paystack reference", value: paystackReference },
+        ],
+        action: { label: "View order", url: new URL(`/orders/${orderId}/details`, authURLs.console).toString() },
+      },
+      "payment problem"
+    )
+  } catch (error) {
+    console.error(`Payment problem notification for ${orderId} failed:`, error)
+  }
+}
