@@ -3,8 +3,12 @@
 // Safe to run again: a category that already exists under the same parent, a brand or product with the same name, a
 // spec its category already has, or a value a product already has is skipped.
 // Run with `pnpm --filter @workspace/db db:seed`.
+//
+// `db:seed:demo` (`--demo`) also adds a demo store to browse and order from: listings for most published products, with
+// a mix of stock levels, sale prices and a few listings hidden from customers, and today's exchange rate if there's none.
+// It's for development databases only: the rate is made up.
 import { generateUniqueSku, prisma } from "../src/client"
-import type { Prisma } from "../generated/prisma/client"
+import { Prisma } from "../generated/prisma/client"
 
 type CategorySeed = {
   name: string
@@ -1733,6 +1737,116 @@ async function seedProductSpecs() {
   }
 }
 
+const DEMO_STORE_NAME = "BS42 Demo Store"
+// GH₵ per US$1, made up: set the real one in Settings
+const DEMO_EXCHANGE_RATE = "15.500000"
+const DEMO_LOW_STOCK_THRESHOLD = 5
+
+// A row's stock, varied but the same on every run: some out of stock, some low, the rest 8 to 37
+function demoStock(n: number) {
+  if (n % 9 === 4) return 0
+  if (n % 9 === 7) return 3
+  return 8 + (n % 30)
+}
+
+// The store and its members. Better Auth's afterCreateOrganization hook doesn't run for a Prisma write, so this adds the
+// system admins as it does: superAdmins as owners, admins as admins (as storeRoleForSystemAdmin in @workspace/auth,
+// which this package can't import).
+async function seedDemoStore() {
+  let store = await prisma.organization.findFirst({ where: { name: DEMO_STORE_NAME }, select: { id: true } })
+  if (store) {
+    counts.skipped++
+  } else {
+    // Placeholder: the Prisma hook generates the real slug from the name
+    store = await prisma.organization.create({ data: { name: DEMO_STORE_NAME, slug: "" }, select: { id: true } })
+    counts.created++
+  }
+
+  const users = await prisma.user.findMany({ where: { role: { contains: "dmin" } }, select: { id: true, role: true } })
+  const systemAdmins = users.flatMap(({ id, role }) => {
+    const roles = (role ?? "").split(",").map((name) => name.trim())
+    if (roles.includes("superAdmin")) return [{ userId: id, role: "owner" }]
+    if (roles.includes("admin")) return [{ userId: id, role: "admin" }]
+    return []
+  })
+  if (systemAdmins.length) await prisma.member.createMany({ data: systemAdmins.map((member) => ({ ...member, organizationId: store.id })), skipDuplicates: true })
+
+  return { storeId: store.id, createdById: systemAdmins.find((member) => member.role === "owner")?.userId ?? null }
+}
+
+// A listing for most published products (every 8th is left out, for trying "Add listing"). Every 6th is on sale (a
+// compare-at price), every 10th featured, every 12th doesn't track stock. Hidden from customers: every 20th listing is a
+// draft, and on every 10th product with variants no variant is on sale. On every 3rd product, if it has variants, the
+// last one has its own price. Each listing's stock gets an "Initial stock" entry, as the listing form
+// writes.
+async function seedDemoListings(storeId: string, createdById: string | null) {
+  const products = await prisma.product.findMany({
+    where: { status: "PUBLISHED" },
+    orderBy: { name: "asc" },
+    select: { id: true, baseSellPrice: true, baseBuyPrice: true, hasVariants: true, variants: { where: { status: "PUBLISHED" }, orderBy: { position: "asc" }, select: { id: true } } },
+  })
+  const listed = new Set((await prisma.storeListing.findMany({ where: { organizationId: storeId }, select: { productId: true } })).map((row) => row.productId))
+
+  let withVariants = 0
+  for (const [i, product] of products.entries()) {
+    if (product.hasVariants) withVariants++
+    if (i % 8 === 7) continue
+    if (listed.has(product.id)) {
+      counts.skipped++
+      continue
+    }
+    if (product.baseSellPrice.lte(0) || (product.hasVariants && !product.variants.length)) continue
+
+    const sellPrice = product.baseSellPrice
+    const trackInventory = i % 12 !== 5
+    const variantsOffSale = product.hasVariants && withVariants % 10 === 5
+
+    await prisma.$transaction(async (tx) => {
+      const listing = await tx.storeListing.create({
+        select: { id: true, stock: true, storeListingVariants: { select: { id: true, stock: true } } },
+        data: {
+          organizationId: storeId,
+          productId: product.id,
+          sellPrice,
+          buyPrice: product.baseBuyPrice,
+          compareAtPrice: i % 6 === 0 ? sellPrice.mul("1.2").toDecimalPlaces(2) : null,
+          stock: product.hasVariants ? 0 : demoStock(i * 7),
+          lowStockThreshold: DEMO_LOW_STOCK_THRESHOLD,
+          trackInventory,
+          isFeatured: i % 10 === 1,
+          status: i % 20 === 10 ? "DRAFT" : "PUBLISHED",
+          storeListingVariants: {
+            create: product.variants.map((variant, position) => ({
+              variantId: variant.id,
+              sellPrice: i % 3 === 0 && position === product.variants.length - 1 && position > 0 ? sellPrice.mul("1.1").toDecimalPlaces(2) : null,
+              stock: demoStock(i * 7 + position * 3),
+              status: variantsOffSale ? "DRAFT" : "PUBLISHED",
+              trackInventory,
+              lowStockThreshold: DEMO_LOW_STOCK_THRESHOLD,
+            })),
+          },
+        },
+      })
+      const rows = [{ variantId: null, stock: listing.stock }, ...listing.storeListingVariants.map((row) => ({ variantId: row.id, stock: row.stock }))]
+      const movements = rows.filter((row) => row.stock > 0)
+      if (movements.length) {
+        await tx.stockMovement.createMany({
+          data: movements.map((row) => ({ storeListingId: listing.id, storeListingVariantId: row.variantId, change: row.stock, stockAfter: row.stock, reason: "INITIAL", createdById })),
+        })
+      }
+    }, TRANSACTION_OPTIONS)
+    counts.created++
+  }
+}
+
+// Today's USD→GHS rate, unless today already has one. Accra is on UTC all year, so today's date there is the UTC date.
+async function seedDemoExchangeRate() {
+  const date = new Date(`${new Date().toISOString().slice(0, 10)}T00:00:00Z`)
+  if (await prisma.exchangeRate.findUnique({ where: { from_to_date: { from: "USD", to: "GHS", date } }, select: { id: true } })) return false
+  await prisma.exchangeRate.create({ data: { from: "USD", to: "GHS", date, rate: new Prisma.Decimal(DEMO_EXCHANGE_RATE), source: "MANUAL" } })
+  return true
+}
+
 async function main() {
   await seedCategories(categories, null)
   console.log(`Categories: ${counts.created} created, ${counts.skipped} already there`)
@@ -1756,6 +1870,21 @@ async function main() {
   counts.skipped = 0
   await seedProductSpecs()
   console.log(`Product spec values: ${counts.created} created, ${counts.skipped} already there`)
+
+  if (!process.argv.includes("--demo")) return
+
+  counts.created = 0
+  counts.skipped = 0
+  const { storeId, createdById } = await seedDemoStore()
+  console.log(`Demo store: ${counts.created ? "created" : "already there"}`)
+  if (!createdById) console.log("No superAdmin yet, so the demo store has no owner: run /setup, then seed again to add one")
+
+  counts.created = 0
+  counts.skipped = 0
+  await seedDemoListings(storeId, createdById)
+  console.log(`Demo listings: ${counts.created} created, ${counts.skipped} already there`)
+
+  console.log(`Today's exchange rate: ${(await seedDemoExchangeRate()) ? `set to ${DEMO_EXCHANGE_RATE}` : "already set"}`)
 }
 
 try {

@@ -35,6 +35,7 @@ pnpm --filter @workspace/db db:generate   # prisma generate -> packages/database
 pnpm --filter @workspace/db db:migrate    # prisma migrate dev
 pnpm --filter @workspace/db db:deploy     # prisma migrate deploy
 pnpm --filter @workspace/db db:seed       # starting categories and brands (prisma/seed.ts, via tsx); skips existing ones
+pnpm --filter @workspace/db db:seed:demo  # the same, plus a demo store with listings and today's rate if none (dev only)
 ```
 
 Better Auth owns most of the schema. After changing auth plugins or `additionalFields`, regenerate the Prisma schema with `pnpm --filter @workspace/auth auth:generate` (writes `packages/database/prisma/schema.prisma`), then create a migration. The script runs the CLI with `--conditions=react-server` (so `server-only` imports load) and `--env-file=../database/.env` (the plugins import the database client). It keeps the non-auth models; its only side effect is a blank line after top-level comments.
