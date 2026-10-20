@@ -1,5 +1,6 @@
 import Link from "next/link"
 
+import { BasketButton } from "@/components/basket/basket-button"
 import { CategoryMenu } from "@/components/category-menu"
 import { MobileMenu } from "@/components/mobile-menu"
 import { SearchForm } from "@/components/search-form"
@@ -15,6 +16,9 @@ export function SiteHeader({ storeName, logoUrl, menu }: { storeName: string; lo
           <StoreLogo storeName={storeName} logoUrl={logoUrl} />
         </Link>
         <SearchForm className="hidden max-w-xl flex-1 md:block" />
+        <div className="ml-auto">
+          <BasketButton />
+        </div>
       </div>
       <div className="px-4 pb-3 md:hidden">
         <SearchForm />

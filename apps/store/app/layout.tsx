@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google"
 import "@workspace/ui/globals.css"
 import { authURLs } from "@workspace/auth/constants"
 import { ThemeProvider } from "@workspace/ui/components/theme-provider"
+import { Toaster } from "@workspace/ui/components/toast"
 import { cn } from "@workspace/ui/lib/utils"
 
 import { SiteFooter } from "@/components/site-footer"
@@ -45,6 +46,7 @@ export default async function RootLayout({
           <SiteHeader storeName={storeName} logoUrl={settings.logoUrl} menu={menu} />
           <main className="flex-1">{children}</main>
           <SiteFooter storeName={storeName} storeDescription={settings.storeDescription} logoUrl={settings.logoUrl} menu={menu} />
+          <Toaster />
         </ThemeProvider>
       </body>
     </html>

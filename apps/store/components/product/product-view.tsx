@@ -7,12 +7,15 @@ import { Badge } from "@workspace/ui/components/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@workspace/ui/components/tabs"
 import { cn } from "@workspace/ui/lib/utils"
 
+import { AddToBasketButton } from "@/components/basket/add-to-basket"
+import { QuantityStepper } from "@/components/basket/quantity-stepper"
+import { MAX_LINE_QUANTITY } from "@/lib/basket-limits"
 import { OfferPrice, OfferStock } from "@/components/offer-details"
 import { useOfferPicker } from "@/components/use-offer-picker"
 import { CONDITION_LABELS } from "@/lib/conditions"
 import type { ProductDetails } from "@/lib/data/product-details"
 import { formatGhs } from "@/lib/money"
-import type { PricedCard } from "@/lib/product-cards"
+import { isInStock, type PricedCard } from "@/lib/product-cards"
 
 // The buy box lists this many specs; the Specifications tab has them all
 const KEY_SPECS = 6
@@ -68,6 +71,7 @@ export function ProductView({
   freeDeliveryFromGhs: string | null
 }) {
   const { offer, options } = useOfferPicker(card, initialVariantId)
+  const [quantity, setQuantity] = useState(1)
 
   const variant = offer.variantId ? details.variants[offer.variantId] : undefined
   const facts = variant ?? details.facts
@@ -77,6 +81,7 @@ export function ProductView({
   // The variant goes in the URL, so the page can be shared and reloaded as it is, without a server round trip
   const pick = (choose: () => { variantId: string | null }) => {
     const next = choose()
+    setQuantity(1)
     if (next.variantId) window.history.replaceState(null, "", `?variant=${next.variantId}`)
   }
 
@@ -89,6 +94,11 @@ export function ProductView({
     ...(facts.weightKg ? [{ name: "Weight", value: `${facts.weightKg} kg` }] : []),
     ...(facts.dimensions ? [{ name: "Dimensions", value: facts.dimensions }] : []),
   ]
+  const values = options.flatMap((option) => option.values.filter((value) => value.selected).map((value) => value.value))
+  const label = values.length ? `${card.name} (${values.join(", ")})` : card.name
+  // The basket caps it at what the store has; this only stops the stepper going past a low stock count shown
+  const maxQuantity = offer.stock.kind === "in-stock" ? Math.min(offer.stock.left ?? MAX_LINE_QUANTITY, MAX_LINE_QUANTITY) : 1
+
   const tabs = [...(description ? ["description"] : []), "specifications", ...(details.documents.length ? ["documents"] : [])]
 
   return (
@@ -139,6 +149,11 @@ export function ProductView({
               </div>
             </fieldset>
           ))}
+
+          <div className="flex flex-wrap items-center gap-3">
+            {offer.price && isInStock(offer) && <QuantityStepper value={Math.min(quantity, maxQuantity)} max={maxQuantity} onChange={setQuantity} label="Quantity" className="h-10" />}
+            <AddToBasketButton offer={offer} label={label} quantity={Math.min(quantity, maxQuantity)} onAdded={() => setQuantity(1)} size="lg" className="min-w-48 flex-1 sm:flex-none" />
+          </div>
 
           {card.specs.length > 0 && (
             <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 rounded-xl bg-muted/50 p-4 text-sm">

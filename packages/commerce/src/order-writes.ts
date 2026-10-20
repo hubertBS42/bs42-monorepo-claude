@@ -35,6 +35,12 @@ export class OrderItemError extends Error {
   }
 }
 
+// A variant's option values in the options' order, "Size: M / Colour: Red", or null without any
+export function describeVariant(variantValues: { optionValue: { value: string; option: { name: string; position: number } } }[]) {
+  const values = [...variantValues].sort((a, b) => a.optionValue.option.position - b.optionValue.option.position)
+  return values.length ? values.map(({ optionValue }) => `${optionValue.option.name}: ${optionValue.value}`).join(" / ") : null
+}
+
 export interface ResolvedLine {
   storeId: string
   listingId: string
@@ -116,8 +122,7 @@ export async function resolveOrderLines(client: Client, storeId: string | null, 
       throw new OrderItemError("ITEM_UNAVAILABLE", product.name)
     }
 
-    const values = row ? [...row.variant.variantValues].sort((a, b) => a.optionValue.option.position - b.optionValue.option.position) : []
-    const variantDescription = values.length ? values.map(({ optionValue }) => `${optionValue.option.name}: ${optionValue.value}`).join(" / ") : null
+    const variantDescription = row ? describeVariant(row.variant.variantValues) : null
     const label = variantDescription ? `${product.name} (${variantDescription})` : product.name
 
     // A variant without its own price sells at the listing's

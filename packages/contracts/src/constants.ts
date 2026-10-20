@@ -1,6 +1,7 @@
 export const INVITATION_EXPIRATION_SECONDS = 60 * 60 * 24 * 7 // 7 days: an emailed invitation may not be opened the same day
 export const RESET_PASSWORD_TOKEN_EXPIRATION_SECONDS = 60 * 30 // 30 minutes
 export const SESSION_CACHE_EXPIRATION_SECONDS = 60 // 1 minute
+export const CART_LIFETIME_DAYS = 30 // a storefront basket left alone this long is cleared out (its cookie lapses too)
 export const PLATFORM_ORGANIZATION_SLUG = "global"
 // Ghana's regions and their towns, for address forms. Town names are unique within a region and sorted, because
 // the selects use the name as both the option value and the React key.

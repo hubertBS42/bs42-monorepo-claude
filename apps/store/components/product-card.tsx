@@ -5,10 +5,11 @@ import { Package } from "lucide-react"
 import { Badge } from "@workspace/ui/components/badge"
 import { cn } from "@workspace/ui/lib/utils"
 
+import { AddToBasketButton } from "@/components/basket/add-to-basket"
 import { OfferPrice, OfferStock } from "@/components/offer-details"
 import { useOfferPicker } from "@/components/use-offer-picker"
 import { CONDITION_LABELS } from "@/lib/conditions"
-import type { PricedCard } from "@/lib/product-cards"
+import { isInStock, type PricedCard } from "@/lib/product-cards"
 
 // A card shows this many of an option's values; the product page has the rest
 const MAX_VALUES = 6
@@ -27,6 +28,7 @@ export function ProductCard({ card }: { card: PricedCard }) {
   const href = `/p/${card.slug}${offer.variantId ? `?variant=${offer.variantId}` : ""}`
   const specs = keySpecs(card)
   const image = offer.image ?? card.image
+  const values = options.flatMap((option) => option.values.filter((value) => value.selected).map((value) => value.value))
 
   return (
     <article className="group relative flex h-full flex-col gap-3 rounded-xl border bg-card p-3 transition-shadow hover:shadow-md">
@@ -76,6 +78,9 @@ export function ProductCard({ card }: { card: PricedCard }) {
         <div className="mt-auto space-y-1.5 pt-2">
           <OfferPrice offer={offer} />
           <OfferStock offer={offer} />
+          {offer.price && isInStock(offer) && (
+            <AddToBasketButton offer={offer} label={values.length ? `${card.name} (${values.join(", ")})` : card.name} size="sm" className="relative z-10 mt-1 w-full" />
+          )}
         </div>
       </div>
     </article>
