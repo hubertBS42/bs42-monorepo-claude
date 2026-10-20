@@ -48,9 +48,6 @@ export default async function SetupPage() {
         </div>
 
         <div className="p-6 sm:p-10">
-          <div className="mb-8 flex items-center justify-center lg:hidden">
-            <img src="/images/logo.png" alt="BS42.NET logo" className="h-10 w-auto max-w-35 object-contain" />
-          </div>
           <SetupForm />
         </div>
       </div>
