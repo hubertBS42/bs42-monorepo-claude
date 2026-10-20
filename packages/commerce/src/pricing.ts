@@ -98,6 +98,13 @@ export function priceOrder({ lines, exchangeRate, shippingGhs, discount, tax }: 
   }
 }
 
+// One unit's price as the storefront shows it: in GHS at the rate, and with tax when it's on. Rounded as priceOrder
+// rounds a line of one with no discount, so the shown price is what the order charges.
+export function shelfPrice(unitPriceUsd: Decimal, exchangeRate: Decimal, taxRate: Decimal | null) {
+  const exTaxGhs = toCents(unitPriceUsd.times(exchangeRate))
+  return { exTaxGhs, incTaxGhs: taxRate ? exTaxGhs.plus(toCents(exTaxGhs.times(taxRate))) : exTaxGhs }
+}
+
 // What returning some of a line's units is worth: their share of what the customer paid for the line, after its share
 // of the discount and with its tax (lineAmountGhs). Worked out on the running total, so a line returned in parts adds
 // up to exactly the whole line. Shipping isn't part of it.
