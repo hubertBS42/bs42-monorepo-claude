@@ -12,6 +12,7 @@ import { loadProductCards } from "@/lib/data/product-cards"
 import { getProductDetails, plainText } from "@/lib/data/product-details"
 import { priceCards } from "@/lib/pricing"
 import { getFreeDeliveryFrom, getShelfPricing } from "@/lib/settings"
+import { breadcrumbJsonLd, JsonLd, productJsonLd } from "@/lib/structured-data"
 
 interface ProductPageProps {
   params: Promise<{ slug: string }>
@@ -47,9 +48,19 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
   const [priced] = priceCards([card], pricing)
   const path = categoryPath(tree, card.categoryId)
   const description = details.description ? <RichTextContent value={details.description} /> : null
+  const firstVariant = priced!.offers[0]!.variantId
+  const jsonLd = [
+    productJsonLd(priced!, {
+      description: plainText(details.description, 5000),
+      images: details.images,
+      sku: (firstVariant ? details.variants[firstVariant]?.sku : null) ?? details.facts.sku,
+    }),
+    breadcrumbJsonLd([{ name: "Home", path: "/" }, ...path.map((category) => ({ name: category.name, path: categoryHref(tree, category.id) })), { name: card.name, path: `/p/${card.slug}` }]),
+  ]
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-6 lg:px-6">
+      <JsonLd data={jsonLd} />
       <Breadcrumb className="mb-6">
         <BreadcrumbList>
           <BreadcrumbItem>

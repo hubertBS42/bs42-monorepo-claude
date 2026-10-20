@@ -1,6 +1,7 @@
 import { Geist, Geist_Mono } from "next/font/google"
 
 import "@workspace/ui/globals.css"
+import { authURLs } from "@workspace/auth/constants"
 import { ThemeProvider } from "@workspace/ui/components/theme-provider"
 import { cn } from "@workspace/ui/lib/utils"
 
@@ -20,6 +21,8 @@ const fontMono = Geist_Mono({ subsets: ["latin"], variable: "--font-mono" })
 export async function generateMetadata() {
   const [settings, storeName] = await Promise.all([getAppSettings(), getStoreName()])
   return {
+    // Canonical links and Open Graph images are relative to the storefront's address
+    metadataBase: new URL(authURLs.store),
     title: { default: storeName, template: `%s | ${storeName}` },
     description: settings.storeDescription ?? undefined,
     openGraph: { siteName: storeName, description: settings.storeDescription ?? undefined },

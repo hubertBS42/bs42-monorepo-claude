@@ -9,6 +9,7 @@ import { categoryHref, categoryPath, getCategoryTree, getFilterSpecs, subtreeIds
 import { loadProductCards } from "@/lib/data/product-cards"
 import { priceCards } from "@/lib/pricing"
 import { getShelfPricing } from "@/lib/settings"
+import { breadcrumbJsonLd, JsonLd } from "@/lib/structured-data"
 
 interface CategoryPageProps {
   // The category's path of slugs, top first. Its own slug finds it (slugs are unique); the rest is for people and
@@ -43,6 +44,7 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-6 lg:px-6">
+      <JsonLd data={breadcrumbJsonLd([{ name: "Home", path: "/" }, ...path.map((category) => ({ name: category.name, path: categoryHref(tree, category.id) }))])} />
       <Breadcrumb>
         <BreadcrumbList>
           <BreadcrumbItem>

@@ -287,6 +287,9 @@ importers:
 
   apps/store:
     dependencies:
+      '@workspace/auth':
+        specifier: workspace:*
+        version: link:../../packages/auth
       '@workspace/commerce':
         specifier: workspace:*
         version: link:../../packages/commerce
