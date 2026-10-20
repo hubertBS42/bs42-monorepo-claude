@@ -93,7 +93,7 @@ A "store" is a Better Auth organization. One special organization, slug `PLATFOR
 
 `readAppSettings()` reads the singleton `AppSettings` row (falling back to defaults). The console caches it via `unstable_cache` with the `app-settings` tag. The settings form carries the row's `updatedAt` as a version and `saveAppSettings` only writes if it still matches (`CONFLICT` otherwise), so a stale form can't undo another save.
 
-Migrations: Prisma doesn't model `CHECK` constraints or triggers, so they live in the migration SQL (stock, quantities, ratings, tax rates; the category cycle trigger). `prisma migrate dev` is interactive when a change could lose data (e.g. removing an enum value), so in a non-interactive shell generate that migration with `prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --script`.
+Migrations: Prisma doesn't model `CHECK` constraints or triggers, so they live in the migration SQL (stock, quantities, ratings, tax rates, one value per spec value row, delivery fees; the category cycle trigger). `prisma migrate dev` is interactive when a change could lose data (e.g. removing an enum value), so in a non-interactive shell generate that migration with `prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --script`.
 
 ### Categories
 - A self-referencing tree (`parentId`, `onDelete: NoAction` on purpose: Postgres checks it at the end of the statement, so a `deleteMany` can remove a parent and its children together, which `Restrict` would reject).
