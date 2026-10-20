@@ -25,6 +25,9 @@
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
       "outputs": ["dist/**", ".next/**", "!.next/cache/**", "!.next/dev/**"]
     },
+    "start": {
+      "cache": false
+    },
     "lint": {
       "dependsOn": ["^lint"]
     },
