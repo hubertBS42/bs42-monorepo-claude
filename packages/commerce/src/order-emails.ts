@@ -16,7 +16,7 @@ import {
   type OrderConfirmationEmail,
   type ReturnedItem,
 } from "@workspace/email"
-import { PAYMENT_METHOD_LABELS } from "./order-status"
+import { hasBeenPaid, PAYMENT_METHOD_LABELS } from "./order-status"
 
 // Customer emails for orders. Actions schedule them with after(), once the order is saved, so a slow or failed
 // email never holds up or fails the change.
@@ -34,6 +34,7 @@ const orderEmailSelect = {
   shippingTown: true,
   shippingRegion: true,
   paymentMethod: true,
+  paymentStatus: true,
   subtotalGhs: true,
   shippingGhs: true,
   taxGhs: true,
@@ -101,6 +102,7 @@ export function buildOrderEmail(
           shippingMethod: order.shippingMethod,
           shippingAddress: isDelivery ? address : null,
           paymentMethod: PAYMENT_METHOD_LABELS[order.paymentMethod],
+          paid: hasBeenPaid(order.paymentStatus),
         },
       }
     case "REFUNDED":

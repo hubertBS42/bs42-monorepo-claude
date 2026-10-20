@@ -17,6 +17,8 @@ interface OrderConfirmationProps {
   shippingMethod: string
   shippingAddress?: string | null
   paymentMethod: string
+  /** Paid when the order was placed (online), rather than due on delivery */
+  paid?: boolean
   appName: string
   /** Absolute https URL of the uploaded logo. When missing, the app name is shown as text instead. */
   logoUrl?: string | null
@@ -37,6 +39,7 @@ export const OrderConfirmation = ({
   shippingMethod,
   shippingAddress,
   paymentMethod,
+  paid = false,
   appName,
   logoUrl,
 }: OrderConfirmationProps) => {
@@ -64,7 +67,9 @@ export const OrderConfirmation = ({
         <Text className="m-0 font-semibold text-[#71717a]">Delivery Information</Text>
         <Text className="m-0 text-sm text-gray-500">Method: {shippingMethod === "PICKUP" ? "Store Pickup" : "Delivery"}</Text>
         {shippingAddress && <Text className="m-0 text-sm text-gray-500">Address: {shippingAddress}</Text>}
-        <Text className="m-0 text-sm text-gray-500">Payment: {paymentMethod} (due on delivery)</Text>
+        <Text className="m-0 text-sm text-gray-500">
+          Payment: {paymentMethod} ({paid ? "paid" : "due on delivery"})
+        </Text>
       </Section>
 
       <Text className="mt-6 text-sm text-gray-500">We will notify you when your order status changes. If you have any questions, please contact us.</Text>

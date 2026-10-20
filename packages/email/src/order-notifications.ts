@@ -32,6 +32,8 @@ export interface OrderConfirmationEmail extends BaseOrderEmail {
   shippingMethod: string
   shippingAddress?: string | null
   paymentMethod: string
+  // Paid when the order was placed (online), rather than due on delivery
+  paid?: boolean
 }
 
 export async function sendOrderConfirmationEmail(data: OrderConfirmationEmail) {
@@ -54,6 +56,7 @@ export async function sendOrderConfirmationEmail(data: OrderConfirmationEmail) {
       shippingMethod: data.shippingMethod,
       shippingAddress: data.shippingAddress,
       paymentMethod: data.paymentMethod,
+      paid: data.paid,
       appName: data.appName,
       logoUrl: data.logoUrl,
     }),
