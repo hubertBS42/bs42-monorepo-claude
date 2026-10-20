@@ -1,6 +1,6 @@
 import { Badge } from "@workspace/ui/components/badge"
 import type { OrderStatus, PaymentStatus, PurchaseOrderStatus } from "@workspace/db/enums"
-import { ORDER_STATUS_LABELS, PAYMENT_STATUS_LABELS } from "@/lib/order-status"
+import { ORDER_STATUS_LABELS, PAYMENT_STATUS_LABELS } from "@workspace/commerce/order-status"
 import { PURCHASE_ORDER_STATUS_LABELS } from "@/lib/purchase-order-status"
 
 // Finished states are success, a cancellation is muted rather than red (nothing went wrong), the rest are in progress

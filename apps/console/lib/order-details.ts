@@ -3,9 +3,9 @@ import "server-only"
 import type { OrderAfterSale, OrderLine, OrderReturnEntry, OrderTimelineEntry, OrderTotals, ReturnableLine } from "@/types"
 import { Prisma } from "@workspace/db/client"
 import { formatCurrency } from "@workspace/utils/currency"
-import { returnedUnitsAmount } from "./order-pricing"
+import { returnedUnitsAmount } from "@workspace/commerce/pricing"
 import { returnedSoFar } from "./order-refunds"
-import { ORDER_STATUS_LABELS, PAYMENT_METHOD_LABELS } from "./order-status"
+import { ORDER_STATUS_LABELS, PAYMENT_METHOD_LABELS } from "@workspace/commerce/order-status"
 
 // What the store's and the platform's order details loaders share: the query and turning its rows into page data
 

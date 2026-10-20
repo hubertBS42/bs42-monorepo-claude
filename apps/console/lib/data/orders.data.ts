@@ -13,7 +13,7 @@ import { getPaginationError } from "@workspace/utils/pagination"
 import { toPhoneSearch } from "@workspace/utils/phone"
 import { z } from "zod"
 import { orderDetailsInclude, toOrderAfterSale, toOrderDetailsBase, toOrderTotals, type OrderWithDetails } from "@/lib/order-details"
-import { returnLabel } from "@/lib/order-status"
+import { returnLabel } from "@workspace/commerce/order-status"
 
 // The platform's orders: every order, whichever stores' items it has. Stores see theirs in store-orders.data.ts.
 

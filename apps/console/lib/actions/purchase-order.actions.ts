@@ -7,7 +7,7 @@ import { prisma } from "@workspace/db"
 import { Prisma } from "@workspace/db/client"
 import { Currency, Status } from "@workspace/db/enums"
 import { hasStorePermission, requireConsoleAccess } from "@/lib/auth-guard"
-import { getLatestExchangeRate } from "@/lib/data/exchange-rates.data"
+import { getLatestExchangeRate } from "@workspace/commerce/exchange-rates"
 import { getIncomingStock, incomingKey } from "@/lib/data/purchase-orders.data"
 import {
   cancelPurchaseOrder,

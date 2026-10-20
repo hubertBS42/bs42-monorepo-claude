@@ -2,7 +2,7 @@ import Link from "next/link"
 import { Badge } from "@workspace/ui/components/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@workspace/ui/components/card"
 import { formatDate } from "@workspace/utils/date"
-import type { ExchangeRateInfo } from "@/lib/data/exchange-rates.data"
+import type { ExchangeRateInfo } from "@workspace/commerce/exchange-rates"
 
 interface Check {
   label: string

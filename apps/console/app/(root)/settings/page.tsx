@@ -4,7 +4,7 @@ import ExchangeRateCard from "./_components/exchange-rate-card"
 import { requireSystemPermission } from "@/lib/auth-guard"
 import { readAppSettings } from "@workspace/db"
 import { getAppSettingsVersion } from "@/lib/data/app-settings.data"
-import { EXCHANGE_RATE_MAX_AGE_DAYS, getLatestExchangeRate } from "@/lib/data/exchange-rates.data"
+import { EXCHANGE_RATE_MAX_AGE_DAYS, getLatestExchangeRate } from "@workspace/commerce/exchange-rates"
 
 export const metadata: Metadata = {
   title: "Platform Settings",

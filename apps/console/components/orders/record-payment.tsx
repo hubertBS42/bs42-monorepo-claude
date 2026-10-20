@@ -13,7 +13,7 @@ import { formatCurrency } from "@workspace/utils/currency"
 import { useCanUpdateOrders } from "@/hooks/use-can-update-orders"
 import { recordOrderPaymentAction } from "@/lib/actions/order.actions"
 import { recordStorePaymentAction } from "@/lib/actions/store-order.actions"
-import { PAYMENT_METHOD_LABELS } from "@/lib/order-status"
+import { PAYMENT_METHOD_LABELS } from "@workspace/commerce/order-status"
 
 const methodOptions = Object.entries(PAYMENT_METHOD_LABELS).map(([value, label]) => ({ label, value: value as PaymentMethod }))
 

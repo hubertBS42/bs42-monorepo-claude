@@ -1,0 +1,35 @@
+{
+  "name": "@workspace/commerce",
+  "version": "0.0.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@workspace/auth": "workspace:*",
+    "@workspace/contracts": "workspace:*",
+    "@workspace/db": "workspace:*",
+    "@workspace/email": "workspace:*",
+    "@workspace/utils": "workspace:*",
+    "server-only": "^0.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/react": "19.3.0",
+    "@workspace/eslint-config": "workspace:*",
+    "@workspace/typescript-config": "workspace:*",
+    "eslint": "^10",
+    "typescript": "^5"
+  },
+  "exports": {
+    "./exchange-rates": "./src/exchange-rates.ts",
+    "./notifications": "./src/notifications.ts",
+    "./order-emails": "./src/order-emails.ts",
+    "./order-status": "./src/order-status.ts",
+    "./order-writes": "./src/order-writes.ts",
+    "./pricing": "./src/pricing.ts",
+    "./stock-movements": "./src/stock-movements.ts"
+  }
+}

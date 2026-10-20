@@ -10,7 +10,7 @@ import FormDialog from "@/components/form-dialog"
 import { useCanUpdateOrders } from "@/hooks/use-can-update-orders"
 import { cancelAndRefundOrderAction, refundOrderAction } from "@/lib/actions/order.actions"
 import { cancelAndRefundStoreOrderAction, refundStoreOrderAction } from "@/lib/actions/store-order.actions"
-import { PAYMENT_METHOD_LABELS } from "@/lib/order-status"
+import { PAYMENT_METHOD_LABELS } from "@workspace/commerce/order-status"
 import { cancelAndRefundFormSchema, refundOrderFormSchema } from "@/lib/schemas/order.schemas"
 
 // Refunds, for superAdmins on the platform's pages and owners and admins on a store's own orders (storeId): part or

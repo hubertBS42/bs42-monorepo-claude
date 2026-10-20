@@ -57,7 +57,7 @@ export async function recordStockMovement(tx: Tx, row: StockRow, change: number,
 }
 
 // Adds stock to a row (a cancellation, a return, a delivery) and records it. Returns the stock after. Only adds: taking
-// stock away needs a guard against going below 0, as a sale reserves it (store-order-writes.ts), then
+// stock away needs a guard against going below 0, as a sale reserves it (order-writes.ts), then
 // recordStockMovement.
 export async function addStock(tx: Tx, row: StockRow, quantity: number, source: StockMovementSource) {
   if (!Number.isInteger(quantity) || quantity <= 0) throw new Error(`addStock takes a whole number above 0, not ${quantity}.`)

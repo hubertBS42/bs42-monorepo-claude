@@ -1,6 +1,7 @@
 import "server-only"
 
 import { prisma } from "@workspace/db"
+import type { Prisma } from "@workspace/db/client"
 import type { ExchangeRateSource } from "@workspace/db/enums"
 import { formatDate } from "@workspace/utils/date"
 
@@ -38,4 +39,21 @@ export async function getLatestExchangeRate(): Promise<ExchangeRateInfo | null> 
   oldestUsable.setUTCDate(oldestUsable.getUTCDate() - EXCHANGE_RATE_MAX_AGE_DAYS)
 
   return { id: latest.id, rate: latest.rate.toString(), date, source: latest.source, isStale: latest.date < oldestUsable }
+}
+
+export interface PricingContext {
+  rate: ExchangeRateInfo
+  // Null when tax is off
+  tax: { rate: Prisma.Decimal; onShipping: boolean } | null
+}
+
+// The rate and tax settings an order is priced with, or null when there's no rate recent enough to sell at
+export async function getPricingContext(): Promise<PricingContext | null> {
+  const [rate, settings] = await Promise.all([getLatestExchangeRate(), prisma.appSettings.findUnique({ where: { id: "singleton" }, select: { taxEnabled: true, taxRate: true, taxShipping: true } })])
+  if (!rate || rate.isStale) return null
+  return {
+    rate,
+    // Read as a Decimal here: AppSettingsData.taxRate is a plain number only so it can reach client components
+    tax: settings?.taxEnabled ? { rate: settings.taxRate, onShipping: settings.taxShipping } : null,
+  }
 }

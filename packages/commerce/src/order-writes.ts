@@ -4,18 +4,23 @@ import type { prisma } from "@workspace/db"
 import { Prisma } from "@workspace/db/client"
 import { OrderStatus, PaymentStatus, ShippingMethod, Status, StockMovementReason } from "@workspace/db/enums"
 import { formatDate } from "@workspace/utils/date"
-import type { z } from "zod"
 import type { StockAlert } from "./notifications"
-import type { PricedOrder } from "./order-pricing"
-import type { orderItemInputSchema } from "./schemas/order.schemas"
+import type { PricedOrder } from "./pricing"
 import { addStock, recordStockMovements } from "./stock-movements"
 
-// A store's order writes: creating one (lines priced from the store's listings, stock reserved) and moving its
-// status on. In their own module (like listing-sync.ts) so they can be tested against the database without a session.
+// Order writes: creating one (lines priced from the stores' listings, stock reserved) and moving its status on. Staff
+// create orders in one store's workspace; a storefront order can take each line from a different store. In their own
+// module so they can be tested against the database without a session.
 
 type Tx = Parameters<Parameters<typeof prisma.$transaction>[0]>[0]
 type Client = typeof prisma | Tx
-type OrderItemInput = z.output<typeof orderItemInputSchema>
+
+// A line as asked for: a listing, and its variant when the product has variants
+export interface OrderItemInput {
+  listingId: string
+  listingVariantId: string | null
+  quantity: number
+}
 
 // A line that can't be sold as asked: unavailable, or not enough stock. `item` names it for the message.
 export class OrderItemError extends Error {
@@ -23,13 +28,14 @@ export class OrderItemError extends Error {
   readonly item: string
 
   constructor(code: "ITEM_UNAVAILABLE" | "INSUFFICIENT_STOCK", item: string) {
-    super(code === "ITEM_UNAVAILABLE" ? `${item} is no longer on sale in this store.` : `There isn't enough stock of ${item}.`)
+    super(code === "ITEM_UNAVAILABLE" ? `${item} is no longer on sale.` : `There isn't enough stock of ${item}.`)
     this.code = code
     this.item = item
   }
 }
 
 export interface ResolvedLine {
+  storeId: string
   listingId: string
   listingVariantId: string | null
   quantity: number
@@ -51,13 +57,15 @@ export interface ResolvedLine {
   label: string
 }
 
-// Looks up each line in the store's published listings, at the store's prices. Throws OrderItemError for a line
-// that isn't on sale; stock is only checked when it's reserved.
-export async function resolveOrderLines(client: Client, storeId: string, items: OrderItemInput[]): Promise<ResolvedLine[]> {
+// Looks up each line in the published listings, at their stores' prices: only the given store's for staff, or any
+// store's (null) for the storefront. Throws OrderItemError for a line that isn't on sale; stock is only checked when
+// it's reserved.
+export async function resolveOrderLines(client: Client, storeId: string | null, items: OrderItemInput[]): Promise<ResolvedLine[]> {
   const listings = await client.storeListing.findMany({
-    where: { id: { in: items.map((item) => item.listingId) }, organizationId: storeId },
+    where: { id: { in: items.map((item) => item.listingId) }, ...(storeId && { organizationId: storeId }) },
     select: {
       id: true,
+      organizationId: true,
       status: true,
       sellPrice: true,
       stock: true,
@@ -112,6 +120,7 @@ export async function resolveOrderLines(client: Client, storeId: string, items: 
     if (unitPriceUsd.lte(0)) throw new OrderItemError("ITEM_UNAVAILABLE", label)
 
     return {
+      storeId: listing.organizationId,
       listingId: listing.id,
       listingVariantId: row?.id ?? null,
       quantity: item.quantity,
@@ -132,9 +141,11 @@ export async function resolveOrderLines(client: Client, storeId: string, items: 
   })
 }
 
-export interface NewStoreOrder {
-  storeId: string
-  createdById: string
+export interface NewOrder {
+  // Null for an order the customer placed on the storefront
+  createdById: string | null
+  // The first entry in the order's status history, e.g. "Created in the store"
+  statusNote: string
   customer: { userId: string | null; name: string; email: string | null; phone: string | null }
   shippingMethod: ShippingMethod
   // Null for a pickup
@@ -148,7 +159,7 @@ export interface NewStoreOrder {
 
 // Writes the order in the caller's transaction. Throws OrderItemError when a line's stock ran out, which rolls it back.
 // Returns the items this sale took down to their low-stock threshold or to 0, for the stock notification.
-export async function createStoreOrder(tx: Tx, order: NewStoreOrder) {
+export async function createOrder(tx: Tx, order: NewOrder) {
   const stockAlerts: StockAlert[] = []
   // For the stock history, written once the order exists to link to
   const sold: { line: ResolvedLine; stockAfter: number }[] = []
@@ -211,7 +222,7 @@ export async function createStoreOrder(tx: Tx, order: NewStoreOrder) {
         create: order.lines.map((line, index) => {
           const amounts = priced.lines[index]!
           return {
-            organizationId: order.storeId,
+            organizationId: line.storeId,
             storeListingId: line.listingId,
             storeListingVariantId: line.listingVariantId,
             quantity: line.quantity,
@@ -232,7 +243,7 @@ export async function createStoreOrder(tx: Tx, order: NewStoreOrder) {
           }
         }),
       },
-      statusHistory: { create: { status: OrderStatus.PENDING, note: "Created in the store", changedById: order.createdById } },
+      statusHistory: { create: { status: OrderStatus.PENDING, note: order.statusNote, changedById: order.createdById } },
     },
     select: { id: true, reference: true },
   })
@@ -258,13 +269,14 @@ export interface StatusChange {
   from: OrderStatus
   to: OrderStatus
   note: string | null
-  changedById: string
+  // Null for a change nobody made by hand, e.g. cancelling an order left unpaid
+  changedById: string | null
   // The order's lines, for putting reserved stock back on a cancellation
   items: { quantity: number; storeListingId: string; storeListingVariantId: string | null; listingTracks: boolean; variantTracks: boolean }[]
 }
 
 // Throws StatusChangedError when the order moved on (or, for a cancellation, was paid) since the page loaded.
-// Callers that cancel a paid order refund it first in the same transaction.
+// Callers that cancel a paid order refund it first in the same transaction (the console's order-refunds.ts).
 export async function changeOrderStatus(tx: Tx, { orderId, from, to, note, changedById, items }: StatusChange) {
   // Only from the status the page showed, so two people can't both move it on, and never cancelling an order
   // that holds money (paid, or partly refunded) in the meantime: that needs a refund first (order-refunds.ts)

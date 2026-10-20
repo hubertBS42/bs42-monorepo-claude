@@ -10,7 +10,7 @@ import { toast } from "@workspace/ui/components/toast"
 import { formatCurrency } from "@workspace/utils/currency"
 import { formatDate } from "@workspace/utils/date"
 import { OrderStatusBadge, PaymentStatusBadge } from "@/components/order-badges"
-import { PAYMENT_METHOD_LABELS, PAYMENT_STATUS_LABELS } from "@/lib/order-status"
+import { PAYMENT_METHOD_LABELS, PAYMENT_STATUS_LABELS } from "@workspace/commerce/order-status"
 import type { OrderSummary } from "./order-summary"
 
 const ghs = (amount: string) => formatCurrency(amount, "GHS", "en-GH")

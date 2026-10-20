@@ -1,7 +1,8 @@
 import { Prisma } from "@workspace/db/client"
 
 // Order maths, as CLAUDE.md "Orders and money" describes it. Pure, with no database access, so it can be tested on
-// its own; lib/store-order-pricing.ts feeds it the store's prices. Every amount is a Decimal: never JS numbers.
+// its own and used in client components; resolveOrderLines (order-writes.ts) feeds it the stores' prices. Every amount
+// is a Decimal: never JS numbers.
 
 type Decimal = Prisma.Decimal
 const Decimal = Prisma.Decimal

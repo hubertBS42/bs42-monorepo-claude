@@ -16,7 +16,7 @@ import RecordReturn from "@/components/orders/return-order"
 import UpdateOrderStatus from "@/components/orders/update-order-status"
 import { requireSystemPermission } from "@/lib/auth-guard"
 import { getOrderDetails } from "@/lib/data/orders.data"
-import { canBeReturned, isPaid, nextOrderStatuses, ORDER_STATUS_LABELS, PAYMENT_METHOD_LABELS, returnBlockedReason } from "@/lib/order-status"
+import { canBeReturned, isPaid, nextOrderStatuses, ORDER_STATUS_LABELS, PAYMENT_METHOD_LABELS, returnBlockedReason } from "@workspace/commerce/order-status"
 
 export const metadata: Metadata = {
   title: "Order Details",

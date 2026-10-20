@@ -5,7 +5,7 @@ import { organizationRoles } from "@workspace/auth/organization-permissions"
 import { buttonVariants } from "@workspace/ui/components/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@workspace/ui/components/card"
 import { requireActiveStoreMember } from "@/lib/auth-guard"
-import { EXCHANGE_RATE_MAX_AGE_DAYS, getLatestExchangeRate } from "@/lib/data/exchange-rates.data"
+import { EXCHANGE_RATE_MAX_AGE_DAYS, getLatestExchangeRate } from "@workspace/commerce/exchange-rates"
 import CreateOrderForm from "./_components/create-order-form"
 
 export const metadata: Metadata = {

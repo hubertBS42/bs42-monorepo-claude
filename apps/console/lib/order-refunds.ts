@@ -3,12 +3,12 @@ import "server-only"
 import type { prisma } from "@workspace/db"
 import { Prisma } from "@workspace/db/client"
 import { OrderStatus, PaymentStatus, StockMovementReason, type PaymentMethod } from "@workspace/db/enums"
-import { canBeReturned, hasBeenPaid, isPaid, nextOrderStatuses } from "./order-status"
-import { addStock } from "./stock-movements"
-import { changeOrderStatus, StatusChangedError } from "./store-order-writes"
+import { canBeReturned, hasBeenPaid, isPaid, nextOrderStatuses } from "@workspace/commerce/order-status"
+import { addStock } from "@workspace/commerce/stock-movements"
+import { changeOrderStatus, StatusChangedError } from "@workspace/commerce/order-writes"
 
 // Refunds, by the platform on any order or by a store's owners and admins on its own: giving money back on a paid order, cancelling a paid order with a refund of whatever is
-// left, and recording items a customer brought back. In their own module (like store-order-writes.ts) so they can be
+// left, and recording items a customer brought back. In their own module (like listing-sync.ts) so they can be
 // tested against the database without a session.
 
 type Tx = Parameters<Parameters<typeof prisma.$transaction>[0]>[0]

@@ -8,7 +8,7 @@ import { ActionResponse } from "@workspace/contracts"
 import { hasStorePermission, requireConsoleAccess } from "@/lib/auth-guard"
 import { ListingConflictError, ListingNotFoundError, StockChangedError, StockReasonRequiredError, syncListing } from "@/lib/listing-sync"
 import { createListingSchema, updateListingSchema } from "@/lib/schemas/listing.schemas"
-import { recordStockMovement } from "@/lib/stock-movements"
+import { recordStockMovement } from "@workspace/commerce/stock-movements"
 import type { StockChangedResponse } from "@/types"
 
 // Every export here is a public endpoint, so every input is validated, and each one calls requireConsoleAccess

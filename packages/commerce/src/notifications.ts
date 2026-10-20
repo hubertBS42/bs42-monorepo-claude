@@ -32,8 +32,7 @@ async function send(settings: AppSettingsData, alert: Alert, context: string) {
   }
 }
 
-// An order customers placed on the storefront, or staff created in a store's workspace. The storefront's checkout
-// calls this with "storefront" once it exists.
+// An order customers placed on the storefront, or staff created in a store's workspace
 export async function notifyNewOrder(orderId: string, source: "storefront" | "staff") {
   try {
     const settings = await readAppSettings()

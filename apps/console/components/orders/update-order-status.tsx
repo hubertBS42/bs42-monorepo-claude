@@ -14,7 +14,7 @@ import { toast } from "@workspace/ui/components/toast"
 import { useCanUpdateOrders } from "@/hooks/use-can-update-orders"
 import { updateOrderStatusAction } from "@/lib/actions/order.actions"
 import { updateStoreOrderStatusAction } from "@/lib/actions/store-order.actions"
-import { hasBeenPaid, isPaid, nextOrderStatuses, ORDER_STATUS_LABELS } from "@/lib/order-status"
+import { hasBeenPaid, isPaid, nextOrderStatuses, ORDER_STATUS_LABELS } from "@workspace/commerce/order-status"
 import { orderStatusFormSchema } from "@/lib/schemas/order.schemas"
 
 type FormInput = z.input<typeof orderStatusFormSchema>

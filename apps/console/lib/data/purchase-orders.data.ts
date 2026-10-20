@@ -9,7 +9,7 @@ import { Prisma } from "@workspace/db/client"
 import { PurchaseOrderStatus } from "@workspace/db/enums"
 import { getPaginationError } from "@workspace/utils/pagination"
 import { hasStorePermission } from "@/lib/auth-guard"
-import { getRateDate } from "@/lib/data/exchange-rates.data"
+import { getRateDate } from "@workspace/commerce/exchange-rates"
 import { isOpenPurchaseOrder, OPEN_PURCHASE_ORDER_STATUSES } from "@/lib/purchase-order-status"
 import type { PurchaseOrderDetails, PurchaseOrdersData, PurchaseOrdersParams, SelectItem } from "@/types"
 

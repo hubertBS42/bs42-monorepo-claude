@@ -1,6 +1,6 @@
 import { getAppSettings } from "@/lib/app-settings"
 import { getPlatformDashboard } from "@/lib/data/dashboard.data"
-import { getLatestExchangeRate } from "@/lib/data/exchange-rates.data"
+import { getLatestExchangeRate } from "@workspace/commerce/exchange-rates"
 import { getRecentOrderDetails } from "@/lib/data/orders.data"
 import type { DashboardPeriod } from "@/types"
 import AttentionCard from "./attention-card"

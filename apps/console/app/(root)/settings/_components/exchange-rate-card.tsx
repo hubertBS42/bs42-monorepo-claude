@@ -12,7 +12,7 @@ import { Spinner } from "@workspace/ui/components/spinner"
 import { toast } from "@workspace/ui/components/toast"
 import { formatDate } from "@workspace/utils/date"
 import { setTodaysExchangeRateAction } from "@/lib/actions/exchange-rate.actions"
-import type { ExchangeRateInfo } from "@/lib/data/exchange-rates.data"
+import type { ExchangeRateInfo } from "@workspace/commerce/exchange-rates"
 import { exchangeRateFormSchema } from "@/lib/schemas/exchange-rate.schemas"
 
 type FormValues = z.infer<typeof exchangeRateFormSchema>

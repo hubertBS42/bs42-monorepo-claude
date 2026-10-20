@@ -5,7 +5,7 @@ import { Separator } from "@workspace/ui/components/separator"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@workspace/ui/components/table"
 import { formatCurrency } from "@workspace/utils/currency"
 import { formatDate } from "@workspace/utils/date"
-import { returnLabel } from "@/lib/order-status"
+import { returnLabel } from "@workspace/commerce/order-status"
 import type { OrderLine, OrderReturnEntry, OrderTimelineEntry, OrderTotals } from "@/types"
 
 // The parts of an order's details page that the store's and the platform's pages share

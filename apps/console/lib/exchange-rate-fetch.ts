@@ -4,11 +4,11 @@ import { prisma } from "@workspace/db"
 import { Prisma } from "@workspace/db/client"
 import { ExchangeRateSource } from "@workspace/db/enums"
 import { z } from "zod"
-import { getRateDate } from "./data/exchange-rates.data"
+import { getRateDate } from "@workspace/commerce/exchange-rates"
 
 // The daily USD→GHS rate from Open Exchange Rates (OPEN_EXCHANGE_RATES_API_KEY), run by POST /api/cron/exchange-rate.
 // It only fills in a day that has no rate yet: a rate a superAdmin set in Settings is never overwritten, and neither
-// is one that orders have used. In its own module (like store-order-writes.ts) so it can run without a request.
+// is one that orders have used. In its own module (like listing-sync.ts) so it can run without a request.
 
 const API_URL = "https://openexchangerates.org/api/latest.json?symbols=GHS"
 const REQUEST_TIMEOUT_MS = 15_000

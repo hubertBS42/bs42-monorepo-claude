@@ -5,7 +5,7 @@ import type { Prisma } from "@workspace/db/client"
 import { StockMovementReason } from "@workspace/db/enums"
 import type { z } from "zod"
 import type { updateListingSchema } from "./schemas/listing.schemas"
-import { recordStockMovement, type StockMovementSource } from "./stock-movements"
+import { recordStockMovement, type StockMovementSource } from "@workspace/commerce/stock-movements"
 import type { ListingSnapshot, StockChangedResponse } from "../types"
 
 // Updating a listing in place, in its own module (like product-sync.ts) so the logic can be tested against the

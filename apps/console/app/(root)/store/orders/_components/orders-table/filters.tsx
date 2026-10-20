@@ -1,5 +1,5 @@
 import type { FilterConfig } from "@workspace/tables"
-import { ORDER_STATUS_LABELS, PAYMENT_STATUS_LABELS } from "@/lib/order-status"
+import { ORDER_STATUS_LABELS, PAYMENT_STATUS_LABELS } from "@workspace/commerce/order-status"
 
 export const orderFilters: FilterConfig[] = [
   { key: "reference", label: "Reference", type: "text", placeholder: "Search reference" },

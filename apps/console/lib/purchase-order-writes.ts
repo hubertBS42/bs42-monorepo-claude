@@ -5,10 +5,10 @@ import { Prisma } from "@workspace/db/client"
 import { Currency, PurchaseOrderStatus, Status, StockMovementReason } from "@workspace/db/enums"
 import { formatDate } from "@workspace/utils/date"
 import { cancelTarget, isEditablePurchaseOrder, isOpenPurchaseOrder } from "./purchase-order-status"
-import { addStock } from "./stock-movements"
+import { addStock } from "@workspace/commerce/stock-movements"
 
 // A store's purchase orders: saving one, marking it ordered, receiving deliveries into stock, and cancelling or
-// closing it. In their own module (like store-order-writes.ts) so they can be tested against the database without a
+// closing it. In their own module (like listing-sync.ts) so they can be tested against the database without a
 // session. The actions check the input and the permission first.
 
 type Tx = Parameters<Parameters<typeof prisma.$transaction>[0]>[0]

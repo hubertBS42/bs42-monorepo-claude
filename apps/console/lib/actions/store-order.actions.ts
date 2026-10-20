@@ -9,10 +9,10 @@ import { prisma } from "@workspace/db"
 import { Prisma } from "@workspace/db/client"
 import { ShippingMethod, Status } from "@workspace/db/enums"
 import { hasStorePermission, requireConsoleAccess } from "@/lib/auth-guard"
-import { getLatestExchangeRate, type ExchangeRateInfo } from "@/lib/data/exchange-rates.data"
-import { notifyNewOrder, notifyStockAlerts } from "@/lib/notifications"
-import { sendOrderEmail } from "@/lib/order-emails"
-import { priceOrder, type PricedOrder } from "@/lib/order-pricing"
+import { getLatestExchangeRate, getPricingContext, type ExchangeRateInfo } from "@workspace/commerce/exchange-rates"
+import { notifyNewOrder, notifyStockAlerts } from "@workspace/commerce/notifications"
+import { sendOrderEmail } from "@workspace/commerce/order-emails"
+import { priceOrder, type PricedOrder } from "@workspace/commerce/pricing"
 import { cancelWithRefund, editPendingOrder, giveRefund, orderForUpdateSelect, recordOrderPayment, recordReturn, toReturnInput, updateOrderStatus, type Failure } from "@/lib/order-updates"
 import {
   cancelAndRefundStoreOrderSchema,
@@ -28,7 +28,7 @@ import {
   updateStoreOrderNotesSchema,
   updateStoreOrderStatusSchema,
 } from "@/lib/schemas/order.schemas"
-import { createStoreOrder, OrderItemError, resolveOrderLines, type ResolvedLine } from "@/lib/store-order-writes"
+import { createOrder, OrderItemError, resolveOrderLines, type ResolvedLine } from "@workspace/commerce/order-writes"
 import type { OrderableListing, OrderCustomer, OrderPreview } from "@/types"
 
 // Every export here is a public endpoint, so every input is validated, and each one calls requireConsoleAccess
@@ -110,18 +110,6 @@ function itemError(error: OrderItemError): Failure {
   return { success: false, error: error.message, code: error.code }
 }
 
-// The rate and tax settings an order is priced with, or a response when there's no usable rate
-async function getPricingContext(): Promise<{ ok: false; problem: Failure } | { ok: true; rate: ExchangeRateInfo; tax: { rate: Prisma.Decimal; onShipping: boolean } | null }> {
-  const [rate, settings] = await Promise.all([getLatestExchangeRate(), prisma.appSettings.findUnique({ where: { id: "singleton" }, select: { taxEnabled: true, taxRate: true, taxShipping: true } })])
-  if (!rate || rate.isStale) return { ok: false, problem: NO_RATE }
-  return {
-    ok: true,
-    rate,
-    // Read as a Decimal here: AppSettingsData.taxRate is a plain number only so it can reach client components
-    tax: settings?.taxEnabled ? { rate: settings.taxRate, onShipping: settings.taxShipping } : null,
-  }
-}
-
 type DiscountInput = { discountType: "NONE" | "FIXED" | "PERCENTAGE"; discountValue: number }
 
 function toDiscount({ discountType, discountValue }: DiscountInput) {
@@ -133,7 +121,7 @@ type StorePricing = { ok: false; problem: Failure } | { ok: true; lines: Resolve
 // Prices the lines at the store's prices, or returns why it can't
 async function priceStoreOrder(storeId: string, input: { items: z.output<typeof previewStoreOrderSchema>["items"]; shippingGhs: number } & DiscountInput): Promise<StorePricing> {
   const context = await getPricingContext()
-  if (!context.ok) return context
+  if (!context) return { ok: false, problem: NO_RATE }
 
   let lines: ResolvedLine[]
   try {
@@ -230,9 +218,9 @@ export async function createStoreOrderAction(input: z.input<typeof createStoreOr
     const isDelivery = data.shippingMethod === ShippingMethod.DELIVERY
     const { stockAlerts, ...order } = await prisma.$transaction(
       (tx) =>
-        createStoreOrder(tx, {
-          storeId: data.storeId,
+        createOrder(tx, {
           createdById: session.user.id,
+          statusNote: "Created in the store",
           customer: { userId: data.customerUserId, name: data.customerName, email: data.customerEmail.toLowerCase() || null, phone: data.customerPhone || null },
           shippingMethod: data.shippingMethod,
           shipping: isDelivery

@@ -2,7 +2,7 @@ import type { Metadata } from "next"
 import { redirect } from "next/navigation"
 import { organizationRoles } from "@workspace/auth/organization-permissions"
 import { requireActiveStoreMember } from "@/lib/auth-guard"
-import { getLatestExchangeRate } from "@/lib/data/exchange-rates.data"
+import { getLatestExchangeRate } from "@workspace/commerce/exchange-rates"
 import { getSupplierOptions } from "@/lib/data/purchase-orders.data"
 import PurchaseOrderForm from "../_components/purchase-order-form"
 

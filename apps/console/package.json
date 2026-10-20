@@ -15,6 +15,7 @@
     "@hookform/resolvers": "^5.9.1",
     "@tanstack/react-table": "^8.21.3",
     "@workspace/auth": "workspace:*",
+    "@workspace/commerce": "workspace:*",
     "@workspace/contracts": "workspace:*",
     "@workspace/db": "workspace:*",
     "@workspace/email": "workspace:*",

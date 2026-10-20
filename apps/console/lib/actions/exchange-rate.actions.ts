@@ -6,7 +6,7 @@ import { ActionResponse } from "@workspace/contracts"
 import { prisma } from "@workspace/db"
 import { ExchangeRateSource } from "@workspace/db/enums"
 import { requireSystemPermission } from "@/lib/auth-guard"
-import { getRateDate } from "@/lib/data/exchange-rates.data"
+import { getRateDate } from "@workspace/commerce/exchange-rates"
 import { exchangeRateFormSchema } from "@/lib/schemas/exchange-rate.schemas"
 
 // Sets today's USD→GHS rate by hand: for a day the daily fetch failed, or to override the fetched rate.

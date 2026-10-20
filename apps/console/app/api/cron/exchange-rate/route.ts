@@ -1,6 +1,6 @@
 import { fetchTodaysRate } from "@/lib/exchange-rate-fetch"
 import { isCronAuthorized } from "@/lib/cron-auth"
-import { notifyRateFetchFailed } from "@/lib/notifications"
+import { notifyRateFetchFailed } from "@workspace/commerce/notifications"
 
 // Saves today's USD→GHS rate from Open Exchange Rates, unless today already has one (an earlier run, or a rate a
 // superAdmin set in Settings). Meant for a scheduler, once a day shortly after midnight (Africa/Accra, UTC+0):
