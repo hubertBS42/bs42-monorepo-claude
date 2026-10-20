@@ -1,7 +1,10 @@
-// Seeds the starting catalogue: the category tree and brands carried over from the old BS42 app, and sample products, without images.
-// Safe to run again: a category that already exists under the same parent, or a brand or product with the same name, is skipped.
+// Seeds the starting catalogue: the category tree and brands carried over from the old BS42 app, sample products without
+// images, and specifications for some categories with the sample products' values.
+// Safe to run again: a category that already exists under the same parent, a brand or product with the same name, a
+// spec its category already has, or a value a product already has is skipped.
 // Run with `pnpm --filter @workspace/db db:seed`.
 import { generateUniqueSku, prisma } from "../src/client"
+import type { Prisma } from "../generated/prisma/client"
 
 type CategorySeed = {
   name: string
@@ -1477,6 +1480,83 @@ const products: ProductSeed[] = [
   },
 ]
 
+type SpecSeed = {
+  // A category's name: unique in the tree, checked when seeding
+  category: string
+  name: string
+  type: "SELECT" | "NUMBER" | "BOOLEAN" | "TEXT"
+  unit?: string
+  options?: string[]
+}
+
+// A spec applies to its category and every category under it, so Connection covers cameras and recorders alike
+const specs: SpecSeed[] = [
+  { category: "CCTV", name: "Connection", type: "SELECT", options: ["IP", "Analogue HD", "Hybrid", "Wi-Fi"] },
+  { category: "CCTV Cameras", name: "Form factor", type: "SELECT", options: ["Dome", "Bullet", "Turret", "PTZ", "Cube"] },
+  { category: "CCTV Cameras", name: "Resolution", type: "SELECT", options: ["2MP", "4MP", "8MP"] },
+  { category: "CCTV Cameras", name: "Night vision range", type: "NUMBER", unit: "m" },
+  { category: "CCTV Cameras", name: "Weatherproof", type: "BOOLEAN" },
+  { category: "CCTV Cameras", name: "Two-way audio", type: "BOOLEAN" },
+  { category: "CCTV Recorders", name: "Channels", type: "NUMBER" },
+  { category: "CCTV Recorders", name: "Drive bays", type: "NUMBER" },
+  { category: "CCTV Recorders", name: "Built-in PoE", type: "BOOLEAN" },
+  { category: "Network Switches", name: "Ports", type: "NUMBER" },
+  { category: "Network Switches", name: "SFP ports", type: "NUMBER" },
+  { category: "Network Switches", name: "PoE", type: "BOOLEAN" },
+  { category: "Network Switches", name: "Managed", type: "BOOLEAN" },
+  { category: "Routers & Gateways", name: "Wi-Fi", type: "SELECT", options: ["None", "Wi-Fi 5", "Wi-Fi 6"] },
+  { category: "Routers & Gateways", name: "Ethernet ports", type: "NUMBER" },
+  { category: "Data Storage", name: "Drive type", type: "SELECT", options: ["HDD", "SSD"] },
+  { category: "Data Storage", name: "Interface", type: "SELECT", options: ["SATA", "USB 3.0", "USB-C"] },
+  { category: "IP Phones", name: "Lines", type: "NUMBER" },
+  { category: "IP Phones", name: "PoE", type: "BOOLEAN" },
+  { category: "IP Phones", name: "Colour screen", type: "BOOLEAN" },
+  { category: "Network Cables", name: "Cable category", type: "SELECT", options: ["Cat5e", "Cat6", "Cat6a"] },
+  { category: "Network Cables", name: "Shielded", type: "BOOLEAN" },
+  { category: "Network Cables", name: "Outdoor rated", type: "BOOLEAN" },
+  { category: "Smart Devices", name: "Protocol", type: "SELECT", options: ["Wi-Fi", "Zigbee", "Bluetooth"] },
+]
+
+// The sample products' values, by product and spec name. A spec a product varies by (a camera sold in 2MP and 4MP)
+// is a variant option instead, so it has no value here.
+const productSpecs: Record<string, Record<string, string | number | boolean>> = {
+  "Hikvision 2MP Dome Camera": { Connection: "Analogue HD", "Form factor": "Dome", Resolution: "2MP", "Night vision range": 20, Weatherproof: false },
+  "Hikvision 4MP Bullet Camera": { Connection: "IP", "Form factor": "Bullet", Resolution: "4MP", "Night vision range": 30, Weatherproof: true },
+  "Hikvision ColorVu Turret Camera": { Connection: "IP", "Form factor": "Turret", Weatherproof: true },
+  "Dahua 2MP HDCVI Bullet Camera": { Connection: "Analogue HD", "Form factor": "Bullet", Resolution: "2MP", Weatherproof: true },
+  "Dahua 4MP PTZ Camera": { Connection: "IP", "Form factor": "PTZ", Resolution: "4MP", "Night vision range": 100, Weatherproof: true },
+  "Dahua Wi-Fi Cube Camera": { Connection: "Wi-Fi", "Form factor": "Cube", Weatherproof: false, "Two-way audio": true },
+  "Hikvision 8-Channel NVR": { Connection: "IP", "Built-in PoE": true },
+  "Dahua 16-Channel XVR": { Connection: "Hybrid", Channels: 16, "Drive bays": 2, "Built-in PoE": false },
+  "Hikvision 4-Channel DVR": { Connection: "Analogue HD", Channels: 4, "Drive bays": 1, "Built-in PoE": false },
+  "Mikrotik CRS326 Switch": { Ports: 24, "SFP ports": 2, PoE: false, Managed: true },
+  "Omada 8-Port PoE Switch": { PoE: true, Managed: true },
+  "Cisco CBS250 24-Port Switch": { Ports: 24, "SFP ports": 4, PoE: false, Managed: true },
+  "Ubiquiti UniFi Flex Mini": { Ports: 5, "SFP ports": 0, PoE: false, Managed: true },
+  "Mikrotik hAP ax2": { "Wi-Fi": "Wi-Fi 6", "Ethernet ports": 5 },
+  "Mikrotik RB5009": { "Wi-Fi": "None", "Ethernet ports": 8 },
+  "Omada ER605 VPN Router": { "Wi-Fi": "None" },
+  "Seagate SkyHawk Surveillance Drive": { "Drive type": "HDD", Interface: "SATA" },
+  "Seagate Expansion Portable Drive": { "Drive type": "HDD", Interface: "USB 3.0" },
+  "SanDisk Extreme Portable SSD": { "Drive type": "SSD", Interface: "USB-C" },
+  "Yealink T31P IP Phone": { Lines: 2, PoE: true, "Colour screen": false },
+  "Yealink T54W IP Phone": { PoE: true, "Colour screen": true },
+  "Fanvil X3U IP Phone": { Lines: 6, "Colour screen": true },
+  "Cat6 UTP Cable Box": { "Cable category": "Cat6", Shielded: false, "Outdoor rated": false },
+  "Cat6 Patch Cable": { "Cable category": "Cat6", Shielded: false, "Outdoor rated": false },
+  "Outdoor Cat6 FTP Cable": { "Cable category": "Cat6", Shielded: true, "Outdoor rated": true },
+  "Tuya Smart LED Bulb": { Protocol: "Wi-Fi" },
+  "Tuya Smart Downlight": { Protocol: "Wi-Fi" },
+  "Lanbon Smart Touch Switch": { Protocol: "Zigbee" },
+  "Ifan Smart Dimmer Switch": { Protocol: "Wi-Fi" },
+  "Tuya Smart Plug": { Protocol: "Wi-Fi" },
+  "TT Lock Smart Door Lock": { Protocol: "Bluetooth" },
+  "D'Locks Smart Padlock": { Protocol: "Bluetooth" },
+  "Tuya Smart Curtain Motor": { Protocol: "Wi-Fi" },
+  "Tuya PIR Motion Sensor": { Protocol: "Zigbee" },
+  "LED Strip Controller": { Protocol: "Wi-Fi" },
+}
+
 const counts = { created: 0, skipped: 0 }
 
 // As the console's actions use: a product with many variants makes many round trips to a remote database
@@ -1590,6 +1670,69 @@ async function seedProducts() {
   }
 }
 
+async function seedSpecs() {
+  const categoryRows = await prisma.category.findMany({ select: { id: true, name: true } })
+  for (const { category, options = [], ...spec } of specs) {
+    const matches = categoryRows.filter((row) => row.name === category)
+    if (matches.length !== 1) throw new Error(`${spec.name}: expected one category called ${category}, found ${matches.length}`)
+    const categoryId = matches[0]!.id
+
+    let saved = await prisma.categorySpec.findUnique({ where: { categoryId_name: { categoryId, name: spec.name } }, select: { id: true, options: { select: { value: true } } } })
+    if (saved) {
+      counts.skipped++
+    } else {
+      const last = await prisma.categorySpec.aggregate({ where: { categoryId }, _max: { position: true } })
+      saved = await prisma.categorySpec.create({ data: { ...spec, categoryId, position: (last._max.position ?? -1) + 1 }, select: { id: true, options: { select: { value: true } } } })
+      counts.created++
+    }
+
+    // Options added to the list later are added to a spec that's already there
+    const have = new Set(saved.options.map((option) => option.value))
+    const missing = options.filter((value) => !have.has(value))
+    if (missing.length) await prisma.categorySpecOption.createMany({ data: missing.map((value) => ({ specId: saved.id, value, position: options.indexOf(value) })) })
+  }
+}
+
+async function seedProductSpecs() {
+  const categoryRows = await prisma.category.findMany({ select: { id: true, parentId: true } })
+  const parents = new Map(categoryRows.map((row) => [row.id, row.parentId]))
+  const allSpecs = await prisma.categorySpec.findMany({ select: { id: true, categoryId: true, name: true, type: true, options: { select: { id: true, value: true } } } })
+
+  for (const [productName, values] of Object.entries(productSpecs)) {
+    const product = await prisma.product.findFirst({ where: { name: productName }, select: { id: true, categoryId: true, specValues: { select: { specId: true } } } })
+    if (!product) throw new Error(`Spec values for ${productName}, which isn't a product`)
+
+    // The product's category and every category above it
+    const chain = new Set<string>()
+    for (let id: string | null | undefined = product.categoryId; id; id = parents.get(id)) chain.add(id)
+    const has = new Set(product.specValues.map((value) => value.specId))
+
+    const data = Object.entries(values).flatMap(([specName, value]): Prisma.ProductSpecValueCreateManyInput[] => {
+      const spec = allSpecs.find((row) => row.name === specName && chain.has(row.categoryId))
+      if (!spec) throw new Error(`${productName}: its category has no spec called ${specName}`)
+      if (has.has(spec.id)) {
+        counts.skipped++
+        return []
+      }
+      counts.created++
+      switch (spec.type) {
+        case "SELECT": {
+          const option = spec.options.find((row) => row.value === value)
+          if (!option) throw new Error(`${productName}: ${specName} has no option ${value}`)
+          return [{ productId: product.id, specId: spec.id, optionId: option.id }]
+        }
+        case "NUMBER":
+          return [{ productId: product.id, specId: spec.id, numberValue: Number(value) }]
+        case "BOOLEAN":
+          return [{ productId: product.id, specId: spec.id, booleanValue: value === true }]
+        case "TEXT":
+          return [{ productId: product.id, specId: spec.id, textValue: String(value) }]
+      }
+    })
+    if (data.length) await prisma.productSpecValue.createMany({ data })
+  }
+}
+
 async function main() {
   await seedCategories(categories, null)
   console.log(`Categories: ${counts.created} created, ${counts.skipped} already there`)
@@ -1603,6 +1746,16 @@ async function main() {
   counts.skipped = 0
   await seedProducts()
   console.log(`Products: ${counts.created} created, ${counts.skipped} already there`)
+
+  counts.created = 0
+  counts.skipped = 0
+  await seedSpecs()
+  console.log(`Specifications: ${counts.created} created, ${counts.skipped} already there`)
+
+  counts.created = 0
+  counts.skipped = 0
+  await seedProductSpecs()
+  console.log(`Product spec values: ${counts.created} created, ${counts.skipped} already there`)
 }
 
 try {
