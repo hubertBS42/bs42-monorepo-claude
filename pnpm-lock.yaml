@@ -287,12 +287,24 @@ importers:
 
   apps/store:
     dependencies:
+      '@workspace/commerce':
+        specifier: workspace:*
+        version: link:../../packages/commerce
+      '@workspace/contracts':
+        specifier: workspace:*
+        version: link:../../packages/contracts
       '@workspace/db':
         specifier: workspace:*
         version: link:../../packages/database
+      '@workspace/forms':
+        specifier: workspace:*
+        version: link:../../packages/forms
       '@workspace/ui':
         specifier: workspace:*
         version: link:../../packages/ui
+      '@workspace/utils':
+        specifier: workspace:*
+        version: link:../../packages/utils
       lucide-react:
         specifier: ^1.51.0
         version: 1.52.0(@types/react@19.3.0)(react@19.3.0)
@@ -308,6 +320,9 @@ importers:
       react-dom:
         specifier: 19.3.0
         version: 19.3.0(react@19.3.0)
+      server-only:
+        specifier: ^0.0.1
+        version: 0.0.1
     devDependencies:
       '@tailwindcss/postcss':
         specifier: ^4

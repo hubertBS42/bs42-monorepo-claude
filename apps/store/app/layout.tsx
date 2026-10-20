@@ -4,22 +4,45 @@ import "@workspace/ui/globals.css"
 import { ThemeProvider } from "@workspace/ui/components/theme-provider"
 import { cn } from "@workspace/ui/lib/utils"
 
+import { SiteFooter } from "@/components/site-footer"
+import { SiteHeader } from "@/components/site-header"
+import { getCategoryTree } from "@/lib/data/categories"
+import { getMenuItems } from "@/lib/menu"
+import { getAppSettings, getStoreName } from "@/lib/settings"
+
+// Pages without search params (the homepage) are built ahead, then rebuilt at most this often, as the data caches
+// expire (lib/settings.ts)
+export const revalidate = 60
+
 const geist = Geist({ subsets: ["latin"], variable: "--font-sans" })
+const fontMono = Geist_Mono({ subsets: ["latin"], variable: "--font-mono" })
 
-const fontMono = Geist_Mono({
-  subsets: ["latin"],
-  variable: "--font-mono",
-})
+export async function generateMetadata() {
+  const [settings, storeName] = await Promise.all([getAppSettings(), getStoreName()])
+  return {
+    title: { default: storeName, template: `%s | ${storeName}` },
+    description: settings.storeDescription ?? undefined,
+    openGraph: { siteName: storeName, description: settings.storeDescription ?? undefined },
+    icons: settings.faviconUrl ? { icon: settings.faviconUrl } : undefined,
+  }
+}
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  const [settings, storeName, tree] = await Promise.all([getAppSettings(), getStoreName(), getCategoryTree()])
+  const menu = getMenuItems(tree)
+
   return (
-    <html lang="en" suppressHydrationWarning className={cn("antialiased", fontMono.variable, "font-sans", geist.variable)}>
-      <body>
-        <ThemeProvider>{children}</ThemeProvider>
+    <html lang="en-GH" suppressHydrationWarning className={cn("antialiased", fontMono.variable, "font-sans", geist.variable)}>
+      <body className="flex min-h-svh flex-col">
+        <ThemeProvider>
+          <SiteHeader storeName={storeName} logoUrl={settings.logoUrl} menu={menu} />
+          <main className="flex-1">{children}</main>
+          <SiteFooter storeName={storeName} storeDescription={settings.storeDescription} logoUrl={settings.logoUrl} menu={menu} />
+        </ThemeProvider>
       </body>
     </html>
   )
