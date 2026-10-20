@@ -29,8 +29,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@workspace/ui/components/alert-dialog"
-import type { ProductFormData, SelectItem, VariantUsage } from "@/types"
+import type { ProductFormData, SelectItem, SpecField, VariantUsage } from "@/types"
 import VariantSheet from "./variant-sheet"
+import ProductSpecs from "./product-specs"
 import DeleteProduct from "./delete-product"
 import { deleteDocuments, deleteFiles, deleteImages, uploadDocuments, uploadImages } from "@/lib/storage"
 
@@ -44,6 +45,8 @@ interface ProductFormProps {
   // The category tree from getCategoryOptions
   categoryOptions: CascaderOption[]
   disabledCategoryIds: string[]
+  // Each category's specs, its own and those above it (getSpecFieldsByCategory)
+  specFields: Record<string, SpecField[]>
   // The product being edited; without it the form adds a new one
   product?: ProductFormData
 }
@@ -69,6 +72,7 @@ const EMPTY_PRODUCT: FormInput = {
   banner: "",
   variantOptions: [],
   variants: [],
+  specs: {},
 }
 
 // Every combination of the options' values, skipping blank ones, e.g. Size S/L × Colour Red gives two. Values are
@@ -119,7 +123,7 @@ function describeRemoval(variants: VariantInput[], usage: Record<string, Variant
 
 type PendingChange = { kind: "removeVariant"; index: number } | { kind: "regenerate" } | { kind: "noVariants" }
 
-const ProductForm = ({ brands, categoryOptions, disabledCategoryIds, product }: ProductFormProps) => {
+const ProductForm = ({ brands, categoryOptions, disabledCategoryIds, specFields, product }: ProductFormProps) => {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [editingVariantIndex, setEditingVariantIndex] = useState<number | null>(null)
@@ -140,6 +144,7 @@ const ProductForm = ({ brands, categoryOptions, disabledCategoryIds, product }: 
   const { fields: variantFields, remove: removeVariant, replace: replaceVariants } = useFieldArray({ control: form.control, name: "variants" })
 
   const hasVariants = useWatch({ control: form.control, name: "hasVariants" })
+  const categoryId = useWatch({ control: form.control, name: "categoryId" })
   const watchedOptions = useWatch({ control: form.control, name: "variantOptions" })
   const watchedVariants = useWatch({ control: form.control, name: "variants" })
   const variantOptions = useMemo(() => watchedOptions ?? [], [watchedOptions])
@@ -310,6 +315,8 @@ const ProductForm = ({ brands, categoryOptions, disabledCategoryIds, product }: 
       else if (response.code === "BARCODE_EXISTS" && !productData.hasVariants) form.setError("barcode", { type: "custom", message: response.error })
       else if (response.code === "INVALID_BRAND") form.setError("brandId", { type: "custom", message: response.error })
       else if (response.code === "INVALID_CATEGORY") form.setError("categoryId", { type: "custom", message: response.error })
+      // A spec or option changed since the page loaded: the message names the spec
+      else if (response.code === "INVALID_SPEC") toast.add({ title: "Check the specifications", description: response.error, type: "error" })
       else toast.add({ title: "Operation failed", description: response.error, type: "error" })
     })
   }
@@ -416,6 +423,8 @@ const ProductForm = ({ brands, categoryOptions, disabledCategoryIds, product }: 
                   </FieldGroup>
                 </CardContent>
               </Card>
+
+              <ProductSpecs control={form.control} fields={specFields[categoryId] ?? []} hasCategory={!!categoryId} disabled={isBusy} />
 
               <Card>
                 <CardHeader>

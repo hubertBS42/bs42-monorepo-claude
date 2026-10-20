@@ -5,7 +5,8 @@ import { Status } from "@workspace/db/enums"
 import type { z } from "zod"
 import type { updateProductFormSchema } from "./schemas/product.schemas"
 
-type ProductUpdate = z.output<typeof updateProductFormSchema>
+// Specs are saved separately (product-specs.ts)
+type ProductUpdate = Omit<z.output<typeof updateProductFormSchema>, "specs">
 type Tx = Parameters<Parameters<typeof prisma.$transaction>[0]>[0]
 
 const valueKey = (option: string, value: string) => `${option}\u0000${value}`

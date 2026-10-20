@@ -3,6 +3,7 @@ import { notFound } from "next/navigation"
 import ProductForm from "../../_components/product-form"
 import { getBrandsForSelect } from "@/lib/data/brands.data"
 import { getCategoryOptions } from "@/lib/data/categories.data"
+import { getSpecFieldsByCategory } from "@/lib/data/category-specs.data"
 import { getProductForEdit } from "@/lib/data/products.data"
 import { requireSystemPermission } from "@/lib/auth-guard"
 
@@ -19,7 +20,7 @@ export default async function EditProductPage({ params }: Props) {
 
   const { id } = await params
   // getProductForEdit returns NOT_FOUND for an id that isn't a UUID
-  const [product, brands, categories] = await Promise.all([getProductForEdit(id), getBrandsForSelect(), getCategoryOptions()])
+  const [product, brands, categories, specFields] = await Promise.all([getProductForEdit(id), getBrandsForSelect(), getCategoryOptions(), getSpecFieldsByCategory()])
 
   if (!product.success) {
     if (product.code === "NOT_FOUND") notFound()
@@ -27,11 +28,12 @@ export default async function EditProductPage({ params }: Props) {
   }
   if (!brands.success) throw new Error(brands.error)
   if (!categories.success) throw new Error(categories.error)
+  if (!specFields.success) throw new Error(specFields.error)
 
   // getBrandsForSelect leaves archived brands out, which would leave this product's brand field empty. It's offered
   // so the form shows it; saving still asks for an active brand.
   const { brand } = product.data
   const brandOptions = brand.isArchived ? [...brands.data, { id: brand.id, name: `${brand.name} (archived)` }] : brands.data
 
-  return <ProductForm product={product.data} brands={brandOptions} categoryOptions={categories.data.options} disabledCategoryIds={categories.data.disabledIds} />
+  return <ProductForm product={product.data} brands={brandOptions} categoryOptions={categories.data.options} disabledCategoryIds={categories.data.disabledIds} specFields={specFields.data} />
 }

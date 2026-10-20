@@ -9,6 +9,7 @@ import { Status } from "@workspace/db/enums"
 import type { DataResponse } from "@workspace/contracts"
 import { getPaginationError } from "@workspace/utils/pagination"
 import { z } from "zod"
+import { toSpecFormValue } from "@/lib/product-specs"
 
 export const MAX_PRODUCTS_PAGE_SIZE = 100
 export const PRODUCT_SORT_FIELDS = ["name", "baseSellPrice", "status", "createdAt", "updatedAt"] as const
@@ -195,6 +196,7 @@ export const getProductForEdit = async (productId: string): Promise<DataResponse
             orderBy: { position: "asc" },
           },
           _count: { select: { storeListings: true } },
+          specValues: { select: { specId: true, optionId: true, numberValue: true, booleanValue: true, textValue: true } },
         },
       }),
       // An order line can point at the product, one of its variants or a store's listing of it
@@ -243,6 +245,7 @@ export const getProductForEdit = async (productId: string): Promise<DataResponse
           banner: product.banner ?? "",
           variantOptions: product.variantOptions,
           variants,
+          specs: Object.fromEntries(product.specValues.map((value) => [value.specId, toSpecFormValue(value)])),
         },
         savedFiles: [...product.images, ...(product.banner ? [product.banner] : []), ...documents.map((document) => document.url), ...variants.flatMap((variant) => variant.images)],
         variantUsage: Object.fromEntries(

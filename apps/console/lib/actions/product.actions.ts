@@ -10,6 +10,7 @@ import { isManagedFileUrl, removeFiles } from "@workspace/storage"
 import { sanitizeRichText } from "@workspace/utils/rich-text"
 import { requireSystemPermission } from "@/lib/auth-guard"
 import { loadProductForUpdate, syncProduct } from "@/lib/product-sync"
+import { saveProductSpecs, SpecValueError } from "@/lib/product-specs"
 
 // Every export here is a public endpoint, so every input is validated
 
@@ -71,6 +72,11 @@ async function checkProductInput(data: ProductInput, ownProductId?: string): Pro
   return undefined
 }
 
+// A spec value that doesn't fit its spec, e.g. an option removed since the page loaded
+function getSpecProblem(error: unknown): ActionResponse | undefined {
+  return error instanceof SpecValueError ? { success: false, error: error.message, code: "INVALID_SPEC" } : undefined
+}
+
 // Slug and option conflicts are handled before they get here, so a unique violation is a SKU or barcode saved in the meantime
 function getUniqueConflict(error: unknown): ActionResponse | undefined {
   if (!(error instanceof Prisma.PrismaClientKnownRequestError) || error.code !== "P2002") return undefined
@@ -91,7 +97,7 @@ export async function createProductAction(input: z.input<typeof addProductFormSc
     const problem = await checkProductInput(parsed.data)
     if (problem) return problem
 
-    const { documents, variantOptions = [], variants = [], sku, barcode, weight, dimensions, banner, ...fields } = parsed.data
+    const { documents, variantOptions = [], variants = [], sku, barcode, weight, dimensions, banner, specs, ...fields } = parsed.data
 
     await prisma.$transaction(async (tx) => {
       const product = await tx.product.create({
@@ -114,6 +120,8 @@ export async function createProductAction(input: z.input<typeof addProductFormSc
         },
         select: { id: true, name: true, variantOptions: { select: { name: true, values: { select: { id: true, value: true } } } } },
       })
+
+      await saveProductSpecs(tx, product.id, fields.categoryId, specs)
 
       // Matched by name and value rather than position: Prisma doesn't promise the order created rows come back in
       const valueIds = new Map(product.variantOptions.flatMap((option) => option.values.map((value) => [`${option.name}\u0000${value.value}`, value.id])))
@@ -144,7 +152,7 @@ export async function createProductAction(input: z.input<typeof addProductFormSc
 
     return { success: true }
   } catch (error) {
-    const conflict = getUniqueConflict(error)
+    const conflict = getUniqueConflict(error) ?? getSpecProblem(error)
     if (conflict) return conflict
     return { success: false, error: formatError(error) }
   }
@@ -164,17 +172,19 @@ export async function updateProductAction(input: z.input<typeof updateProductFor
     const problem = await checkProductInput(parsed.data, parsed.data.id)
     if (problem) return problem
 
-    const unusedFiles = await prisma.$transaction(
+    const { specs, ...data } = parsed.data
+    const unusedFiles = await prisma.$transaction(async (tx) => {
       // Editor JSON the storefront renders, and the client could send anything
-      (tx) => syncProduct(tx, saved, { ...parsed.data, description: sanitizeRichText(parsed.data.description) }),
-      TRANSACTION_OPTIONS
-    )
+      const unused = await syncProduct(tx, saved, { ...data, description: sanitizeRichText(data.description) })
+      await saveProductSpecs(tx, data.id, data.categoryId, specs)
+      return unused
+    }, TRANSACTION_OPTIONS)
 
     // Only the server knows which files were saved, so it removes the replaced ones once the update has committed
     await removeFiles(unusedFiles)
     return { success: true }
   } catch (error) {
-    const conflict = getUniqueConflict(error)
+    const conflict = getUniqueConflict(error) ?? getSpecProblem(error)
     if (conflict) return conflict
     return { success: false, error: formatError(error) }
   }

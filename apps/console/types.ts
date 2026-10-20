@@ -1,6 +1,19 @@
 import { PaginationParams, PaginatedResult } from "@workspace/contracts"
 import { Brand, Category, Organization, Prisma, User } from "@workspace/db/client"
-import { Condition, Currency, DiscountType, OrderStatus, OrganizationStatus, PaymentMethod, PaymentStatus, PurchaseOrderStatus, ShippingMethod, Status, StockMovementReason } from "@workspace/db/enums"
+import {
+  Condition,
+  Currency,
+  DiscountType,
+  OrderStatus,
+  OrganizationStatus,
+  PaymentMethod,
+  PaymentStatus,
+  PurchaseOrderStatus,
+  ShippingMethod,
+  SpecType,
+  Status,
+  StockMovementReason,
+} from "@workspace/db/enums"
 import type { LucideIcon } from "lucide-react"
 import type { z } from "zod"
 import type { addProductFormSchema } from "@/lib/schemas/product.schemas"
@@ -162,6 +175,29 @@ export interface VariantUsage {
   ordered: boolean
   // Store listings with their own price and stock for it, which go when it's deleted
   storeCount: number
+}
+
+// A category spec as the product form shows it
+export interface SpecField {
+  id: string
+  name: string
+  type: SpecType
+  unit: string | null
+  options: { id: string; value: string }[]
+}
+
+// A spec on the category's edit page. updatedAt is the version the edit dialog sends back.
+export interface CategorySpecRow extends SpecField {
+  isFilterable: boolean
+  updatedAt: string
+  // Products with a value for it, which deleting it clears
+  productCount: number
+}
+
+// The category's own specs, and those it gets from the categories above it (nearest last)
+export interface CategorySpecsData {
+  own: CategorySpecRow[]
+  inherited: (SpecField & { categoryName: string })[]
 }
 
 // The edit form's starting point. Plain values only: Decimal can't be passed to client components

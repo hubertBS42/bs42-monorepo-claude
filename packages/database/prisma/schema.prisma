@@ -199,21 +199,23 @@ model Brand {
 }
 
 model Category {
-  id              String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id              String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name            String
-  slug            String     @unique
+  slug            String         @unique
   description     String?
   image           String?
   products        Product[]
-  parent          Category?  @relation("CategoriesHierarchy", fields: [parentId], references: [id], onDelete: NoAction)
-  parentId        String?    @db.Uuid
-  childCategories Category[] @relation("CategoriesHierarchy")
-  status          Status     @default(DRAFT)
-  isFeatured      Boolean    @default(false)
+  // Specifications its products (and those in the categories under it) can have
+  specs           CategorySpec[]
+  parent          Category?      @relation("CategoriesHierarchy", fields: [parentId], references: [id], onDelete: NoAction)
+  parentId        String?        @db.Uuid
+  childCategories Category[]     @relation("CategoriesHierarchy")
+  status          Status         @default(DRAFT)
+  isFeatured      Boolean        @default(false)
   // Order among siblings, lowest first. Ties (all 0 until someone reorders) fall back to name order.
-  position        Int        @default(0)
-  createdAt       DateTime   @default(now())
-  updatedAt       DateTime   @default(now()) @updatedAt
+  position        Int            @default(0)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @default(now()) @updatedAt
 
   // Names are unique among siblings, and the first index also serves lookups by parent. Postgres treats NULLs as
   // distinct, so top-level categories need their own partial index.
@@ -260,12 +262,76 @@ model Product {
   reviews       Review[]
   storeListings StoreListing[]
   documents     ProductDocument[]
-  createdAt     DateTime          @default(now())
-  updatedAt     DateTime          @default(now()) @updatedAt
+  specValues    ProductSpecValue[]
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @default(now()) @updatedAt
 
   @@index([brandId])
   @@index([categoryId])
   @@map("product")
+}
+
+enum SpecType {
+  SELECT // one of the spec's options
+  NUMBER // with an optional unit, e.g. 30 m
+  BOOLEAN // yes or no
+  TEXT
+}
+
+// A specification products can have, e.g. CCTV Cameras: Resolution. It applies to products in its category and in every
+// category under it, and the storefront can filter by it.
+model CategorySpec {
+  id           String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  categoryId   String               @db.Uuid
+  category     Category             @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  name         String
+  type         SpecType
+  unit         String? // NUMBER only, e.g. "m"
+  // Order on the product form and among the storefront's filters, lowest first; ties fall back to name order
+  position     Int                  @default(0)
+  isFilterable Boolean              @default(true)
+  options      CategorySpecOption[]
+  values       ProductSpecValue[]
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @default(now()) @updatedAt
+
+  // The unique index also serves lookups by category
+  @@unique([categoryId, name])
+  @@map("category_spec")
+}
+
+// A SELECT spec's choices. Products point at the row, so renaming one keeps their values.
+model CategorySpecOption {
+  id       String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  specId   String             @db.Uuid
+  spec     CategorySpec       @relation(fields: [specId], references: [id], onDelete: Cascade)
+  value    String
+  position Int                @default(0)
+  values   ProductSpecValue[]
+
+  @@unique([specId, value])
+  @@map("category_spec_option")
+}
+
+// A product's value for a spec: one column set, by the spec's type
+model ProductSpecValue {
+  id           String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  productId    String              @db.Uuid
+  product      Product             @relation(fields: [productId], references: [id], onDelete: Cascade)
+  specId       String              @db.Uuid
+  spec         CategorySpec        @relation(fields: [specId], references: [id], onDelete: Cascade)
+  optionId     String?             @db.Uuid
+  option       CategorySpecOption? @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  numberValue  Decimal?            @db.Decimal(14, 4)
+  booleanValue Boolean?
+  textValue    String?
+
+  // The unique index also serves lookups by product; the others serve the storefront's filters
+  @@unique([productId, specId])
+  @@index([specId, optionId])
+  @@index([specId, numberValue])
+  @@index([optionId])
+  @@map("product_spec_value")
 }
 
 model ProductDocument {
