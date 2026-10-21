@@ -609,6 +609,8 @@ model Order {
   // Where a storefront order was placed from (the first X-Forwarded-For address), so one visitor can only hold so
   // many unpaid orders (and their stock) at a time. Null for staff orders.
   placedFromIp String?
+  // When "Find an order" last emailed this order's link, so its customer can't be sent it over and over
+  orderLinkSentAt DateTime?
 
   // POS
   createdById String? @db.Uuid

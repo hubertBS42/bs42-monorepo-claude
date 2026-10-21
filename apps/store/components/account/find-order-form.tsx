@@ -41,7 +41,8 @@ export function FindOrderForm() {
           <MailCheck className="mx-auto mb-2 size-8 text-muted-foreground" aria-hidden />
           <CardTitle className="text-xl">Check your email</CardTitle>
           <CardDescription>
-            If we have an order with that reference for <span className="font-medium text-foreground">{sentTo}</span>, we&apos;ve sent a link to it there. It can take a minute or two.
+            If we have an order with that reference for <span className="font-medium text-foreground">{sentTo}</span>, we&apos;ve sent a link to it there. It can take a minute or two, and we send one
+            every 10 minutes at most, so look for an earlier email too.
           </CardDescription>
         </CardHeader>
         <CardContent>

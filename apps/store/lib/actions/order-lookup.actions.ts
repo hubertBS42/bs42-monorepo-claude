@@ -9,6 +9,9 @@ import { orderUrl } from "@workspace/commerce/order-links"
 import { findOrderSchema, type FindOrderValues } from "@/lib/schemas/account.schemas"
 import { getAppSettings, getStoreName } from "@/lib/settings"
 
+// One link email per order in this long, however often it's asked for, so nobody can fill a customer's inbox with them
+const ORDER_LINK_INTERVAL_MINUTES = 10
+
 // "Find an order": the order's link goes to the order's own email, never to the page. Whoever asks gets the same
 // answer whether or not the order exists, so references and emails can't be tried out here, and a receipt that's
 // been seen or passed on doesn't open the order (its name, address and phone).
@@ -25,6 +28,14 @@ export async function findOrderAction(input: FindOrderValues): Promise<ActionRes
         select: { id: true, reference: true, customerName: true, customerEmail: true },
       })
       if (!order?.customerEmail) return
+
+      // Claimed in one statement, so two requests at once can't both send it
+      const since = new Date(Date.now() - ORDER_LINK_INTERVAL_MINUTES * 60_000)
+      const claimed = await prisma.order.updateMany({
+        where: { id: order.id, OR: [{ orderLinkSentAt: null }, { orderLinkSentAt: { lt: since } }] },
+        data: { orderLinkSentAt: new Date() },
+      })
+      if (!claimed.count) return
 
       const [settings, storeName] = await Promise.all([getAppSettings(), getStoreName()])
       await sendEmail({
