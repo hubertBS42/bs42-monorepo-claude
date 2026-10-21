@@ -14,6 +14,8 @@ import { PasswordUpdatedEmail } from "../dist/src/templates/password-updated-ema
 import { ResetPasswordEmail } from "../dist/src/templates/reset-password-email.js"
 import { SetPasswordEmail } from "../dist/src/templates/set-password-email.js"
 import { StaffAlertEmail } from "../dist/src/templates/staff-alert-email.js"
+import { VerifyEmailEmail } from "../dist/src/templates/verify-email-email.js"
+import { OrderLinkEmail } from "../dist/src/templates/order-link-email.js"
 
 const orderDetails = {
   customerName: "Alex Morgan",
@@ -31,6 +33,8 @@ const templates = [
   ],
   ["password setup", SetPasswordEmail({ name: "Alex Morgan", url: "https://example.com/setup" }), "https://example.com/setup"],
   ["password update", PasswordUpdatedEmail({ name: "Alex Morgan" }), "Password updated"],
+  ["email verification", VerifyEmailEmail({ name: "Alex Morgan", url: "https://example.com/verify", appName: "BS42" }), "https://example.com/verify"],
+  ["order link", OrderLinkEmail({ name: "Alex Morgan", reference: "BS42-20261020-00001", url: "https://example.com/orders/1", appName: "BS42" }), "https://example.com/orders/1"],
   [
     "member invitation",
     InviteMemberEmail({

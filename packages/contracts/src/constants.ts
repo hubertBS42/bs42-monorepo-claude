@@ -1,5 +1,6 @@
 export const INVITATION_EXPIRATION_SECONDS = 60 * 60 * 24 * 7 // 7 days: an emailed invitation may not be opened the same day
 export const RESET_PASSWORD_TOKEN_EXPIRATION_SECONDS = 60 * 30 // 30 minutes
+export const EMAIL_VERIFICATION_TOKEN_EXPIRATION_SECONDS = 60 * 60 * 24 // 1 day: a storefront sign-up may not open the email straight away
 export const SESSION_CACHE_EXPIRATION_SECONDS = 60 // 1 minute
 export const CART_LIFETIME_DAYS = 30 // a storefront basket left alone this long is cleared out (its cookie lapses too)
 export const PLATFORM_ORGANIZATION_SLUG = "global"
