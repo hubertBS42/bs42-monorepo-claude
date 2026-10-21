@@ -1,9 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { LogIn, LogOut, PackageSearch, UserPlus, UserRound } from "lucide-react"
+import { LayoutDashboard, LogIn, LogOut, PackageSearch, UserPlus, UserRound } from "lucide-react"
 import { storeAuthClient } from "@workspace/auth/store-client"
 import { Avatar, AvatarFallback, AvatarImage } from "@workspace/ui/components/avatar"
 import { Button } from "@workspace/ui/components/button"
@@ -22,6 +22,28 @@ import { getNameInitials } from "@workspace/utils/name"
 import { refreshBasketCount } from "@/components/basket/basket-count"
 import { signInHref } from "@/lib/auth-redirect"
 
+// The console's address for staff, null for customers (and while it's being asked)
+function useConsoleUrl(userId: string | undefined) {
+  const [consoleUrl, setConsoleUrl] = useState<{ userId: string; url: string | null } | null>(null)
+
+  useEffect(() => {
+    if (!userId) return
+    let current = true
+    fetch("/api/account/console-access", { cache: "no-store" })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data: { consoleUrl: string | null } | null) => {
+        if (current) setConsoleUrl({ userId, url: data?.consoleUrl ?? null })
+      })
+      .catch(() => {})
+    return () => {
+      current = false
+    }
+  }, [userId])
+
+  // Another account's answer doesn't count
+  return consoleUrl && consoleUrl.userId === userId ? consoleUrl.url : null
+}
+
 // The header's account menu. Pages are cached and shared, so the session is read in the browser.
 export function AccountButton() {
   const router = useRouter()
@@ -29,6 +51,7 @@ export function AccountButton() {
   const { data: session, isPending } = storeAuthClient.useSession()
   const [isSigningOut, setIsSigningOut] = useState(false)
   const [signOutError, setSignOutError] = useState<string | null>(null)
+  const consoleUrl = useConsoleUrl(session?.user.id)
 
   // Same size as the button, so the header doesn't shift when the session arrives
   if (isPending) return <div className="size-9 animate-pulse rounded-full bg-muted" aria-hidden />
@@ -100,6 +123,16 @@ export function AccountButton() {
           </DropdownMenuLabel>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
+        {consoleUrl && (
+          <>
+            {/* Staff only. A new tab, signed in there too: the apps share the session. */}
+            <DropdownMenuLinkItem render={<a href={consoleUrl} target="_blank" rel="noopener" />}>
+              <LayoutDashboard aria-hidden />
+              Open console
+            </DropdownMenuLinkItem>
+            <DropdownMenuSeparator />
+          </>
+        )}
         {signOutError && (
           <p role="alert" className="px-2 py-1 text-sm text-destructive">
             {signOutError}

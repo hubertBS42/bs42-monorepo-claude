@@ -8,7 +8,7 @@ import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader } from "@workspac
 
 import { StoreSwitcher } from "./store-switcher"
 
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+export function AppSidebar({ storefrontUrl, ...props }: React.ComponentProps<typeof Sidebar> & { storefrontUrl: string }) {
   return (
     <Sidebar variant="inset" {...props}>
       <SidebarHeader>
@@ -18,7 +18,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <Nav />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser />
+        <NavUser storefrontUrl={storefrontUrl} />
       </SidebarFooter>
     </Sidebar>
   )

@@ -12,7 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@workspace/ui/components/dropdown-menu"
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from "@workspace/ui/components/sidebar"
-import { ChevronsUpDownIcon, CircleUserIcon, LogOutIcon } from "lucide-react"
+import { ChevronsUpDownIcon, CircleUserIcon, LogOutIcon, StoreIcon } from "lucide-react"
 import Link from "next/link"
 import { consoleAuthClient } from "@workspace/auth/console-client"
 import { useSignOut } from "@/hooks/use-sign-out"
@@ -56,7 +56,8 @@ function NavUserSkeleton() {
   )
 }
 
-export function NavUser() {
+// storefrontUrl comes from the server: STORE_AUTH_URL doesn't reach client code
+export function NavUser({ storefrontUrl }: { storefrontUrl: string }) {
   const { isMobile } = useSidebar()
   const { data: session, isPending } = consoleAuthClient.useSession()
   const { signOut, isSigningOut, signOutError } = useSignOut()
@@ -87,6 +88,11 @@ export function NavUser() {
               <DropdownMenuLinkItem render={<Link href="/account" />}>
                 <CircleUserIcon />
                 Account
+              </DropdownMenuLinkItem>
+              {/* A new tab, so the console stays open. Signed in there too: the apps share the session. */}
+              <DropdownMenuLinkItem render={<a href={storefrontUrl} target="_blank" rel="noopener" />}>
+                <StoreIcon />
+                View storefront
               </DropdownMenuLinkItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />

@@ -1,5 +1,6 @@
 import { AppHeader } from "@/components/app-header"
 import { AppSidebar } from "@/components/app-sidebar"
+import { authURLs } from "@workspace/auth/constants"
 import { SidebarInset, SidebarProvider } from "@workspace/ui/components/sidebar"
 import { ReactNode } from "react"
 
@@ -8,10 +9,9 @@ export default async function RootLayout({
 }: Readonly<{
   children: ReactNode
 }>) {
-
   return (
     <SidebarProvider>
-      <AppSidebar />
+      <AppSidebar storefrontUrl={authURLs.store} />
       <SidebarInset>
         <AppHeader />
         <div className="flex flex-1 flex-col">
