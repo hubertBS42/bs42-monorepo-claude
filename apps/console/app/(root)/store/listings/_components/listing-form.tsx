@@ -16,6 +16,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { toast } from "@workspace/ui/components/toast"
 import SharedFormFooter from "@/components/shared-form-footer"
 import SharedFormHeader from "@/components/shared-form-header"
+import { StorefrontLinkCard } from "@/components/storefront-link-card"
+import type { StorefrontLink } from "@/lib/data/storefront-links.data"
 import { STATUS_OPTIONS } from "@/constants"
 import { createListingAction, updateListingAction } from "@/lib/actions/listing.actions"
 import { listingFormSchema } from "@/lib/schemas/listing.schemas"
@@ -29,6 +31,8 @@ type FormOutput = z.output<typeof listingFormSchema>
 interface ListingFormProps {
   storeId: string
   data: ListingFormData
+  // Its product's storefront page, when editing
+  storefrontLink?: StorefrontLink
 }
 
 // ActionResponse's code is a plain string, so it can't tell this reply apart by itself
@@ -39,7 +43,7 @@ function isStockChanged(response: { success: boolean; code?: string }): response
 const stockReasonOptions = MANUAL_STOCK_REASONS.map((reason) => ({ value: reason, label: STOCK_MOVEMENT_REASON_LABELS[reason] }))
 
 // One form for adding and editing, as for products
-const ListingForm = ({ storeId, data }: ListingFormProps) => {
+const ListingForm = ({ storeId, data, storefrontLink }: ListingFormProps) => {
   const { id, product, variants: variantRows } = data
   const isEditing = !!id
   const router = useRouter()
@@ -290,6 +294,13 @@ const ListingForm = ({ storeId, data }: ListingFormProps) => {
                   <SwitchField control={form.control} variant="card" label="Featured" name="isFeatured" disabled={isPending} description="Show this listing in the store's featured sections" />
                 </CardContent>
               </Card>
+
+              {storefrontLink && (
+                <StorefrontLinkCard
+                  link={storefrontLink}
+                  description="The product's page, with the best offer across every store selling it, which may not be this listing. Saved changes show within a minute."
+                />
+              )}
 
               {id && (
                 <Card>

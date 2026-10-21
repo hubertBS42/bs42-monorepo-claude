@@ -8,10 +8,12 @@ import { Button, buttonVariants } from "@workspace/ui/components/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@workspace/ui/components/card"
 import { FieldError, FieldGroup } from "@workspace/ui/components/field"
 import Link from "next/link"
+import { useState } from "react"
 import { SubmitHandler, useForm } from "react-hook-form"
 import { z } from "zod"
 
 export function SetPasswordForm({ token, invalidToken = false }: { token?: string; invalidToken?: boolean }) {
+  const [isUpdated, setIsUpdated] = useState(false)
   const form = useForm<z.infer<typeof setPasswordSchema>>({
     resolver: zodResolver(setPasswordSchema),
     defaultValues: {
@@ -42,6 +44,7 @@ export function SetPasswordForm({ token, invalidToken = false }: { token?: strin
         })
         return
       }
+      setIsUpdated(true)
     } catch (error) {
       console.error("Password update failed:", error)
       form.setError("root", {
@@ -55,12 +58,12 @@ export function SetPasswordForm({ token, invalidToken = false }: { token?: strin
       <CardHeader>
         <CardTitle>Set a new password</CardTitle>
         <CardDescription>
-          {form.formState.isSubmitting ? "Your password has been updated successfully." : "Enter your new password below to set a new password."}
+          {isUpdated ? "Your password has been updated successfully." : "Enter your new password below to set a new password."}
         </CardDescription>
       </CardHeader>
 
       <CardContent>
-        {form.formState.isSubmitting ? (
+        {isUpdated ? (
           <Link href="/login" className={buttonVariants({ variant: "default" })}>
             Continue to login
           </Link>

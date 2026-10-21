@@ -10,6 +10,8 @@ import { Control, FieldErrors, SubmitErrorHandler, SubmitHandler, useFieldArray,
 import { z } from "zod"
 import { toast } from "@workspace/ui/components/toast"
 import SharedFormHeader from "@/components/shared-form-header"
+import { StorefrontLinkCard } from "@/components/storefront-link-card"
+import type { StorefrontLink } from "@/lib/data/storefront-links.data"
 import SharedFormFooter from "@/components/shared-form-footer"
 import { Condition, Status } from "@workspace/db/enums"
 import { createProductAction, updateProductAction } from "@/lib/actions/product.actions"
@@ -49,6 +51,8 @@ interface ProductFormProps {
   specFields: Record<string, SpecField[]>
   // The product being edited; without it the form adds a new one
   product?: ProductFormData
+  // Its storefront page, when editing
+  storefrontLink?: StorefrontLink
 }
 
 const EMPTY_PRODUCT: FormInput = {
@@ -123,7 +127,7 @@ function describeRemoval(variants: VariantInput[], usage: Record<string, Variant
 
 type PendingChange = { kind: "removeVariant"; index: number } | { kind: "regenerate" } | { kind: "noVariants" }
 
-const ProductForm = ({ brands, categoryOptions, disabledCategoryIds, specFields, product }: ProductFormProps) => {
+const ProductForm = ({ brands, categoryOptions, disabledCategoryIds, specFields, product, storefrontLink }: ProductFormProps) => {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [editingVariantIndex, setEditingVariantIndex] = useState<number | null>(null)
@@ -639,6 +643,8 @@ const ProductForm = ({ brands, categoryOptions, disabledCategoryIds, specFields,
                   />
                 </CardContent>
               </Card>
+
+              {storefrontLink && <StorefrontLinkCard link={storefrontLink} description="As customers see it, with the best offer across the stores selling it. Saved changes show within a minute." />}
 
               {product && (
                 <Card>
