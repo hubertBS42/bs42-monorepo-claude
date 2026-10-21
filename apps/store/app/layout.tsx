@@ -6,11 +6,12 @@ import { ThemeProvider } from "@workspace/ui/components/theme-provider"
 import { Toaster } from "@workspace/ui/components/toast"
 import { cn } from "@workspace/ui/lib/utils"
 
+import { legalLinks } from "@/components/legal-consent"
 import { SiteFooter } from "@/components/site-footer"
 import { SiteHeader } from "@/components/site-header"
 import { getCategoryTree } from "@/lib/data/categories"
 import { getMenuItems } from "@/lib/menu"
-import { getAppSettings, getStoreName } from "@/lib/settings"
+import { getAppSettings, getLegalPages, getStoreName } from "@/lib/settings"
 
 // Pages without search params (the homepage) are built ahead, then rebuilt at most this often, as the data caches
 // expire (lib/settings.ts)
@@ -36,7 +37,7 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode
 }>) {
-  const [settings, storeName, tree] = await Promise.all([getAppSettings(), getStoreName(), getCategoryTree()])
+  const [settings, storeName, tree, legal] = await Promise.all([getAppSettings(), getStoreName(), getCategoryTree(), getLegalPages()])
   const menu = getMenuItems(tree)
 
   return (
@@ -45,7 +46,7 @@ export default async function RootLayout({
         <ThemeProvider>
           <SiteHeader storeName={storeName} logoUrl={settings.logoUrl} menu={menu} />
           <main className="flex-1">{children}</main>
-          <SiteFooter storeName={storeName} storeDescription={settings.storeDescription} logoUrl={settings.logoUrl} menu={menu} />
+          <SiteFooter storeName={storeName} storeDescription={settings.storeDescription} logoUrl={settings.logoUrl} menu={menu} legal={legalLinks(legal)} />
           <Toaster />
         </ThemeProvider>
       </body>

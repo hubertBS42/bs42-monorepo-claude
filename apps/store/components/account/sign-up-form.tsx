@@ -14,12 +14,13 @@ import { Field, FieldDescription, FieldError, FieldGroup, FieldSeparator } from 
 import { Spinner } from "@workspace/ui/components/spinner"
 
 import { GoogleButton } from "@/components/account/google-button"
+import { LegalConsent, type LegalLinks } from "@/components/legal-consent"
 import { signInHref, verifyEmailHref } from "@/lib/auth-redirect"
 import { signUpSchema, type SignUpValues } from "@/lib/schemas/account.schemas"
 
 // Signing up sends a link to confirm the email, which signs the customer in. An email that already has an account gets
 // the same answer (and no email), so the form can't be used to find out who has one.
-export function SignUpForm({ redirectTo, googleEnabled }: { redirectTo: string; googleEnabled: boolean }) {
+export function SignUpForm({ redirectTo, googleEnabled, legal }: { redirectTo: string; googleEnabled: boolean; legal: LegalLinks }) {
   const [sentTo, setSentTo] = useState<string | null>(null)
   const [resend, setResend] = useState<"idle" | "sending" | "sent" | "failed">("idle")
   const form = useForm<SignUpValues>({ resolver: zodResolver(signUpSchema), defaultValues: { name: "", email: "", password: "", confirmPassword: "" } })
@@ -83,44 +84,48 @@ export function SignUpForm({ redirectTo, googleEnabled }: { redirectTo: string; 
   }
 
   return (
-    <Card>
-      <CardHeader className="text-center">
-        <CardTitle className="text-xl">Create your account</CardTitle>
-        <CardDescription>Track your orders and check out faster</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={form.handleSubmit(onSubmit)} noValidate>
-          <FieldGroup>
-            {googleEnabled && (
-              <>
-                <Field>
-                  <GoogleButton redirectTo={redirectTo} label="Sign up with Google" />
-                </Field>
-                <FieldSeparator className="*:data-[slot=field-separator-content]:bg-card">Or continue with</FieldSeparator>
-              </>
-            )}
-            <TextInputField control={form.control} name="name" label="Full name" placeholder="Ama Mensah" autoComplete="name" autoFocus />
-            <TextInputField control={form.control} name="email" label="Email" type="email" placeholder="m@example.com" autoComplete="email" />
-            <Field>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <PasswordField control={form.control} name="password" label="Password" autoComplete="new-password" />
-                <PasswordField control={form.control} name="confirmPassword" label="Confirm password" autoComplete="new-password" />
-              </div>
-              <FieldDescription>Must be at least 8 characters long.</FieldDescription>
-            </Field>
-            {form.formState.errors.root && <FieldError errors={[form.formState.errors.root]} />}
-            <Field>
-              <Button type="submit" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting && <Spinner />}
-                Create account
-              </Button>
-              <FieldDescription className="text-center">
-                Already have an account? <Link href={signInHref("/sign-in", redirectTo)}>Sign in</Link>
-              </FieldDescription>
-            </Field>
-          </FieldGroup>
-        </form>
-      </CardContent>
-    </Card>
+    <>
+      <Card>
+        <CardHeader className="text-center">
+          <CardTitle className="text-xl">Create your account</CardTitle>
+          <CardDescription>Track your orders and check out faster</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={form.handleSubmit(onSubmit)} noValidate>
+            <FieldGroup>
+              {googleEnabled && (
+                <>
+                  <Field>
+                    <GoogleButton redirectTo={redirectTo} label="Sign up with Google" />
+                  </Field>
+                  <FieldSeparator className="*:data-[slot=field-separator-content]:bg-card">Or continue with</FieldSeparator>
+                </>
+              )}
+              <TextInputField control={form.control} name="name" label="Full name" placeholder="Ama Mensah" autoComplete="name" autoFocus />
+              <TextInputField control={form.control} name="email" label="Email" type="email" placeholder="m@example.com" autoComplete="email" />
+              <Field>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <PasswordField control={form.control} name="password" label="Password" autoComplete="new-password" />
+                  <PasswordField control={form.control} name="confirmPassword" label="Confirm password" autoComplete="new-password" />
+                </div>
+                <FieldDescription>Must be at least 8 characters long.</FieldDescription>
+              </Field>
+              {form.formState.errors.root && <FieldError errors={[form.formState.errors.root]} />}
+              <Field>
+                <Button type="submit" disabled={form.formState.isSubmitting}>
+                  {form.formState.isSubmitting && <Spinner />}
+                  Create account
+                </Button>
+                <FieldDescription className="text-center">
+                  Already have an account? <Link href={signInHref("/sign-in", redirectTo)}>Sign in</Link>
+                </FieldDescription>
+              </Field>
+            </FieldGroup>
+          </form>
+        </CardContent>
+      </Card>
+      {/* Below the card, as in shadcn's signup-03; Google sign-up agrees to the same */}
+      <LegalConsent action="creating an account" links={legal} className="px-6 text-center" />
+    </>
   )
 }

@@ -39,3 +39,25 @@ export const getFreeDeliveryFrom = unstable_cache(
   ["store-free-delivery-from"],
   { revalidate: REVALIDATE_SECONDS }
 )
+
+// The Terms and Privacy pages the platform writes in the console's Settings, with when each last changed (a string, so
+// it can be cached). A page without text is null: it 404s, and nothing links to it.
+export interface LegalPage {
+  content: string
+  updatedAt: string
+}
+
+export interface LegalPages {
+  terms: LegalPage | null
+  privacy: LegalPage | null
+}
+
+export const getLegalPages = unstable_cache(
+  async (): Promise<LegalPages> => {
+    const row = await prisma.legalPages.findUnique({ where: { id: "singleton" } })
+    const page = (content: string | null | undefined, updatedAt: Date | null | undefined) => (content && updatedAt ? { content, updatedAt: updatedAt.toISOString() } : null)
+    return { terms: page(row?.termsOfService, row?.termsUpdatedAt), privacy: page(row?.privacyPolicy, row?.privacyUpdatedAt) }
+  },
+  ["store-legal-pages"],
+  { revalidate: REVALIDATE_SECONDS }
+)

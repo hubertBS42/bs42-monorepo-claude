@@ -176,6 +176,20 @@ model DeliverySettings {
   @@map("delivery_settings")
 }
 
+// The storefront's Terms and Privacy pages, as the platform (the seller of record) writes them in Settings. Rich text
+// (TipTap JSON, cleaned by sanitizeRichText); null: no page yet, and nothing links to it. Each *UpdatedAt is when that
+// text last changed, shown on its page.
+model LegalPages {
+  id               String    @id @default("singleton")
+  termsOfService   String?
+  termsUpdatedAt   DateTime?
+  privacyPolicy    String?
+  privacyUpdatedAt DateTime?
+  updatedAt        DateTime  @updatedAt
+
+  @@map("legal_pages")
+}
+
 // A region's delivery fee (town null), or a town's, which overrides its region's. An address in a region with neither
 // isn't delivered to. Region and town names are GEODATA's (@workspace/contracts), as addresses store them.
 model DeliveryRate {

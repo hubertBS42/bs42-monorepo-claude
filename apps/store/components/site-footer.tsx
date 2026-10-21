@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { Banknote, ShieldCheck, Smartphone, Truck } from "lucide-react"
 
+import type { LegalLinks } from "@/components/legal-consent"
 import { StoreLogo } from "@/components/store-logo"
 import type { MenuItem } from "@/lib/menu"
 
@@ -11,7 +12,7 @@ const promises = [
   { icon: ShieldCheck, label: "Secure checkout" },
 ]
 
-export function SiteFooter({ storeName, storeDescription, logoUrl, menu }: { storeName: string; storeDescription: string | null; logoUrl: string | null; menu: MenuItem[] }) {
+export function SiteFooter({ storeName, storeDescription, logoUrl, menu, legal }: { storeName: string; storeDescription: string | null; logoUrl: string | null; menu: MenuItem[]; legal: LegalLinks }) {
   return (
     <footer className="mt-16 bg-muted">
       <div className="border-b">
@@ -45,9 +46,30 @@ export function SiteFooter({ storeName, storeDescription, logoUrl, menu }: { sto
         </nav>
       </div>
       <div className="border-t">
-        <p className="mx-auto max-w-7xl px-4 py-6 text-xs text-muted-foreground lg:px-6">
-          © {new Date().getFullYear()} {storeName}
-        </p>
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-x-6 gap-y-2 px-4 py-6 text-xs text-muted-foreground lg:px-6">
+          <p>
+            © {new Date().getFullYear()} {storeName}
+          </p>
+          {/* Only the pages that have been written */}
+          {(legal.terms || legal.privacy) && (
+            <ul className="flex gap-4">
+              {legal.terms && (
+                <li>
+                  <Link href="/terms" className="hover:text-foreground hover:underline">
+                    Terms
+                  </Link>
+                </li>
+              )}
+              {legal.privacy && (
+                <li>
+                  <Link href="/privacy" className="hover:text-foreground hover:underline">
+                    Privacy Policy
+                  </Link>
+                </li>
+              )}
+            </ul>
+          )}
+        </div>
       </div>
     </footer>
   )

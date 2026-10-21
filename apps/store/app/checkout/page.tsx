@@ -12,15 +12,17 @@ import { prisma } from "@workspace/db"
 
 import { SyncBasketCount } from "@/components/basket/basket-count"
 import { type CheckoutAccount, CheckoutForm, type DeliveryArea, type SavedAddressOption } from "@/components/checkout/checkout-form"
+import { legalLinks } from "@/components/legal-consent"
 import { getSavedAddresses } from "@/lib/addresses"
 import { readCartId } from "@/lib/cart-cookie"
 import { CheckoutError, priceCheckout } from "@/lib/checkout"
 import { getStoreSession } from "@/lib/session"
+import { getLegalPages } from "@/lib/settings"
 
 export const metadata: Metadata = { title: "Checkout", robots: { index: false } }
 
 export default async function CheckoutPage() {
-  const [cartId, pricing, session] = await Promise.all([readCartId(), getPricingContext(), getStoreSession()])
+  const [cartId, pricing, session, legal] = await Promise.all([readCartId(), getPricingContext(), getStoreSession(), getLegalPages()])
   // Without a rate to sell at, the basket says so
   if (!cartId || !pricing) redirect("/basket")
 
@@ -66,7 +68,15 @@ export default async function CheckoutPage() {
         </ul>
       )}
 
-      <CheckoutForm lines={checkout.basket.lines} areas={areas} initialSummary={checkout.summary} paymentMinutes={PAYMENT_WINDOW_MINUTES} account={account} savedAddresses={savedAddresses} />
+      <CheckoutForm
+        lines={checkout.basket.lines}
+        areas={areas}
+        initialSummary={checkout.summary}
+        paymentMinutes={PAYMENT_WINDOW_MINUTES}
+        account={account}
+        savedAddresses={savedAddresses}
+        legal={legalLinks(legal)}
+      />
     </div>
   )
 }

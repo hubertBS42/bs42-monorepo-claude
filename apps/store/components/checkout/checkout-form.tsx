@@ -18,6 +18,7 @@ import { Separator } from "@workspace/ui/components/separator"
 import { Spinner } from "@workspace/ui/components/spinner"
 import { toast } from "@workspace/ui/components/toast"
 
+import { LegalConsent, type LegalLinks } from "@/components/legal-consent"
 import { placeOrderAction, quoteCheckoutAction } from "@/lib/actions/checkout.actions"
 import type { CartLine } from "@/lib/cart"
 import type { CheckoutSummary } from "@/lib/checkout"
@@ -81,12 +82,15 @@ export function CheckoutForm({
   paymentMinutes,
   account,
   savedAddresses,
+  legal,
 }: {
   lines: CartLine[]
   areas: DeliveryArea[]
   initialSummary: CheckoutSummary
   account: CheckoutAccount | null
   savedAddresses: SavedAddressOption[]
+  // Which of the Terms and Privacy pages exist, for the line under the button
+  legal: LegalLinks
   // How long the order holds its items for the customer to pay
   paymentMinutes: number
 }) {
@@ -326,6 +330,7 @@ export function CheckoutForm({
             <Info className="size-4 shrink-0" aria-hidden />
             You'll pay by mobile money or card on Paystack's secure page. We hold your items for {paymentMinutes} minutes while you pay.
           </p>
+          <LegalConsent action="placing your order" links={legal} />
         </CardFooter>
       </Card>
     </form>
