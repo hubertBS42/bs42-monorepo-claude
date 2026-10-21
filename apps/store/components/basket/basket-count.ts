@@ -18,6 +18,16 @@ function subscribe(listener: () => void) {
   return () => listeners.delete(listener)
 }
 
+// Asks /api/basket again, e.g. after signing in or out, when the basket becomes the account's or a new one
+export function refreshBasketCount() {
+  return fetch("/api/basket", { cache: "no-store" })
+    .then((response) => (response.ok ? response.json() : null))
+    .then((data: { count: number } | null) => {
+      if (data) setBasketCount(data.count)
+    })
+    .catch(() => {})
+}
+
 export function useBasketCount() {
   const value = useSyncExternalStore(
     subscribe,

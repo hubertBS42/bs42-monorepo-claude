@@ -113,6 +113,50 @@ type LineRow = Prisma.CartItemGetPayload<{ select: typeof lineSelect }>
 const lineItem = (line: LineRow): Item => ({ productId: line.storeListing.productId, variantId: line.storeListingVariant?.variantId ?? null })
 const lineRow = (line: LineRow) => ({ listingId: line.storeListingId, listingVariantId: line.storeListingVariantId })
 
+// A signed-in customer's basket is their account's (Cart.userId), so it follows them from device to device. One made
+// while signed out joins it when they sign in: its lines move across, and an item in both adds the two quantities (up
+// to the most a line can hold; the next view lowers it to what's in stock). A basket that belongs to an account is
+// nobody else's, so a signed-out visitor with its cookie gets a new one. Returns the basket's id (`sessionCartId`), or
+// null when there is none and `create` is false. Run it in a transaction: a merge moves lines between two baskets.
+export async function claimCart(client: Client, userId: string | null, cookieCartId: string | null, create: boolean) {
+  const carts = await client.cart.findMany({
+    where: { OR: [...(userId ? [{ userId }] : []), ...(cookieCartId ? [{ sessionCartId: cookieCartId }] : [])] },
+    select: { id: true, userId: true, sessionCartId: true, items: { select: lineSelect } },
+  })
+  const owned = userId ? carts.find((cart) => cart.userId === userId) : undefined
+  const guest = carts.find((cart) => cart.sessionCartId === cookieCartId && cart.userId === null)
+
+  if (!userId) {
+    if (guest || !cookieCartId) return guest?.sessionCartId ?? (create ? crypto.randomUUID() : null)
+    // The cookie's basket is an account's, or gone (gone is fine: the first add makes it again)
+    return carts.length ? (create ? crypto.randomUUID() : null) : cookieCartId
+  }
+
+  if (!guest) {
+    if (owned) return owned.sessionCartId
+    return create ? (await client.cart.create({ data: { sessionCartId: crypto.randomUUID(), userId }, select: { sessionCartId: true } })).sessionCartId : null
+  }
+
+  if (!owned) {
+    // The guest basket becomes the account's
+    await client.cart.update({ where: { id: guest.id }, data: { userId } })
+    return guest.sessionCartId
+  }
+
+  for (const line of guest.items) {
+    const match = owned.items.find((ownedLine) => itemKey(lineItem(ownedLine)) === itemKey(lineItem(line)))
+    if (match) {
+      await client.cartItem.update({ where: { id: match.id }, data: { quantity: Math.min(match.quantity + line.quantity, MAX_LINE_QUANTITY) } })
+    } else {
+      await client.cartItem.update({ where: { id: line.id }, data: { cartId: owned.id } })
+    }
+  }
+  // Its moved lines are the account's now; the matched ones go with it
+  await client.cart.delete({ where: { id: guest.id } })
+  await client.cart.update({ where: { id: owned.id }, data: { updatedAt: new Date() } })
+  return owned.sessionCartId
+}
+
 export async function countCartItems(client: Client, sessionCartId: string) {
   const { _sum } = await client.cartItem.aggregate({ where: { cart: { sessionCartId } }, _sum: { quantity: true } })
   return _sum.quantity ?? 0

@@ -97,6 +97,8 @@ export interface PlaceOrderInput extends Area {
   expectedTotalGhs: string
   // Where the order is placed from, when known
   ip: string | null
+  // The signed-in customer's account, which the order is then listed under
+  userId: string | null
 }
 
 const unpaidStorefrontOrder = {
@@ -123,7 +125,7 @@ export async function placeOrder(tx: Tx, sessionCartId: string, pricing: Pricing
     createdById: null,
     placedFromIp: input.ip,
     statusNote: "Placed on the storefront",
-    customer: { userId: null, name: input.name, email, phone: input.phone },
+    customer: { userId: input.userId, name: input.name, email, phone: input.phone },
     shippingMethod: ShippingMethod.DELIVERY,
     paymentMethod: PaymentMethod.CARD,
     shipping: { name: input.name, phone: input.phone, line1: input.line1, line2: input.line2 || null, region: input.region, town: input.town },

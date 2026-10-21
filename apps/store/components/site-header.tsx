@@ -1,6 +1,7 @@
 import Link from "next/link"
 import ThemeToggle from "@workspace/ui/components/theme-toggle"
 
+import { AccountButton } from "@/components/account/account-button"
 import { BasketButton } from "@/components/basket/basket-button"
 import { CategoryMenu } from "@/components/category-menu"
 import { MobileMenu } from "@/components/mobile-menu"
@@ -19,6 +20,7 @@ export function SiteHeader({ storeName, logoUrl, menu }: { storeName: string; lo
         <SearchForm className="hidden max-w-xl flex-1 md:block" />
         <div className="ml-auto flex items-center gap-1">
           <ThemeToggle />
+          <AccountButton />
           <BasketButton />
         </div>
       </div>

@@ -16,6 +16,7 @@ import { readCartId } from "@/lib/cart-cookie"
 import { CheckoutError, placeOrder, priceCheckout, type CheckoutSummary } from "@/lib/checkout"
 import { isOrderKey, orderHref } from "@/lib/order-access"
 import { areaSchema, placeOrderSchema } from "@/lib/schemas/checkout.schemas"
+import { getStoreSession } from "@/lib/session"
 
 // Checkout's actions. Anyone can call them: the basket cookie is the key to a basket, and the order link's key to an
 // order (lib/order-access.ts).
@@ -72,13 +73,13 @@ export async function placeOrderAction(input: unknown): Promise<DataResponse<{ r
     const parsed = placeOrderSchema.safeParse(input)
     if (!parsed.success) return { success: false, error: parsed.error.issues[0]?.message ?? "Check your details.", code: "INVALID_INPUT" }
 
-    const [cartId, pricing] = await Promise.all([readCartId(), getPricingContext()])
+    const [cartId, pricing, session] = await Promise.all([readCartId(), getPricingContext(), getStoreSession()])
     if (!cartId) return EMPTY_BASKET
     if (!pricing) return NO_RATE
 
     // The first address in X-Forwarded-For is the visitor's, as the host's proxy adds it
     const ip = (await headers()).get("x-forwarded-for")?.split(",")[0]?.trim() || null
-    const { stockAlerts, ...order } = await prisma.$transaction((tx) => placeOrder(tx, cartId, pricing, { ...parsed.data, ip }), TRANSACTION_OPTIONS)
+    const { stockAlerts, ...order } = await prisma.$transaction((tx) => placeOrder(tx, cartId, pricing, { ...parsed.data, ip, userId: session?.user.id ?? null }), TRANSACTION_OPTIONS)
     // Stock went down now, not when the order is paid. The customer's and staff's order emails wait for the payment.
     after(() => notifyStockAlerts(stockAlerts))
 
