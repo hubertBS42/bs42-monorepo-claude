@@ -1,10 +1,10 @@
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
-import { CircleCheck, CircleX, Clock, Package } from "lucide-react"
+import { Circle, CircleCheck, CircleX, Clock, Package } from "lucide-react"
 import { canStartPayment, paymentDeadline } from "@workspace/commerce/online-payments"
 import { hasBeenPaid, ORDER_STATUS_LABELS, PAYMENT_METHOD_LABELS } from "@workspace/commerce/order-status"
 import { prisma } from "@workspace/db"
-import { OrderStatus, PaymentStatus } from "@workspace/db/enums"
+import { OrderStatus, PaymentStatus, ShippingMethod } from "@workspace/db/enums"
 import { Badge } from "@workspace/ui/components/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@workspace/ui/components/card"
 import { Separator } from "@workspace/ui/components/separator"
@@ -15,6 +15,7 @@ import { PayNowButton, ReorderButton } from "@/components/orders/order-actions"
 import type { SearchParams } from "@/lib/catalogue-filters"
 import { formatGhs } from "@/lib/money"
 import { isOrderKey } from "@/lib/order-access"
+import { orderTimeline, type TimelineStep } from "@/lib/order-timeline"
 
 export const metadata: Metadata = { title: "Your order", robots: { index: false } }
 
@@ -33,6 +34,40 @@ function Row({ label, value, strong, muted }: { label: string; value: string; st
   )
 }
 
+// What has happened to the order, then what's still to come (lib/order-timeline.ts)
+function ProgressCard({ steps }: { steps: TimelineStep[] }) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Progress</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <ol className="text-sm">
+          {steps.map((step, index) => (
+            <li key={step.key} className="relative flex gap-3 pb-4 last:pb-0">
+              {/* The line down to the next step */}
+              {index < steps.length - 1 && <span className="absolute top-5 bottom-0 left-[7px] w-px bg-border" aria-hidden />}
+              {step.at ? (
+                <CircleCheck className="relative mt-0.5 size-4 shrink-0 text-primary" aria-hidden />
+              ) : (
+                <Circle className="relative mt-0.5 size-4 shrink-0 text-muted-foreground/50" aria-hidden />
+              )}
+              <div className="min-w-0">
+                <p className={step.at ? "font-medium" : "text-muted-foreground"}>
+                  {step.title}
+                  {!step.at && <span className="sr-only"> (to come)</span>}
+                </p>
+                {step.at && <p className="text-xs text-muted-foreground">{formatDate(step.at, "d MMM yyyy, HH:mm")}</p>}
+                {step.note && <p className="mt-1 text-muted-foreground">{step.note}</p>}
+              </div>
+            </li>
+          ))}
+        </ol>
+      </CardContent>
+    </Card>
+  )
+}
+
 export default async function OrderPage({ params, searchParams }: OrderPageProps) {
   const [{ reference }, query] = await Promise.all([params, searchParams])
   const key = getStringParam(query.key)
@@ -45,6 +80,8 @@ export default async function OrderPage({ params, searchParams }: OrderPageProps
       status: true,
       paymentStatus: true,
       paymentMethod: true,
+      paidAt: true,
+      shippingMethod: true,
       createdById: true,
       createdAt: true,
       customerName: true,
@@ -59,6 +96,9 @@ export default async function OrderPage({ params, searchParams }: OrderPageProps
       shippingGhs: true,
       taxGhs: true,
       totalGhs: true,
+      statusHistory: { orderBy: { createdAt: "asc" }, select: { id: true, status: true, note: true, createdAt: true } },
+      refunds: { select: { id: true, amountGhs: true, reason: true, createdAt: true, return: { select: { id: true } } } },
+      returns: { select: { id: true, reason: true, createdAt: true, refund: { select: { amountGhs: true } } } },
       orderItems: { orderBy: { id: "asc" }, select: { id: true, productName: true, productImage: true, variantDescription: true, quantity: true, totalPriceGhs: true } },
     },
   })
@@ -79,6 +119,14 @@ export default async function OrderPage({ params, searchParams }: OrderPageProps
   const deadline = formatDate(paymentDeadline(order.createdAt), "HH:mm")
   const address = [order.shippingLine1, order.shippingLine2, order.shippingTown, order.shippingRegion].filter(Boolean).join(", ")
   const discount = order.discountAmountGhs?.gt(0) ? order.discountAmountGhs : null
+  const timeline = orderTimeline(
+    {
+      ...order,
+      refunds: order.refunds.map((refund) => ({ ...refund, amountGhs: refund.amountGhs.toFixed(2), isForReturn: !!refund.return })),
+      returns: order.returns.map((item) => ({ ...item, refundAmountGhs: item.refund?.amountGhs.toFixed(2) ?? null })),
+    },
+    formatGhs
+  )
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8 lg:px-6">
@@ -172,13 +220,14 @@ export default async function OrderPage({ params, searchParams }: OrderPageProps
         </Card>
 
         <div className="flex flex-col gap-6">
+          <ProgressCard steps={timeline} />
           <Card>
             <CardHeader>
-              <CardTitle>Delivery</CardTitle>
+              <CardTitle>{order.shippingMethod === ShippingMethod.PICKUP ? "Collection" : "Delivery"}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-1 text-sm">
               <p className="font-medium">{order.customerName}</p>
-              <p className="text-muted-foreground">{address}</p>
+              <p className="text-muted-foreground">{address || "You collect it from the store."}</p>
               {order.customerPhone && <p className="text-muted-foreground">{order.customerPhone}</p>}
             </CardContent>
           </Card>
