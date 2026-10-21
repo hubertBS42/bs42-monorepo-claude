@@ -24,6 +24,15 @@ async function getPlatformOrganizationId() {
   return platformOrganizationId
 }
 
+// A session the login form didn't make (signing in on the storefront, which shares the session cookie) has no
+// workspace. It gets the one the login form would pick: the platform organization when the user belongs to it, else
+// their first store. Undefined for someone in no organization, whom the pages send to /no-stores.
+async function chooseWorkspace(userId: string) {
+  const platformId = await getPlatformOrganizationId()
+  const memberships = await prisma.member.findMany({ where: { userId }, orderBy: { createdAt: "asc" }, select: { organizationId: true } })
+  return (memberships.find((membership) => membership.organizationId === platformId) ?? memberships[0])?.organizationId
+}
+
 function redirectToLogin(request: NextRequest) {
   const loginUrl = new URL("/login", request.url)
   loginUrl.searchParams.set("callbackURL", `${request.nextUrl.pathname}${request.nextUrl.search}`)
@@ -51,6 +60,22 @@ export async function proxy(request: NextRequest) {
   }
 
   const activeOrganizationId = session.session.activeOrganizationId
+  if (!activeOrganizationId) {
+    const organizationId = await chooseWorkspace(session.user.id)
+    if (organizationId) {
+      try {
+        // Through Better Auth, which saves the session and returns its cookies: the console caches the session in a
+        // cookie for a minute, and the cached copy says there's no workspace. The same page again then reads the new
+        // cookies; this request's are the old ones.
+        const { headers } = await consoleAuth.api.setActiveOrganization({ headers: request.headers, body: { organizationId }, returnHeaders: true })
+        const response = NextResponse.redirect(request.nextUrl)
+        for (const cookie of headers.getSetCookie()) response.headers.append("set-cookie", cookie)
+        return response
+      } catch (error) {
+        console.error("Could not choose a workspace for the session:", error)
+      }
+    }
+  }
 
   // Without an active organization the context is unknown, so only the role is checked here
   let context: RouteContext | undefined

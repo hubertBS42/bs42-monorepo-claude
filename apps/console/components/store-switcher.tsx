@@ -34,8 +34,18 @@ export function StoreSwitcher() {
   const { data: session, isPending: isSessionLoading, error: sessionError } = consoleAuthClient.useSession()
 
   const isLoading = isStoresLoading || isSessionLoading
+  // A session signed in on the storefront has no workspace. The proxy picks one on the next page request, but a tab
+  // already open fetches the session without one: pick the same workspace here (the login form's choice).
+  const needsWorkspace = !!session && !session.session.activeOrganizationId && !!stores?.length
+  const pickedWorkspace = React.useRef(false)
+  React.useEffect(() => {
+    if (!needsWorkspace || !stores || pickedWorkspace.current) return
+    pickedWorkspace.current = true
+    const preferred = stores.find((store) => store.slug === PLATFORM_ORGANIZATION_SLUG) ?? stores[0]!
+    void switchStore({ storeId: preferred.id, to: `${window.location.pathname}${window.location.search}` })
+  }, [needsWorkspace, stores, switchStore])
 
-  if (isLoading || isSwitching) return <StoreSwitcherSkeleton />
+  if (isLoading || isSwitching || needsWorkspace) return <StoreSwitcherSkeleton />
 
   if (sessionError) {
     return (
