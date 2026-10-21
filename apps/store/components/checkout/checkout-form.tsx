@@ -7,10 +7,13 @@ import { Info, Lock, Package } from "lucide-react"
 import { useForm, useWatch } from "react-hook-form"
 import ComboboxField from "@workspace/forms/components/combobox-field"
 import PhoneField from "@workspace/forms/components/phone-field"
+import SwitchField from "@workspace/forms/components/switch-field"
 import TextInputField from "@workspace/forms/components/text-input-field"
 import TextareaField from "@workspace/forms/components/textarea-field"
 import { Button } from "@workspace/ui/components/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@workspace/ui/components/card"
+import { Field, FieldLabel } from "@workspace/ui/components/field"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@workspace/ui/components/select"
 import { Separator } from "@workspace/ui/components/separator"
 import { Spinner } from "@workspace/ui/components/spinner"
 import { toast } from "@workspace/ui/components/toast"
@@ -29,6 +32,39 @@ export interface DeliveryArea {
   towns: string[]
 }
 
+// A signed-in customer's details, filled in for them
+export interface CheckoutAccount {
+  name: string
+  email: string
+  phone: string
+}
+
+// A saved address; one in a town without delivery can't be chosen
+export interface SavedAddressOption {
+  id: string
+  name: string
+  phone: string
+  line1: string
+  line2: string
+  region: string
+  town: string
+  isDefault: boolean
+  deliverable: boolean
+}
+
+const NEW_ADDRESS = "new"
+
+const addressLabel = (address: SavedAddressOption) => `${address.line1}, ${address.town}${address.deliverable ? "" : " (we don't deliver there yet)"}`
+
+// The form's starting values: the account's details, and its default address when it can be delivered to
+function startingValues(account: CheckoutAccount | null, savedCount: number, start: SavedAddressOption | undefined): CheckoutFormValues {
+  const blank = { name: account?.name ?? "", email: account?.email ?? "", phone: account?.phone ?? "", line1: "", line2: "", region: "", town: "", notes: "" }
+  // Kept for next time by default when the account has no address of its own yet
+  const saveAddress = !!account && savedCount === 0
+  if (!start) return { ...blank, saveAddress }
+  return { ...blank, name: start.name, phone: start.phone, line1: start.line1, line2: start.line2, region: start.region, town: start.town, saveAddress }
+}
+
 function SummaryRow({ label, value, muted }: { label: string; value: string; muted?: boolean }) {
   return (
     <div className={muted ? "flex justify-between gap-4 text-muted-foreground" : "flex justify-between gap-4"}>
@@ -43,10 +79,14 @@ export function CheckoutForm({
   areas,
   initialSummary,
   paymentMinutes,
+  account,
+  savedAddresses,
 }: {
   lines: CartLine[]
   areas: DeliveryArea[]
   initialSummary: CheckoutSummary
+  account: CheckoutAccount | null
+  savedAddresses: SavedAddressOption[]
   // How long the order holds its items for the customer to pay
   paymentMinutes: number
 }) {
@@ -56,10 +96,24 @@ export function CheckoutForm({
   const [summary, setSummary] = useState(initialSummary)
   const [areaError, setAreaError] = useState<string | null>(null)
 
-  const form = useForm<CheckoutFormValues>({
-    resolver: zodResolver(checkoutFormSchema),
-    defaultValues: { name: "", email: "", phone: "", line1: "", line2: "", region: "", town: "", notes: "" },
-  })
+  const startAddress = savedAddresses.find((address) => address.isDefault && address.deliverable)
+  const [addressChoice, setAddressChoice] = useState(startAddress?.id ?? NEW_ADDRESS)
+  const form = useForm<CheckoutFormValues>({ resolver: zodResolver(checkoutFormSchema), defaultValues: startingValues(account, savedAddresses.length, startAddress) })
+
+  // Choosing a saved address fills the delivery in from it; "A new address" empties it for typing
+  const chooseAddress = (choice: string) => {
+    setAddressChoice(choice)
+    const saved = savedAddresses.find((address) => address.id === choice)
+    const values = saved
+      ? { name: saved.name, phone: saved.phone, line1: saved.line1, line2: saved.line2, region: saved.region, town: saved.town }
+      : { name: account?.name ?? "", phone: account?.phone ?? "", line1: "", line2: "", region: "", town: "" }
+    for (const [key, value] of Object.entries(values)) form.setValue(key as keyof typeof values, value, { shouldDirty: true })
+    form.clearErrors()
+  }
+  const addressOptions = useMemo(
+    () => [...savedAddresses.map((address) => ({ value: address.id, label: addressLabel(address), disabled: !address.deliverable })), { value: NEW_ADDRESS, label: "A new address", disabled: false }],
+    [savedAddresses]
+  )
 
   const region = useWatch({ control: form.control, name: "region" })
   const town = useWatch({ control: form.control, name: "town" })
@@ -114,7 +168,9 @@ export function CheckoutForm({
 
   const onSubmit = (values: CheckoutFormValues) =>
     startTransition(async () => {
-      const result = await placeOrderAction({ ...values, expectedTotalGhs: summary.totalGhs })
+      // The switch shows only for a new address
+      const saveAddress = addressChoice === NEW_ADDRESS && !!values.saveAddress
+      const result = await placeOrderAction({ ...values, saveAddress, expectedTotalGhs: summary.totalGhs })
       if (!result.success) {
         toast.add({ title: "Your order wasn't placed", description: result.error, type: "error" })
         if (result.code === "EMPTY_BASKET") router.push("/basket")
@@ -160,6 +216,23 @@ export function CheckoutForm({
               <p className="text-sm text-muted-foreground sm:col-span-2">We're not taking deliveries yet. Please check back soon.</p>
             ) : (
               <>
+                {savedAddresses.length > 0 && (
+                  <Field className="sm:col-span-2">
+                    <FieldLabel htmlFor="saved-address">Deliver to</FieldLabel>
+                    <Select items={addressOptions} value={addressChoice} onValueChange={(next) => next && chooseAddress(next)} disabled={isPending}>
+                      <SelectTrigger id="saved-address" className="w-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {addressOptions.map((option) => (
+                          <SelectItem key={option.value} value={option.value} disabled={option.disabled}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </Field>
+                )}
                 <div className="sm:col-span-2">
                   <TextInputField control={form.control} name="line1" label="Address" placeholder="House number and street, or a landmark" autoComplete="address-line1" disabled={isPending} />
                 </div>
@@ -186,6 +259,11 @@ export function CheckoutForm({
                 />
                 <ComboboxField control={form.control} name="town" label="Town" options={townOptions} placeholder="Select a town" disabled={isPending || !region} />
                 {areaError && <p className="text-sm text-destructive sm:col-span-2">{areaError}</p>}
+                {account && addressChoice === NEW_ADDRESS && (
+                  <div className="sm:col-span-2">
+                    <SwitchField control={form.control} name="saveAddress" label="Save this address to my account" description="Checkout can fill it in next time." disabled={isPending} />
+                  </div>
+                )}
               </>
             )}
           </CardContent>

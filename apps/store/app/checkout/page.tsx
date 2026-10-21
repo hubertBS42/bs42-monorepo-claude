@@ -11,14 +11,16 @@ import { GEODATA } from "@workspace/contracts"
 import { prisma } from "@workspace/db"
 
 import { SyncBasketCount } from "@/components/basket/basket-count"
-import { CheckoutForm, type DeliveryArea } from "@/components/checkout/checkout-form"
+import { type CheckoutAccount, CheckoutForm, type DeliveryArea, type SavedAddressOption } from "@/components/checkout/checkout-form"
+import { getSavedAddresses } from "@/lib/addresses"
 import { readCartId } from "@/lib/cart-cookie"
 import { CheckoutError, priceCheckout } from "@/lib/checkout"
+import { getStoreSession } from "@/lib/session"
 
 export const metadata: Metadata = { title: "Checkout", robots: { index: false } }
 
 export default async function CheckoutPage() {
-  const [cartId, pricing] = await Promise.all([readCartId(), getPricingContext()])
+  const [cartId, pricing, session] = await Promise.all([readCartId(), getPricingContext(), getStoreSession()])
   // Without a rate to sell at, the basket says so
   if (!cartId || !pricing) redirect("/basket")
 
@@ -33,6 +35,15 @@ export default async function CheckoutPage() {
   const areas: DeliveryArea[] = GEODATA.map((region) => ({ region: region.name, towns: region.towns.filter((town) => findDeliveryRate(rates, region.name, town)) })).filter(
     (area) => area.towns.length > 0
   )
+
+  // Signed in: the account's details and saved addresses fill the form in
+  let account: CheckoutAccount | null = null
+  let savedAddresses: SavedAddressOption[] = []
+  if (session) {
+    const [user, addresses] = await Promise.all([prisma.user.findUnique({ where: { id: session.user.id }, select: { name: true, email: true, phone: true } }), getSavedAddresses(session.user.id)])
+    account = { name: user?.name ?? session.user.name, email: user?.email ?? session.user.email, phone: user?.phone ?? "" }
+    savedAddresses = addresses.map((address) => ({ ...address, line2: address.line2 ?? "", deliverable: !!findDeliveryRate(rates, address.region, address.town) }))
+  }
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 lg:px-6">
@@ -55,7 +66,7 @@ export default async function CheckoutPage() {
         </ul>
       )}
 
-      <CheckoutForm lines={checkout.basket.lines} areas={areas} initialSummary={checkout.summary} paymentMinutes={PAYMENT_WINDOW_MINUTES} />
+      <CheckoutForm lines={checkout.basket.lines} areas={areas} initialSummary={checkout.summary} paymentMinutes={PAYMENT_WINDOW_MINUTES} account={account} savedAddresses={savedAddresses} />
     </div>
   )
 }

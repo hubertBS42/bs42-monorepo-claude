@@ -12,6 +12,7 @@ import { initializeTransaction } from "@workspace/commerce/paystack"
 import type { DataResponse } from "@workspace/contracts"
 import { prisma } from "@workspace/db"
 
+import { rememberAddress } from "@/lib/addresses"
 import { readCartId } from "@/lib/cart-cookie"
 import { CheckoutError, placeOrder, priceCheckout, type CheckoutSummary } from "@/lib/checkout"
 import { isOrderKey, orderHref } from "@/lib/order-access"
@@ -82,6 +83,11 @@ export async function placeOrderAction(input: unknown): Promise<DataResponse<{ r
     const { stockAlerts, ...order } = await prisma.$transaction((tx) => placeOrder(tx, cartId, pricing, { ...parsed.data, ip, userId: session?.user.id ?? null }), TRANSACTION_OPTIONS)
     // Stock went down now, not when the order is paid. The customer's and staff's order emails wait for the payment.
     after(() => notifyStockAlerts(stockAlerts))
+    // "Save this address": once the order stands, and never in its way
+    if (session && parsed.data.saveAddress) {
+      const { name, phone, line1, line2, region, town } = parsed.data
+      after(() => rememberAddress(session.user.id, { name, phone, line1, line2, region, town }))
+    }
 
     const orderPage = orderHref(order.reference, order.id)
     try {
