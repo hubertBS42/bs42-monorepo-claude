@@ -4,7 +4,7 @@ import { betterAuth } from "better-auth"
 import { APIError } from "better-auth/api"
 import { nextCookies } from "better-auth/next-js"
 import { EMAIL_VERIFICATION_TOKEN_EXPIRATION_SECONDS, RESET_PASSWORD_TOKEN_EXPIRATION_SECONDS } from "@workspace/contracts"
-import { PasswordUpdatedEmail, ResetPasswordEmail, sendEmail, VerifyEmailEmail } from "@workspace/email"
+import { ExistingAccountEmail, PasswordUpdatedEmail, ResetPasswordEmail, sendEmail, VerifyEmailEmail } from "@workspace/email"
 import { prisma, readAppSettings, resolveStoreName } from "@workspace/db"
 import { authURLs, sharedAuthOptions } from "./shared"
 
@@ -52,6 +52,21 @@ export const storeAuth = betterAuth({
         fromName: appName,
         subject: `Reset your ${appName} password`,
         reactTemplate: ResetPasswordEmail({ name: user.name, url, appName, logoUrl }),
+      }))
+    },
+    // Sign-up answers the same for an email that has an account, so the account's owner is told by email instead
+    onExistingUserSignUp: async ({ user }) => {
+      sendCustomerEmail((appName, logoUrl) => ({
+        to: user.email,
+        fromName: appName,
+        subject: `You already have a ${appName} account`,
+        reactTemplate: ExistingAccountEmail({
+          name: user.name,
+          signInUrl: new URL("/sign-in", authURLs.store).toString(),
+          resetPasswordUrl: new URL("/forgot-password", authURLs.store).toString(),
+          appName,
+          logoUrl,
+        }),
       }))
     },
     onPasswordReset: async ({ user }) => {
