@@ -6,6 +6,7 @@ import {
   DiscountType,
   OrderStatus,
   OrganizationStatus,
+  PaymentAttemptStatus,
   PaymentMethod,
   PaymentStatus,
   PurchaseOrderStatus,
@@ -422,6 +423,21 @@ interface OrderDetailsBase {
   createdAt: Date
   // Status changes, a recorded payment and refunds, newest first
   timeline: OrderTimelineEntry[]
+  // Each "Pay" on the storefront, newest first; none for a staff order
+  paymentAttempts: OrderPaymentAttempt[]
+}
+
+// One try at paying a storefront order on Paystack
+export interface OrderPaymentAttempt {
+  id: string
+  reference: string
+  // Null where the viewer sees only their own lines of the order
+  amountGhs: string | null
+  status: PaymentAttemptStatus
+  channel: string | null
+  gatewayResponse: string | null
+  paidAt: Date | null
+  createdAt: Date
 }
 
 export interface StoreOrderDetails extends OrderDetailsBase {

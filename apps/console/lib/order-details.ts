@@ -30,6 +30,7 @@ export const orderDetailsInclude = {
   },
   createdBy: { select: { name: true } },
   paymentRecordedBy: { select: { name: true } },
+  paymentAttempts: { orderBy: { createdAt: "desc" } },
 } satisfies Prisma.OrderInclude
 
 export type OrderWithDetails = Prisma.OrderGetPayload<{ include: typeof orderDetailsInclude }>
@@ -156,6 +157,16 @@ export function toOrderDetailsBase(order: OrderWithDetails, lines: LineRow[], sh
     createdBy: staffName(order.createdBy),
     createdAt: order.createdAt,
     timeline: toOrderTimeline(order, showAmounts, new Set(lines.map((line) => line.id))),
+    paymentAttempts: order.paymentAttempts.map((attempt) => ({
+      id: attempt.id,
+      reference: attempt.reference,
+      amountGhs: showAmounts ? attempt.amountGhs.toString() : null,
+      status: attempt.status,
+      channel: attempt.channel,
+      gatewayResponse: attempt.gatewayResponse,
+      paidAt: attempt.paidAt,
+      createdAt: attempt.createdAt,
+    })),
   }
 }
 

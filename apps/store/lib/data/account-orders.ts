@@ -2,8 +2,7 @@ import "server-only"
 
 import { prisma } from "@workspace/db"
 import type { Prisma } from "@workspace/db/client"
-
-import { orderHref } from "@/lib/order-access"
+import { orderHref } from "@workspace/commerce/order-links"
 
 export const ACCOUNT_ORDERS_PAGE_SIZE = 10
 

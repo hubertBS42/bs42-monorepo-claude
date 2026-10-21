@@ -1,12 +1,13 @@
 /* eslint-disable @next/next/no-img-element -- next/image would need the storage host in images.remotePatterns */
 import type { ReactNode } from "react"
+import { Badge } from "@workspace/ui/components/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@workspace/ui/components/card"
 import { Separator } from "@workspace/ui/components/separator"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@workspace/ui/components/table"
 import { formatCurrency } from "@workspace/utils/currency"
 import { formatDate } from "@workspace/utils/date"
 import { returnLabel } from "@workspace/commerce/order-status"
-import type { OrderLine, OrderReturnEntry, OrderTimelineEntry, OrderTotals } from "@/types"
+import type { OrderLine, OrderPaymentAttempt, OrderReturnEntry, OrderTimelineEntry, OrderTotals } from "@/types"
 
 // The parts of an order's details page that the store's and the platform's pages share
 
@@ -79,6 +80,55 @@ export function OrderTotalsSummary({ totals, exchangeRate }: { totals: OrderTota
       <TotalRow label="Total" amount={ghs(totals.totalGhs)} strong />
       <p className="text-right text-xs text-muted-foreground">{`At GH₵${Number(exchangeRate)} per $1`}</p>
     </div>
+  )
+}
+
+const ATTEMPT_STATUS = {
+  PENDING: { label: "Open", variant: "outline" },
+  SUCCESS: { label: "Paid", variant: "default" },
+  FAILED: { label: "Failed", variant: "destructive" },
+  ABANDONED: { label: "Abandoned", variant: "secondary" },
+} as const
+
+// Paystack's channel names (card, mobile_money, bank_transfer), readable
+const channelLabel = (channel: string) => channel.charAt(0).toUpperCase() + channel.slice(1).replaceAll("_", " ")
+
+// Each time the customer pressed "Pay" on the storefront, with what Paystack said. Its reference is the one to search
+// for in Paystack's dashboard, where refunds are given.
+export function OrderPaymentAttemptsCard({ attempts }: { attempts: OrderPaymentAttempt[] }) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Online payments</CardTitle>
+        <CardDescription>Each time the customer started paying on Paystack, newest first. Search Paystack&apos;s dashboard by reference.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Reference</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Paystack</TableHead>
+              <TableHead>Started</TableHead>
+              <TableHead className="text-right">Amount</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {attempts.map((attempt) => (
+              <TableRow key={attempt.id}>
+                <TableCell className="font-mono text-xs">{attempt.reference}</TableCell>
+                <TableCell>
+                  <Badge variant={ATTEMPT_STATUS[attempt.status].variant}>{ATTEMPT_STATUS[attempt.status].label}</Badge>
+                </TableCell>
+                <TableCell className="text-muted-foreground">{[attempt.channel && channelLabel(attempt.channel), attempt.gatewayResponse].filter(Boolean).join(" · ") || "—"}</TableCell>
+                <TableCell className="text-muted-foreground">{formatDate(attempt.createdAt, "MMM d, h:mm a")}</TableCell>
+                <TableCell className="text-right">{attempt.amountGhs ? ghs(attempt.amountGhs) : "—"}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
   )
 }
 

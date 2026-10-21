@@ -6,11 +6,11 @@ import { Prisma } from "@workspace/db/client"
 import type { DataResponse } from "@workspace/contracts"
 import { formatError } from "@workspace/auth/format-error"
 import { z } from "zod"
+import { isOrderKey } from "@workspace/commerce/order-links"
 
 import { MAX_LINE_QUANTITY } from "@/lib/basket-limits"
 import { addCartItem, CartError, countCartItems, removeCartItem, setCartItemQuantity, type AddToCartInput } from "@/lib/cart"
 import { ensureCartId, readCartId } from "@/lib/cart-cookie"
-import { isOrderKey } from "@/lib/order-access"
 
 // The basket's actions. Anyone can call them: the cookie is the only key to a basket, and every line is checked again
 // when the basket is shown and when the order is placed.

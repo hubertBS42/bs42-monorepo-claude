@@ -6,6 +6,7 @@ import { Prisma } from "@workspace/db/client"
 import { OrderStatus, PaymentAttemptStatus, PaymentMethod, PaymentStatus } from "@workspace/db/enums"
 import { notifyNewOrder, notifyPaymentProblem, type PaymentProblem } from "./notifications"
 import { sendOrderEmail } from "./order-emails"
+import { orderUrl } from "./order-links"
 import { changeOrderStatus, StatusChangedError } from "./order-writes"
 import { verifyTransaction, type PaystackTransaction } from "./paystack"
 
@@ -242,7 +243,11 @@ export async function cancelUnpaidOrders(): Promise<UnpaidOrdersResult> {
     }
     if (paid) result.paid.push(order.reference)
     else if (unknown) result.skipped.push(order.reference)
-    else if (await prisma.$transaction((tx) => cancelUnpaidOrder(tx, order.id), TRANSACTION_OPTIONS)) result.cancelled.push(order.reference)
+    else if (await prisma.$transaction((tx) => cancelUnpaidOrder(tx, order.id), TRANSACTION_OPTIONS)) {
+      result.cancelled.push(order.reference)
+      // Its link offers to put the items back in the basket
+      await sendOrderEmail(order.id, "UNPAID_CANCELLED", null, { orderUrl: orderUrl(order.reference, order.id), paymentMinutes: PAYMENT_WINDOW_MINUTES })
+    }
   }
   return result
 }

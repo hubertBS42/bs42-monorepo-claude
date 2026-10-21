@@ -12,6 +12,7 @@ import {
   sendOrderRefundedEmail,
   sendOrderReturnedEmail,
   sendOrderShippedEmail,
+  sendOrderUnpaidCancelledEmail,
   type BaseOrderEmail,
   type OrderConfirmationEmail,
   type ReturnedItem,
@@ -21,8 +22,17 @@ import { hasBeenPaid, PAYMENT_METHOD_LABELS } from "./order-status"
 // Customer emails for orders. Actions schedule them with after(), once the order is saved, so a slow or failed
 // email never holds up or fails the change.
 
+// UNPAID_CANCELLED: a storefront order cancelled by the unpaid-order job, which wasn't charged
 export type OrderEmailEvent =
-  "CREATED" | "PAYMENT_RECEIVED" | "REFUNDED" | "RETURNED" | typeof OrderStatus.CONFIRMED | typeof OrderStatus.SHIPPED | typeof OrderStatus.DELIVERED | typeof OrderStatus.CANCELLED
+  | "CREATED"
+  | "PAYMENT_RECEIVED"
+  | "REFUNDED"
+  | "RETURNED"
+  | "UNPAID_CANCELLED"
+  | typeof OrderStatus.CONFIRMED
+  | typeof OrderStatus.SHIPPED
+  | typeof OrderStatus.DELIVERED
+  | typeof OrderStatus.CANCELLED
 
 const orderEmailSelect = {
   reference: true,
@@ -57,14 +67,18 @@ export type OrderEmail =
   | { kind: "RETURNED"; data: BaseOrderEmail & { items: ReturnedItem[]; returnReason: string; refundAmountGhs: number | null } }
   | { kind: "SHIPPED"; data: BaseOrderEmail & { shippingAddress: string; note: string | null } }
   | { kind: "CANCELLED"; data: BaseOrderEmail & { cancellationReason: string; totalGhs: number } }
+  | { kind: "UNPAID_CANCELLED"; data: BaseOrderEmail & { paymentMinutes: number; url: string } }
 
 // The stored amounts as they are, for display: nothing here recalculates them
 const amount = (value: Prisma.Decimal) => Number(value.toFixed(2))
 
-// What a refund or a return adds to its email: the amount given back, and for a return what came back
+// What a refund or a return adds to its email: the amount given back, and for a return what came back. An unpaid
+// order's cancellation adds the order page's address and how long there was to pay.
 export interface OrderEmailExtra {
   refundAmountGhs?: string | null
   returnedItems?: ReturnedItem[]
+  orderUrl?: string
+  paymentMinutes?: number
 }
 
 // Which email an event sends, or null when it sends none. Pure, so it can be tested without sending anything.
@@ -74,7 +88,7 @@ export function buildOrderEmail(
   event: OrderEmailEvent,
   note: string | null,
   brand: { appName: string; logoUrl: string | null },
-  { refundAmountGhs = null, returnedItems = [] }: OrderEmailExtra = {}
+  { refundAmountGhs = null, returnedItems = [], orderUrl, paymentMinutes }: OrderEmailExtra = {}
 ): OrderEmail | null {
   // Walk-in customers may give no email; an account can turn order emails off
   if (!order.customerEmail || order.user?.getOrderEmails === false) return null
@@ -121,6 +135,8 @@ export function buildOrderEmail(
     case OrderStatus.DELIVERED:
       // Someone who collected the order in person doesn't need telling it was delivered
       return isDelivery ? { kind: "DELIVERED", data: { ...base, note } } : null
+    case "UNPAID_CANCELLED":
+      return orderUrl && paymentMinutes ? { kind: "UNPAID_CANCELLED", data: { ...base, paymentMinutes, url: orderUrl } } : null
     case OrderStatus.CANCELLED:
       return { kind: "CANCELLED", data: { ...base, cancellationReason: note || "No reason was given.", totalGhs: amount(order.totalGhs) } }
   }
@@ -144,6 +160,8 @@ function deliver(email: OrderEmail) {
       return sendOrderDeliveredEmail(email.data)
     case "CANCELLED":
       return sendOrderCancelledEmail(email.data)
+    case "UNPAID_CANCELLED":
+      return sendOrderUnpaidCancelledEmail(email.data)
   }
 }
 

@@ -9,7 +9,19 @@ import { Separator } from "@workspace/ui/components/separator"
 import { formatDate } from "@workspace/utils/date"
 import BackButton from "@/components/back-button"
 import { OrderStatusBadge, PaymentStatusBadge } from "@/components/order-badges"
-import { Detail, ghs, OrderCustomerCard, OrderLinesTable, OrderNotesCard, OrderReturnsCard, OrderTimelineCard, OrderTotalsSummary, returnState, TotalRow } from "@/components/orders/order-details"
+import {
+  Detail,
+  ghs,
+  OrderCustomerCard,
+  OrderLinesTable,
+  OrderNotesCard,
+  OrderPaymentAttemptsCard,
+  OrderReturnsCard,
+  OrderTimelineCard,
+  OrderTotalsSummary,
+  returnState,
+  TotalRow,
+} from "@/components/orders/order-details"
 import { EditOrderCustomer, EditOrderDelivery, EditOrderNotes } from "@/components/orders/order-edits"
 import RecordPayment from "@/components/orders/record-payment"
 import OrderRefunds from "@/components/orders/refund-order"
@@ -113,6 +125,8 @@ export default async function StoreOrderDetailsPage({ params }: OrderDetailsPage
               }
             />
           )}
+
+          {order.paymentAttempts.length > 0 && <OrderPaymentAttemptsCard attempts={order.paymentAttempts} />}
 
           <OrderTimelineCard timeline={order.timeline} />
         </div>

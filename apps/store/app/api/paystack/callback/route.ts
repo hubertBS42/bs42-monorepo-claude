@@ -2,8 +2,7 @@ import { after } from "next/server"
 import { authURLs } from "@workspace/auth/constants"
 import { sendPaymentEmails, settlePaystackReference } from "@workspace/commerce/online-payments"
 import { prisma } from "@workspace/db"
-
-import { orderHref } from "@/lib/order-access"
+import { orderHref } from "@workspace/commerce/order-links"
 
 // Where Paystack sends the customer back to (?reference=). The payment is recorded from Paystack's own answer, not
 // from the address, so a forged return changes nothing; the webhook records it too, whichever is first.

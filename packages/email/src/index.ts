@@ -14,6 +14,7 @@ export {
   sendOrderShippedEmail,
   sendOrderDeliveredEmail,
   sendOrderCancelledEmail,
+  sendOrderUnpaidCancelledEmail,
   sendOrderConfirmedEmail,
   sendOrderPaymentReceivedEmail,
   sendOrderRefundedEmail,

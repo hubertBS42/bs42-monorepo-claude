@@ -1,8 +1,9 @@
 import "server-only"
 
 import { createHmac, timingSafeEqual } from "node:crypto"
+import { authURLs } from "@workspace/auth/constants"
 
-// Who can see a storefront order without an account: whoever has its link. The link carries a key signed with the
+// Who can see a storefront order without an account: whoever has its link (the storefront's /orders/[reference]). The link carries a key signed with the
 // auth secret, so an order can't be opened by guessing its reference.
 
 function sign(orderId: string) {
@@ -23,4 +24,9 @@ export function isOrderKey(orderId: string, key: string | undefined) {
 
 export function orderHref(reference: string, orderId: string) {
   return `/orders/${reference}?key=${orderKey(orderId)}`
+}
+
+// The order page's full address, for emails
+export function orderUrl(reference: string, orderId: string) {
+  return new URL(orderHref(reference, orderId), authURLs.store).toString()
 }

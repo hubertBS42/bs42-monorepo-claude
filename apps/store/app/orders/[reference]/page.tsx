@@ -10,18 +10,18 @@ import { Card, CardContent, CardHeader, CardTitle } from "@workspace/ui/componen
 import { Separator } from "@workspace/ui/components/separator"
 import { formatDate } from "@workspace/utils/date"
 import { getStringParam } from "@workspace/utils/search-params"
+import { isOrderKey } from "@workspace/commerce/order-links"
 
 import { PayNowButton, ReorderButton } from "@/components/orders/order-actions"
 import type { SearchParams } from "@/lib/catalogue-filters"
 import { formatGhs } from "@/lib/money"
-import { isOrderKey } from "@/lib/order-access"
 import { orderTimeline, type TimelineStep } from "@/lib/order-timeline"
 
 export const metadata: Metadata = { title: "Your order", robots: { index: false } }
 
 interface OrderPageProps {
   params: Promise<{ reference: string }>
-  // ?key= opens the order (lib/order-access.ts); ?payment=unavailable after Paystack couldn't be reached
+  // ?key= opens the order (@workspace/commerce/order-links); ?payment=unavailable after Paystack couldn't be reached
   searchParams: Promise<SearchParams>
 }
 

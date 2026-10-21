@@ -1,12 +1,11 @@
 "use server"
 
 import { after } from "next/server"
-import { authURLs } from "@workspace/auth/constants"
 import type { ActionResponse } from "@workspace/contracts"
 import { prisma } from "@workspace/db"
 import { OrderLinkEmail, sendEmail } from "@workspace/email"
+import { orderUrl } from "@workspace/commerce/order-links"
 
-import { orderHref } from "@/lib/order-access"
 import { findOrderSchema, type FindOrderValues } from "@/lib/schemas/account.schemas"
 import { getAppSettings, getStoreName } from "@/lib/settings"
 
@@ -35,7 +34,7 @@ export async function findOrderAction(input: FindOrderValues): Promise<ActionRes
         reactTemplate: OrderLinkEmail({
           name: order.customerName.split(" ")[0] || order.customerName,
           reference: order.reference,
-          url: new URL(orderHref(order.reference, order.id), authURLs.store).toString(),
+          url: orderUrl(order.reference, order.id),
           appName: storeName,
           logoUrl: settings.logoUrl,
         }),

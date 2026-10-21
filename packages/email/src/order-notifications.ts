@@ -4,6 +4,7 @@ import { OrderConfirmed } from "./templates/order/order-confirmed.js"
 import { OrderShipped } from "./templates/order/order-shipped.js"
 import { OrderDelivered } from "./templates/order/order-delivered.js"
 import { OrderCancelled } from "./templates/order/order-cancelled.js"
+import { OrderUnpaidCancelled } from "./templates/order/order-unpaid-cancelled.js"
 import { OrderRefunded } from "./templates/order/order-refunded.js"
 import { OrderPaymentReceived } from "./templates/order/order-payment-received.js"
 import { OrderReturned, type ReturnedItem } from "./templates/order/order-returned.js"
@@ -120,6 +121,22 @@ export async function sendOrderDeliveredEmail(data: BaseOrderEmail & { note?: st
       customerName: data.customerName,
       reference: data.reference,
       note: data.note,
+      appName: data.appName,
+      logoUrl: data.logoUrl,
+    }),
+  })
+}
+
+export async function sendOrderUnpaidCancelledEmail(data: BaseOrderEmail & { paymentMinutes: number; url: string }) {
+  return sendEmail({
+    to: data.to,
+    fromName: data.appName,
+    subject: `Order Not Completed — ${data.reference}`,
+    reactTemplate: OrderUnpaidCancelled({
+      customerName: data.customerName,
+      reference: data.reference,
+      paymentMinutes: data.paymentMinutes,
+      url: data.url,
       appName: data.appName,
       logoUrl: data.logoUrl,
     }),

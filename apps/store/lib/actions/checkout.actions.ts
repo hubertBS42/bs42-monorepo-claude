@@ -11,16 +11,16 @@ import { OrderItemError } from "@workspace/commerce/order-writes"
 import { initializeTransaction } from "@workspace/commerce/paystack"
 import type { DataResponse } from "@workspace/contracts"
 import { prisma } from "@workspace/db"
+import { isOrderKey, orderHref } from "@workspace/commerce/order-links"
 
 import { rememberAddress } from "@/lib/addresses"
 import { readCartId } from "@/lib/cart-cookie"
 import { CheckoutError, placeOrder, priceCheckout, type CheckoutSummary } from "@/lib/checkout"
-import { isOrderKey, orderHref } from "@/lib/order-access"
 import { areaSchema, placeOrderSchema } from "@/lib/schemas/checkout.schemas"
 import { getStoreSession } from "@/lib/session"
 
 // Checkout's actions. Anyone can call them: the basket cookie is the key to a basket, and the order link's key to an
-// order (lib/order-access.ts).
+// order (@workspace/commerce/order-links).
 
 const TRANSACTION_OPTIONS = { maxWait: 10_000, timeout: 30_000 }
 

@@ -30,6 +30,7 @@
     "./notifications": "./src/notifications.ts",
     "./online-payments": "./src/online-payments.ts",
     "./order-emails": "./src/order-emails.ts",
+    "./order-links": "./src/order-links.ts",
     "./order-status": "./src/order-status.ts",
     "./order-writes": "./src/order-writes.ts",
     "./paystack": "./src/paystack.ts",
