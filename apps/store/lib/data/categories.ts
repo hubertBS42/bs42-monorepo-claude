@@ -10,6 +10,8 @@ export interface CategoryRow {
   slug: string
   description: string | null
   image: string | null
+  // Marked Featured in the console: a slide in the homepage's carousel
+  isFeatured: boolean
   parentId: string | null
   // Products customers can buy here, in this category or under it
   productCount: number
@@ -25,7 +27,7 @@ const loadCategoryRows = unstable_cache(
   async (): Promise<CategoryRow[]> => {
     const rows = await prisma.category.findMany({
       orderBy: [{ position: "asc" }, { name: "asc" }],
-      select: { id: true, name: true, slug: true, description: true, image: true, parentId: true, status: true },
+      select: { id: true, name: true, slug: true, description: true, image: true, isFeatured: true, parentId: true, status: true },
     })
     const visibleIds = getVisibleCategoryIds(rows)
     const counts = await prisma.product.groupBy({
@@ -40,7 +42,7 @@ const loadCategoryRows = unstable_cache(
     for (const row of visible) childrenOf.set(row.parentId, [...(childrenOf.get(row.parentId) ?? []), row])
     const subtreeCount = (id: string): number => (ownCount.get(id) ?? 0) + (childrenOf.get(id) ?? []).reduce((total, child) => total + subtreeCount(child.id), 0)
 
-    return visible.map(({ id, name, slug, description, image, parentId }) => ({ id, name, slug, description, image, parentId, productCount: subtreeCount(id) }))
+    return visible.map(({ id, name, slug, description, image, isFeatured, parentId }) => ({ id, name, slug, description, image, isFeatured, parentId, productCount: subtreeCount(id) }))
   },
   ["store-categories"],
   { revalidate: 60 }
@@ -97,3 +99,14 @@ export const getFilterSpecs = unstable_cache(
   ["store-filter-specs"],
   { revalidate: 60 }
 )
+
+// The homepage carousel's slides: featured categories with something on sale, in menu order (each top-level category,
+// then the ones under it), at most this many
+const MAX_FEATURED_CATEGORIES = 6
+
+export function featuredCategories(tree: CategoryTree) {
+  const inMenuOrder = (nodes: CategoryNode[]): CategoryNode[] => nodes.flatMap((node) => [node, ...inMenuOrder(node.children)])
+  return inMenuOrder(tree.roots)
+    .filter((node) => node.isFeatured)
+    .slice(0, MAX_FEATURED_CATEGORIES)
+}

@@ -129,12 +129,13 @@ export default function EditCategoryForm({ category, parentOptions, disabledPare
                     <ImageField
                       control={form.control}
                       name="image"
-                      sizeLimit={100}
+                      sizeLimit={500}
                       maxImages={1}
                       onAdd={handleAddImage}
                       onRemove={handleRemoveImage}
                       clearErrors={form.clearErrors}
                       label="Image"
+                      description="Wide, about 1600 × 600: behind the category's slide on the homepage when it's featured."
                       disabled={isBusy}
                       className="max-w-35"
                       defaultValues={category.image}
@@ -155,7 +156,7 @@ export default function EditCategoryForm({ category, parentOptions, disabledPare
                   <CardDescription>Settings for this category.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <SwitchField control={form.control} label="Featured" name="isFeatured" disabled={isBusy} description="Show this category in featured sections" variant="card" />
+                  <SwitchField control={form.control} label="Featured" name="isFeatured" disabled={isBusy} description="Show it as a slide in the homepage's carousel (up to 6)" variant="card" />
                 </CardContent>
               </Card>
             </div>
