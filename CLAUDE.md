@@ -9,7 +9,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 BS42.NET is a multi-tenant e-commerce platform in a pnpm + Turborepo monorepo (started from the shadcn/ui Next.js monorepo template).
 
 - `apps/console`: the admin dashboard (console.bs42.net, port 3000 in dev). Almost all current work is here.
-- `apps/store`: the customer storefront (bs42.net). Browsing, the basket, checkout with Paystack, sign-in and the account pages (orders, addresses, email preferences) are built (see Storefront). Its `start` script runs it on port 3001, next to the console on 3000 (`pnpm start` runs both after a build); `STORE_AUTH_URL` defaults to localhost:3001 in dev.
+- `apps/store`: the customer storefront (bs42.net). Browsing (with a featured-category carousel on the homepage), the basket, checkout with Paystack, sign-in, the account pages (orders, addresses, email preferences) and the Terms/Privacy pages are built (see Storefront). Its `start` script runs it on port 3001, next to the console on 3000 (`pnpm start` runs both after a build); `STORE_AUTH_URL` defaults to localhost:3001 in dev.
 - `packages/*`: shared workspace packages imported as `@workspace/<name>` (the database package is `@workspace/db`). `@workspace/commerce` holds the order logic both apps use (see Orders and money).
 
 ## Commands
@@ -153,7 +153,7 @@ Migrations: Prisma doesn't model `CHECK` constraints or triggers, so they live i
 - The numbers come from `lib/dashboard-stats.ts`, which loads the rows for the period and the one before it and adds them up as decimals per day (`toSalesTrend`); it takes the client so a script can run it in a transaction, and `lib/data/dashboard.data.ts` adds the access checks. Stock states (`lib/stock-states.ts`, `stockStatesSql`) are shared with the listings stock filter.
 
 ### Storefront
-`apps/store` shows what `@workspace/commerce/visibility` allows, and nothing else. It uses the shared theme (`@workspace/ui/globals.css`) and the console's `ThemeToggle` in its header.
+`apps/store` shows what `@workspace/commerce/visibility` allows, and nothing else. It uses the shared theme (`@workspace/ui/globals.css`) and the console's `ThemeToggle` in its header. Its favicon is Settings' `faviconUrl` only (there's no `app/favicon.ico`).
 - **Offers**: customers see one offer per product, or per variant, never the stores. Across every store selling it, the offer is the one in stock, else the first due on an open purchase order, else the cheapest (`pickOffers` in `lib/product-cards.ts`). A card opens on its first offer, and picking a variant value on a card switches to that variant's offer.
 - **Prices**: GHS at today's rate, with tax when it's on (`shelfPrice` in `@workspace/commerce/pricing`, rounded as an order rounds a line of one), the ex-tax price under it. Without a rate fresh enough to sell at (`getPricingContext`), no prices show. Stock lines come from `lib/stock-line.ts`: "Only N left" at the low-stock threshold, "Due w/c …" from the earliest `expectedOn` on an open purchase order (one already past says "On order").
 - **Homepage**: a carousel of featured categories (the category form's Featured switch, `featuredCategories` in `lib/data/categories.ts`: those with something on sale, in menu order, at most 6), each slide the category's image (wide, about 1600×600) behind its name, description and "Shop now" (`components/home/category-carousel.tsx`, shadcn's `carousel` with `embla-carousel-autoplay`; it pauses on hover and focus and doesn't play for reduced motion). With no featured category it shows the store's name and description instead. Then "Shop by category" and the featured products.
@@ -217,7 +217,7 @@ The primitives are built on Base UI, not Radix. Use `render={<Button />}` instea
 - Charts use shadcn's `chart` (Recharts 3.8.0). A chart component imports Recharts' parts itself, so `recharts` is a dependency of the console as well as `packages/ui`.
 
 ### Email
-`@workspace/email` holds React Email templates (auth flows, including the storefront's `VerifyEmailEmail`; member invites; order lifecycle, plus `OrderLinkEmail` for finding an order; and `StaffAlertEmail` for staff notifications) sent via Nodemailer (`SITE_MAILER_*` env vars). The sender name and logo come from app settings: the console's name for staff emails, the storefront's (`resolveStoreName`) for customer emails, including the store's account emails. `@workspace/commerce` and the store import it for order emails and staff notifications, so build its `dist/` before the console.
+`@workspace/email` holds React Email templates (auth flows, including the storefront's `VerifyEmailEmail` and `ExistingAccountEmail`; member invites; order lifecycle under `templates/order/`, including `OrderUnpaidCancelled`, plus `OrderLinkEmail` for finding an order; and `StaffAlertEmail` for staff notifications) sent via Nodemailer (`SITE_MAILER_*` env vars). The sender name and logo come from app settings: the console's name for staff emails, the storefront's (`resolveStoreName`) for customer emails, including the store's account emails. `@workspace/commerce` and the store import it for order emails and staff notifications, so build its `dist/` before the console.
 
 ## Environment
 
