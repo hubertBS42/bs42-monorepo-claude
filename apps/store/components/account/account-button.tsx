@@ -19,6 +19,7 @@ import {
 } from "@workspace/ui/components/dropdown-menu"
 import { getNameInitials } from "@workspace/utils/name"
 
+import { ACCOUNT_LINKS } from "@/components/account/account-nav"
 import { refreshBasketCount } from "@/components/basket/basket-count"
 import { signInHref } from "@/lib/auth-redirect"
 
@@ -121,6 +122,15 @@ export function AccountButton() {
               <span className="truncate text-xs">{email}</span>
             </div>
           </DropdownMenuLabel>
+        </DropdownMenuGroup>
+        <DropdownMenuSeparator />
+        <DropdownMenuGroup>
+          {ACCOUNT_LINKS.map(({ href, label, icon: Icon }) => (
+            <DropdownMenuLinkItem key={href} render={<Link href={href} />}>
+              <Icon aria-hidden />
+              {label}
+            </DropdownMenuLinkItem>
+          ))}
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         {consoleUrl && (

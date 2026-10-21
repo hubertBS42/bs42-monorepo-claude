@@ -12,6 +12,7 @@ import { Field, FieldDescription, FieldError, FieldGroup } from "@workspace/ui/c
 import { Spinner } from "@workspace/ui/components/spinner"
 
 import { findOrderAction } from "@/lib/actions/order-lookup.actions"
+import { signInHref } from "@/lib/auth-redirect"
 import { findOrderSchema, type FindOrderValues } from "@/lib/schemas/account.schemas"
 
 export function FindOrderForm() {
@@ -70,7 +71,7 @@ export function FindOrderForm() {
                 Email me a link
               </Button>
               <FieldDescription className="text-center">
-                Have an account? <Link href="/sign-in">Sign in</Link> to see your orders.
+                Have an account? <Link href={signInHref("/sign-in", "/account/orders")}>Sign in</Link> to see your orders.
               </FieldDescription>
             </Field>
           </FieldGroup>
