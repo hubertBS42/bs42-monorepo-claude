@@ -143,6 +143,7 @@ model User {
   orders           Order[]
   reviews          Review[]
   hiddenReviews    Review[]             @relation("ReviewHiddenBy")
+  wishListItems    WishListItem[]
   sessions         Session[]
   accounts         Account[]
   members          Member[]
@@ -303,6 +304,7 @@ model Product {
 
   orderItems    OrderItem[]
   reviews       Review[]
+  wishListItems WishListItem[]
   storeListings StoreListing[]
   documents     ProductDocument[]
   specValues    ProductSpecValue[]
@@ -446,6 +448,7 @@ model ProductVariant {
 
   orderItems           OrderItem[]
   storeListingVariants StoreListingVariant[]
+  wishListItems        WishListItem[]
   createdAt            DateTime              @default(now())
   updatedAt            DateTime              @default(now()) @updatedAt
 
@@ -1167,4 +1170,26 @@ model Invitation {
   @@index([email])
   @@index([inviterId])
   @@map("invitation")
+}
+
+// A product a customer has saved for later, with the variant they had picked. Per product, never per store: customers
+// never see stores. Saved items stay when a product stops being on sale (it may come back) and go with the product.
+model WishListItem {
+  id        String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String          @db.Uuid
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId String          @db.Uuid
+  product   Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+  // Cascade, not the optional default SetNull, which would turn a saved variant into the plain product
+  variantId String?         @db.Uuid
+  variant   ProductVariant? @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  createdAt DateTime        @default(now())
+
+  // One row per variant. Postgres treats NULLs as distinct, so products without variants need their own partial index.
+  @@unique([userId, productId, variantId])
+  @@unique([userId, productId], map: "wish_list_item_no_variant_key", where: { variantId: null })
+  @@index([userId, createdAt])
+  @@index([productId])
+  @@index([variantId])
+  @@map("wish_list_item")
 }
