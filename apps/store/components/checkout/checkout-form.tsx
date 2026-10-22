@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState, useTransition } from "react"
+import { type ReactNode, useCallback, useEffect, useMemo, useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Info, Lock, Package } from "lucide-react"
@@ -15,6 +15,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Field, FieldLabel } from "@workspace/ui/components/field"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@workspace/ui/components/select"
 import { Separator } from "@workspace/ui/components/separator"
+import { Skeleton } from "@workspace/ui/components/skeleton"
 import { Spinner } from "@workspace/ui/components/spinner"
 import { toast } from "@workspace/ui/components/toast"
 
@@ -66,7 +67,7 @@ function startingValues(account: CheckoutAccount | null, savedCount: number, sta
   return { ...blank, name: start.name, phone: start.phone, line1: start.line1, line2: start.line2, region: start.region, town: start.town, saveAddress }
 }
 
-function SummaryRow({ label, value, muted }: { label: string; value: string; muted?: boolean }) {
+function SummaryRow({ label, value, muted }: { label: string; value: ReactNode; muted?: boolean }) {
   return (
     <div className={muted ? "flex justify-between gap-4 text-muted-foreground" : "flex justify-between gap-4"}>
       <span>{label}</span>
@@ -172,6 +173,14 @@ export function CheckoutForm({
     if (areaKey) quote(areaKey)
   }, [areaKey, quote])
   const quoted = !!areaKey && quotedFor === areaKey && summary.deliveryGhs !== null
+  // A town is chosen and its fee is on the way
+  const quoting = isQuoting && !!areaKey
+  const loadingAmount = (
+    <>
+      <Skeleton className="h-4 w-16" aria-hidden />
+      <span className="sr-only">Working out</span>
+    </>
+  )
 
   const onSubmit = (values: CheckoutFormValues) =>
     startTransition(async () => {
@@ -322,18 +331,24 @@ export function CheckoutForm({
             <SummaryRow label={summary.trade ? "Items, ex. tax" : "Items"} value={formatGhs(summary.itemsGhs)} />
             {summary.trade && summary.discountGhs && <SummaryRow label={`Trade discount (${Number(summary.trade.percent)}%)`} value={`−${formatGhs(summary.discountGhs)}`} />}
             {summary.installationGhs && <SummaryRow label="Installation" value={formatGhs(summary.installationGhs)} />}
-            <SummaryRow label="Delivery" value={!quoted ? "Choose your town" : summary.freeDelivery ? "Free" : formatGhs(summary.deliveryGhs!)} muted={!quoted} />
+            <SummaryRow
+              label="Delivery"
+              value={quoting ? loadingAmount : !areaKey ? "Choose your town" : !quoted ? (areaError ? "Not available" : "—") : summary.freeDelivery ? "Free" : formatGhs(summary.deliveryGhs!)}
+              muted={!quoted}
+            />
             {summary.taxGhs && <SummaryRow label={summary.trade ? "Tax" : "Includes tax"} value={formatGhs(summary.taxGhs)} muted={!summary.trade} />}
           </div>
           <Separator />
           <div className="flex items-baseline justify-between gap-4 text-base font-semibold">
             <span>Total</span>
-            <span className="tabular-nums">{quoted ? formatGhs(summary.totalGhs) : "—"}</span>
+            <span className="tabular-nums" aria-live="polite">
+              {quoting ? loadingAmount : quoted ? formatGhs(summary.totalGhs) : "—"}
+            </span>
           </div>
         </CardContent>
         <CardFooter className="flex-col items-stretch gap-3">
           <Button type="submit" size="lg" disabled={busy || !quoted || noDelivery}>
-            {isPending ? <Spinner data-icon="inline-start" /> : <Lock data-icon="inline-start" aria-hidden />}
+            {isPending || quoting ? <Spinner data-icon="inline-start" /> : <Lock data-icon="inline-start" aria-hidden />}
             {quoted ? `Pay ${formatGhs(summary.totalGhs)}` : "Pay"}
           </Button>
           <p className="flex gap-2 text-xs text-muted-foreground">
