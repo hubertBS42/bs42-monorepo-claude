@@ -1,5 +1,5 @@
 import { z } from "zod"
-import { Condition, Status } from "@workspace/db/enums"
+import { Condition, InstallationOption, Status } from "@workspace/db/enums"
 
 // Helper schema for decimal validation. Also used by listings, which hold store prices.
 export const decimalSchema = z
@@ -66,6 +66,9 @@ export const addProductFormSchema = z
     categoryId: z.uuid("Select a category"),
     hasVariants: z.boolean(),
     condition: z.enum(Condition),
+    // Installing one unit: the category's fee, its own (GHS), or not offered. The fee only counts for OWN.
+    installation: z.enum(InstallationOption),
+    installationFeeGhs: optionalDecimalSchema,
     // Editor JSON, so the limit is on the document rather than the visible text
     description: z.string().max(200_000, "The description is too long.").nullable(),
     images: z.array(z.httpUrl("Invalid image URL")).min(1, "You must provide at least one image."),
@@ -91,6 +94,9 @@ export const addProductFormSchema = z
     // Drafts can be saved before the price is known, but nothing goes on sale for free by accident
     if (data.status === Status.PUBLISHED && data.baseSellPrice <= 0) {
       ctx.addIssue({ code: "custom", message: "A published product needs a sell price above 0", path: ["baseSellPrice"] })
+    }
+    if (data.installation === InstallationOption.OWN && !data.installationFeeGhs) {
+      ctx.addIssue({ code: "custom", message: "Enter the fee for installing one", path: ["installationFeeGhs"] })
     }
 
     // ============================================

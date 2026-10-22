@@ -1,6 +1,7 @@
 import { Status } from "@workspace/db/enums"
 import { z } from "zod"
 import { optionalHttpUrl } from "./common.schemas"
+import { optionalDecimalSchema } from "./product.schemas"
 
 // The parent select's value for a top-level category. Selects need a string, so the schema turns it into null (null itself is also accepted).
 export const NO_PARENT = "none"
@@ -15,6 +16,8 @@ export const addCategoryFormSchema = z.object({
     .transform((value) => value || null)
     .nullable(),
   isFeatured: z.boolean(),
+  // GHS per item; empty: the parent's applies, or none
+  installationFeeGhs: optionalDecimalSchema.refine((fee) => fee == null || fee > 0, "Leave it empty for no fee of its own"),
   status: z.enum(Status),
 })
 

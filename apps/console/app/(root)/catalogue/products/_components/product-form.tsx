@@ -15,7 +15,8 @@ import { StorefrontLinkCard } from "@/components/storefront-link-card"
 import type { ProductReviewStats } from "@/lib/data/reviews.data"
 import type { StorefrontLink } from "@/lib/data/storefront-links.data"
 import SharedFormFooter from "@/components/shared-form-footer"
-import { Condition, Status } from "@workspace/db/enums"
+import { Condition, InstallationOption, Status } from "@workspace/db/enums"
+import { formatCurrency } from "@workspace/utils/currency"
 import { createProductAction, updateProductAction } from "@/lib/actions/product.actions"
 import { CascaderField, ComboboxField, DocumentField, ImageField, NumberInputField, RichTextField, SelectField, SwitchField, TagsField, TextInputField, type CascaderOption } from "@workspace/forms"
 import { Button } from "@workspace/ui/components/button"
@@ -51,6 +52,8 @@ interface ProductFormProps {
   disabledCategoryIds: string[]
   // Each category's specs, its own and those above it (getSpecFieldsByCategory)
   specFields: Record<string, SpecField[]>
+  // Each category's installation fee in GHS, its own or the nearest above it (getInstallationFeesByCategory)
+  categoryInstallationFees: Record<string, number>
   // The product being edited; without it the form adds a new one
   product?: ProductFormData
   // Its storefront page and its reviews, when editing
@@ -75,6 +78,8 @@ const EMPTY_PRODUCT: FormInput = {
   hasVariants: false,
   status: Status.DRAFT,
   condition: Condition.NEW,
+  installation: InstallationOption.CATEGORY,
+  installationFeeGhs: null,
   images: [],
   banner: "",
   variantOptions: [],
@@ -130,7 +135,7 @@ function describeRemoval(variants: VariantInput[], usage: Record<string, Variant
 
 type PendingChange = { kind: "removeVariant"; index: number } | { kind: "regenerate" } | { kind: "noVariants" }
 
-const ProductForm = ({ brands, categoryOptions, disabledCategoryIds, specFields, product, storefrontLink, reviewStats }: ProductFormProps) => {
+const ProductForm = ({ brands, categoryOptions, disabledCategoryIds, specFields, categoryInstallationFees, product, storefrontLink, reviewStats }: ProductFormProps) => {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [editingVariantIndex, setEditingVariantIndex] = useState<number | null>(null)
@@ -152,6 +157,16 @@ const ProductForm = ({ brands, categoryOptions, disabledCategoryIds, specFields,
 
   const hasVariants = useWatch({ control: form.control, name: "hasVariants" })
   const categoryId = useWatch({ control: form.control, name: "categoryId" })
+  const installation = useWatch({ control: form.control, name: "installation" })
+  const categoryFee = categoryInstallationFees[categoryId]
+  const installationOptions = [
+    {
+      value: InstallationOption.CATEGORY,
+      label: !categoryId ? "The category's fee" : categoryFee ? `The category's fee (${formatCurrency(String(categoryFee), "GHS", "en-GH")})` : "The category's fee (it has none: not offered)",
+    },
+    { value: InstallationOption.OWN, label: "Its own fee" },
+    { value: InstallationOption.NONE, label: "Not offered" },
+  ]
   const watchedOptions = useWatch({ control: form.control, name: "variantOptions" })
   const watchedVariants = useWatch({ control: form.control, name: "variants" })
   const variantOptions = useMemo(() => watchedOptions ?? [], [watchedOptions])
@@ -448,6 +463,21 @@ const ProductForm = ({ brands, categoryOptions, disabledCategoryIds, specFields,
                     description="Product has multiple variants (color, size, etc.)"
                     onChange={handleHasVariantsChange}
                   />
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Installation</CardTitle>
+                  <CardDescription>What customers pay to have one installed by the platform&apos;s installers, where Settings → Installation says they work.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid gap-5 sm:grid-cols-2">
+                    <SelectField control={form.control} label="Installation" name="installation" disabled={isBusy} options={installationOptions} />
+                    {installation === InstallationOption.OWN && (
+                      <NumberInputField control={form.control} label="Fee per item" name="installationFeeGhs" step={0.01} min={0} prependText="GH₵" disabled={isBusy} />
+                    )}
+                  </div>
                 </CardContent>
               </Card>
 

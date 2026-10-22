@@ -6,7 +6,8 @@ import { consoleAuth } from "@workspace/auth/console"
 import { headers } from "next/headers"
 import { prisma } from "@workspace/db"
 import type { Category } from "@workspace/db/client"
-import { Status } from "@workspace/db/enums"
+import { InstallationOption, Status } from "@workspace/db/enums"
+import { installationFee, loadCategoryFees } from "@workspace/commerce/installation"
 import type { DataResponse } from "@workspace/contracts"
 import type { TreeSelectOption } from "@workspace/forms"
 import { z } from "zod"
@@ -21,7 +22,7 @@ async function getSession() {
 
 // Nests each category under its parent in one pass. Siblings keep the input order, so sort before calling.
 // A row whose parent is missing becomes a top-level row, so it can't silently disappear from the tree.
-export function buildCategoryTree(categories: Category[]): CategoryNode[] {
+export function buildCategoryTree(categories: Omit<Category, "installationFeeGhs">[]): CategoryNode[] {
   const nodes = new Map<string, CategoryNode>(categories.map((category) => [category.id, { ...category, children: [] }]))
   const roots: CategoryNode[] = []
 
@@ -34,6 +35,25 @@ export function buildCategoryTree(categories: Category[]): CategoryNode[] {
   return roots
 }
 
+// For the product form: each category's installation fee in GHS, its own or the nearest category's above it, so the
+// form can name the fee a product in it would charge. Categories without one are left out.
+export const getInstallationFeesByCategory = async (): Promise<DataResponse<Record<string, number>>> => {
+  try {
+    const session = await getSession()
+    if (!session) return { success: false, error: "Unauthorized" }
+
+    const categories = await loadCategoryFees(prisma)
+    const fees: Record<string, number> = {}
+    for (const categoryId of categories.keys()) {
+      const fee = installationFee({ installation: InstallationOption.CATEGORY, installationFeeGhs: null, categoryId }, categories)
+      if (fee) fees[categoryId] = fee.toNumber()
+    }
+    return { success: true, data: fees }
+  } catch (error) {
+    return { success: false, error: formatError(error) }
+  }
+}
+
 // The whole hierarchy, unpaginated: a page boundary would cut subtrees apart
 export const getCategoryTree = async (): Promise<DataResponse<CategoryNode[]>> => {
   try {
@@ -41,6 +61,7 @@ export const getCategoryTree = async (): Promise<DataResponse<CategoryNode[]>> =
     if (!session) return { success: false, error: "Unauthorized" }
 
     const categories = await prisma.category.findMany({
+      omit: { installationFeeGhs: true },
       orderBy: [{ position: "asc" }, { name: "asc" }, { id: "asc" }],
     })
 
@@ -77,6 +98,7 @@ export const getCategoryOptions = async (editingId?: string): Promise<DataRespon
     if (!session) return { success: false, error: "Unauthorized" }
 
     const categories = await prisma.category.findMany({
+      omit: { installationFeeGhs: true },
       orderBy: [{ position: "asc" }, { name: "asc" }, { id: "asc" }],
     })
 
@@ -97,7 +119,10 @@ export const getCategoryOptions = async (editingId?: string): Promise<DataRespon
 }
 
 // childCount lets the edit page explain why a category can't be deleted yet
-export const getCategoryById = async (categoryId: string): Promise<DataResponse<Category & { childCount: number }>> => {
+// The fee as a number: a Decimal can't reach the client form
+export type CategoryForEdit = Omit<Category, "installationFeeGhs"> & { installationFeeGhs: number | null; childCount: number }
+
+export const getCategoryById = async (categoryId: string): Promise<DataResponse<CategoryForEdit>> => {
   try {
     const session = await getSession()
     if (!session) return { success: false, error: "Unauthorized" }
@@ -113,7 +138,7 @@ export const getCategoryById = async (categoryId: string): Promise<DataResponse<
     if (!category) return { success: false, error: "Category not found.", code: "NOT_FOUND" }
 
     const { _count, ...rest } = category
-    return { success: true, data: { ...rest, childCount: _count.childCategories } }
+    return { success: true, data: { ...rest, installationFeeGhs: rest.installationFeeGhs?.toNumber() ?? null, childCount: _count.childCategories } }
   } catch (error) {
     return { success: false, error: formatError(error) }
   }

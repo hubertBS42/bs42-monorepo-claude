@@ -3,7 +3,7 @@ import { z } from "zod"
 import { addProductFormSchema, updateProductFormSchema } from "@/lib/schemas/product.schemas"
 import { generateUniqueSku, prisma } from "@workspace/db"
 import { Prisma } from "@workspace/db/client"
-import { Status } from "@workspace/db/enums"
+import { InstallationOption, Status } from "@workspace/db/enums"
 import { formatError } from "@workspace/auth/format-error"
 import { ActionResponse } from "@workspace/contracts"
 import { isManagedFileUrl, removeFiles } from "@workspace/storage"
@@ -108,6 +108,7 @@ export async function createProductAction(input: z.input<typeof addProductFormSc
           // Placeholder: the Prisma hook generates the real slug, and a SKU for a simple product left without one
           slug: "",
           banner: banner || null,
+          installationFeeGhs: fields.installation === InstallationOption.OWN ? fields.installationFeeGhs : null,
           ...(!fields.hasVariants && { sku: sku || null, barcode: barcode || null, weight: weight ?? null, dimensions: dimensions || null }),
           documents: { create: documents.map(({ name, url }) => ({ name, url })) },
           variantOptions: {

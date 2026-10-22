@@ -241,6 +241,8 @@ export const getProductForEdit = async (productId: string): Promise<DataResponse
           hasVariants: product.hasVariants,
           status: product.status,
           condition: product.condition,
+          installation: product.installation,
+          installationFeeGhs: product.installationFeeGhs?.toNumber() ?? null,
           images: product.images,
           banner: product.banner ?? "",
           variantOptions: product.variantOptions,

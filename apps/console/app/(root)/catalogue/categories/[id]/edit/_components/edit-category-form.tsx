@@ -11,15 +11,15 @@ import { toast } from "@workspace/ui/components/toast"
 import SharedFormHeader from "@/components/shared-form-header"
 import SharedFormFooter from "@/components/shared-form-footer"
 import { updateCategoryAction } from "@/lib/actions/category.actions"
-import { ImageField, SelectField, SelectTreeField, SwitchField, TextareaField, TextInputField, type TreeSelectOption } from "@workspace/forms"
+import { ImageField, NumberInputField, SelectField, SelectTreeField, SwitchField, TextareaField, TextInputField, type TreeSelectOption } from "@workspace/forms"
 import { STATUS_OPTIONS } from "@/constants"
-import type { Category } from "@workspace/db/client"
+import type { CategoryForEdit } from "@/lib/data/categories.data"
 import { deleteImages, uploadImages } from "@/lib/storage"
 import DeleteCategory from "./delete-category"
 
 interface EditCategoryFormProps {
   // From getCategoryById
-  category: Category & { childCount: number }
+  category: CategoryForEdit
   // The category tree from getCategoryOptions(category.id)
   parentOptions: TreeSelectOption[]
   // Archived categories, plus this category and its subcategories (picking one would make a cycle)
@@ -42,6 +42,7 @@ export default function EditCategoryForm({ category, parentOptions, disabledPare
       parentId: category.parentId ?? NO_PARENT,
       description: category.description ?? "",
       isFeatured: category.isFeatured,
+      installationFeeGhs: category.installationFeeGhs ?? "",
       status: category.status,
     },
   })
@@ -156,7 +157,19 @@ export default function EditCategoryForm({ category, parentOptions, disabledPare
                   <CardDescription>Settings for this category.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <SwitchField control={form.control} label="Featured" name="isFeatured" disabled={isBusy} description="Show it as a slide in the homepage's carousel (up to 6)" variant="card" />
+                  <FieldGroup>
+                    <SwitchField control={form.control} label="Featured" name="isFeatured" disabled={isBusy} description="Show it as a slide in the homepage's carousel (up to 6)" variant="card" />
+                    <NumberInputField
+                      control={form.control}
+                      label="Installation fee"
+                      name="installationFeeGhs"
+                      step={0.01}
+                      min={0}
+                      prependText="GH₵"
+                      disabled={isBusy}
+                      description="Per item, for products here and in the categories under it that don't set their own. Empty: the parent category's fee applies, or none."
+                    />
+                  </FieldGroup>
                 </CardContent>
               </Card>
             </div>

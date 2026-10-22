@@ -1,7 +1,7 @@
 import "server-only"
 
 import { generateUniqueSku, prisma } from "@workspace/db"
-import { Status } from "@workspace/db/enums"
+import { InstallationOption, Status } from "@workspace/db/enums"
 import type { z } from "zod"
 import type { updateProductFormSchema } from "./schemas/product.schemas"
 
@@ -175,6 +175,7 @@ export async function syncProduct(tx: Tx, saved: SavedProduct, data: ProductUpda
     data: {
       ...fields,
       banner: banner || null,
+      installationFeeGhs: fields.installation === InstallationOption.OWN ? fields.installationFeeGhs : null,
       ...(fields.hasVariants
         ? { sku: null, barcode: null, weight: null, dimensions: null }
         : { sku: sku || (await generateUniqueSku(tx, fields.name)), barcode: barcode || null, weight: weight ?? null, dimensions: dimensions || null }),

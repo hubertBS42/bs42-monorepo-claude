@@ -11,7 +11,7 @@ import { toast } from "@workspace/ui/components/toast"
 import SharedFormHeader from "@/components/shared-form-header"
 import SharedFormFooter from "@/components/shared-form-footer"
 import { createCategoryAction } from "@/lib/actions/category.actions"
-import { ImageField, SelectField, SelectTreeField, SwitchField, TextareaField, TextInputField, type TreeSelectOption } from "@workspace/forms"
+import { ImageField, NumberInputField, SelectField, SelectTreeField, SwitchField, TextareaField, TextInputField, type TreeSelectOption } from "@workspace/forms"
 import { STATUS_OPTIONS } from "@/constants"
 import { Status } from "@workspace/db/enums"
 import { deleteImages, uploadImages } from "@/lib/storage"
@@ -38,6 +38,7 @@ const AddCategoryForm = ({ parentOptions, disabledParentIds }: AddCategoryFormPr
       parentId: NO_PARENT,
       description: "",
       isFeatured: false,
+      installationFeeGhs: "",
       status: Status.DRAFT,
     },
   })
@@ -148,7 +149,19 @@ const AddCategoryForm = ({ parentOptions, disabledParentIds }: AddCategoryFormPr
                   <CardDescription>Settings for this category.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <SwitchField control={form.control} label="Featured" name="isFeatured" disabled={isBusy} description="Show it as a slide in the homepage's carousel (up to 6)" variant="card" />
+                  <FieldGroup>
+                    <SwitchField control={form.control} label="Featured" name="isFeatured" disabled={isBusy} description="Show it as a slide in the homepage's carousel (up to 6)" variant="card" />
+                    <NumberInputField
+                      control={form.control}
+                      label="Installation fee"
+                      name="installationFeeGhs"
+                      step={0.01}
+                      min={0}
+                      prependText="GH₵"
+                      disabled={isBusy}
+                      description="Per item, for products here and in the categories under it that don't set their own. Empty: the parent category's fee applies, or none."
+                    />
+                  </FieldGroup>
                 </CardContent>
               </Card>
             </div>

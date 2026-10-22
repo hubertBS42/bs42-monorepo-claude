@@ -163,7 +163,8 @@ export interface ReviewRow {
 export type ReviewsData = PaginatedResult<ReviewRow>
 
 // A category with its subcategories, as the categories tree table shows them
-export type CategoryNode = Category & {
+// Without the installation fee, a Decimal: the tree goes to client components
+export type CategoryNode = Omit<Category, "installationFeeGhs"> & {
   children: CategoryNode[]
 }
 
