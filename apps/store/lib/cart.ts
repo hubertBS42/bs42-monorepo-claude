@@ -184,6 +184,9 @@ export interface AddToCartInput {
   quantity: number
   // Ticked on the product page: the line then includes installation (adding without it leaves the line's as it was)
   installation?: boolean
+  // Putting a cancelled order's or a quote's items back: the line holds at least this many, rather than this many more,
+  // so items already in the basket aren't doubled
+  atLeast?: boolean
 }
 
 // Adds to the item's line, creating the basket on its first item. The quantity is capped at what the line's store has,
@@ -213,12 +216,13 @@ export async function addCartItem(client: Client, sessionCartId: string, input: 
   if (!chosen) throw new CartError("OUT_OF_STOCK")
 
   const before = existing?.quantity ?? 0
-  const quantity = Math.min(before + input.quantity, limit(chosen, maxLine))
+  const wanted = input.atLeast ? Math.max(before, input.quantity) : before + input.quantity
+  const quantity = Math.min(wanted, limit(chosen, maxLine))
   const row = { storeListingId: chosen.listingId, storeListingVariantId: chosen.listingVariantId, ...(input.installation && { withInstallation: true }) }
   if (existing) await client.cartItem.update({ where: { id: existing.id }, data: { ...row, quantity } })
   else await client.cartItem.create({ data: { cartId: cart.id, ...row, quantity } })
 
-  return { quantity, added: Math.max(quantity - before, 0), capped: before + input.quantity > quantity, count: await countCartItems(client, sessionCartId) }
+  return { quantity, added: Math.max(quantity - before, 0), capped: wanted > quantity, count: await countCartItems(client, sessionCartId) }
 }
 
 // Sets a line's quantity, capped at what its store has and at maxLine; 0 removes it

@@ -14,10 +14,26 @@ import { loadCart } from "@/lib/cart"
 import { readCartId } from "@/lib/cart-cookie"
 import { formatGhs } from "@/lib/money"
 import { describeInstallationAreas } from "@workspace/commerce/installation-areas"
-import { getTradeTerms } from "@/lib/session"
-import { getFreeDeliveryFrom, getInstallationAreas } from "@/lib/settings"
+import { QuoteRequestDialog } from "@/components/quotes/quote-request-dialog"
+import { getSavedAddresses } from "@/lib/addresses"
+import { getDeliveryAreas } from "@/lib/delivery-areas"
+import { getStoreSession, getTradeTerms } from "@/lib/session"
+import { getAppSettings, getFreeDeliveryFrom, getInstallationAreas } from "@/lib/settings"
 
 export const metadata: Metadata = { title: "Basket", robots: { index: false } }
+
+async function quoteRequestProps() {
+  const [session, { areas, deliversTo }, settings] = await Promise.all([getStoreSession(), getDeliveryAreas(), getAppSettings()])
+  const blank = { name: "", phone: "", line1: "", line2: "", region: "", town: "" }
+  if (!session) return { signedIn: false, initial: blank, areas, validityDays: settings.quoteValidityDays }
+
+  const [user, addresses] = await Promise.all([prisma.user.findUnique({ where: { id: session.user.id }, select: { name: true, phone: true } }), getSavedAddresses(session.user.id)])
+  const address = addresses.find((saved) => deliversTo(saved.region, saved.town))
+  const initial = address
+    ? { name: address.name, phone: address.phone, line1: address.line1, line2: address.line2 ?? "", region: address.region, town: address.town }
+    : { ...blank, name: user?.name ?? session.user.name, phone: user?.phone ?? "" }
+  return { signedIn: true, initial, areas, validityDays: settings.quoteValidityDays }
+}
 
 export default async function BasketPage() {
   const cartId = await readCartId()
@@ -32,6 +48,9 @@ export default async function BasketPage() {
   // spending it is always enough.
   const shortBeforeTax = basket?.totals && freeDeliveryFrom ? new Prisma.Decimal(freeDeliveryFrom).minus(basket.totals.thresholdGhs) : null
   const toFreeDelivery = shortBeforeTax && pricing?.tax && !trade ? shortBeforeTax.times(pricing.tax.rate.plus(1)).toDecimalPlaces(2, Prisma.Decimal.ROUND_UP) : shortBeforeTax
+
+  // "Get a quote", filled in from the account and its default address (when it's delivered to)
+  const quote = basket?.totals ? await quoteRequestProps() : null
 
   // Under the summary, trade account or not
   const notes = basket?.totals && (
@@ -167,6 +186,7 @@ export default async function BasketPage() {
                   Go to checkout
                 </Button>
               )}
+              {quote && <QuoteRequestDialog {...quote} />}
               <Button render={<Link href="/" />} variant="ghost" className="w-full">
                 Continue shopping
               </Button>

@@ -2,11 +2,12 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Briefcase, Heart, Mail, MapPin, MessageSquareText, Package } from "lucide-react"
+import { Briefcase, FileText, Heart, Mail, MapPin, MessageSquareText, Package } from "lucide-react"
 import { cn } from "@workspace/ui/lib/utils"
 
 export const ACCOUNT_LINKS = [
   { href: "/account/orders", label: "My orders", icon: Package },
+  { href: "/account/quotes", label: "Quotations", icon: FileText },
   { href: "/account/wish-list", label: "Wish list", icon: Heart },
   { href: "/account/reviews", label: "Reviews", icon: MessageSquareText },
   { href: "/account/addresses", label: "Addresses", icon: MapPin },

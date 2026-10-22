@@ -6,7 +6,7 @@ import { Prisma } from "@workspace/db/client"
 import type { DataResponse } from "@workspace/contracts"
 import { formatError } from "@workspace/auth/format-error"
 import { z } from "zod"
-import { isOrderKey } from "@workspace/commerce/order-links"
+import { isOrderKey, isQuoteKey } from "@workspace/commerce/order-links"
 
 import { MAX_LINE_QUANTITY, TRADE_LINE_QUANTITY } from "@/lib/basket-limits"
 import { addCartItem, CartError, countCartItems, removeCartItem, setCartItemInstallation, setCartItemQuantity, type AddToCartInput } from "@/lib/cart"
@@ -103,8 +103,9 @@ export async function removeFromBasketAction(lineId: string): Promise<DataRespon
   }
 }
 
-// "Put these items back in your basket" on a cancelled order's page. Each line goes in as if added again, at today's
-// stores and stock; what can't be bought any more is named.
+// "Put these items back in your basket" on a cancelled order's page. Each line goes in at today's stores and stock,
+// topping up an item already in the basket to the order's quantity rather than adding to it; what can't be bought any
+// more is named.
 export async function reorderAction(orderId: string, key: string): Promise<DataResponse<{ count: number; missed: string[] }>> {
   try {
     if (!isOrderKey(orderId, key)) return { success: false, error: "We can't find that order.", code: "NOT_FOUND" }
@@ -118,10 +119,51 @@ export async function reorderAction(orderId: string, key: string): Promise<DataR
     const missed: string[] = []
     for (const item of items) {
       try {
-        await addOnce(cartId, { listingId: item.storeListingId, listingVariantId: item.storeListingVariantId, quantity: Math.min(item.quantity, TRADE_LINE_QUANTITY) })
+        await addOnce(cartId, { listingId: item.storeListingId, listingVariantId: item.storeListingVariantId, quantity: Math.min(item.quantity, TRADE_LINE_QUANTITY), atLeast: true })
       } catch (error) {
         if (!(error instanceof CartError)) throw error
         missed.push(item.variantDescription ? `${item.productName} (${item.variantDescription})` : item.productName)
+      }
+    }
+    return { success: true, data: { count: await countCartItems(prisma, cartId), missed } }
+  } catch (error) {
+    return failure(error)
+  }
+}
+
+// "Put these items in your basket" on a quotation that lapsed or can't be supplied in full. Each line goes in at today's
+// stores, stock and prices, with its installation, topping up an item already in the basket to the quoted quantity
+// rather than adding to it (making a quote keeps the basket); what can't be bought any more is named.
+export async function quoteToBasketAction(quoteId: string, key: string): Promise<DataResponse<{ count: number; missed: string[] }>> {
+  try {
+    if (!isQuoteKey(quoteId, key)) return { success: false, error: "We can't find that quotation.", code: "NOT_FOUND" }
+    const items = await prisma.quoteItem.findMany({
+      where: { quoteId },
+      orderBy: { id: "asc" },
+      select: { storeListingId: true, storeListingVariantId: true, hasVariant: true, quantity: true, installationUnitGhs: true, productName: true, variantDescription: true },
+    })
+
+    const cartId = await ensureCartId()
+    const missed: string[] = []
+    for (const item of items) {
+      const label = item.variantDescription ? `${item.productName} (${item.variantDescription})` : item.productName
+      // Deleted since it was quoted
+      if (!item.storeListingId || (item.hasVariant && !item.storeListingVariantId)) {
+        missed.push(label)
+        continue
+      }
+      const input = { listingId: item.storeListingId, listingVariantId: item.storeListingVariantId, quantity: Math.min(item.quantity, TRADE_LINE_QUANTITY), atLeast: true }
+      try {
+        await addOnce(cartId, { ...input, installation: !!item.installationUnitGhs })
+      } catch (error) {
+        if (!(error instanceof CartError)) throw error
+        // Installation no longer offered: the item still goes in, without it
+        if (error.code === "NO_INSTALLATION") {
+          await addOnce(cartId, input).catch((retry) => {
+            if (!(retry instanceof CartError)) throw retry
+            missed.push(label)
+          })
+        } else missed.push(label)
       }
     }
     return { success: true, data: { count: await countCartItems(prisma, cartId), missed } }
