@@ -1,5 +1,6 @@
 import { Badge } from "@workspace/ui/components/badge"
-import type { InstallationStatus, OrderStatus, PaymentStatus, PurchaseOrderStatus } from "@workspace/db/enums"
+import type { InstallationStatus, OrderStatus, PaymentStatus, PurchaseOrderStatus, TradeAccountStatus } from "@workspace/db/enums"
+import { TRADE_ACCOUNT_STATUS_LABELS } from "@workspace/commerce/trade-account-status"
 import { INSTALLATION_STATUS_LABELS, ORDER_STATUS_LABELS, PAYMENT_STATUS_LABELS } from "@workspace/commerce/order-status"
 import { PURCHASE_ORDER_STATUS_LABELS } from "@/lib/purchase-order-status"
 
@@ -42,6 +43,18 @@ const INSTALLATION_STATUS_VARIANTS: Record<InstallationStatus, "outline" | "seco
 
 export function InstallationStatusBadge({ status }: { status: InstallationStatus }) {
   return <Badge variant={INSTALLATION_STATUS_VARIANTS[status]}>{INSTALLATION_STATUS_LABELS[status]}</Badge>
+}
+
+// Pending waits on staff, so it stands out; rejected and suspended are muted
+const TRADE_ACCOUNT_STATUS_VARIANTS: Record<TradeAccountStatus, "outline" | "secondary" | "success"> = {
+  PENDING: "outline",
+  APPROVED: "success",
+  REJECTED: "secondary",
+  SUSPENDED: "secondary",
+}
+
+export function TradeAccountStatusBadge({ status }: { status: TradeAccountStatus }) {
+  return <Badge variant={TRADE_ACCOUNT_STATUS_VARIANTS[status]}>{TRADE_ACCOUNT_STATUS_LABELS[status]}</Badge>
 }
 
 export function OrderStatusBadge({ status }: { status: OrderStatus }) {

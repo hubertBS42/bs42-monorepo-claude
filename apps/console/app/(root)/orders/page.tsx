@@ -29,6 +29,7 @@ export default async function OrdersPage({ searchParams }: OrdersPageProps) {
     paymentStatus: getEnumParam(params.paymentStatus, Object.values(PaymentStatus)),
     multiStore: getEnumParam(params.multiStore, ["true", "false"]),
     returned: getEnumParam(params.returned, ["true", "false"]),
+    trade: getEnumParam(params.trade, ["true", "false"]),
     placedStart: getDayParam(params.placedStart),
     placedEnd: getDayParam(params.placedEnd),
     page: getPositiveIntegerParam(params.page, 1),

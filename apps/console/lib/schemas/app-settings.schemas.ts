@@ -27,6 +27,7 @@ export const appSettingsSchema = z
     notifyRateFetchFailure: z.boolean(),
     notifyStoreRefunds: z.boolean(),
     notifyLowRatings: z.boolean(),
+    notifyTradeApplications: z.boolean(),
     // The version the form was opened with (getAppSettingsVersion); not a field the user sees
     version: z.string(),
   })

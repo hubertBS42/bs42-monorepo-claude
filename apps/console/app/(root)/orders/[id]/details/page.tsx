@@ -177,6 +177,8 @@ export default async function OrderDetailsPage({ params }: OrderDetailsPageProps
           <OrderCustomerCard
             customer={order.customer}
             shipping={order.shipping}
+            trade={order.trade}
+            tradeHref={order.trade?.accountId ? `/trade-accounts/${order.trade.accountId}` : null}
             actions={
               isEditable && (
                 <>

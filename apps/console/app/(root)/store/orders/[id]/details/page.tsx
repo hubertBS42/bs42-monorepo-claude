@@ -195,6 +195,7 @@ export default async function StoreOrderDetailsPage({ params }: OrderDetailsPage
           <OrderCustomerCard
             customer={order.customer}
             shipping={order.shipping}
+            trade={order.trade}
             actions={
               isEditable && (
                 <>

@@ -180,6 +180,7 @@ export function toOrderDetailsBase(order: OrderWithDetails, lines: LineRow[], sh
     createdBy: staffName(order.createdBy),
     createdAt: order.createdAt,
     timeline: toOrderTimeline(order, showAmounts, new Set(lines.map((line) => line.id))),
+    trade: order.tradeCompanyName ? { accountId: order.tradeAccountId, companyName: order.tradeCompanyName, tin: order.tradeTin } : null,
     installation: order.installationStatus
       ? { status: order.installationStatus, date: order.installationDate?.toISOString().slice(0, 10) ?? null, leftGhs: installationLeftGhs(order.orderItems).toString() }
       : null,

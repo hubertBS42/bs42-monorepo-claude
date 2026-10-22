@@ -16,6 +16,8 @@ import {
   SpecType,
   Status,
   StockMovementReason,
+  BusinessType,
+  TradeAccountStatus,
 } from "@workspace/db/enums"
 import type { LucideIcon } from "lucide-react"
 import type { z } from "zod"
@@ -370,6 +372,8 @@ export interface OrdersParams extends PaginationParams {
   multiStore?: "true" | "false"
   // "true": only orders with items brought back; "false": only orders without
   returned?: "true" | "false"
+  // "true": only orders placed by a trade account; "false": only orders without
+  trade?: "true" | "false"
   // Plain yyyy-MM-dd days in the app's time zone, both inclusive
   placedStart?: string
   placedEnd?: string
@@ -380,6 +384,8 @@ export interface OrderListItem {
   id: string
   reference: string
   customerName: string
+  // The trade account's company, for its orders
+  tradeCompanyName: string | null
   status: OrderStatus
   paymentStatus: PaymentStatus
   shippingMethod: ShippingMethod
@@ -467,6 +473,8 @@ interface OrderDetailsBase {
   paymentAttempts: OrderPaymentAttempt[]
   // Null for an order without installation
   installation: OrderInstallation | null
+  // Placed by a trade account: the company and TIN copied onto the order, and the account (null if since deleted)
+  trade: { accountId: string | null; companyName: string; tin: string | null } | null
 }
 
 // One try at paying a storefront order on Paystack
@@ -788,4 +796,43 @@ export interface StockMovementItem {
 export interface StockHistoryData {
   listing: { id: string; productName: string; hasVariants: boolean; variants: SelectItem[] }
   movements: PaginatedResult<StockMovementItem>
+}
+
+// ============================================
+// TRADE ACCOUNTS
+// ============================================
+
+export interface TradeAccountsParams extends PaginationParams {
+  // Company name, registration number, TIN, or the customer's name or email
+  search?: string
+  status?: TradeAccountStatus
+  businessType?: BusinessType
+}
+
+export interface TradeAccountRow {
+  id: string
+  companyName: string
+  businessType: BusinessType
+  status: TradeAccountStatus
+  // A percentage; null until approved
+  discountPercent: string | null
+  customer: { name: string | null; email: string }
+  orderCount: number
+  createdAt: Date
+}
+
+export type TradeAccountsData = PaginatedResult<TradeAccountRow>
+
+export interface TradeAccountDetails extends TradeAccountRow {
+  registrationNumber: string
+  tin: string
+  phone: string
+  details: string | null
+  rejectionReason: string | null
+  reviewedBy: string | null
+  reviewedAt: Date | null
+  // Its orders' totals and discounts, cancelled ones left out (GHS strings)
+  ordersTotalGhs: string
+  discountGivenGhs: string
+  recentOrders: { id: string; reference: string; status: OrderStatus; paymentStatus: PaymentStatus; totalGhs: string; createdAt: Date }[]
 }

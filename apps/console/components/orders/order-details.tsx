@@ -1,5 +1,6 @@
 /* eslint-disable @next/next/no-img-element -- next/image would need the storage host in images.remotePatterns */
 import type { ReactNode } from "react"
+import Link from "next/link"
 import { Badge } from "@workspace/ui/components/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@workspace/ui/components/card"
 import { Separator } from "@workspace/ui/components/separator"
@@ -167,9 +168,12 @@ interface OrderCustomerCardProps {
   shipping: { name: string | null; phone: string | null; line1: string | null; line2: string | null; region: string | null; town: string | null } | null
   // Edit buttons, when the order can still be edited
   actions?: ReactNode
+  // Placed by a trade account; tradeHref links to the account on the platform's pages
+  trade?: { companyName: string; tin: string | null } | null
+  tradeHref?: string | null
 }
 
-export function OrderCustomerCard({ customer, shipping, actions }: OrderCustomerCardProps) {
+export function OrderCustomerCard({ customer, shipping, actions, trade, tradeHref }: OrderCustomerCardProps) {
   return (
     <Card>
       <CardHeader>
@@ -180,6 +184,18 @@ export function OrderCustomerCard({ customer, shipping, actions }: OrderCustomer
         <Detail label="Name">{customer.name}</Detail>
         <Detail label="Email">{customer.email ?? <span className="text-muted-foreground">Not given</span>}</Detail>
         <Detail label="Phone">{customer.phone ?? <span className="text-muted-foreground">Not given</span>}</Detail>
+        {trade && (
+          <Detail label="Trade account">
+            {tradeHref ? (
+              <Link href={tradeHref} className="hover:underline hover:underline-offset-4">
+                {trade.companyName}
+              </Link>
+            ) : (
+              trade.companyName
+            )}
+            {trade.tin && <span className="block text-xs font-normal text-muted-foreground">{`TIN ${trade.tin}`}</span>}
+          </Detail>
+        )}
         <Separator />
         {shipping ? (
           <>

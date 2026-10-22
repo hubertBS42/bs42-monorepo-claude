@@ -48,7 +48,7 @@ export const getOrders = async (filters: OrdersParams = {}): Promise<DataRespons
       return { success: false, error: paginationError }
     }
 
-    const { reference, customer, storeId, status, paymentStatus, multiStore, returned, placedStart, placedEnd, page = 1, pageSize = 10, sort, order } = filters
+    const { reference, customer, storeId, status, paymentStatus, multiStore, returned, trade, placedStart, placedEnd, page = 1, pageSize = 10, sort, order } = filters
 
     // The store id is a uuid column, so a malformed one (a hand-edited URL) would make Prisma throw: it matches nothing
     if (storeId && !z.uuid().safeParse(storeId).success) return { success: true, data: { data: [], total: 0, page, pageSize, totalPages: 0 } }
@@ -68,6 +68,7 @@ export const getOrders = async (filters: OrdersParams = {}): Promise<DataRespons
       ...(paymentStatus && { paymentStatus }),
       ...(multiStore && { id: multiStore === "true" ? { in: multiStoreIds } : { notIn: multiStoreIds } }),
       ...(returned && { returns: returned === "true" ? { some: {} } : { none: {} } }),
+      ...(trade && { tradeCompanyName: trade === "true" ? { not: null } : null }),
       ...((placedStart || placedEnd) && {
         createdAt: {
           ...(placedStart && { gte: dayStart(placedStart) }),
@@ -91,6 +92,7 @@ export const getOrders = async (filters: OrdersParams = {}): Promise<DataRespons
           id: true,
           reference: true,
           customerName: true,
+          tradeCompanyName: true,
           status: true,
           paymentStatus: true,
           shippingMethod: true,

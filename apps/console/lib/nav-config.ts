@@ -1,4 +1,4 @@
-import { Building2, LayoutDashboard, Settings, ShoppingBag, ShoppingCart, UsersIcon } from "lucide-react"
+import { Briefcase, Building2, LayoutDashboard, Settings, ShoppingBag, ShoppingCart, UsersIcon } from "lucide-react"
 import type { NavItem } from "@/types"
 
 /**
@@ -62,6 +62,13 @@ export const navConfig: NavItem[] = [
     icon: ShoppingCart,
     group: "main",
     order: 5,
+  },
+  {
+    url: "/trade-accounts",
+    title: "Trade Accounts",
+    icon: Briefcase,
+    group: "main",
+    order: 6,
   },
   {
     url: "/settings",

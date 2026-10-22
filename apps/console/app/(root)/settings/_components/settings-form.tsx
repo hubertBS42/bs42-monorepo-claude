@@ -41,6 +41,7 @@ export default function SettingsForm({ settings, version }: { settings: AppSetti
     notifyRateFetchFailure: settings.notifyRateFetchFailure,
     notifyStoreRefunds: settings.notifyStoreRefunds,
     notifyLowRatings: settings.notifyLowRatings,
+    notifyTradeApplications: settings.notifyTradeApplications,
     version,
   }
 
@@ -218,6 +219,14 @@ export default function SettingsForm({ settings, version }: { settings: AppSetti
                         disabled={isPending}
                       />
                       <SwitchField control={form.control} name="notifyLowRatings" label="Low ratings" description="When a customer posts a 1 or 2 star review" variant="card" disabled={isPending} />
+                      <SwitchField
+                        control={form.control}
+                        name="notifyTradeApplications"
+                        label="Trade account applications"
+                        description="When a business applies for a trade account on the storefront"
+                        variant="card"
+                        disabled={isPending}
+                      />
                       <SwitchField
                         control={form.control}
                         name="notifyRateFetchFailure"

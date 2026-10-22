@@ -29,6 +29,12 @@ export const columns: ColumnDef<OrderListItem, unknown>[] = [
   {
     accessorKey: "customerName",
     header: () => <ColumnHeader title="Customer" />,
+    cell: ({ row }) => (
+      <div className="grid gap-y-0.5">
+        <span>{row.original.customerName}</span>
+        {row.original.tradeCompanyName && <span className="text-xs text-muted-foreground">{`Trade: ${row.original.tradeCompanyName}`}</span>}
+      </div>
+    ),
   },
   {
     accessorKey: "storeNames",

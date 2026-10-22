@@ -41,6 +41,16 @@ export function getOrderFilters(stores: { label: string; value: string }[]): Fil
         { label: "Nothing returned", value: "false" },
       ],
     },
+    {
+      key: "trade",
+      label: "Trade",
+      type: "boolean",
+      placeholder: "Any",
+      options: [
+        { label: "Trade orders", value: "true" },
+        { label: "Not trade", value: "false" },
+      ],
+    },
     { key: "placed", label: "Placed", type: "dateRange" },
   ]
 }
