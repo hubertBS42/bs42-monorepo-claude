@@ -48,6 +48,8 @@ const listingSelect = {
       images: true,
       condition: true,
       createdAt: true,
+      rating: true,
+      numReviews: true,
       hasVariants: true,
       categoryId: true,
       brand: { select: { id: true, name: true, slug: true } },
@@ -192,6 +194,8 @@ export const loadProductCards = unstable_cache(
           image: product.images[0] ?? null,
           isFeatured: rows.some((row) => row.isFeatured && offers.some((offer) => offer.listingId === row.id)),
           createdAt: product.createdAt.getTime(),
+          rating: product.rating.toFixed(2),
+          numReviews: product.numReviews,
           specs: [...product.specValues]
             .sort((a, b) => depth(a.spec.categoryId) - depth(b.spec.categoryId) || a.spec.position - b.spec.position || a.spec.name.localeCompare(b.spec.name))
             .flatMap((row) => toSpecValue(row) ?? []),

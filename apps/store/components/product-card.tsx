@@ -7,6 +7,7 @@ import { cn } from "@workspace/ui/lib/utils"
 
 import { AddToBasketButton } from "@/components/basket/add-to-basket"
 import { OfferPrice, OfferStock } from "@/components/offer-details"
+import { RatingLine } from "@/components/reviews/stars"
 import { useOfferPicker } from "@/components/use-offer-picker"
 import { CONDITION_LABELS } from "@/lib/conditions"
 import { isInStock, type PricedCard } from "@/lib/product-cards"
@@ -52,6 +53,7 @@ export function ProductCard({ card }: { card: PricedCard }) {
             {card.name}
           </Link>
         </h3>
+        {card.numReviews > 0 && <RatingLine rating={card.rating} count={card.numReviews} className="text-xs" />}
         {specs && <p className="line-clamp-1 text-xs text-muted-foreground">{specs}</p>}
 
         {options.map((option) => (

@@ -49,6 +49,9 @@ export interface ProductCardData {
   image: string | null
   isFeatured: boolean
   createdAt: number
+  // Its published reviews' average (0.00 without any) and count
+  rating: string
+  numReviews: number
   // The product's spec values, its category's top one's specs first
   specs: SpecValue[]
   // Only the values some offer has

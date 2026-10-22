@@ -13,9 +13,15 @@ import { isInStock, type PricedCard } from "@/lib/product-cards"
 
 export type SearchParams = Record<string, SearchParamValue>
 
-export const SORTS = ["featured", "price-asc", "price-desc", "newest"] as const
+export const SORTS = ["featured", "price-asc", "price-desc", "newest", "top-rated"] as const
 export type Sort = (typeof SORTS)[number]
-export const SORT_LABELS: Record<Sort, string> = { featured: "Featured", "price-asc": "Price: low to high", "price-desc": "Price: high to low", newest: "Newest" }
+export const SORT_LABELS: Record<Sort, string> = {
+  featured: "Featured",
+  "price-asc": "Price: low to high",
+  "price-desc": "Price: high to low",
+  newest: "Newest",
+  "top-rated": "Top rated",
+}
 
 export const PAGE_SIZE = 24
 
@@ -170,6 +176,9 @@ function compareCards(sort: Sort) {
       return (a: PricedCard, b: PricedCard) => price(b).comparedTo(price(a)) || byName(a, b)
     case "newest":
       return (a: PricedCard, b: PricedCard) => b.createdAt - a.createdAt || byName(a, b)
+    case "top-rated":
+      // Ratings are two-place averages, so comparing them as numbers is exact; then the more reviewed first
+      return (a: PricedCard, b: PricedCard) => Number(b.rating) - Number(a.rating) || b.numReviews - a.numReviews || byName(a, b)
   }
 }
 

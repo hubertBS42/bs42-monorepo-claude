@@ -2,11 +2,12 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Mail, MapPin, Package } from "lucide-react"
+import { Mail, MapPin, MessageSquareText, Package } from "lucide-react"
 import { cn } from "@workspace/ui/lib/utils"
 
 export const ACCOUNT_LINKS = [
   { href: "/account/orders", label: "My orders", icon: Package },
+  { href: "/account/reviews", label: "Reviews", icon: MessageSquareText },
   { href: "/account/addresses", label: "Addresses", icon: MapPin },
   { href: "/account/email-preferences", label: "Email preferences", icon: Mail },
 ]

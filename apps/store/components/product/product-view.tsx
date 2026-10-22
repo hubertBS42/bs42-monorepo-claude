@@ -11,6 +11,7 @@ import { AddToBasketButton } from "@/components/basket/add-to-basket"
 import { QuantityStepper } from "@/components/basket/quantity-stepper"
 import { MAX_LINE_QUANTITY } from "@/lib/basket-limits"
 import { OfferPrice, OfferStock } from "@/components/offer-details"
+import { RatingLine } from "@/components/reviews/stars"
 import { useOfferPicker } from "@/components/use-offer-picker"
 import { CONDITION_LABELS } from "@/lib/conditions"
 import type { ProductDetails } from "@/lib/data/product-details"
@@ -113,6 +114,11 @@ export function ProductView({
               {card.brand.name}
             </Link>
             <h1 className="text-2xl font-bold tracking-tight md:text-3xl">{card.name}</h1>
+            {card.numReviews > 0 && (
+              <a href="#reviews" className="block w-fit rounded-sm hover:underline hover:underline-offset-4">
+                <RatingLine rating={card.rating} count={card.numReviews} />
+              </a>
+            )}
             <div className="flex flex-wrap items-center gap-2">
               {offer.price?.wasGhs && <Badge variant="destructive">Sale</Badge>}
               {card.condition !== "NEW" && <Badge variant="secondary">{CONDITION_LABELS[card.condition]}</Badge>}

@@ -1,10 +1,12 @@
 import { authURLs } from "@workspace/auth/constants"
 import type { Condition } from "@workspace/db/enums"
 
+import type { ProductReview } from "@/lib/data/reviews"
 import type { PricedCard } from "@/lib/product-cards"
 
 // schema.org data for search engines: a product's offers and the breadcrumb trail. Prices are what the page shows (GHS,
-// with tax when it's on); without a rate to sell at there are none, so offers are left out.
+// with tax when it's on); without a rate to sell at there are none, so offers are left out. Ratings and reviews are the
+// published ones the page shows.
 
 export const siteUrl = (path: string) => new URL(path, authURLs.store).toString()
 
@@ -22,7 +24,15 @@ function availability(card: PricedCard) {
   return "https://schema.org/OutOfStock"
 }
 
-export function productJsonLd(card: PricedCard, { description, images, sku }: { description: string | null; images: string[]; sku: string | null }) {
+interface ProductExtras {
+  description: string | null
+  images: string[]
+  sku: string | null
+  rating: { average: string; count: number } | null
+  reviews: ProductReview[]
+}
+
+export function productJsonLd(card: PricedCard, { description, images, sku, rating, reviews }: ProductExtras) {
   const url = siteUrl(`/p/${card.slug}`)
   const prices = card.offers.flatMap((offer) => (offer.price ? [offer.price.ghs] : [])).sort((a, b) => Number(a) - Number(b))
   const common = { priceCurrency: "GHS", availability: availability(card), itemCondition: CONDITIONS[card.condition], url }
@@ -43,6 +53,17 @@ export function productJsonLd(card: PricedCard, { description, images, sku }: { 
     ...(sku && { sku }),
     brand: { "@type": "Brand", name: card.brand.name },
     ...(offers && { offers }),
+    ...(rating && { aggregateRating: { "@type": "AggregateRating", ratingValue: rating.average, reviewCount: rating.count, bestRating: 5, worstRating: 1 } }),
+    ...(reviews.length && {
+      review: reviews.map((review) => ({
+        "@type": "Review",
+        name: review.title,
+        reviewBody: review.body,
+        datePublished: review.createdAt.slice(0, 10),
+        author: { "@type": "Person", name: review.author },
+        reviewRating: { "@type": "Rating", ratingValue: review.rating, bestRating: 5, worstRating: 1 },
+      })),
+    }),
   }
 }
 
