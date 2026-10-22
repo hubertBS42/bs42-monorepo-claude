@@ -28,6 +28,8 @@
     "./customer-orders": "./src/customer-orders.ts",
     "./delivery-rates": "./src/delivery-rates.ts",
     "./exchange-rates": "./src/exchange-rates.ts",
+    "./installation": "./src/installation.ts",
+    "./installation-areas": "./src/installation-areas.ts",
     "./notifications": "./src/notifications.ts",
     "./online-payments": "./src/online-payments.ts",
     "./order-emails": "./src/order-emails.ts",

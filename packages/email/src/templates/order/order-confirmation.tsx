@@ -8,6 +8,7 @@ interface OrderConfirmationProps {
   items: OrderSummaryItem[]
   subtotalGhs: number
   shippingGhs: number
+  installationGhs?: number
   taxGhs: number
   discountAmountGhs: number | null
   discountType: string | null
@@ -30,6 +31,7 @@ export const OrderConfirmation = ({
   items,
   subtotalGhs,
   shippingGhs,
+  installationGhs,
   taxGhs,
   discountAmountGhs,
   discountType,
@@ -54,6 +56,7 @@ export const OrderConfirmation = ({
         items={items}
         subtotalGhs={subtotalGhs}
         shippingGhs={shippingGhs}
+        installationGhs={installationGhs}
         taxGhs={taxGhs}
         discountAmountGhs={discountAmountGhs}
         discountType={discountType}
@@ -71,6 +74,8 @@ export const OrderConfirmation = ({
           Payment: {paymentMethod} ({paid ? "paid" : "due on delivery"})
         </Text>
       </Section>
+
+      {!!installationGhs && <Text className="mt-6 text-sm text-gray-500">Our installers will call you to arrange a day for the installation.</Text>}
 
       <Text className="mt-6 text-sm text-gray-500">We will notify you when your order status changes. If you have any questions, please contact us.</Text>
     </OrderLayout>

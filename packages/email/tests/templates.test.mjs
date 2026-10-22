@@ -6,6 +6,7 @@ import { OrderConfirmation } from "../dist/src/templates/order/order-confirmatio
 import { OrderConfirmed } from "../dist/src/templates/order/order-confirmed.js"
 import { OrderCancelled } from "../dist/src/templates/order/order-cancelled.js"
 import { OrderDelivered } from "../dist/src/templates/order/order-delivered.js"
+import { OrderInstallationBooked } from "../dist/src/templates/order/order-installation-booked.js"
 import { OrderPaymentReceived } from "../dist/src/templates/order/order-payment-received.js"
 import { OrderRefunded } from "../dist/src/templates/order/order-refunded.js"
 import { OrderReturned } from "../dist/src/templates/order/order-returned.js"
@@ -66,6 +67,27 @@ const templates = [
     "ORDER-123",
   ],
   ["order confirmed", OrderConfirmed({ ...orderDetails }), "ORDER-123"],
+  [
+    "order confirmation with installation",
+    OrderConfirmation({
+      ...orderDetails,
+      items: [{ productName: "Dome Camera", variantDescription: null, quantity: 2, totalPriceGhs: 300, installed: true }],
+      subtotalGhs: 300,
+      shippingGhs: 20,
+      installationGhs: 200,
+      taxGhs: 0,
+      discountAmountGhs: null,
+      discountType: null,
+      discountValue: null,
+      discountReason: null,
+      totalGhs: 520,
+      shippingMethod: "DELIVERY",
+      paymentMethod: "Card",
+      paid: true,
+    }),
+    "Installation",
+  ],
+  ["installation booked", OrderInstallationBooked({ ...orderDetails, date: "Friday 23 October", note: "The installer will call first", appName: "BS42" }), "Friday 23 October"],
   [
     "order shipped",
     OrderShipped({

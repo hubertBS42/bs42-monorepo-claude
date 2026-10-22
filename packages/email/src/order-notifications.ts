@@ -9,6 +9,7 @@ import { OrderRefunded } from "./templates/order/order-refunded.js"
 import { OrderPaymentReceived } from "./templates/order/order-payment-received.js"
 import { OrderReturned, type ReturnedItem } from "./templates/order/order-returned.js"
 import { OrderReviewRequest, type ReviewRequestItem } from "./templates/order/order-review-request.js"
+import { OrderInstallationBooked } from "./templates/order/order-installation-booked.js"
 import type { OrderSummaryItem } from "./templates/order/components/order-summary.js"
 
 export interface BaseOrderEmail {
@@ -25,6 +26,7 @@ export interface OrderConfirmationEmail extends BaseOrderEmail {
   items: OrderSummaryItem[]
   subtotalGhs: number
   shippingGhs: number
+  installationGhs?: number
   taxGhs: number
   discountAmountGhs: number | null
   discountType: string | null
@@ -49,6 +51,7 @@ export async function sendOrderConfirmationEmail(data: OrderConfirmationEmail) {
       items: data.items,
       subtotalGhs: data.subtotalGhs,
       shippingGhs: data.shippingGhs,
+      installationGhs: data.installationGhs,
       taxGhs: data.taxGhs,
       discountAmountGhs: data.discountAmountGhs,
       discountType: data.discountType,
@@ -73,6 +76,23 @@ export async function sendOrderConfirmedEmail(data: BaseOrderEmail & { note?: st
     reactTemplate: OrderConfirmed({
       customerName: data.customerName,
       reference: data.reference,
+      note: data.note,
+      appName: data.appName,
+      logoUrl: data.logoUrl,
+    }),
+  })
+}
+
+// date is the booked day as the customer reads it ("Friday 23 October"); note is what staff told them with it
+export async function sendOrderInstallationBookedEmail(data: BaseOrderEmail & { date: string; note?: string | null }) {
+  return sendEmail({
+    to: data.to,
+    fromName: data.appName,
+    subject: `Installation Booked — ${data.reference}`,
+    reactTemplate: OrderInstallationBooked({
+      customerName: data.customerName,
+      reference: data.reference,
+      date: data.date,
       note: data.note,
       appName: data.appName,
       logoUrl: data.logoUrl,

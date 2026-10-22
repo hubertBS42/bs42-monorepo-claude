@@ -8,12 +8,16 @@ export interface OrderSummaryItem {
   variantDescription: string | null
   quantity: number
   totalPriceGhs: number
+  /** Installed by our installers: its fee is in installationGhs */
+  installed?: boolean
 }
 
 interface OrderSummaryProps {
   items: OrderSummaryItem[]
   subtotalGhs: number
   shippingGhs: number
+  /** Installation of the items marked installed; 0 or missing without any */
+  installationGhs?: number
   taxGhs: number
   discountAmountGhs: number | null
   totalGhs: number
@@ -24,7 +28,7 @@ interface OrderSummaryProps {
 
 const fmt = formatCurrencyGhs
 
-export const OrderSummary = ({ items, subtotalGhs, shippingGhs, taxGhs, discountAmountGhs, totalGhs, discountReason, discountType, discountValue }: OrderSummaryProps) => {
+export const OrderSummary = ({ items, subtotalGhs, shippingGhs, installationGhs = 0, taxGhs, discountAmountGhs, totalGhs, discountReason, discountType, discountValue }: OrderSummaryProps) => {
   return (
     <Section>
       <Text className="mb-2 font-semibold text-[#18181b]">Order Items</Text>
@@ -34,7 +38,10 @@ export const OrderSummary = ({ items, subtotalGhs, shippingGhs, taxGhs, discount
           <Column className="flex-1">
             <Text className="m-0 text-sm text-gray-900">{item.productName}</Text>
             {item.variantDescription && <Text className="m-0 text-xs text-[#71717a]">{item.variantDescription}</Text>}
-            <Text className="m-0 text-xs text-[#71717a]">Qty: {item.quantity}</Text>
+            <Text className="m-0 text-xs text-[#71717a]">
+              Qty: {item.quantity}
+              {item.installed && " · with installation"}
+            </Text>
           </Column>
           <Column className="text-right">
             <Text className="m-0 text-sm text-gray-900">{fmt(item.totalPriceGhs)}</Text>
@@ -62,6 +69,17 @@ export const OrderSummary = ({ items, subtotalGhs, shippingGhs, taxGhs, discount
           <Text className="m-0 text-sm text-gray-900">{fmt(shippingGhs)}</Text>
         </Column>
       </Row>
+
+      {installationGhs > 0 && (
+        <Row className="mb-1">
+          <Column className="flex-1">
+            <Text className="m-0 text-sm text-[#71717a]">Installation</Text>
+          </Column>
+          <Column className="text-right">
+            <Text className="m-0 text-sm text-gray-900">{fmt(installationGhs)}</Text>
+          </Column>
+        </Row>
+      )}
 
       {taxGhs > 0 && (
         <Row className="mb-1">

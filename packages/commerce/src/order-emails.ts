@@ -9,6 +9,7 @@ import {
   sendOrderConfirmationEmail,
   sendOrderConfirmedEmail,
   sendOrderDeliveredEmail,
+  sendOrderInstallationBookedEmail,
   sendOrderPaymentReceivedEmail,
   sendOrderRefundedEmail,
   sendOrderReturnedEmail,
@@ -20,6 +21,7 @@ import {
   type ReturnedItem,
   type ReviewRequestItem,
 } from "@workspace/email"
+import { formatDate } from "@workspace/utils/date"
 import { hasBeenPaid, PAYMENT_METHOD_LABELS } from "./order-status"
 import { unreviewedOrderProducts } from "./reviews"
 
@@ -27,9 +29,10 @@ import { unreviewedOrderProducts } from "./reviews"
 // email never holds up or fails the change.
 
 // UNPAID_CANCELLED: a storefront order cancelled by the unpaid-order job, which wasn't charged. COMPLETED asks for
-// reviews of what the customer hasn't reviewed yet.
+// reviews of what the customer hasn't reviewed yet. INSTALLATION_BOOKED: the day the installers come, with staff's note.
 export type OrderEmailEvent =
   | "CREATED"
+  | "INSTALLATION_BOOKED"
   | "PAYMENT_RECEIVED"
   | "REFUNDED"
   | "RETURNED"
@@ -53,6 +56,8 @@ const orderEmailSelect = {
   paymentStatus: true,
   subtotalGhs: true,
   shippingGhs: true,
+  installationGhs: true,
+  installationDate: true,
   taxGhs: true,
   totalGhs: true,
   discountType: true,
@@ -60,7 +65,7 @@ const orderEmailSelect = {
   discountAmountGhs: true,
   discountReason: true,
   user: { select: { getOrderEmails: true } },
-  orderItems: { orderBy: { id: "asc" }, select: { productName: true, variantDescription: true, quantity: true, totalPriceGhs: true } },
+  orderItems: { orderBy: { id: "asc" }, select: { productName: true, variantDescription: true, quantity: true, totalPriceGhs: true, installationUnitGhs: true } },
 } satisfies Prisma.OrderSelect
 
 export type OrderForEmail = Prisma.OrderGetPayload<{ select: typeof orderEmailSelect }>
@@ -75,6 +80,7 @@ export type OrderEmail =
   | { kind: "CANCELLED"; data: BaseOrderEmail & { cancellationReason: string; totalGhs: number } }
   | { kind: "UNPAID_CANCELLED"; data: BaseOrderEmail & { paymentMinutes: number; url: string } }
   | { kind: "REVIEW_REQUEST"; data: BaseOrderEmail & { items: ReviewRequestItem[] } }
+  | { kind: "INSTALLATION_BOOKED"; data: BaseOrderEmail & { date: string; note: string | null } }
 
 // The stored amounts as they are, for display: nothing here recalculates them
 const amount = (value: Prisma.Decimal) => Number(value.toFixed(2))
@@ -112,9 +118,16 @@ export function buildOrderEmail(
         kind: "CREATED",
         data: {
           ...base,
-          items: order.orderItems.map((item) => ({ productName: item.productName, variantDescription: item.variantDescription, quantity: item.quantity, totalPriceGhs: amount(item.totalPriceGhs) })),
+          items: order.orderItems.map((item) => ({
+            productName: item.productName,
+            variantDescription: item.variantDescription,
+            quantity: item.quantity,
+            totalPriceGhs: amount(item.totalPriceGhs),
+            installed: !!item.installationUnitGhs,
+          })),
           subtotalGhs: amount(order.subtotalGhs),
           shippingGhs: amount(order.shippingGhs),
+          installationGhs: amount(order.installationGhs),
           taxGhs: amount(order.taxGhs),
           // A zero discount isn't one
           discountAmountGhs: order.discountAmountGhs && order.discountAmountGhs.gt(0) ? amount(order.discountAmountGhs) : null,
@@ -146,6 +159,9 @@ export function buildOrderEmail(
       return isDelivery ? { kind: "DELIVERED", data: { ...base, note } } : null
     case "UNPAID_CANCELLED":
       return orderUrl && paymentMinutes ? { kind: "UNPAID_CANCELLED", data: { ...base, paymentMinutes, url: orderUrl } } : null
+    case "INSTALLATION_BOOKED":
+      // A @db.Date comes back as midnight UTC, which formatDate's zone (Accra's) reads as the same day
+      return order.installationDate ? { kind: "INSTALLATION_BOOKED", data: { ...base, date: formatDate(order.installationDate, "EEEE d MMMM"), note } } : null
     case OrderStatus.COMPLETED:
       // Nothing left to review, nothing to ask
       return reviewItems.length > 0 ? { kind: "REVIEW_REQUEST", data: { ...base, items: reviewItems } } : null
@@ -176,6 +192,8 @@ function deliver(email: OrderEmail) {
       return sendOrderUnpaidCancelledEmail(email.data)
     case "REVIEW_REQUEST":
       return sendOrderReviewRequestEmail(email.data)
+    case "INSTALLATION_BOOKED":
+      return sendOrderInstallationBookedEmail(email.data)
   }
 }
 

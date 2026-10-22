@@ -2,8 +2,9 @@ import "server-only"
 
 import type { prisma } from "@workspace/db"
 import { Prisma } from "@workspace/db/client"
-import { OrderStatus, PaymentMethod, PaymentStatus, ShippingMethod, Status, StockMovementReason } from "@workspace/db/enums"
+import { InstallationStatus, OrderStatus, PaymentMethod, PaymentStatus, ShippingMethod, Status, StockMovementReason } from "@workspace/db/enums"
 import { formatDate } from "@workspace/utils/date"
+import { loadInstallationFees } from "./installation"
 import type { StockAlert } from "./notifications"
 import type { PricedOrder } from "./pricing"
 import { addStock, recordStockMovements } from "./stock-movements"
@@ -21,15 +22,24 @@ export interface OrderItemInput {
   listingId: string
   listingVariantId: string | null
   quantity: number
+  // Installation of every unit, at the product's fee (storefront orders only)
+  installation?: boolean
 }
 
-// A line that can't be sold as asked: unavailable, or not enough stock. `item` names it for the message.
+const ITEM_MESSAGES = {
+  ITEM_UNAVAILABLE: (item: string) => `${item} is no longer on sale.`,
+  INSUFFICIENT_STOCK: (item: string) => `There isn't enough stock of ${item}.`,
+  NO_INSTALLATION: (item: string) => `Installation is no longer offered for ${item}.`,
+}
+
+// A line that can't be sold as asked: unavailable, not enough stock, or installation no longer offered. `item` names
+// it for the message.
 export class OrderItemError extends Error {
-  readonly code: "ITEM_UNAVAILABLE" | "INSUFFICIENT_STOCK"
+  readonly code: keyof typeof ITEM_MESSAGES
   readonly item: string
 
-  constructor(code: "ITEM_UNAVAILABLE" | "INSUFFICIENT_STOCK", item: string) {
-    super(code === "ITEM_UNAVAILABLE" ? `${item} is no longer on sale.` : `There isn't enough stock of ${item}.`)
+  constructor(code: keyof typeof ITEM_MESSAGES, item: string) {
+    super(ITEM_MESSAGES[code](item))
     this.code = code
     this.item = item
   }
@@ -47,6 +57,8 @@ export interface ResolvedLine {
   listingVariantId: string | null
   quantity: number
   unitPriceUsd: Prisma.Decimal
+  // Installing one unit, in GHS; null without installation
+  installationUnitGhs: Prisma.Decimal | null
   // What the stock check and reservation need. The threshold is the listing's: saving a listing copies it to its variants.
   stock: number
   trackInventory: boolean
@@ -66,7 +78,8 @@ export interface ResolvedLine {
 
 // Looks up each line in the published listings, at their stores' prices: only the given store's for staff, or any
 // store's (null) for the storefront, which also needs customers to be able to see it (visibility.ts: brand, category
-// and store too). Throws OrderItemError for a line that isn't on sale; stock is only checked when it's reserved.
+// and store too). Throws OrderItemError for a line that isn't on sale, or whose installation no longer is; stock is only
+// checked when it's reserved.
 export async function resolveOrderLines(client: Client, storeId: string | null, items: OrderItemInput[]): Promise<ResolvedLine[]> {
   // One after the other: a transaction has one connection
   const visibleCategoryIds = storeId ? null : await loadVisibleCategoryIds(client)
@@ -106,6 +119,8 @@ export async function resolveOrderLines(client: Client, storeId: string | null, 
     },
   })
   const byId = new Map(listings.map((listing) => [listing.id, listing]))
+  const installed = items.filter((item) => item.installation).flatMap((item) => byId.get(item.listingId)?.product.id ?? [])
+  const fees = await loadInstallationFees(client, [...new Set(installed)])
 
   return items.map((item) => {
     const listing = byId.get(item.listingId)
@@ -129,12 +144,16 @@ export async function resolveOrderLines(client: Client, storeId: string | null, 
     const unitPriceUsd = row?.sellPrice ?? listing.sellPrice
     if (unitPriceUsd.lte(0)) throw new OrderItemError("ITEM_UNAVAILABLE", label)
 
+    const installationUnitGhs = item.installation ? (fees.get(product.id) ?? null) : null
+    if (item.installation && !installationUnitGhs) throw new OrderItemError("NO_INSTALLATION", label)
+
     return {
       storeId: listing.organizationId,
       listingId: listing.id,
       listingVariantId: row?.id ?? null,
       quantity: item.quantity,
       unitPriceUsd,
+      installationUnitGhs,
       stock: row?.stock ?? listing.stock,
       trackInventory: row?.trackInventory ?? listing.trackInventory,
       lowStockThreshold: listing.lowStockThreshold,
@@ -223,6 +242,10 @@ export async function createOrder(tx: Tx, order: NewOrder) {
       subtotalUsd: priced.subtotalUsd,
       subtotalGhs: priced.subtotalGhs,
       shippingGhs: priced.shippingGhs,
+      installationGhs: priced.installationGhs,
+      // Arranged by the platform's staff once it's paid
+      installationStatus: priced.installationGhs.gt(0) ? InstallationStatus.TO_ARRANGE : null,
+      installationHistory: priced.installationGhs.gt(0) ? { create: { status: InstallationStatus.TO_ARRANGE, changedById: order.createdById } } : undefined,
       taxGhs: priced.taxGhs,
       taxRate: priced.taxRate,
       totalGhs: priced.totalGhs,
@@ -249,6 +272,9 @@ export async function createOrder(tx: Tx, order: NewOrder) {
             totalPriceGhs: amounts.totalPriceGhs,
             discountGhs: amounts.discountGhs,
             taxGhs: amounts.taxGhs,
+            installationUnitGhs: amounts.installationUnitGhs,
+            installationTotalGhs: amounts.installationTotalGhs,
+            installationTaxGhs: amounts.installationTaxGhs,
             productName: line.productName,
             productSlug: line.productSlug,
             productImage: line.productImage,
@@ -304,6 +330,13 @@ export async function changeOrderStatus(tx: Tx, { orderId, from, to, note, chang
   if (count === 0) throw new StatusChangedError()
 
   await tx.orderStatusHistory.create({ data: { orderId, status: to, note, changedById } })
+
+  // Nobody installs what a cancelled order never delivers. One that was done stays done.
+  if (to === OrderStatus.CANCELLED) {
+    const installation = { id: orderId, installationStatus: { in: [InstallationStatus.TO_ARRANGE, InstallationStatus.BOOKED] } }
+    const { count: cancelled } = await tx.order.updateMany({ where: installation, data: { installationStatus: InstallationStatus.CANCELLED } })
+    if (cancelled) await tx.orderInstallationHistory.create({ data: { orderId, status: InstallationStatus.CANCELLED, note: "The order was cancelled", changedById } })
+  }
 
   // Stock was reserved when the order was made, for the rows that track it, so a cancellation puts it back
   if (to === OrderStatus.CANCELLED) {

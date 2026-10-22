@@ -14,6 +14,8 @@ const toCents = (value: Decimal) => value.toDecimalPlaces(2, Decimal.ROUND_HALF_
 export interface PricingLine {
   unitPriceUsd: Decimal
   quantity: number
+  // Installing one unit, in GHS: every unit on the line is installed. Null or left out: no installation.
+  installationUnitGhs?: Decimal | null
 }
 
 export interface PricingInput {
@@ -34,6 +36,9 @@ export interface PricedLine {
   totalPriceGhs: Decimal
   discountGhs: Decimal
   taxGhs: Decimal
+  installationUnitGhs: Decimal | null
+  installationTotalGhs: Decimal
+  installationTaxGhs: Decimal
 }
 
 export interface PricedOrder {
@@ -43,7 +48,10 @@ export interface PricedOrder {
   // Null without a discount
   discountAmountGhs: Decimal | null
   shippingGhs: Decimal
+  // The lines' installationTotalGhs
+  installationGhs: Decimal
   taxRate: Decimal
+  // The lines' taxGhs and installationTaxGhs, and the shipping's tax
   taxGhs: Decimal
   totalGhs: Decimal
 }
@@ -61,10 +69,17 @@ function splitDiscount(amount: Decimal, totals: Decimal[], subtotal: Decimal) {
 export function priceOrder({ lines, exchangeRate, shippingGhs, discount, tax }: PricingInput): PricedOrder {
   if (lines.length === 0) throw new Error("An order needs at least one line")
 
-  const priced = lines.map(({ unitPriceUsd, quantity }) => {
+  const priced = lines.map(({ unitPriceUsd, quantity, installationUnitGhs }) => {
     const unitPriceGhs = toCents(unitPriceUsd.times(exchangeRate))
     // From the rounded unit price, so quantity × unit price is the line total on a receipt
-    return { unitPriceUsd, totalPriceUsd: unitPriceUsd.times(quantity), unitPriceGhs, totalPriceGhs: unitPriceGhs.times(quantity) }
+    return {
+      unitPriceUsd,
+      totalPriceUsd: unitPriceUsd.times(quantity),
+      unitPriceGhs,
+      totalPriceGhs: unitPriceGhs.times(quantity),
+      installationUnitGhs: installationUnitGhs ?? null,
+      installationTotalGhs: installationUnitGhs ? installationUnitGhs.times(quantity) : ZERO,
+    }
   })
 
   const subtotalUsd = sum(priced.map((line) => line.totalPriceUsd))
@@ -80,11 +95,17 @@ export function priceOrder({ lines, exchangeRate, shippingGhs, discount, tax }: 
   const taxRate = tax?.rate ?? ZERO
   const pricedLines = priced.map((line, index) => {
     const discountGhs = shares[index]!
-    // Tax is charged after the discount
-    return { ...line, discountGhs, taxGhs: toCents(line.totalPriceGhs.minus(discountGhs).times(taxRate)) }
+    // Tax is charged after the discount, which installation doesn't share
+    return {
+      ...line,
+      discountGhs,
+      taxGhs: toCents(line.totalPriceGhs.minus(discountGhs).times(taxRate)),
+      installationTaxGhs: toCents(line.installationTotalGhs.times(taxRate)),
+    }
   })
+  const installationGhs = sum(pricedLines.map((line) => line.installationTotalGhs))
   const shippingTax = tax?.onShipping ? toCents(shippingGhs.times(taxRate)) : ZERO
-  const taxGhs = sum(pricedLines.map((line) => line.taxGhs)).plus(shippingTax)
+  const taxGhs = sum(pricedLines.map((line) => line.taxGhs.plus(line.installationTaxGhs))).plus(shippingTax)
 
   return {
     lines: pricedLines,
@@ -92,9 +113,10 @@ export function priceOrder({ lines, exchangeRate, shippingGhs, discount, tax }: 
     subtotalGhs,
     discountAmountGhs: discount ? discountAmount : null,
     shippingGhs,
+    installationGhs,
     taxRate,
     taxGhs,
-    totalGhs: subtotalGhs.minus(discountAmount).plus(shippingGhs).plus(taxGhs),
+    totalGhs: subtotalGhs.minus(discountAmount).plus(shippingGhs).plus(installationGhs).plus(taxGhs),
   }
 }
 
@@ -102,7 +124,12 @@ export function priceOrder({ lines, exchangeRate, shippingGhs, discount, tax }: 
 // rounds a line of one with no discount, so the shown price is what the order charges.
 export function shelfPrice(unitPriceUsd: Decimal, exchangeRate: Decimal, taxRate: Decimal | null) {
   const exTaxGhs = toCents(unitPriceUsd.times(exchangeRate))
-  return { exTaxGhs, incTaxGhs: taxRate ? exTaxGhs.plus(toCents(exTaxGhs.times(taxRate))) : exTaxGhs }
+  return { exTaxGhs, incTaxGhs: withTax(exTaxGhs, taxRate) }
+}
+
+// A GHS amount with its tax, rounded as priceOrder rounds it: an installation fee as the storefront shows it
+export function withTax(exTaxGhs: Decimal, taxRate: Decimal | null) {
+  return taxRate ? exTaxGhs.plus(toCents(exTaxGhs.times(taxRate))) : exTaxGhs
 }
 
 // What returning some of a line's units is worth: their share of what the customer paid for the line, after its share

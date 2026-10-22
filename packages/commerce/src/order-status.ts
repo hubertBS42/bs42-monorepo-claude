@@ -1,4 +1,4 @@
-import { OrderStatus, PaymentMethod, PaymentStatus, ShippingMethod } from "@workspace/db/enums"
+import { InstallationStatus, OrderStatus, PaymentMethod, PaymentStatus, ShippingMethod } from "@workspace/db/enums"
 
 // Order fulfilment rules, shared by the actions and the pages. OrderStatus tracks fulfilment only;
 // PaymentStatus is the source of truth for money.
@@ -75,4 +75,31 @@ export function returnBlockedReason(order: { status: OrderStatus; paymentStatus:
 export function returnLabel(sold: number, returned: number) {
   if (returned === 0) return null
   return returned >= sold ? "Returned" : "Partly returned"
+}
+
+export const INSTALLATION_STATUS_LABELS: Record<InstallationStatus, string> = {
+  TO_ARRANGE: "To arrange",
+  BOOKED: "Booked",
+  DONE: "Done",
+  CANCELLED: "Cancelled",
+}
+
+// Booked can be booked again, for another day. Cancelling refunds the installation (the console's order-installation.ts).
+export function nextInstallationStatuses(status: InstallationStatus): InstallationStatus[] {
+  switch (status) {
+    case InstallationStatus.TO_ARRANGE:
+      return [InstallationStatus.BOOKED, InstallationStatus.CANCELLED]
+    case InstallationStatus.BOOKED:
+      return [InstallationStatus.BOOKED, InstallationStatus.DONE, InstallationStatus.CANCELLED]
+    case InstallationStatus.DONE:
+    case InstallationStatus.CANCELLED:
+      return []
+  }
+}
+
+// Why installation can't be booked or marked done yet, or null when it can: installers go out for paid orders only
+export function installationBlockedReason(order: { status: OrderStatus; paymentStatus: PaymentStatus }) {
+  if (order.status === OrderStatus.CANCELLED) return "The order was cancelled."
+  if (!hasBeenPaid(order.paymentStatus)) return "Arrange installation once the order has been paid."
+  return null
 }

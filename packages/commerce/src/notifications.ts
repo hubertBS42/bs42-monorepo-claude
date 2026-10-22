@@ -46,8 +46,9 @@ export async function notifyNewOrder(orderId: string, source: "storefront" | "st
         customerName: true,
         totalGhs: true,
         shippingMethod: true,
+        installationGhs: true,
         createdBy: { select: { name: true } },
-        orderItems: { select: { quantity: true, storeName: true } },
+        orderItems: { select: { quantity: true, storeName: true, installationUnitGhs: true } },
       },
     })
     if (!order) return
@@ -70,6 +71,15 @@ export async function notifyNewOrder(orderId: string, source: "storefront" | "st
           { label: "Items", value: String(itemCount) },
           { label: "Total", value: ghs(order.totalGhs) },
           { label: "Fulfilment", value: order.shippingMethod === "DELIVERY" ? "Delivery" : "Pickup" },
+          // The platform's installers are needed: someone has to call the customer
+          ...(order.installationGhs.gt(0)
+            ? [
+                {
+                  label: "Installation",
+                  value: `${order.orderItems.filter((item) => item.installationUnitGhs).reduce((sum, item) => sum + item.quantity, 0)} items, ${ghs(order.installationGhs)}: to arrange`,
+                },
+              ]
+            : []),
         ],
         action: { label: "View order", url: new URL(`/orders/${orderId}/details`, authURLs.console).toString() },
       },
