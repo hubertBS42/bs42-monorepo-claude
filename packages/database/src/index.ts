@@ -24,6 +24,8 @@ export const DEFAULT_APP_SETTINGS: AppSettingsData = {
   notifyStoreRefunds: true,
   notifyLowRatings: false,
   notifyTradeApplications: true,
+  notifyQuotes: false,
+  quoteValidityDays: 7,
 }
 
 export const resolveConsoleName = (s: AppSettingsData) => s.consoleName ?? s.storeName
@@ -51,6 +53,8 @@ export async function readAppSettings(): Promise<AppSettingsData> {
         notifyStoreRefunds: row.notifyStoreRefunds,
         notifyLowRatings: row.notifyLowRatings,
         notifyTradeApplications: row.notifyTradeApplications,
+        notifyQuotes: row.notifyQuotes,
+        quoteValidityDays: row.quoteValidityDays,
       }
     : DEFAULT_APP_SETTINGS
 }

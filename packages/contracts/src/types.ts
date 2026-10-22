@@ -54,4 +54,7 @@ export type AppSettingsData = {
   notifyStoreRefunds: boolean
   notifyLowRatings: boolean
   notifyTradeApplications: boolean
+  notifyQuotes: boolean
+  // How long a storefront quotation's prices hold
+  quoteValidityDays: number
 }
