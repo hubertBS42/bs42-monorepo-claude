@@ -26,6 +26,7 @@ export const DEFAULT_APP_SETTINGS: AppSettingsData = {
   notifyTradeApplications: true,
   notifyQuotes: false,
   quoteValidityDays: 7,
+  exchangeRateMarkupPercent: 0,
 }
 
 export const resolveConsoleName = (s: AppSettingsData) => s.consoleName ?? s.storeName
@@ -55,6 +56,7 @@ export async function readAppSettings(): Promise<AppSettingsData> {
         notifyTradeApplications: row.notifyTradeApplications,
         notifyQuotes: row.notifyQuotes,
         quoteValidityDays: row.quoteValidityDays,
+        exchangeRateMarkupPercent: row.exchangeRateMarkupPercent.toNumber(),
       }
     : DEFAULT_APP_SETTINGS
 }

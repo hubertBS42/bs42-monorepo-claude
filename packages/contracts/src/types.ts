@@ -57,4 +57,6 @@ export type AppSettingsData = {
   notifyQuotes: boolean
   // How long a storefront quotation's prices hold
   quoteValidityDays: number
+  // Added to the rate fetched each day, a percentage (2 is 2%), as a plain number like taxRate
+  exchangeRateMarkupPercent: number
 }

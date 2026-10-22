@@ -30,6 +30,12 @@ export const appSettingsSchema = z
     notifyTradeApplications: z.boolean(),
     notifyQuotes: z.boolean(),
     quoteValidityDays: z.number("Enter a number of days").int("Use whole days").min(1, "At least 1 day").max(90, "At most 90 days"),
+    // A percentage; 0 for none
+    exchangeRateMarkupPercent: z
+      .number("Enter a percentage")
+      .min(0, "At least 0%")
+      .max(10, "At most 10%")
+      .refine((value) => Math.abs(value * 100 - Math.round(value * 100)) < 1e-9, "Use at most 2 decimal places"),
     // The version the form was opened with (getAppSettingsVersion); not a field the user sees
     version: z.string(),
   })

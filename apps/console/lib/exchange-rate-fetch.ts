@@ -1,14 +1,14 @@
 import "server-only"
 
-import { prisma } from "@workspace/db"
+import { prisma, readAppSettings } from "@workspace/db"
 import { Prisma } from "@workspace/db/client"
 import { ExchangeRateSource } from "@workspace/db/enums"
 import { z } from "zod"
 import { getRateDate } from "@workspace/commerce/exchange-rates"
 
-// The daily USD→GHS rate from Open Exchange Rates (OPEN_EXCHANGE_RATES_API_KEY), run by POST /api/cron/exchange-rate.
-// It only fills in a day that has no rate yet: a rate a superAdmin set in Settings is never overwritten, and neither
-// is one that orders have used. In its own module (like listing-sync.ts) so it can run without a request.
+// The daily USD→GHS rate from Open Exchange Rates (OPEN_EXCHANGE_RATES_API_KEY), run by POST /api/cron/exchange-rate,
+// saved with the markup in Settings added (the market rate is kept beside it). It only fills in a day that has no rate
+// yet: a rate a superAdmin set in Settings is never overwritten, and neither is one that orders have used. In its own module (like listing-sync.ts) so it can run without a request.
 
 const API_URL = "https://openexchangerates.org/api/latest.json?symbols=GHS"
 const REQUEST_TIMEOUT_MS = 15_000
@@ -60,22 +60,27 @@ export async function fetchTodaysRate(now = new Date()): Promise<RateFetchResult
     const apiKey = process.env.OPEN_EXCHANGE_RATES_API_KEY
     if (!apiKey) return { status: "failed", date: day, error: "OPEN_EXCHANGE_RATES_API_KEY is not set." }
 
-    const rate = await requestRate(apiKey)
+    const marketRate = await requestRate(apiKey)
 
-    const previous = await prisma.exchangeRate.findFirst({ where: { from: "USD", to: "GHS", date: { lt: date } }, orderBy: { date: "desc" }, select: { rate: true } })
+    // Market against market: the markup, or a change to it, isn't a move in the rate
+    const previous = await prisma.exchangeRate.findFirst({ where: { from: "USD", to: "GHS", date: { lt: date } }, orderBy: { date: "desc" }, select: { rate: true, marketRate: true } })
     if (previous) {
-      const change = rate.minus(previous.rate).abs().dividedBy(previous.rate)
+      const previousMarket = previous.marketRate ?? previous.rate
+      const change = marketRate.minus(previousMarket).abs().dividedBy(previousMarket)
       if (change.gt(MAX_DAILY_CHANGE)) {
         return {
           status: "failed",
           date: day,
-          error: `The fetched rate (${rate}) is ${change.times(100).toFixed(1)}% away from the last one (${previous.rate}), so it wasn't saved. Check it and set today's rate in Settings.`,
+          error: `The fetched rate (${marketRate}) is ${change.times(100).toFixed(1)}% away from the last one (${previousMarket}), so it wasn't saved. Check it and set today's rate in Settings.`,
         }
       }
     }
 
+    const { exchangeRateMarkupPercent } = await readAppSettings()
+    const rate = marketRate.times(new Prisma.Decimal(exchangeRateMarkupPercent).dividedBy(100).plus(1)).toDecimalPlaces(6, Prisma.Decimal.ROUND_HALF_UP)
+
     try {
-      await prisma.exchangeRate.create({ data: { from: "USD", to: "GHS", date, rate, source: ExchangeRateSource.OPEN_EXCHANGE_RATES } })
+      await prisma.exchangeRate.create({ data: { from: "USD", to: "GHS", date, rate, marketRate, source: ExchangeRateSource.OPEN_EXCHANGE_RATES } })
     } catch (error) {
       // Someone set today's rate (or another run saved it) while this one was fetching: theirs stands
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {

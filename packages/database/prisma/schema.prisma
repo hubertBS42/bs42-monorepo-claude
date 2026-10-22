@@ -113,25 +113,28 @@ model AppSettings {
   taxShipping        Boolean @default(false)
 
   // Staff notifications, emailed to these addresses (not necessarily console users), one switch per event
-  notificationEmails      String[] @default([])
+  notificationEmails        String[] @default([])
   // Orders customers place on the storefront, and orders staff create in a store's workspace
-  notifyStorefrontOrders  Boolean  @default(true)
-  notifyStaffOrders       Boolean  @default(false)
+  notifyStorefrontOrders    Boolean  @default(true)
+  notifyStaffOrders         Boolean  @default(false)
   // A sale taking a listing (or variant) to its low-stock threshold, or to 0
-  notifyLowStock          Boolean  @default(true)
-  notifyOutOfStock        Boolean  @default(true)
+  notifyLowStock            Boolean  @default(true)
+  notifyOutOfStock          Boolean  @default(true)
   // The daily exchange-rate fetch failing (orders stop once the last rate is too old)
-  notifyRateFetchFailure  Boolean  @default(true)
+  notifyRateFetchFailure    Boolean  @default(true)
   // A store's owner or admin giving a refund (the platform keeps an eye on money going back)
-  notifyStoreRefunds      Boolean  @default(true)
+  notifyStoreRefunds        Boolean  @default(true)
   // A customer posting a 1 or 2 star review
-  notifyLowRatings        Boolean  @default(false)
+  notifyLowRatings          Boolean  @default(false)
   // A business applying for a trade account
-  notifyTradeApplications Boolean  @default(true)
+  notifyTradeApplications   Boolean  @default(true)
   // A customer making a quotation on the storefront
-  notifyQuotes            Boolean  @default(false)
+  notifyQuotes              Boolean  @default(false)
+  // Added to the rate fetched each day (0-10), to cover the cedi moving between quoting or pricing and paying.
+  // A rate set by hand is used as typed.
+  exchangeRateMarkupPercent Decimal  @default(0) @db.Decimal(4, 2)
   // How long a quotation's prices hold, in days
-  quoteValidityDays       Int      @default(7)
+  quoteValidityDays         Int      @default(7)
 
   updatedAt DateTime @updatedAt
 
@@ -273,17 +276,20 @@ model InstallationSettings {
 }
 
 model ExchangeRate {
-  id        String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  from      String // "USD"
-  to        String // "GHS"
-  // Units of `to` per 1 `from`: for USD→GHS, 15.5 means $1 = GH₵15.50
-  rate      Decimal            @db.Decimal(12, 6)
-  date      DateTime           @db.Date // the date this rate applies to
+  id         String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  from       String // "USD"
+  to         String // "GHS"
+  // Units of `to` per 1 `from`: for USD→GHS, 15.5 means $1 = GH₵15.50. What prices use: a fetched rate with the
+  // markup in Settings added (AppSettings.exchangeRateMarkupPercent), or one set by hand as typed.
+  rate       Decimal            @db.Decimal(12, 6)
+  // The market rate fetched, before the markup; null for a rate set by hand
+  marketRate Decimal?           @db.Decimal(12, 6)
+  date       DateTime           @db.Date // the date this rate applies to
   // Where it came from: the daily fetch, or a superAdmin in Settings (which overrides a fetched one)
-  source    ExchangeRateSource @default(MANUAL)
-  fetchedAt DateTime           @default(now())
-  orders    Order[]
-  quotes    Quote[]
+  source     ExchangeRateSource @default(MANUAL)
+  fetchedAt  DateTime           @default(now())
+  orders     Order[]
+  quotes     Quote[]
 
   // One rate per currency pair per day. It also serves lookups by pair, so no separate [from, to] index is needed.
   @@unique([from, to, date])
@@ -1022,7 +1028,7 @@ model OrderItem {
   storeListingVariantId String?              @db.Uuid
   storeListingVariant   StoreListingVariant? @relation(fields: [storeListingVariantId], references: [id], onDelete: Restrict)
 
-  quantity Int
+  quantity    Int
   // Whether the sale took stock off its listing (or variant), which tracked it then. A cancellation or a restocking
   // return puts back what was taken, whatever the row tracks by then.
   tracksStock Boolean

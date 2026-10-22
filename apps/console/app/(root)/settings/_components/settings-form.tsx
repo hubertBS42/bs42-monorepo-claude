@@ -44,6 +44,7 @@ export default function SettingsForm({ settings, version }: { settings: AppSetti
     notifyTradeApplications: settings.notifyTradeApplications,
     notifyQuotes: settings.notifyQuotes,
     quoteValidityDays: settings.quoteValidityDays,
+    exchangeRateMarkupPercent: settings.exchangeRateMarkupPercent,
     version,
   }
 
@@ -167,6 +168,21 @@ export default function SettingsForm({ settings, version }: { settings: AppSetti
                       disabled={isPending || !taxEnabled}
                     />
                   </FieldGroup>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Exchange Rate Markup</CardTitle>
+                  <CardDescription>
+                    Added to the rate fetched each day, to cover the cedi weakening between pricing and payment (quotations hold their prices for days). A rate set by hand below is used as typed. 0
+                    adds nothing.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="max-w-60">
+                    <NumberInputField control={form.control} name="exchangeRateMarkupPercent" label="Markup (%)" min={0} max={10} step={0.01} disabled={isPending} />
+                  </div>
                 </CardContent>
               </Card>
 

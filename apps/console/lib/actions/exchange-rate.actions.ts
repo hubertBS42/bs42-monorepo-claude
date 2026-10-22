@@ -31,7 +31,8 @@ export async function setTodaysExchangeRateAction(input: z.input<typeof exchange
     await prisma.exchangeRate.upsert({
       where: key,
       create: { from: "USD", to: "GHS", date, rate: parsed.data.rate, source: ExchangeRateSource.MANUAL },
-      update: { rate: parsed.data.rate, source: ExchangeRateSource.MANUAL, fetchedAt: new Date() },
+      // Typed by hand, so no market rate or markup
+      update: { rate: parsed.data.rate, marketRate: null, source: ExchangeRateSource.MANUAL, fetchedAt: new Date() },
     })
 
     return { success: true }

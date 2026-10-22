@@ -12,6 +12,8 @@ export interface ExchangeRateInfo {
   id: string
   // Units of GHS per 1 USD, as a string: Decimal can't be passed to client components
   rate: string
+  // The market rate fetched, before Settings' markup; null for a rate set by hand
+  marketRate: string | null
   // The day it applies to (yyyy-MM-dd)
   date: string
   // Fetched daily, or set by hand in Settings
@@ -29,7 +31,7 @@ export async function getLatestExchangeRate(): Promise<ExchangeRateInfo | null> 
   const latest = await prisma.exchangeRate.findFirst({
     where: { from: "USD", to: "GHS" },
     orderBy: { date: "desc" },
-    select: { id: true, rate: true, date: true, source: true },
+    select: { id: true, rate: true, marketRate: true, date: true, source: true },
   })
   if (!latest) return null
 
@@ -38,7 +40,7 @@ export async function getLatestExchangeRate(): Promise<ExchangeRateInfo | null> 
   const oldestUsable = new Date(`${getRateDate()}T00:00:00Z`)
   oldestUsable.setUTCDate(oldestUsable.getUTCDate() - EXCHANGE_RATE_MAX_AGE_DAYS)
 
-  return { id: latest.id, rate: latest.rate.toString(), date, source: latest.source, isStale: latest.date < oldestUsable }
+  return { id: latest.id, rate: latest.rate.toString(), marketRate: latest.marketRate?.toString() ?? null, date, source: latest.source, isStale: latest.date < oldestUsable }
 }
 
 export interface PricingContext {

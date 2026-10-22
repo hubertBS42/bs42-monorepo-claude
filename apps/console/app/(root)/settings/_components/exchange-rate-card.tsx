@@ -60,7 +60,7 @@ export default function ExchangeRateCard({ latest, maxAgeDays }: { latest: Excha
         >
           <p className={latest?.isStale || !latest ? "text-sm text-destructive" : "text-sm text-muted-foreground"}>
             {latest
-              ? `Latest: GH₵${Number(latest.rate)} per $1 for ${formatDate(`${latest.date}T12:00:00Z`, "MMM d, yyyy")}, ${latest.source === "MANUAL" ? "set by hand" : "fetched from Open Exchange Rates"}.${latest.isStale ? " It's too old for new orders." : ""}`
+              ? `Latest: GH₵${Number(latest.rate)} per $1 for ${formatDate(`${latest.date}T12:00:00Z`, "MMM d, yyyy")}, ${latest.source === "MANUAL" ? "set by hand" : `fetched from Open Exchange Rates${latest.marketRate && latest.marketRate !== latest.rate ? ` (market rate GH₵${Number(latest.marketRate)}, plus the markup)` : ""}`}.${latest.isStale ? " It's too old for new orders." : ""}`
               : "No rate has been set, so no order can be priced yet."}
           </p>
           <div className="flex items-end gap-2">

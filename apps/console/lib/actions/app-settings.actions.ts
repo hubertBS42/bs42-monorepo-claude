@@ -41,6 +41,7 @@ export async function saveAppSettings(input: unknown): Promise<SaveAppSettingsRe
     ...fields,
     // Decimal arithmetic, so 15% is stored as exactly 0.15. Turning tax off keeps the rate for next time.
     taxRate: new Prisma.Decimal(taxRatePercent === "" ? 0 : taxRatePercent).div(100),
+    exchangeRateMarkupPercent: new Prisma.Decimal(parsed.data.exchangeRateMarkupPercent.toFixed(2)),
     storeDescription: parsed.data.storeDescription || null,
     consoleName: parsed.data.consoleName || null,
     consoleDescription: parsed.data.consoleDescription || null,
