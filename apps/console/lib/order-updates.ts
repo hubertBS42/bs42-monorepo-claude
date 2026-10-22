@@ -33,8 +33,7 @@ export const orderForUpdateSelect = {
       quantity: true,
       storeListingId: true,
       storeListingVariantId: true,
-      storeListing: { select: { trackInventory: true } },
-      storeListingVariant: { select: { trackInventory: true } },
+      tracksStock: true,
     },
   },
 } satisfies Prisma.OrderSelect
@@ -63,15 +62,8 @@ export async function updateOrderStatus(order: OrderForUpdate, { orderId, status
     return { success: false, error: "Record the payment before completing the order.", code: "UNPAID" }
   }
 
-  const items = order.orderItems.map((item) => ({
-    quantity: item.quantity,
-    storeListingId: item.storeListingId,
-    storeListingVariantId: item.storeListingVariantId,
-    listingTracks: item.storeListing.trackInventory,
-    variantTracks: item.storeListingVariant?.trackInventory ?? false,
-  }))
   try {
-    await prisma.$transaction((tx) => changeOrderStatus(tx, { orderId, from: currentStatus, to: status, note: note || null, changedById, items }), TRANSACTION_OPTIONS)
+    await prisma.$transaction((tx) => changeOrderStatus(tx, { orderId, from: currentStatus, to: status, note: note || null, changedById, items: order.orderItems }), TRANSACTION_OPTIONS)
   } catch (error) {
     if (error instanceof StatusChangedError) return STATUS_CHANGED
     throw error

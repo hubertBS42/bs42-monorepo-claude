@@ -92,7 +92,7 @@ function ReturnFields({
               {line.tracksStock ? (
                 <SwitchField control={form.control} label="Put back in stock" name={`items.${index}.restock`} disabled={isPending} />
               ) : (
-                <p className="text-xs text-muted-foreground">This listing doesn&apos;t track stock.</p>
+                <p className="text-xs text-muted-foreground">Its listing didn&apos;t track stock when it sold, so there&apos;s none to put back.</p>
               )}
             </div>
           </div>

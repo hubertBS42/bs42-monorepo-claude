@@ -18,8 +18,6 @@ export const orderDetailsInclude = {
     orderBy: { id: "asc" },
     include: {
       returns: { select: { quantity: true } },
-      storeListing: { select: { trackInventory: true } },
-      storeListingVariant: { select: { trackInventory: true } },
     },
   },
   statusHistory: { orderBy: { createdAt: "desc" }, include: { changedBy: { select: { name: true } } } },
@@ -244,7 +242,7 @@ function toReturnableLines(order: OrderWithDetails): ReturnableLine[] {
         variantDescription: line.variantDescription,
         storeName: line.storeName,
         left,
-        tracksStock: line.storeListingVariantId ? (line.storeListingVariant?.trackInventory ?? false) : line.storeListing.trackInventory,
+        tracksStock: line.tracksStock,
         valueByQuantity: Array.from({ length: left + 1 }, (_, count) => returnedUnitsAmount(paid, line.quantity, returned, count).toString()),
       },
     ]

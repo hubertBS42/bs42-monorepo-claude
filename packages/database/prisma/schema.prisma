@@ -1023,6 +1023,9 @@ model OrderItem {
   storeListingVariant   StoreListingVariant? @relation(fields: [storeListingVariantId], references: [id], onDelete: Restrict)
 
   quantity Int
+  // Whether the sale took stock off its listing (or variant), which tracked it then. A cancellation or a restocking
+  // return puts back what was taken, whatever the row tracks by then.
+  tracksStock Boolean
 
   // Prices in USD, and in GHS at the order's exchange rate. Each GHS amount is rounded once, here,
   // and Order.subtotalGhs is their sum.

@@ -59,8 +59,7 @@ async function lockOrderForRefund(tx: Tx, orderId: string, refundedGhs: Prisma.D
           quantity: true,
           storeListingId: true,
           storeListingVariantId: true,
-          storeListing: { select: { trackInventory: true } },
-          storeListingVariant: { select: { trackInventory: true } },
+          tracksStock: true,
         },
       },
     },
@@ -117,13 +116,7 @@ export async function cancelAndRefundOrder(tx: Tx, input: RefundInput & { curren
     to: OrderStatus.CANCELLED,
     note: input.reason,
     changedById: input.refundedById,
-    items: order.orderItems.map((item) => ({
-      quantity: item.quantity,
-      storeListingId: item.storeListingId,
-      storeListingVariantId: item.storeListingVariantId,
-      listingTracks: item.storeListing.trackInventory,
-      variantTracks: item.storeListingVariant?.trackInventory ?? false,
-    })),
+    items: order.orderItems,
   })
 
   return { refundedGhs: remaining }
@@ -167,9 +160,8 @@ export async function recordOrderReturn(tx: Tx, input: ReturnInput) {
     if (entry.quantity > left) {
       throw new RefundError("TOO_MANY", `Only ${left} of ${line.productName}${line.variantDescription ? ` (${line.variantDescription})` : ""} can still be returned.`)
     }
-    // Stock goes back only to a row that tracks it, as a cancellation does
-    const tracks = line.storeListingVariantId ? (line.storeListingVariant?.trackInventory ?? false) : line.storeListing.trackInventory
-    return { line, quantity: entry.quantity, restocked: entry.restock && tracks }
+    // Stock goes back only for a line whose sale took it, as a cancellation does
+    return { line, quantity: entry.quantity, restocked: entry.restock && line.tracksStock }
   })
 
   const amount = input.refund?.amountGhs ?? new Prisma.Decimal(0)

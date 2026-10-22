@@ -271,6 +271,8 @@ export async function createOrder(tx: Tx, order: NewOrder) {
             storeListingId: line.listingId,
             storeListingVariantId: line.listingVariantId,
             quantity: line.quantity,
+            // What the reservation above did, for a cancellation or a return to undo
+            tracksStock: line.trackInventory,
             unitPriceUsd: amounts.unitPriceUsd,
             totalPriceUsd: amounts.totalPriceUsd,
             unitPriceGhs: amounts.unitPriceGhs,
@@ -319,8 +321,8 @@ export interface StatusChange {
   note: string | null
   // Null for a change nobody made by hand, e.g. cancelling an order left unpaid
   changedById: string | null
-  // The order's lines, for putting reserved stock back on a cancellation
-  items: { quantity: number; storeListingId: string; storeListingVariantId: string | null; listingTracks: boolean; variantTracks: boolean }[]
+  // The order's lines, for putting reserved stock back on a cancellation (only lines whose sale took stock)
+  items: { quantity: number; storeListingId: string; storeListingVariantId: string | null; tracksStock: boolean }[]
 }
 
 // Throws StatusChangedError when the order moved on (or, for a cancellation, was paid) since the page loaded.
@@ -343,11 +345,10 @@ export async function changeOrderStatus(tx: Tx, { orderId, from, to, note, chang
     if (cancelled) await tx.orderInstallationHistory.create({ data: { orderId, status: InstallationStatus.CANCELLED, note: "The order was cancelled", changedById } })
   }
 
-  // Stock was reserved when the order was made, for the rows that track it, so a cancellation puts it back
+  // Stock was reserved when the order was made, for the rows that tracked it then, so a cancellation puts it back
   if (to === OrderStatus.CANCELLED) {
     for (const item of items) {
-      const tracks = item.storeListingVariantId ? item.variantTracks : item.listingTracks
-      if (!tracks) continue
+      if (!item.tracksStock) continue
       await addStock(tx, { listingId: item.storeListingId, listingVariantId: item.storeListingVariantId }, item.quantity, {
         reason: StockMovementReason.CANCELLATION,
         createdById: changedById,

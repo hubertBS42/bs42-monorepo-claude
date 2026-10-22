@@ -520,7 +520,7 @@ export interface ReturnableLine {
   storeName: string
   // Units that can still come back
   left: number
-  // Only a listing that tracks stock can have units put back
+  // Only a line whose sale took stock (its row tracked it then) can have units put back
   tracksStock: boolean
   // What returning 0, 1, ... left of its units is worth (GHS strings): their share of what was paid for the line
   valueByQuantity: string[]

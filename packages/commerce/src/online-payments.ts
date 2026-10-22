@@ -184,8 +184,7 @@ export async function cancelUnpaidOrder(tx: Tx, orderId: string) {
           quantity: true,
           storeListingId: true,
           storeListingVariantId: true,
-          storeListing: { select: { trackInventory: true } },
-          storeListingVariant: { select: { trackInventory: true } },
+          tracksStock: true,
         },
       },
     },
@@ -199,13 +198,7 @@ export async function cancelUnpaidOrder(tx: Tx, orderId: string) {
       to: OrderStatus.CANCELLED,
       note: `Not paid within ${PAYMENT_WINDOW_MINUTES} minutes`,
       changedById: null,
-      items: order.orderItems.map((item) => ({
-        quantity: item.quantity,
-        storeListingId: item.storeListingId,
-        storeListingVariantId: item.storeListingVariantId,
-        listingTracks: item.storeListing.trackInventory,
-        variantTracks: item.storeListingVariant?.trackInventory ?? false,
-      })),
+      items: order.orderItems,
     })
   } catch (error) {
     if (error instanceof StatusChangedError) return false
