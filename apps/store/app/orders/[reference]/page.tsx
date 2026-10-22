@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import Link from "next/link"
 import { notFound } from "next/navigation"
 import { Circle, CircleCheck, CircleX, Clock, Package } from "lucide-react"
 import { canStartPayment, paymentDeadline } from "@workspace/commerce/online-payments"
@@ -10,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@workspace/ui/componen
 import { Separator } from "@workspace/ui/components/separator"
 import { formatDate } from "@workspace/utils/date"
 import { getStringParam } from "@workspace/utils/search-params"
-import { isOrderKey } from "@workspace/commerce/order-links"
+import { invoiceHref, isOrderKey } from "@workspace/commerce/order-links"
 
 import { PayNowButton, ReorderButton } from "@/components/orders/order-actions"
 import type { SearchParams } from "@/lib/catalogue-filters"
@@ -246,6 +247,9 @@ export default async function OrderPage({ params, searchParams }: OrderPageProps
             <CardContent className="space-y-1 text-sm">
               <p>{paid ? `Paid by ${PAYMENT_METHOD_LABELS[order.paymentMethod].toLowerCase()}` : "Not paid yet"}</p>
               <p className="text-muted-foreground">Placed {formatDate(order.createdAt, "d MMM yyyy, HH:mm")}</p>
+              <Link href={invoiceHref(order.reference, order.id)} className="inline-block pt-1 underline underline-offset-4 hover:text-muted-foreground">
+                View invoice
+              </Link>
             </CardContent>
           </Card>
         </div>

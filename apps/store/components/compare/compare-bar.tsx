@@ -19,10 +19,10 @@ export function CompareBar() {
 
   return (
     <>
-      <div className="h-20" aria-hidden />
+      <div className="h-20 print:hidden" aria-hidden />
       <section
         aria-label="Compare products"
-        className="fixed inset-x-0 bottom-0 z-40 border-t bg-background/95 shadow-[0_-4px_12px_-6px_rgb(0_0_0/0.15)] backdrop-blur supports-backdrop-filter:bg-background/80"
+        className="fixed inset-x-0 bottom-0 z-40 border-t bg-background/95 shadow-[0_-4px_12px_-6px_rgb(0_0_0/0.15)] backdrop-blur supports-backdrop-filter:bg-background/80 print:hidden"
       >
         <div className="mx-auto flex h-20 max-w-7xl items-center gap-3 px-4 lg:px-6">
           {/* On phones, only the count: there isn't room for the picks */}
