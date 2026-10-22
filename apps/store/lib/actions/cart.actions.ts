@@ -9,7 +9,7 @@ import { z } from "zod"
 import { isOrderKey } from "@workspace/commerce/order-links"
 
 import { MAX_LINE_QUANTITY } from "@/lib/basket-limits"
-import { addCartItem, CartError, countCartItems, removeCartItem, setCartItemQuantity, type AddToCartInput } from "@/lib/cart"
+import { addCartItem, CartError, countCartItems, removeCartItem, setCartItemInstallation, setCartItemQuantity, type AddToCartInput } from "@/lib/cart"
 import { ensureCartId, readCartId } from "@/lib/cart-cookie"
 
 // The basket's actions. Anyone can call them: the cookie is the only key to a basket, and every line is checked again
@@ -21,6 +21,7 @@ const addSchema = z.object({
   listingId: z.uuid(),
   listingVariantId: z.uuid().nullable(),
   quantity: quantitySchema.min(1),
+  installation: z.boolean().optional(),
 })
 
 // Two adds at once (two tabs) can both try to create the basket or the item's line, and the second fails on the
@@ -62,6 +63,22 @@ export async function setBasketQuantityAction(lineId: string, quantity: number):
     const result = await setCartItemQuantity(prisma, cartId, parsed.data.lineId, parsed.data.quantity)
     refresh()
     return { success: true, data: result }
+  } catch (error) {
+    return failure(error)
+  }
+}
+
+// Installation of every unit on a line, on or off. The basket page shows the result, so it's refreshed.
+export async function setBasketInstallationAction(lineId: string, withInstallation: boolean): Promise<DataResponse<null>> {
+  try {
+    const parsed = z.object({ lineId: z.uuid(), withInstallation: z.boolean() }).safeParse({ lineId, withInstallation })
+    if (!parsed.success) return { success: false, error: "Invalid item.", code: "INVALID_INPUT" }
+
+    const cartId = await readCartId()
+    if (!cartId) return failure(new CartError("LINE_NOT_FOUND"))
+    await setCartItemInstallation(prisma, cartId, parsed.data.lineId, parsed.data.withInstallation)
+    refresh()
+    return { success: true, data: null }
   } catch (error) {
     return failure(error)
   }

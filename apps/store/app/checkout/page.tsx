@@ -5,6 +5,7 @@ import { Info } from "lucide-react"
 import { findDeliveryRate } from "@workspace/commerce/delivery-rates"
 import { loadDeliverySettings } from "@workspace/commerce/delivery"
 import { getPricingContext } from "@workspace/commerce/exchange-rates"
+import { describeInstallationAreas } from "@workspace/commerce/installation-areas"
 import { PAYMENT_WINDOW_MINUTES } from "@workspace/commerce/online-payments"
 import { OrderItemError } from "@workspace/commerce/order-writes"
 import { GEODATA } from "@workspace/contracts"
@@ -17,12 +18,12 @@ import { getSavedAddresses } from "@/lib/addresses"
 import { readCartId } from "@/lib/cart-cookie"
 import { CheckoutError, priceCheckout } from "@/lib/checkout"
 import { getStoreSession } from "@/lib/session"
-import { getLegalPages } from "@/lib/settings"
+import { getInstallationAreas, getLegalPages } from "@/lib/settings"
 
 export const metadata: Metadata = { title: "Checkout", robots: { index: false } }
 
 export default async function CheckoutPage() {
-  const [cartId, pricing, session, legal] = await Promise.all([readCartId(), getPricingContext(), getStoreSession(), getLegalPages()])
+  const [cartId, pricing, session, legal, installationAreas] = await Promise.all([readCartId(), getPricingContext(), getStoreSession(), getLegalPages(), getInstallationAreas()])
   // Without a rate to sell at, the basket says so
   if (!cartId || !pricing) redirect("/basket")
 
@@ -76,6 +77,7 @@ export default async function CheckoutPage() {
         account={account}
         savedAddresses={savedAddresses}
         legal={legalLinks(legal)}
+        installationAreas={checkout.basket.lines.some((line) => line.withInstallation) ? describeInstallationAreas(installationAreas) : null}
       />
     </div>
   )

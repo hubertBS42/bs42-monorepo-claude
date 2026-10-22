@@ -2,6 +2,7 @@ import "server-only"
 
 import { unstable_cache } from "next/cache"
 import { getPricingContext } from "@workspace/commerce/exchange-rates"
+import { loadInstallationAreas } from "@workspace/commerce/installation"
 import { prisma, readAppSettings, resolveStoreName } from "@workspace/db"
 
 // The storefront's own caches. Saving settings or a rate in the console refreshes the console's caches, which this app
@@ -39,6 +40,9 @@ export const getFreeDeliveryFrom = unstable_cache(
   ["store-free-delivery-from"],
   { revalidate: REVALIDATE_SECONDS }
 )
+
+// Where installers work, for the product page and checkout's notes. Checkout checks the address against the database.
+export const getInstallationAreas = unstable_cache(() => loadInstallationAreas(prisma), ["store-installation-areas"], { revalidate: REVALIDATE_SECONDS })
 
 // The Terms and Privacy pages the platform writes in the console's Settings, with when each last changed (a string, so
 // it can be cached). A page without text is null: it 404s, and nothing links to it.

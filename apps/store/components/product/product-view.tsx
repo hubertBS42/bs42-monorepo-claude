@@ -2,8 +2,9 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { FileText, Package, Truck } from "lucide-react"
+import { FileText, Package, Truck, Wrench } from "lucide-react"
 import { Badge } from "@workspace/ui/components/badge"
+import { Checkbox } from "@workspace/ui/components/checkbox"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@workspace/ui/components/tabs"
 import { cn } from "@workspace/ui/lib/utils"
 
@@ -65,6 +66,7 @@ export function ProductView({
   initialVariantId,
   description,
   freeDeliveryFromGhs,
+  installation,
 }: {
   card: PricedCard
   details: ProductDetails
@@ -72,9 +74,13 @@ export function ProductView({
   // Rendered on the server (RichTextContent)
   description: React.ReactNode
   freeDeliveryFromGhs: string | null
+  // Installing one unit (with tax when it's on) and where installers work; null when it isn't offered
+  installation: { unitGhs: string; areas: string } | null
 }) {
   const { offer, options } = useOfferPicker(card, initialVariantId)
   const [quantity, setQuantity] = useState(1)
+  const [withInstallation, setWithInstallation] = useState(false)
+  const canBuy = !!offer.price && isInStock(offer)
 
   const variant = offer.variantId ? details.variants[offer.variantId] : undefined
   const facts = variant ?? details.facts
@@ -159,11 +165,32 @@ export function ProductView({
           ))}
 
           <div className="flex flex-wrap items-center gap-3">
-            {offer.price && isInStock(offer) && <QuantityStepper value={Math.min(quantity, maxQuantity)} max={maxQuantity} onChange={setQuantity} label="Quantity" className="h-10" />}
-            <AddToBasketButton offer={offer} label={label} quantity={Math.min(quantity, maxQuantity)} onAdded={() => setQuantity(1)} size="lg" className="min-w-48 flex-1 sm:flex-none" />
+            {canBuy && <QuantityStepper value={Math.min(quantity, maxQuantity)} max={maxQuantity} onChange={setQuantity} label="Quantity" className="h-10" />}
+            <AddToBasketButton
+              offer={offer}
+              label={label}
+              quantity={Math.min(quantity, maxQuantity)}
+              installation={withInstallation}
+              onAdded={() => setQuantity(1)}
+              size="lg"
+              className="min-w-48 flex-1 sm:flex-none"
+            />
             <WishListHeart item={{ productId: card.id, variantId: offer.variantId }} label={label} appearance="button" />
             <CompareToggle pick={{ id: card.id, name: card.name, slug: card.slug, image: card.image, categoryId: card.categoryId }} className="text-sm" />
           </div>
+
+          {installation && canBuy && (
+            <label className="flex w-fit cursor-pointer gap-3 rounded-xl border p-4 text-sm has-data-checked:border-foreground/40">
+              <Checkbox checked={withInstallation} onCheckedChange={setWithInstallation} className="mt-0.5" />
+              <span>
+                <span className="flex items-center gap-1.5 font-semibold">
+                  <Wrench className="size-4 text-muted-foreground" aria-hidden />
+                  Add installation, {formatGhs(installation.unitGhs)} per item
+                </span>
+                <span className="block text-muted-foreground">Our installers fit it for you. Available in {installation.areas}; we'll call to arrange a day.</span>
+              </span>
+            </label>
+          )}
 
           {card.specs.length > 0 && (
             <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 rounded-xl bg-muted/50 p-4 text-sm">

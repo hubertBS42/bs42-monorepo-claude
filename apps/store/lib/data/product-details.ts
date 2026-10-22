@@ -1,6 +1,8 @@
 import "server-only"
 
 import { unstable_cache } from "next/cache"
+import { installationFee, loadCategoryFees } from "@workspace/commerce/installation"
+import { InstallationOption } from "@workspace/db/enums"
 import { prisma } from "@workspace/db"
 
 // What only the product page shows, beyond its card (lib/data/product-cards.ts, which decides whether customers can
@@ -16,6 +18,9 @@ export const getProductDetails = unstable_cache(
         barcode: true,
         weight: true,
         dimensions: true,
+        categoryId: true,
+        installation: true,
+        installationFeeGhs: true,
         documents: { orderBy: { name: "asc" }, select: { id: true, name: true, url: true } },
         variants: { select: { id: true, sku: true, barcode: true, images: true, weight: true, dimensions: true } },
       },
@@ -26,8 +31,11 @@ export const getProductDetails = unstable_cache(
       weightKg: row.weight?.toString() ?? null,
       dimensions: row.dimensions,
     })
+    const fee = product.installation === InstallationOption.NONE ? null : installationFee(product, await loadCategoryFees(prisma))
     return {
       description: product.description,
+      // Installing one unit, in GHS before tax; null when it isn't offered
+      installationFeeGhs: fee?.toFixed(2) ?? null,
       images: product.images,
       documents: product.documents,
       facts: facts(product),

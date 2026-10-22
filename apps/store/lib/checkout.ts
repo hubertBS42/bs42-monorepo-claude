@@ -2,12 +2,14 @@ import "server-only"
 
 import { quoteDelivery, loadDeliverySettings, type DeliveryQuote } from "@workspace/commerce/delivery"
 import type { PricingContext } from "@workspace/commerce/exchange-rates"
+import { loadInstallationAreas } from "@workspace/commerce/installation"
+import { installsIn } from "@workspace/commerce/installation-areas"
 import { createOrder, resolveOrderLines } from "@workspace/commerce/order-writes"
 import { priceOrder } from "@workspace/commerce/pricing"
 import type { prisma } from "@workspace/db"
 import { Prisma } from "@workspace/db/client"
 import { OrderStatus, PaymentMethod, PaymentStatus, ShippingMethod } from "@workspace/db/enums"
-import { clearCart, loadCart } from "./cart"
+import { clearCart, loadCart, sumInstallation } from "./cart"
 
 // Checkout: pricing the basket with delivery to an address, and placing the order from it (unpaid, with its stock
 // reserved; payment follows on Paystack). Prices come from the stores' listings, never the browser, and the order is
@@ -17,13 +19,14 @@ import { clearCart, loadCart } from "./cart"
 type Tx = Parameters<Parameters<typeof prisma.$transaction>[0]>[0]
 type Client = typeof prisma | Tx
 
-export type CheckoutErrorCode = "EMPTY_BASKET" | "BASKET_CHANGED" | "PRICE_CHANGED" | "NO_DELIVERY" | "TOO_MANY_UNPAID"
+export type CheckoutErrorCode = "EMPTY_BASKET" | "BASKET_CHANGED" | "PRICE_CHANGED" | "NO_DELIVERY" | "NO_INSTALLATION" | "TOO_MANY_UNPAID"
 
 const MESSAGES: Record<CheckoutErrorCode, string> = {
   EMPTY_BASKET: "Your basket is empty.",
   BASKET_CHANGED: "Something in your basket changed. Please check it before placing your order.",
   PRICE_CHANGED: "Your order's total has changed. Please check it before placing your order.",
   NO_DELIVERY: "We don't deliver to that town yet.",
+  NO_INSTALLATION: "We don't install in that town yet. Take installation off in your basket, or choose another address.",
   TOO_MANY_UNPAID: "You already have orders waiting for payment. Please pay for one of them, or wait for it to lapse, before placing another.",
 }
 
@@ -47,8 +50,8 @@ export interface Area {
 }
 
 // The basket checked again (loadCart), its lines as an order would sell them, and their prices with delivery to the
-// area (or without delivery when there's no area yet). Throws CheckoutError for an empty basket or an area with no
-// delivery, and OrderItemError when a line can't be sold.
+// area (or without delivery when there's no area yet). Throws CheckoutError for an empty basket, or an area with no
+// delivery or, when a line includes installation, none of that; and OrderItemError when a line can't be sold.
 export async function priceCheckout(client: Client, sessionCartId: string, pricing: PricingContext, area: Area | null) {
   const basket = await loadCart(client, sessionCartId, pricing)
   if (!basket.lines.length) throw new CheckoutError("EMPTY_BASKET")
@@ -56,7 +59,7 @@ export async function priceCheckout(client: Client, sessionCartId: string, prici
   const lines = await resolveOrderLines(
     client,
     null,
-    basket.lines.map((line) => ({ listingId: line.listingId, listingVariantId: line.listingVariantId, quantity: line.quantity }))
+    basket.lines.map((line) => ({ listingId: line.listingId, listingVariantId: line.listingVariantId, quantity: line.quantity, installation: line.withInstallation }))
   )
   const input = { lines, exchangeRate: new Prisma.Decimal(pricing.rate.rate), discount: null, tax: pricing.tax }
   const goods = priceOrder({ ...input, shippingGhs: new Prisma.Decimal(0) })
@@ -65,6 +68,7 @@ export async function priceCheckout(client: Client, sessionCartId: string, prici
   if (area) {
     quote = quoteDelivery(await loadDeliverySettings(client), area.region, area.town, goods.subtotalGhs)
     if (!quote) throw new CheckoutError("NO_DELIVERY")
+    if (lines.some((line) => line.installationUnitGhs) && !installsIn(await loadInstallationAreas(client), area.region, area.town)) throw new CheckoutError("NO_INSTALLATION")
   }
   const priced = quote ? priceOrder({ ...input, shippingGhs: quote.feeGhs }) : goods
 
@@ -73,9 +77,10 @@ export async function priceCheckout(client: Client, sessionCartId: string, prici
     lines,
     priced,
     quote,
-    // What the summary shows: the items and delivery each with their tax, so the rows add up to the total
+    // What the summary shows: the items, installation and delivery each with their tax, so the rows add up to the total
     summary: {
-      itemsGhs: goods.subtotalGhs.plus(goods.taxGhs).toFixed(2),
+      itemsGhs: goods.subtotalGhs.plus(goods.lines.reduce((sum, line) => sum.plus(line.taxGhs), new Prisma.Decimal(0))).toFixed(2),
+      installationGhs: goods.installationGhs.gt(0) ? sumInstallation(goods.lines).toFixed(2) : null,
       deliveryGhs: quote ? priced.shippingGhs.plus(priced.taxGhs).minus(goods.taxGhs).toFixed(2) : null,
       freeDelivery: quote?.isFree ?? false,
       taxGhs: pricing.tax ? priced.taxGhs.toFixed(2) : null,

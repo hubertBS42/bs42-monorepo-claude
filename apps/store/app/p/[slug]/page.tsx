@@ -1,6 +1,9 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { notFound } from "next/navigation"
+import { describeInstallationAreas } from "@workspace/commerce/installation-areas"
+import { withTax } from "@workspace/commerce/pricing"
+import { Prisma } from "@workspace/db/client"
 import { RichTextContent } from "@workspace/forms/components/rich-text-content"
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@workspace/ui/components/breadcrumb"
 import { getEnumParam, getPositiveIntegerParam, getStringParam } from "@workspace/utils/search-params"
@@ -13,7 +16,7 @@ import { loadProductCards } from "@/lib/data/product-cards"
 import { getProductDetails, plainText } from "@/lib/data/product-details"
 import { getProductReviews, getReviewSummary, REVIEW_SORTS, type ReviewSort } from "@/lib/data/reviews"
 import { priceCards } from "@/lib/pricing"
-import { getFreeDeliveryFrom, getShelfPricing } from "@/lib/settings"
+import { getFreeDeliveryFrom, getInstallationAreas, getShelfPricing } from "@/lib/settings"
 import { breadcrumbJsonLd, JsonLd, productJsonLd } from "@/lib/structured-data"
 
 interface ProductPageProps {
@@ -60,17 +63,24 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
   if (!card) notFound()
 
   const reviewSort = getEnumParam(query.reviews, REVIEW_SORTS) ?? "newest"
-  const [details, tree, pricing, freeDeliveryFrom, reviewSummary, reviews] = await Promise.all([
+  const [details, tree, pricing, freeDeliveryFrom, installationAreas, reviewSummary, reviews] = await Promise.all([
     getProductDetails(card.id),
     getCategoryTree(),
     getShelfPricing(),
     getFreeDeliveryFrom(),
+    getInstallationAreas(),
     getReviewSummary(card.id),
     getProductReviews(card.id, reviewSort, getPositiveIntegerParam(query["reviews-page"], 1)),
   ])
   const [priced] = priceCards([card], pricing)
   const path = categoryPath(tree, card.categoryId)
   const description = details.description ? <RichTextContent value={details.description} /> : null
+  // Offered once installers work somewhere, and priced as the shelf is (with tax when it's on)
+  const installationAreasText = describeInstallationAreas(installationAreas)
+  const installation =
+    details.installationFeeGhs && installationAreasText && pricing
+      ? { unitGhs: withTax(new Prisma.Decimal(details.installationFeeGhs), pricing.taxRate ? new Prisma.Decimal(pricing.taxRate) : null).toFixed(2), areas: installationAreasText }
+      : null
   const firstVariant = priced!.offers[0]!.variantId
   const jsonLd = [
     productJsonLd(priced!, {
@@ -105,7 +115,14 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
         </BreadcrumbList>
       </Breadcrumb>
 
-      <ProductView card={priced!} details={details} initialVariantId={getStringParam(query.variant) ?? null} description={description} freeDeliveryFromGhs={freeDeliveryFrom} />
+      <ProductView
+        card={priced!}
+        details={details}
+        initialVariantId={getStringParam(query.variant) ?? null}
+        description={description}
+        freeDeliveryFromGhs={freeDeliveryFrom}
+        installation={installation}
+      />
 
       <ProductReviews
         productSlug={card.slug}

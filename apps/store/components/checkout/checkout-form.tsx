@@ -83,9 +83,12 @@ export function CheckoutForm({
   account,
   savedAddresses,
   legal,
+  installationAreas,
 }: {
   lines: CartLine[]
   areas: DeliveryArea[]
+  // Where installers work ("Greater Accra and Adum"), when a line includes installation
+  installationAreas: string | null
   initialSummary: CheckoutSummary
   account: CheckoutAccount | null
   savedAddresses: SavedAddressOption[]
@@ -213,7 +216,10 @@ export function CheckoutForm({
         <Card>
           <CardHeader>
             <CardTitle>Delivery address</CardTitle>
-            <CardDescription>We deliver to the towns listed. The fee depends on the town.</CardDescription>
+            <CardDescription>
+              We deliver to the towns listed. The fee depends on the town.
+              {installationAreas && ` We install in ${installationAreas}.`}
+            </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4 sm:grid-cols-2">
             {noDelivery ? (
@@ -304,6 +310,7 @@ export function CheckoutForm({
                   <p className="text-muted-foreground">
                     {line.variantDescription && `${line.variantDescription} · `}Qty {line.quantity}
                   </p>
+                  {line.installationGhs && <p className="text-muted-foreground">With installation, {formatGhs(line.installationGhs)}</p>}
                 </div>
                 {line.totalGhs && <span className="font-medium tabular-nums">{formatGhs(line.totalGhs)}</span>}
               </li>
@@ -312,6 +319,7 @@ export function CheckoutForm({
           <Separator />
           <div className="space-y-2">
             <SummaryRow label="Items" value={formatGhs(summary.itemsGhs)} />
+            {summary.installationGhs && <SummaryRow label="Installation" value={formatGhs(summary.installationGhs)} />}
             <SummaryRow label="Delivery" value={!quoted ? "Choose your town" : summary.freeDelivery ? "Free" : formatGhs(summary.deliveryGhs!)} muted={!quoted} />
             {summary.taxGhs && <SummaryRow label="Includes tax" value={formatGhs(summary.taxGhs)} muted />}
           </div>

@@ -13,14 +13,15 @@ import { BasketLine } from "@/components/basket/basket-line"
 import { loadCart } from "@/lib/cart"
 import { readCartId } from "@/lib/cart-cookie"
 import { formatGhs } from "@/lib/money"
-import { getFreeDeliveryFrom } from "@/lib/settings"
+import { describeInstallationAreas } from "@workspace/commerce/installation-areas"
+import { getFreeDeliveryFrom, getInstallationAreas } from "@/lib/settings"
 
 export const metadata: Metadata = { title: "Basket", robots: { index: false } }
 
 export default async function BasketPage() {
   const cartId = await readCartId()
   // Priced fresh, not from the shelf's minute-long cache: this is what checkout will charge
-  const [pricing, freeDeliveryFrom] = await Promise.all([getPricingContext(), getFreeDeliveryFrom()])
+  const [pricing, freeDeliveryFrom, installationAreas] = await Promise.all([getPricingContext(), getFreeDeliveryFrom(), getInstallationAreas()])
   const basket = cartId ? await loadCart(prisma, cartId, pricing) : null
   const lines = basket?.lines ?? []
 
@@ -74,6 +75,12 @@ export default async function BasketPage() {
                     </span>
                     <span className="font-semibold tabular-nums">{formatGhs(basket.totals.totalGhs)}</span>
                   </div>
+                  {basket.totals.installationGhs && (
+                    <div className="flex justify-between gap-4 text-muted-foreground">
+                      <span>Includes installation</span>
+                      <span className="tabular-nums">{formatGhs(basket.totals.installationGhs)}</span>
+                    </div>
+                  )}
                   {basket.totals.taxGhs && (
                     <div className="flex justify-between gap-4 text-muted-foreground">
                       <span>Includes tax</span>
@@ -84,6 +91,9 @@ export default async function BasketPage() {
                     <span>Delivery</span>
                     <span>Worked out at checkout</span>
                   </div>
+                  {basket.totals.installationGhs && (
+                    <p className="text-muted-foreground">We install in {describeInstallationAreas(installationAreas) ?? "a few towns"} and call you to arrange a day.</p>
+                  )}
                   {toFreeDelivery &&
                     (toFreeDelivery.gt(0) ? (
                       <>

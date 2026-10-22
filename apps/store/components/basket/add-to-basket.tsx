@@ -17,6 +17,7 @@ export function AddToBasketButton({
   offer,
   label,
   quantity = 1,
+  installation = false,
   onAdded,
   size = "default",
   className,
@@ -24,6 +25,8 @@ export function AddToBasketButton({
   offer: PricedOffer
   label: string
   quantity?: number
+  // Ticked on the product page: the basket line includes installation
+  installation?: boolean
   onAdded?: () => void
   size?: "default" | "sm" | "lg"
   className?: string
@@ -34,7 +37,7 @@ export function AddToBasketButton({
 
   const add = () =>
     startTransition(async () => {
-      const result = await addToBasketAction({ listingId: offer.listingId, listingVariantId: offer.listingVariantId, quantity })
+      const result = await addToBasketAction({ listingId: offer.listingId, listingVariantId: offer.listingVariantId, quantity, installation })
       if (!result.success) {
         toast.add({ title: "Couldn't add that to your basket", description: result.error, type: "error" })
         return
@@ -49,7 +52,8 @@ export function AddToBasketButton({
       } else if (capped) {
         toast.add({ title: `Added ${added} to your basket`, description: `That's all we have of ${label}: your basket now holds ${inBasket}.`, type: "warning", actionProps: viewBasket })
       } else {
-        toast.add({ title: "Added to your basket", description: added > 1 ? `${added} × ${label}` : label, type: "success", actionProps: viewBasket })
+        const description = `${added > 1 ? `${added} × ${label}` : label}${installation ? ", with installation" : ""}`
+        toast.add({ title: "Added to your basket", description, type: "success", actionProps: viewBasket })
       }
     })
 

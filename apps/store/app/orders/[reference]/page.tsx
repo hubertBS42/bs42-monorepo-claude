@@ -94,12 +94,16 @@ export default async function OrderPage({ params, searchParams }: OrderPageProps
       subtotalGhs: true,
       discountAmountGhs: true,
       shippingGhs: true,
+      installationGhs: true,
+      installationStatus: true,
+      installationDate: true,
+      installationHistory: { orderBy: { createdAt: "asc" }, select: { id: true, status: true, date: true, note: true, createdAt: true } },
       taxGhs: true,
       totalGhs: true,
       statusHistory: { orderBy: { createdAt: "asc" }, select: { id: true, status: true, note: true, createdAt: true } },
       refunds: { select: { id: true, amountGhs: true, reason: true, createdAt: true, return: { select: { id: true } } } },
       returns: { select: { id: true, reason: true, createdAt: true, refund: { select: { amountGhs: true } } } },
-      orderItems: { orderBy: { id: "asc" }, select: { id: true, productName: true, productImage: true, variantDescription: true, quantity: true, totalPriceGhs: true } },
+      orderItems: { orderBy: { id: "asc" }, select: { id: true, productName: true, productImage: true, variantDescription: true, quantity: true, totalPriceGhs: true, installationUnitGhs: true } },
     },
   })
   // The same answer for a wrong key as for no order, so references can't be probed
@@ -125,7 +129,9 @@ export default async function OrderPage({ params, searchParams }: OrderPageProps
       refunds: order.refunds.map((refund) => ({ ...refund, amountGhs: refund.amountGhs.toFixed(2), isForReturn: !!refund.return })),
       returns: order.returns.map((item) => ({ ...item, refundAmountGhs: item.refund?.amountGhs.toFixed(2) ?? null })),
     },
-    formatGhs
+    formatGhs,
+    // A @db.Date comes back as midnight UTC, which formatDate's zone (Accra's) reads as the same day
+    (date) => formatDate(date, "EEE d MMM")
   )
 
   return (
@@ -201,6 +207,7 @@ export default async function OrderPage({ params, searchParams }: OrderPageProps
                     <p className="font-medium">{item.productName}</p>
                     <p className="text-muted-foreground">
                       {item.variantDescription && `${item.variantDescription} · `}Qty {item.quantity}
+                      {item.installationUnitGhs && " · with installation"}
                     </p>
                   </div>
                   <span className="tabular-nums">{formatGhs(item.totalPriceGhs.toFixed(2))}</span>
@@ -212,6 +219,7 @@ export default async function OrderPage({ params, searchParams }: OrderPageProps
               <Row label="Subtotal" value={formatGhs(order.subtotalGhs.toFixed(2))} />
               {discount && <Row label="Discount" value={`−${formatGhs(discount.toFixed(2))}`} />}
               <Row label="Delivery" value={order.shippingGhs.isZero() ? "Free" : formatGhs(order.shippingGhs.toFixed(2))} />
+              {order.installationGhs.gt(0) && <Row label="Installation" value={formatGhs(order.installationGhs.toFixed(2))} />}
               {order.taxGhs.gt(0) && <Row label="Tax" value={formatGhs(order.taxGhs.toFixed(2))} />}
             </div>
             <Separator />

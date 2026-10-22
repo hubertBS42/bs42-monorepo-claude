@@ -1,8 +1,9 @@
 import "server-only"
 
 import type { PricingContext } from "@workspace/commerce/exchange-rates"
+import { loadInstallationFees } from "@workspace/commerce/installation"
 import { describeVariant } from "@workspace/commerce/order-writes"
-import { priceOrder, shelfPrice } from "@workspace/commerce/pricing"
+import { priceOrder, shelfPrice, withTax } from "@workspace/commerce/pricing"
 import { customerVisibleListingWhere, loadVisibleCategoryIds, variantOnSaleWhere } from "@workspace/commerce/visibility"
 import type { prisma } from "@workspace/db"
 import { Prisma } from "@workspace/db/client"
@@ -11,19 +12,27 @@ import { MAX_LINE_QUANTITY } from "./basket-limits"
 // The basket: one line per thing customers can buy (a product without variants, or a variant), each held at one
 // store's listing. Adding picks the store (one already in the basket if it has the item in stock, else the offer the
 // page showed, else the cheapest in stock); viewing checks every line again and moves a line to another store, or
-// lowers its quantity, or drops it, when its store can no longer sell it. The order checks prices and stock once more.
+// lowers its quantity, or drops it, when its store can no longer sell it. A line can include installation of every unit,
+// which is taken off with a notice if the product stops offering it. The order checks prices and stock once more.
 // In its own module, with relative imports, so it can be tested against the database without a request.
 
 type Tx = Parameters<Parameters<typeof prisma.$transaction>[0]>[0]
 type Client = typeof prisma | Tx
 
-export type CartErrorCode = "ITEM_UNAVAILABLE" | "OUT_OF_STOCK" | "LINE_NOT_FOUND"
+const CART_MESSAGES = {
+  ITEM_UNAVAILABLE: "That's no longer on sale.",
+  OUT_OF_STOCK: "That's out of stock.",
+  LINE_NOT_FOUND: "That item isn't in your basket any more.",
+  NO_INSTALLATION: "Installation isn't offered for that item.",
+}
+
+export type CartErrorCode = keyof typeof CART_MESSAGES
 
 export class CartError extends Error {
   readonly code: CartErrorCode
 
   constructor(code: CartErrorCode) {
-    super(code === "OUT_OF_STOCK" ? "That's out of stock." : code === "LINE_NOT_FOUND" ? "That item isn't in your basket any more." : "That's no longer on sale.")
+    super(CART_MESSAGES[code])
     this.code = code
   }
 }
@@ -102,6 +111,7 @@ function chooseCandidate(candidates: Candidate[], prefer: { current?: string; st
 const lineSelect = {
   id: true,
   quantity: true,
+  withInstallation: true,
   storeListingId: true,
   storeListingVariantId: true,
   storeListing: { select: { organizationId: true, productId: true } },
@@ -146,7 +156,10 @@ export async function claimCart(client: Client, userId: string | null, cookieCar
   for (const line of guest.items) {
     const match = owned.items.find((ownedLine) => itemKey(lineItem(ownedLine)) === itemKey(lineItem(line)))
     if (match) {
-      await client.cartItem.update({ where: { id: match.id }, data: { quantity: Math.min(match.quantity + line.quantity, MAX_LINE_QUANTITY) } })
+      await client.cartItem.update({
+        where: { id: match.id },
+        data: { quantity: Math.min(match.quantity + line.quantity, MAX_LINE_QUANTITY), withInstallation: match.withInstallation || line.withInstallation },
+      })
     } else {
       await client.cartItem.update({ where: { id: line.id }, data: { cartId: owned.id } })
     }
@@ -167,6 +180,8 @@ export interface AddToCartInput {
   listingId: string
   listingVariantId: string | null
   quantity: number
+  // Ticked on the product page: the line then includes installation (adding without it leaves the line's as it was)
+  installation?: boolean
 }
 
 // Adds to the item's line, creating the basket on its first item. The quantity is capped at what the line's store has;
@@ -180,6 +195,7 @@ export async function addCartItem(client: Client, sessionCartId: string, input: 
 
   const candidates = (await loadCandidates(client, [item])).get(itemKey(item)) ?? []
   if (!candidates.length) throw new CartError("ITEM_UNAVAILABLE")
+  if (input.installation && !(await loadInstallationFees(client, [item.productId])).has(item.productId)) throw new CartError("NO_INSTALLATION")
 
   // Touched on every add, so a basket left alone can be cleared out by its age
   const cart = await client.cart.upsert({
@@ -196,7 +212,7 @@ export async function addCartItem(client: Client, sessionCartId: string, input: 
 
   const before = existing?.quantity ?? 0
   const quantity = Math.min(before + input.quantity, limit(chosen))
-  const row = { storeListingId: chosen.listingId, storeListingVariantId: chosen.listingVariantId }
+  const row = { storeListingId: chosen.listingId, storeListingVariantId: chosen.listingVariantId, ...(input.installation && { withInstallation: true }) }
   if (existing) await client.cartItem.update({ where: { id: existing.id }, data: { ...row, quantity } })
   else await client.cartItem.create({ data: { cartId: cart.id, ...row, quantity } })
 
@@ -219,6 +235,15 @@ export async function setCartItemQuantity(client: Client, sessionCartId: string,
   const capped = Math.min(quantity, current ? limit(current) : MAX_LINE_QUANTITY)
   await client.cartItem.update({ where: { id: line.id }, data: { quantity: capped } })
   return { quantity: capped, capped: capped < quantity, count: await countCartItems(client, sessionCartId) }
+}
+
+// Adds installation of every unit on a line to it, or takes it off
+export async function setCartItemInstallation(client: Client, sessionCartId: string, lineId: string, withInstallation: boolean) {
+  const line = await client.cartItem.findFirst({ where: { id: lineId, cart: { sessionCartId } }, select: lineSelect })
+  if (!line) throw new CartError("LINE_NOT_FOUND")
+  const { productId } = line.storeListing
+  if (withInstallation && !(await loadInstallationFees(client, [productId])).has(productId)) throw new CartError("NO_INSTALLATION")
+  await client.cartItem.update({ where: { id: line.id }, data: { withInstallation } })
 }
 
 export async function removeCartItem(client: Client, sessionCartId: string, lineId: string) {
@@ -257,6 +282,11 @@ export interface CartLine {
   unitGhs: string | null
   // What the order would charge for the line: its GHS total plus its tax
   totalGhs: string | null
+  // Installing one unit, with tax when it's on; null when the product doesn't offer it (or without a rate to sell at)
+  installationUnitGhs: string | null
+  withInstallation: boolean
+  // What the order would charge for installing every unit, with its tax; null without installation
+  installationGhs: string | null
 }
 
 export interface CartView {
@@ -268,9 +298,11 @@ export interface CartView {
   totals: {
     // Before tax, which is what the free-delivery threshold compares with (quoteDelivery)
     subtotalGhs: string
-    // Null when tax is off
+    // Null when tax is off. Includes the installation's.
     taxGhs: string | null
-    // With tax, before delivery
+    // Installation with its tax; null when no line has it
+    installationGhs: string | null
+    // With tax and installation, before delivery
     totalGhs: string
   } | null
 }
@@ -284,9 +316,17 @@ export async function loadCart(client: Client, sessionCartId: string, pricing: P
   if (!cart?.items.length) return EMPTY
 
   const candidates = await loadCandidates(client, cart.items.map(lineItem))
+  const fees = await loadInstallationFees(client, [...new Set(cart.items.map((line) => line.storeListing.productId))])
   const notices: string[] = []
   const stores = new Set<string>()
-  const kept: { line: (typeof cart.items)[number]; chosen: Candidate; quantity: number; variantDescription: string | null }[] = []
+  const kept: {
+    line: (typeof cart.items)[number]
+    chosen: Candidate
+    quantity: number
+    variantDescription: string | null
+    fee: Prisma.Decimal | null
+    withInstallation: boolean
+  }[] = []
 
   for (const line of cart.items) {
     const variantDescription = line.storeListingVariant ? describeVariant(line.storeListingVariant.variant.variantValues) : null
@@ -307,8 +347,14 @@ export async function loadCart(client: Client, sessionCartId: string, pricing: P
       await client.cartItem.updateMany({ where: { id: line.id }, data: { storeListingId: chosen.listingId, storeListingVariantId: chosen.listingVariantId, quantity } })
     }
     if (quantity < line.quantity) notices.push(`Only ${quantity} of ${label} ${quantity === 1 ? "is" : "are"} left, so we've lowered the quantity.`)
+
+    const fee = fees.get(line.storeListing.productId) ?? null
+    if (line.withInstallation && !fee) {
+      await client.cartItem.updateMany({ where: { id: line.id }, data: { withInstallation: false } })
+      notices.push(`Installation is no longer offered for ${label}, so we've taken it off.`)
+    }
     stores.add(chosen.storeId)
-    kept.push({ line, chosen, quantity, variantDescription })
+    kept.push({ line, chosen, quantity, variantDescription, fee, withInstallation: line.withInstallation && !!fee })
   }
 
   if (!kept.length) return { ...EMPTY, notices }
@@ -317,10 +363,16 @@ export async function loadCart(client: Client, sessionCartId: string, pricing: P
   const priced =
     pricing &&
     rate &&
-    priceOrder({ lines: kept.map(({ chosen, quantity }) => ({ unitPriceUsd: chosen.priceUsd, quantity })), exchangeRate: rate, shippingGhs: new Prisma.Decimal(0), discount: null, tax: pricing.tax })
+    priceOrder({
+      lines: kept.map(({ chosen, quantity, fee, withInstallation }) => ({ unitPriceUsd: chosen.priceUsd, quantity, installationUnitGhs: withInstallation ? fee : null })),
+      exchangeRate: rate,
+      shippingGhs: new Prisma.Decimal(0),
+      discount: null,
+      tax: pricing.tax,
+    })
 
   return {
-    lines: kept.map(({ line, chosen, quantity, variantDescription }, index) => {
+    lines: kept.map(({ line, chosen, quantity, variantDescription, fee, withInstallation }, index) => {
       const amounts = priced?.lines[index]
       return {
         id: line.id,
@@ -335,6 +387,9 @@ export async function loadCart(client: Client, sessionCartId: string, pricing: P
         maxQuantity: limit(chosen),
         unitGhs: rate ? shelfPrice(chosen.priceUsd, rate, pricing.tax?.rate ?? null).incTaxGhs.toFixed(2) : null,
         totalGhs: amounts ? amounts.totalPriceGhs.plus(amounts.taxGhs).toFixed(2) : null,
+        installationUnitGhs: fee && pricing ? withTax(fee, pricing.tax?.rate ?? null).toFixed(2) : null,
+        withInstallation,
+        installationGhs: amounts?.installationUnitGhs ? amounts.installationTotalGhs.plus(amounts.installationTaxGhs).toFixed(2) : null,
       }
     }),
     notices,
@@ -342,7 +397,13 @@ export async function loadCart(client: Client, sessionCartId: string, pricing: P
     totals: priced && {
       subtotalGhs: priced.subtotalGhs.toFixed(2),
       taxGhs: pricing.tax ? priced.taxGhs.toFixed(2) : null,
-      totalGhs: priced.subtotalGhs.plus(priced.taxGhs).toFixed(2),
+      installationGhs: priced.installationGhs.gt(0) ? sumInstallation(priced.lines).toFixed(2) : null,
+      totalGhs: priced.totalGhs.toFixed(2),
     },
   }
+}
+
+// Installation on every line, with its tax
+export function sumInstallation(lines: { installationTotalGhs: Prisma.Decimal; installationTaxGhs: Prisma.Decimal }[]) {
+  return lines.reduce((sum, line) => sum.plus(line.installationTotalGhs).plus(line.installationTaxGhs), new Prisma.Decimal(0))
 }
