@@ -2,21 +2,19 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { redirect } from "next/navigation"
 import { Info } from "lucide-react"
-import { findDeliveryRate } from "@workspace/commerce/delivery-rates"
-import { loadDeliverySettings } from "@workspace/commerce/delivery"
 import { getPricingContext } from "@workspace/commerce/exchange-rates"
 import { describeInstallationAreas } from "@workspace/commerce/installation-areas"
 import { PAYMENT_WINDOW_MINUTES } from "@workspace/commerce/online-payments"
 import { OrderItemError } from "@workspace/commerce/order-writes"
-import { GEODATA } from "@workspace/contracts"
 import { prisma } from "@workspace/db"
 
 import { SyncBasketCount } from "@/components/basket/basket-count"
-import { type CheckoutAccount, CheckoutForm, type DeliveryArea, type SavedAddressOption } from "@/components/checkout/checkout-form"
+import { type CheckoutAccount, CheckoutForm, type SavedAddressOption } from "@/components/checkout/checkout-form"
 import { legalLinks } from "@/components/legal-consent"
 import { getSavedAddresses } from "@/lib/addresses"
 import { readCartId } from "@/lib/cart-cookie"
 import { CheckoutError, priceCheckout } from "@/lib/checkout"
+import { getDeliveryAreas } from "@/lib/delivery-areas"
 import { getStoreSession, getTradeTerms } from "@/lib/session"
 import { getInstallationAreas, getLegalPages } from "@/lib/settings"
 
@@ -35,10 +33,7 @@ export default async function CheckoutPage() {
   if (!checkout) redirect("/basket")
 
   // Only the towns there's a delivery fee for (a town's own, or its region's)
-  const { rates } = await loadDeliverySettings(prisma)
-  const areas: DeliveryArea[] = GEODATA.map((region) => ({ region: region.name, towns: region.towns.filter((town) => findDeliveryRate(rates, region.name, town)) })).filter(
-    (area) => area.towns.length > 0
-  )
+  const { areas, deliversTo } = await getDeliveryAreas()
 
   // Signed in: the account's details and saved addresses fill the form in
   let account: CheckoutAccount | null = null
@@ -46,7 +41,7 @@ export default async function CheckoutPage() {
   if (session) {
     const [user, addresses] = await Promise.all([prisma.user.findUnique({ where: { id: session.user.id }, select: { name: true, email: true, phone: true } }), getSavedAddresses(session.user.id)])
     account = { name: user?.name ?? session.user.name, email: user?.email ?? session.user.email, phone: user?.phone ?? "" }
-    savedAddresses = addresses.map((address) => ({ ...address, line2: address.line2 ?? "", deliverable: !!findDeliveryRate(rates, address.region, address.town) }))
+    savedAddresses = addresses.map((address) => ({ ...address, line2: address.line2 ?? "", deliverable: deliversTo(address.region, address.town) }))
   }
 
   return (

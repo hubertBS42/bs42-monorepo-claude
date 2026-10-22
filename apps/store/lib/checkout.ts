@@ -118,14 +118,20 @@ const unpaidStorefrontOrder = {
   paymentStatus: { in: [PaymentStatus.PENDING, PaymentStatus.FAILED] },
 } satisfies Prisma.OrderWhereInput
 
+// Throws TOO_MANY_UNPAID when the customer (by email or phone) or the address they're placing from already holds as
+// many unpaid storefront orders as allowed. Placing an order from the basket or from a quote checks it.
+export async function checkUnpaidLimits(tx: Tx, customer: { email: string; phone: string; ip: string | null }) {
+  const byCustomer = await tx.order.count({ where: { ...unpaidStorefrontOrder, OR: [{ customerEmail: customer.email }, { customerPhone: customer.phone }] } })
+  const byIp = customer.ip ? await tx.order.count({ where: { ...unpaidStorefrontOrder, placedFromIp: customer.ip } }) : 0
+  if (byCustomer >= MAX_UNPAID_ORDERS || byIp >= MAX_UNPAID_ORDERS_PER_IP) throw new CheckoutError("TOO_MANY_UNPAID")
+}
+
 // Places the order from the basket and empties the basket, in the caller's transaction. Throws CheckoutError when the
 // basket or the total changed since the page showed them (the page then shows them again), and OrderItemError when
 // stock ran out.
 export async function placeOrder(tx: Tx, sessionCartId: string, pricing: PricingContext, input: PlaceOrderInput) {
   const email = input.email.toLowerCase()
-  const byCustomer = await tx.order.count({ where: { ...unpaidStorefrontOrder, OR: [{ customerEmail: email }, { customerPhone: input.phone }] } })
-  const byIp = input.ip ? await tx.order.count({ where: { ...unpaidStorefrontOrder, placedFromIp: input.ip } }) : 0
-  if (byCustomer >= MAX_UNPAID_ORDERS || byIp >= MAX_UNPAID_ORDERS_PER_IP) throw new CheckoutError("TOO_MANY_UNPAID")
+  await checkUnpaidLimits(tx, { email, phone: input.phone, ip: input.ip })
 
   // The account's terms as they are now, not as the page saw them: a suspension stops the discount (PRICE_CHANGED)
   const trade = await loadTradeTerms(tx, input.userId)

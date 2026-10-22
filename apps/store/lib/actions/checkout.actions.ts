@@ -1,21 +1,19 @@
 "use server"
 
-import { headers } from "next/headers"
 import { after } from "next/server"
-import { authURLs } from "@workspace/auth/constants"
 import { formatError } from "@workspace/auth/format-error"
 import { getPricingContext } from "@workspace/commerce/exchange-rates"
 import { notifyStockAlerts } from "@workspace/commerce/notifications"
-import { createPaymentAttempt, markAttemptFailed, PaymentClosedError } from "@workspace/commerce/online-payments"
+import { PaymentClosedError } from "@workspace/commerce/online-payments"
 import { OrderItemError } from "@workspace/commerce/order-writes"
-import { initializeTransaction } from "@workspace/commerce/paystack"
 import type { DataResponse } from "@workspace/contracts"
 import { prisma } from "@workspace/db"
-import { isOrderKey, orderHref } from "@workspace/commerce/order-links"
+import { isOrderKey } from "@workspace/commerce/order-links"
 
 import { rememberAddress } from "@/lib/addresses"
 import { readCartId } from "@/lib/cart-cookie"
 import { CheckoutError, placeOrder, priceCheckout, type CheckoutSummary } from "@/lib/checkout"
+import { paymentRedirect, startPayment, visitorIp } from "@/lib/payments"
 import { areaSchema, placeOrderSchema } from "@/lib/schemas/checkout.schemas"
 import { getStoreSession, getTradeTerms } from "@/lib/session"
 
@@ -50,23 +48,6 @@ export async function quoteCheckoutAction(area: { region: string; town: string }
   }
 }
 
-// Starts paying for an order on Paystack: a new attempt, and the page on Paystack to send the customer to
-async function startPayment(orderId: string) {
-  const attempt = await prisma.$transaction((tx) => createPaymentAttempt(tx, orderId), TRANSACTION_OPTIONS)
-  try {
-    return await initializeTransaction({
-      reference: attempt.reference,
-      email: attempt.email,
-      amountGhs: attempt.amountGhs,
-      callbackUrl: new URL("/api/paystack/callback", authURLs.store).toString(),
-      metadata: { orderId, orderReference: attempt.orderReference },
-    })
-  } catch (error) {
-    await markAttemptFailed(prisma, attempt.reference, error instanceof Error ? error.message : String(error))
-    throw error
-  }
-}
-
 // Places the order and sends the customer to Paystack to pay. The order stands even if Paystack can't be reached: its
 // page then offers to try paying again.
 export async function placeOrderAction(input: unknown): Promise<DataResponse<{ redirectTo: string }>> {
@@ -78,8 +59,7 @@ export async function placeOrderAction(input: unknown): Promise<DataResponse<{ r
     if (!cartId) return EMPTY_BASKET
     if (!pricing) return NO_RATE
 
-    // The first address in X-Forwarded-For is the visitor's, as the host's proxy adds it
-    const ip = (await headers()).get("x-forwarded-for")?.split(",")[0]?.trim() || null
+    const ip = await visitorIp()
     const { stockAlerts, ...order } = await prisma.$transaction((tx) => placeOrder(tx, cartId, pricing, { ...parsed.data, ip, userId: session?.user.id ?? null }), TRANSACTION_OPTIONS)
     // Stock went down now, not when the order is paid. The customer's and staff's order emails wait for the payment.
     after(() => notifyStockAlerts(stockAlerts))
@@ -89,13 +69,7 @@ export async function placeOrderAction(input: unknown): Promise<DataResponse<{ r
       after(() => rememberAddress(session.user.id, { name, phone, line1, line2, region, town }))
     }
 
-    const orderPage = orderHref(order.reference, order.id)
-    try {
-      return { success: true, data: { redirectTo: await startPayment(order.id) } }
-    } catch (error) {
-      console.error(`Couldn't start paying for ${order.reference}:`, error)
-      return { success: true, data: { redirectTo: `${orderPage}&payment=unavailable` } }
-    }
+    return { success: true, data: { redirectTo: await paymentRedirect(order) } }
   } catch (error) {
     return failure(error)
   }
