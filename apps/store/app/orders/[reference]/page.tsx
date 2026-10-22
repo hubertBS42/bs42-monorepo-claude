@@ -1,7 +1,7 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { notFound } from "next/navigation"
-import { Circle, CircleCheck, CircleX, Clock, Package } from "lucide-react"
+import { ArrowLeft, Circle, CircleCheck, CircleX, Clock, Package } from "lucide-react"
 import { canStartPayment, paymentDeadline } from "@workspace/commerce/online-payments"
 import { hasBeenPaid, ORDER_STATUS_LABELS, PAYMENT_METHOD_LABELS } from "@workspace/commerce/order-status"
 import { prisma } from "@workspace/db"
@@ -12,11 +12,13 @@ import { Separator } from "@workspace/ui/components/separator"
 import { formatDate } from "@workspace/utils/date"
 import { getStringParam } from "@workspace/utils/search-params"
 import { invoiceHref, isOrderKey } from "@workspace/commerce/order-links"
+import { accountOrdersWhere } from "@workspace/commerce/customer-orders"
 
 import { PayNowButton, ReorderButton } from "@/components/orders/order-actions"
 import type { SearchParams } from "@/lib/catalogue-filters"
 import { formatGhs } from "@/lib/money"
 import { orderTimeline, type TimelineStep } from "@/lib/order-timeline"
+import { getStoreSession } from "@/lib/session"
 
 export const metadata: Metadata = { title: "Your order", robots: { index: false } }
 
@@ -110,6 +112,10 @@ export default async function OrderPage({ params, searchParams }: OrderPageProps
   // The same answer for a wrong key as for no order, so references can't be probed
   if (!order || !key || !isOrderKey(order.id, key)) notFound()
 
+  // "My orders" only for the account the order belongs to (as that list counts it), not a guest or a forwarded link
+  const session = await getStoreSession()
+  const inMyOrders = !!session && (await prisma.order.count({ where: { AND: [{ id: order.id }, accountOrdersWhere(session.user)] } })) > 0
+
   const paid = hasBeenPaid(order.paymentStatus)
   const cancelled = order.status === OrderStatus.CANCELLED
   // A paid order's heading follows its delivery
@@ -138,6 +144,12 @@ export default async function OrderPage({ params, searchParams }: OrderPageProps
   return (
     <div className="mx-auto max-w-4xl px-4 py-8 lg:px-6">
       <div className="mb-8 flex flex-col gap-4">
+        {inMyOrders && (
+          <Link href="/account/orders" className="flex w-fit items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+            <ArrowLeft className="size-4" aria-hidden />
+            My orders
+          </Link>
+        )}
         {cancelled ? (
           <>
             <CircleX className="size-10 text-muted-foreground" aria-hidden />

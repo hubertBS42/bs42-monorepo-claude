@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import Link from "next/link"
+import { ArrowLeft } from "lucide-react"
 import { notFound } from "next/navigation"
 import { isQuoteKey, orderHref } from "@workspace/commerce/order-links"
 import { prisma } from "@workspace/db"
@@ -61,6 +62,12 @@ export default async function QuotePage({ params, searchParams }: QuotePageProps
   return (
     <div className="mx-auto max-w-3xl px-4 py-8 lg:px-6 print:max-w-none print:p-0">
       <div className="mb-6 space-y-4 print:hidden">
+        {isOwner && (
+          <Link href="/account/quotes" className="flex w-fit items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+            <ArrowLeft className="size-4" aria-hidden />
+            Quotations
+          </Link>
+        )}
         <div className="flex flex-wrap items-center justify-between gap-3">
           <Badge variant={isOpen ? "default" : "secondary"}>{status}</Badge>
           <PrintButton />
