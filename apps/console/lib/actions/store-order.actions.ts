@@ -7,7 +7,7 @@ import { consoleAdminRoles, hasSystemPermission, hasSystemRole } from "@workspac
 import { ActionResponse, DataResponse } from "@workspace/contracts"
 import { prisma } from "@workspace/db"
 import { Prisma } from "@workspace/db/client"
-import { ShippingMethod, Status } from "@workspace/db/enums"
+import { OrganizationStatus, ShippingMethod, Status } from "@workspace/db/enums"
 import { hasStorePermission, requireConsoleAccess } from "@/lib/auth-guard"
 import { getLatestExchangeRate, getPricingContext, type ExchangeRateInfo } from "@workspace/commerce/exchange-rates"
 import { notifyNewOrder, notifyStockAlerts } from "@workspace/commerce/notifications"
@@ -118,8 +118,14 @@ function toDiscount({ discountType, discountValue }: DiscountInput) {
 
 type StorePricing = { ok: false; problem: Failure } | { ok: true; lines: ResolvedLine[]; priced: PricedOrder; rate: ExchangeRateInfo; discount: ReturnType<typeof toDiscount> }
 
-// Prices the lines at the store's prices, or returns why it can't
+const STORE_SUSPENDED: Failure = { success: false, error: "This store is suspended, so it can't take orders. Ask the platform's admins.", code: "STORE_SUSPENDED" }
+
+// Prices the lines at the store's prices, or returns why it can't. A suspended store sells nothing, in its own
+// workspace as on the storefront.
 async function priceStoreOrder(storeId: string, input: { items: z.output<typeof previewStoreOrderSchema>["items"]; shippingGhs: number } & DiscountInput): Promise<StorePricing> {
+  const store = await prisma.organization.findUnique({ where: { id: storeId }, select: { status: true } })
+  if (store?.status !== OrganizationStatus.ACTIVE) return { ok: false, problem: STORE_SUSPENDED }
+
   const context = await getPricingContext()
   if (!context) return { ok: false, problem: NO_RATE }
 

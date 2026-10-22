@@ -8,6 +8,8 @@ import { requireActiveStoreMember } from "@/lib/auth-guard"
 import { EXCHANGE_RATE_MAX_AGE_DAYS, getLatestExchangeRate } from "@workspace/commerce/exchange-rates"
 import CreateOrderForm from "./_components/create-order-form"
 import { getDeliverySettings } from "@/lib/data/delivery.data"
+import { prisma } from "@workspace/db"
+import { OrganizationStatus } from "@workspace/db/enums"
 
 export const metadata: Metadata = {
   title: "Create Order",
@@ -18,7 +20,8 @@ export default async function CreateStoreOrderPage() {
   if (!organizationRoles[role].authorize({ order: ["create"] }).success) redirect("/forbidden")
 
   // The actions check again when pricing; this only saves filling in a form that can't be saved
-  const [rate, delivery] = await Promise.all([getLatestExchangeRate(), getDeliverySettings()])
+  const [rate, delivery, store] = await Promise.all([getLatestExchangeRate(), getDeliverySettings(), prisma.organization.findUnique({ where: { id: storeId }, select: { status: true } })])
+  const suspended = store?.status !== OrganizationStatus.ACTIVE
 
   return (
     <main className="flex flex-col gap-y-6">
@@ -27,12 +30,14 @@ export default async function CreateStoreOrderPage() {
         <p className="text-sm text-muted-foreground">An order taken in the store: at the counter, by phone or by message.</p>
       </div>
 
-      {!rate || rate.isStale ? (
+      {suspended || !rate || rate.isStale ? (
         <Card>
           <CardHeader>
-            <CardTitle>Orders can&apos;t be priced right now</CardTitle>
+            <CardTitle>{suspended ? "This store can't take orders" : "Orders can't be priced right now"}</CardTitle>
             <CardDescription>
-              {`Prices are converted from USD at the latest exchange rate, and ${rate ? `the latest one is more than ${EXCHANGE_RATE_MAX_AGE_DAYS} days old` : "no rate has been set"}. Ask a platform admin to set today's rate in Settings.`}
+              {suspended
+                ? "The store is suspended, so it sells nothing here or on the storefront. Ask the platform's admins."
+                : `Prices are converted from USD at the latest exchange rate, and ${rate ? `the latest one is more than ${EXCHANGE_RATE_MAX_AGE_DAYS} days old` : "no rate has been set"}. Ask a platform admin to set today's rate in Settings.`}
             </CardDescription>
           </CardHeader>
           <CardContent>
