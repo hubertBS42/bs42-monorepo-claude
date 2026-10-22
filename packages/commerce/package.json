@@ -25,6 +25,7 @@
   },
   "exports": {
     "./delivery": "./src/delivery.ts",
+    "./customer-orders": "./src/customer-orders.ts",
     "./delivery-rates": "./src/delivery-rates.ts",
     "./exchange-rates": "./src/exchange-rates.ts",
     "./notifications": "./src/notifications.ts",
@@ -35,6 +36,7 @@
     "./order-writes": "./src/order-writes.ts",
     "./paystack": "./src/paystack.ts",
     "./pricing": "./src/pricing.ts",
+    "./reviews": "./src/reviews.ts",
     "./stock-movements": "./src/stock-movements.ts",
     "./visibility": "./src/visibility.ts"
   }

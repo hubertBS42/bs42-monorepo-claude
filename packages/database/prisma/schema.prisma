@@ -92,6 +92,8 @@ model AppSettings {
   notifyRateFetchFailure Boolean  @default(true)
   // A store's owner or admin giving a refund (the platform keeps an eye on money going back)
   notifyStoreRefunds     Boolean  @default(true)
+  // A customer posting a 1 or 2 star review
+  notifyLowRatings       Boolean  @default(false)
 
   updatedAt DateTime @updatedAt
 
@@ -140,6 +142,7 @@ model User {
   cart             Cart?
   orders           Order[]
   reviews          Review[]
+  hiddenReviews    Review[]             @relation("ReviewHiddenBy")
   sessions         Session[]
   accounts         Account[]
   members          Member[]
@@ -287,7 +290,8 @@ model Product {
   condition   Condition @default(NEW)
   description String?
   images      String[] // Main product images
-  rating      Decimal   @default(0) @db.Decimal(3, 2) // average review rating, 0.00-5.00
+  // Its published reviews' average (0.00-5.00) and count, recomputed by each review change (@workspace/commerce/reviews)
+  rating      Decimal   @default(0) @db.Decimal(3, 2)
   numReviews  Int       @default(0)
   banner      String?
   tags        String[]
@@ -471,7 +475,6 @@ model StoreListing {
   orderItems           OrderItem[]
   cartItems            CartItem[]
   storeListingVariants StoreListingVariant[]
-  reviews              Review[]
   purchaseOrderItems   PurchaseOrderItem[]
   stockMovements       StockMovement[]
 
@@ -622,7 +625,7 @@ model Order {
 
   // Where a storefront order was placed from (the first X-Forwarded-For address), so one visitor can only hold so
   // many unpaid orders (and their stock) at a time. Null for staff orders.
-  placedFromIp String?
+  placedFromIp    String?
   // When "Find an order" last emailed this order's link, so its customer can't be sent it over and over
   orderLinkSentAt DateTime?
 
@@ -800,6 +803,7 @@ model OrderItem {
   productVariantId   String?         @db.Uuid
 
   returns OrderReturnItem[]
+  reviews Review[]
 
   @@index([orderId])
   @@index([organizationId])
@@ -1023,26 +1027,39 @@ model StockMovement {
   @@map("stock_movement")
 }
 
-model Review {
-  id                 String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  userId             String       @db.Uuid
-  productId          String       @db.Uuid
-  rating             Int
-  title              String
-  description        String
-  // Set only once a purchase has been confirmed
-  isVerifiedPurchase Boolean      @default(false)
-  createdAt          DateTime     @default(now())
-  updatedAt          DateTime     @updatedAt
-  product            Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
-  user               User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  storeListingId     String       @db.Uuid
-  // Cascade like product: deleting a product already removes its listings and so their reviews
-  storeListing       StoreListing @relation(fields: [storeListingId], references: [id], onDelete: Cascade)
+enum ReviewStatus {
+  PUBLISHED
+  HIDDEN
+}
 
-  @@unique([userId, productId, storeListingId])
-  @@index([productId])
-  @@index([storeListingId])
+model Review {
+  id           String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  // One review per customer per product, whichever store sold it: customers never see stores
+  userId       String       @db.Uuid
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId    String       @db.Uuid
+  product      Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
+  // The purchase it's for (only buyers review), and the variant bought, as the order line named it ("4MP / Black")
+  orderItemId  String?      @db.Uuid
+  orderItem    OrderItem?   @relation(fields: [orderItemId], references: [id], onDelete: SetNull)
+  variantLabel String?
+  rating       Int
+  title        String
+  body         String
+  // Published at once; staff can hide one, with a reason the customer sees
+  status       ReviewStatus @default(PUBLISHED)
+  hiddenReason String?
+  hiddenAt     DateTime?
+  hiddenById   String?      @db.Uuid
+  hiddenBy     User?        @relation("ReviewHiddenBy", fields: [hiddenById], references: [id], onDelete: SetNull)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  @@unique([userId, productId])
+  @@index([productId, status])
+  @@index([status, createdAt])
+  @@index([orderItemId])
+  @@index([hiddenById])
   @@map("review")
 }
 

@@ -22,6 +22,7 @@ export const DEFAULT_APP_SETTINGS: AppSettingsData = {
   notifyOutOfStock: true,
   notifyRateFetchFailure: true,
   notifyStoreRefunds: true,
+  notifyLowRatings: false,
 }
 
 export const resolveConsoleName = (s: AppSettingsData) => s.consoleName ?? s.storeName
@@ -47,6 +48,7 @@ export async function readAppSettings(): Promise<AppSettingsData> {
         notifyOutOfStock: row.notifyOutOfStock,
         notifyRateFetchFailure: row.notifyRateFetchFailure,
         notifyStoreRefunds: row.notifyStoreRefunds,
+        notifyLowRatings: row.notifyLowRatings,
       }
     : DEFAULT_APP_SETTINGS
 }

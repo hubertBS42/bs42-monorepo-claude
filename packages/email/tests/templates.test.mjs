@@ -9,6 +9,7 @@ import { OrderDelivered } from "../dist/src/templates/order/order-delivered.js"
 import { OrderPaymentReceived } from "../dist/src/templates/order/order-payment-received.js"
 import { OrderRefunded } from "../dist/src/templates/order/order-refunded.js"
 import { OrderReturned } from "../dist/src/templates/order/order-returned.js"
+import { OrderReviewRequest } from "../dist/src/templates/order/order-review-request.js"
 import { OrderShipped } from "../dist/src/templates/order/order-shipped.js"
 import { PasswordUpdatedEmail } from "../dist/src/templates/password-updated-email.js"
 import { ResetPasswordEmail } from "../dist/src/templates/reset-password-email.js"
@@ -114,6 +115,15 @@ const templates = [
       refundAmountGhs: 25.5,
     }),
     "Sole came loose",
+  ],
+  [
+    "review request",
+    OrderReviewRequest({
+      ...orderDetails,
+      items: [{ productName: "4MP Dome Camera", imageUrl: null, reviewUrl: "https://example.com/account/reviews/4mp-dome-camera" }],
+      appName: "BS42",
+    }),
+    "https://example.com/account/reviews/4mp-dome-camera",
   ],
 ]
 

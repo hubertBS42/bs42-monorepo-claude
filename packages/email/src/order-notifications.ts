@@ -8,6 +8,7 @@ import { OrderUnpaidCancelled } from "./templates/order/order-unpaid-cancelled.j
 import { OrderRefunded } from "./templates/order/order-refunded.js"
 import { OrderPaymentReceived } from "./templates/order/order-payment-received.js"
 import { OrderReturned, type ReturnedItem } from "./templates/order/order-returned.js"
+import { OrderReviewRequest, type ReviewRequestItem } from "./templates/order/order-review-request.js"
 import type { OrderSummaryItem } from "./templates/order/components/order-summary.js"
 
 export interface BaseOrderEmail {
@@ -137,6 +138,21 @@ export async function sendOrderUnpaidCancelledEmail(data: BaseOrderEmail & { pay
       reference: data.reference,
       paymentMinutes: data.paymentMinutes,
       url: data.url,
+      appName: data.appName,
+      logoUrl: data.logoUrl,
+    }),
+  })
+}
+
+export async function sendOrderReviewRequestEmail(data: BaseOrderEmail & { items: ReviewRequestItem[] }) {
+  return sendEmail({
+    to: data.to,
+    fromName: data.appName,
+    subject: `How was your order? — ${data.reference}`,
+    reactTemplate: OrderReviewRequest({
+      customerName: data.customerName,
+      reference: data.reference,
+      items: data.items,
       appName: data.appName,
       logoUrl: data.logoUrl,
     }),

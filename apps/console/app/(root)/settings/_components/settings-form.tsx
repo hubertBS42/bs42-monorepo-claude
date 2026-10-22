@@ -40,6 +40,7 @@ export default function SettingsForm({ settings, version }: { settings: AppSetti
     notifyOutOfStock: settings.notifyOutOfStock,
     notifyRateFetchFailure: settings.notifyRateFetchFailure,
     notifyStoreRefunds: settings.notifyStoreRefunds,
+    notifyLowRatings: settings.notifyLowRatings,
     version,
   }
 
@@ -216,6 +217,7 @@ export default function SettingsForm({ settings, version }: { settings: AppSetti
                         variant="card"
                         disabled={isPending}
                       />
+                      <SwitchField control={form.control} name="notifyLowRatings" label="Low ratings" description="When a customer posts a 1 or 2 star review" variant="card" disabled={isPending} />
                       <SwitchField
                         control={form.control}
                         name="notifyRateFetchFailure"

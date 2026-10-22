@@ -1,5 +1,6 @@
 import "server-only"
 
+import { authURLs } from "@workspace/auth/constants"
 import { prisma, readAppSettings, resolveStoreName } from "@workspace/db"
 import { Prisma } from "@workspace/db/client"
 import { OrderStatus, ShippingMethod } from "@workspace/db/enums"
@@ -11,18 +12,22 @@ import {
   sendOrderPaymentReceivedEmail,
   sendOrderRefundedEmail,
   sendOrderReturnedEmail,
+  sendOrderReviewRequestEmail,
   sendOrderShippedEmail,
   sendOrderUnpaidCancelledEmail,
   type BaseOrderEmail,
   type OrderConfirmationEmail,
   type ReturnedItem,
+  type ReviewRequestItem,
 } from "@workspace/email"
 import { hasBeenPaid, PAYMENT_METHOD_LABELS } from "./order-status"
+import { unreviewedOrderProducts } from "./reviews"
 
 // Customer emails for orders. Actions schedule them with after(), once the order is saved, so a slow or failed
 // email never holds up or fails the change.
 
-// UNPAID_CANCELLED: a storefront order cancelled by the unpaid-order job, which wasn't charged
+// UNPAID_CANCELLED: a storefront order cancelled by the unpaid-order job, which wasn't charged. COMPLETED asks for
+// reviews of what the customer hasn't reviewed yet.
 export type OrderEmailEvent =
   | "CREATED"
   | "PAYMENT_RECEIVED"
@@ -32,6 +37,7 @@ export type OrderEmailEvent =
   | typeof OrderStatus.CONFIRMED
   | typeof OrderStatus.SHIPPED
   | typeof OrderStatus.DELIVERED
+  | typeof OrderStatus.COMPLETED
   | typeof OrderStatus.CANCELLED
 
 const orderEmailSelect = {
@@ -68,17 +74,20 @@ export type OrderEmail =
   | { kind: "SHIPPED"; data: BaseOrderEmail & { shippingAddress: string; note: string | null } }
   | { kind: "CANCELLED"; data: BaseOrderEmail & { cancellationReason: string; totalGhs: number } }
   | { kind: "UNPAID_CANCELLED"; data: BaseOrderEmail & { paymentMinutes: number; url: string } }
+  | { kind: "REVIEW_REQUEST"; data: BaseOrderEmail & { items: ReviewRequestItem[] } }
 
 // The stored amounts as they are, for display: nothing here recalculates them
 const amount = (value: Prisma.Decimal) => Number(value.toFixed(2))
 
 // What a refund or a return adds to its email: the amount given back, and for a return what came back. An unpaid
-// order's cancellation adds the order page's address and how long there was to pay.
+// order's cancellation adds the order page's address and how long there was to pay. A completed order adds the
+// products to ask for reviews of.
 export interface OrderEmailExtra {
   refundAmountGhs?: string | null
   returnedItems?: ReturnedItem[]
   orderUrl?: string
   paymentMinutes?: number
+  reviewItems?: ReviewRequestItem[]
 }
 
 // Which email an event sends, or null when it sends none. Pure, so it can be tested without sending anything.
@@ -88,7 +97,7 @@ export function buildOrderEmail(
   event: OrderEmailEvent,
   note: string | null,
   brand: { appName: string; logoUrl: string | null },
-  { refundAmountGhs = null, returnedItems = [], orderUrl, paymentMinutes }: OrderEmailExtra = {}
+  { refundAmountGhs = null, returnedItems = [], orderUrl, paymentMinutes, reviewItems = [] }: OrderEmailExtra = {}
 ): OrderEmail | null {
   // Walk-in customers may give no email; an account can turn order emails off
   if (!order.customerEmail || order.user?.getOrderEmails === false) return null
@@ -137,6 +146,9 @@ export function buildOrderEmail(
       return isDelivery ? { kind: "DELIVERED", data: { ...base, note } } : null
     case "UNPAID_CANCELLED":
       return orderUrl && paymentMinutes ? { kind: "UNPAID_CANCELLED", data: { ...base, paymentMinutes, url: orderUrl } } : null
+    case OrderStatus.COMPLETED:
+      // Nothing left to review, nothing to ask
+      return reviewItems.length > 0 ? { kind: "REVIEW_REQUEST", data: { ...base, items: reviewItems } } : null
     case OrderStatus.CANCELLED:
       return { kind: "CANCELLED", data: { ...base, cancellationReason: note || "No reason was given.", totalGhs: amount(order.totalGhs) } }
   }
@@ -162,14 +174,25 @@ function deliver(email: OrderEmail) {
       return sendOrderCancelledEmail(email.data)
     case "UNPAID_CANCELLED":
       return sendOrderUnpaidCancelledEmail(email.data)
+    case "REVIEW_REQUEST":
+      return sendOrderReviewRequestEmail(email.data)
   }
 }
+
+// The storefront's page for writing a product's review
+export const reviewUrl = (productSlug: string) => new URL(`/account/reviews/${productSlug}`, authURLs.store).toString()
 
 // Sends the event's email from the saved order. Never throws: it runs after the response, where nothing could catch it.
 export async function sendOrderEmail(orderId: string, event: OrderEmailEvent, note: string | null = null, extra: OrderEmailExtra = {}) {
   try {
     const [order, settings] = await Promise.all([prisma.order.findUnique({ where: { id: orderId }, select: orderEmailSelect }), readAppSettings()])
     if (!order) return
+
+    // The review links go through sign-in: only buyers review
+    if (event === OrderStatus.COMPLETED) {
+      const products = await unreviewedOrderProducts(prisma, orderId)
+      extra = { ...extra, reviewItems: products.map((product) => ({ productName: product.name, imageUrl: product.image, reviewUrl: reviewUrl(product.slug) })) }
+    }
 
     // Customer emails carry the storefront's name and logo, not the console's
     const email = buildOrderEmail(order, event, note, { appName: resolveStoreName(settings), logoUrl: settings.logoUrl }, extra)
@@ -181,5 +204,5 @@ export async function sendOrderEmail(orderId: string, event: OrderEmailEvent, no
 
 // The email a status change sends, if any
 export function statusEmailEvent(status: OrderStatus): OrderEmailEvent | null {
-  return status === OrderStatus.CONFIRMED || status === OrderStatus.SHIPPED || status === OrderStatus.DELIVERED || status === OrderStatus.CANCELLED ? status : null
+  return status === OrderStatus.CONFIRMED || status === OrderStatus.SHIPPED || status === OrderStatus.DELIVERED || status === OrderStatus.COMPLETED || status === OrderStatus.CANCELLED ? status : null
 }

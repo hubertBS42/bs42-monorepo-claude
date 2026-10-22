@@ -159,6 +159,42 @@ export async function notifyStoreRefund(orderId: string, storeId: string, refund
   }
 }
 
+// A customer posted a 1 or 2 star review (an edit down to one counts too), so staff can look into what went wrong,
+// or hide it if it breaks the rules
+export async function notifyLowRating(reviewId: string) {
+  try {
+    const settings = await readAppSettings()
+    if (!settings.notifyLowRatings || settings.notificationEmails.length === 0) return
+
+    const review = await prisma.review.findUnique({
+      where: { id: reviewId },
+      select: { rating: true, title: true, body: true, variantLabel: true, productId: true, product: { select: { name: true } }, user: { select: { name: true, email: true } } },
+    })
+    if (!review) return
+
+    await send(
+      settings,
+      {
+        subject: `${review.rating}★ review of ${review.product.name}`,
+        preview: review.title,
+        heading: "Low rating",
+        intro: `A customer rated ${review.product.name} ${review.rating} out of 5.`,
+        details: [
+          { label: "Product", value: review.variantLabel ? `${review.product.name} (${review.variantLabel})` : review.product.name },
+          { label: "Customer", value: review.user.name ? `${review.user.name} (${review.user.email})` : review.user.email },
+          { label: "Rating", value: `${review.rating} / 5` },
+          { label: "Title", value: review.title },
+          { label: "Review", value: review.body },
+        ],
+        action: { label: "View reviews", url: new URL(`/catalogue/reviews?product=${review.productId}`, authURLs.console).toString() },
+      },
+      "low rating"
+    )
+  } catch (error) {
+    console.error(`Low rating notification for ${reviewId} failed:`, error)
+  }
+}
+
 // The daily exchange-rate fetch failed. The last rate stays usable for a while, then orders stop until one is set.
 export async function notifyRateFetchFailed(date: string, error: string) {
   try {

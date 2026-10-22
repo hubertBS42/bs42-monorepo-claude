@@ -163,7 +163,7 @@ export async function deleteListingAction(input: z.input<typeof deleteListingSch
     ])
     if (ordered || purchased) return HAS_ORDERS
 
-    // Its variants, cart items and reviews cascade
+    // Its variants and cart items cascade
     await prisma.storeListing.delete({ where: { id } })
     return { success: true }
   } catch (error) {
