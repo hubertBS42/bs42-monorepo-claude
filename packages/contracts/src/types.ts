@@ -53,4 +53,5 @@ export type AppSettingsData = {
   notifyRateFetchFailure: boolean
   notifyStoreRefunds: boolean
   notifyLowRatings: boolean
+  notifyTradeApplications: boolean
 }

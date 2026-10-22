@@ -9,6 +9,8 @@ const statement = {
   product: ["create", "update", "delete"],
   // Platform orders (the platform is the seller). update covers status, shipping and tax overrides; refund gives money back.
   order: ["read", "create", "update", "refund"],
+  // Storefront customers' trade accounts: update approves, rejects, suspends and sets the discount
+  tradeAccount: ["read", "update"],
   appSettings: ["update"],
 } as const
 
@@ -29,6 +31,7 @@ export const systemRoles = {
     product: ["create", "update", "delete"],
     // Refunds give money back, so they're for superAdmins only
     order: ["read", "create", "update"],
+    tradeAccount: ["read", "update"],
   }),
   superAdmin: systemAccessController.newRole({
     ...adminAc.statements,
@@ -37,6 +40,7 @@ export const systemRoles = {
     category: ["create", "update", "delete"],
     product: ["create", "update", "delete"],
     order: ["read", "create", "update", "refund"],
+    tradeAccount: ["read", "update"],
     appSettings: ["update"],
   }),
 }

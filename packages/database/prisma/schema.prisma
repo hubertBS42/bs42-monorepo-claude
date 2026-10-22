@@ -71,6 +71,22 @@ enum InstallationOption {
   NONE
 }
 
+// A storefront customer's trade account: a business applies, the platform's staff approve it with a discount
+enum TradeAccountStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  // Approved once, its discount stopped for now
+  SUSPENDED
+}
+
+enum BusinessType {
+  INSTALLER
+  IT_CONTRACTOR
+  RESELLER
+  OTHER
+}
+
 // One installation visit per order, arranged by the platform's staff after payment
 enum InstallationStatus {
   TO_ARRANGE
@@ -97,19 +113,21 @@ model AppSettings {
   taxShipping        Boolean @default(false)
 
   // Staff notifications, emailed to these addresses (not necessarily console users), one switch per event
-  notificationEmails     String[] @default([])
+  notificationEmails      String[] @default([])
   // Orders customers place on the storefront, and orders staff create in a store's workspace
-  notifyStorefrontOrders Boolean  @default(true)
-  notifyStaffOrders      Boolean  @default(false)
+  notifyStorefrontOrders  Boolean  @default(true)
+  notifyStaffOrders       Boolean  @default(false)
   // A sale taking a listing (or variant) to its low-stock threshold, or to 0
-  notifyLowStock         Boolean  @default(true)
-  notifyOutOfStock       Boolean  @default(true)
+  notifyLowStock          Boolean  @default(true)
+  notifyOutOfStock        Boolean  @default(true)
   // The daily exchange-rate fetch failing (orders stop once the last rate is too old)
-  notifyRateFetchFailure Boolean  @default(true)
+  notifyRateFetchFailure  Boolean  @default(true)
   // A store's owner or admin giving a refund (the platform keeps an eye on money going back)
-  notifyStoreRefunds     Boolean  @default(true)
+  notifyStoreRefunds      Boolean  @default(true)
   // A customer posting a 1 or 2 star review
-  notifyLowRatings       Boolean  @default(false)
+  notifyLowRatings        Boolean  @default(false)
+  // A business applying for a trade account
+  notifyTradeApplications Boolean  @default(true)
 
   updatedAt DateTime @updatedAt
 
@@ -154,23 +172,25 @@ model User {
   banReason  String?
   banExpires DateTime?
 
-  addresses           Address[]
-  cart                Cart?
-  orders              Order[]
-  reviews             Review[]
-  hiddenReviews       Review[]                   @relation("ReviewHiddenBy")
-  wishListItems       WishListItem[]
-  sessions            Session[]
-  accounts            Account[]
-  members             Member[]
-  invitations         Invitation[]
-  createdOrders       Order[]                    @relation("OrderCreatedBy")
+  addresses             Address[]
+  cart                  Cart?
+  orders                Order[]
+  reviews               Review[]
+  hiddenReviews         Review[]                   @relation("ReviewHiddenBy")
+  wishListItems         WishListItem[]
+  tradeAccount          TradeAccount?              @relation("TradeAccountUser")
+  tradeAccountsReviewed TradeAccount[]             @relation("TradeAccountReviewedBy")
+  sessions              Session[]
+  accounts              Account[]
+  members               Member[]
+  invitations           Invitation[]
+  createdOrders         Order[]                    @relation("OrderCreatedBy")
   // Payments they recorded by hand (cash, mobile money or a card terminal in a store)
-  recordedPayments    Order[]                    @relation("OrderPaymentRecordedBy")
-  statusChanges       OrderStatusHistory[]
-  installationChanges OrderInstallationHistory[]
-  refundsGiven        OrderRefund[]              @relation("OrderRefundedBy")
-  returnsRecorded     OrderReturn[]              @relation("OrderReturnRecordedBy")
+  recordedPayments      Order[]                    @relation("OrderPaymentRecordedBy")
+  statusChanges         OrderStatusHistory[]
+  installationChanges   OrderInstallationHistory[]
+  refundsGiven          OrderRefund[]              @relation("OrderRefundedBy")
+  returnsRecorded       OrderReturn[]              @relation("OrderReturnRecordedBy")
 
   purchaseOrdersCreated  PurchaseOrder[]        @relation("PurchaseOrderCreatedBy")
   purchaseOrdersPlaced   PurchaseOrder[]        @relation("PurchaseOrderOrderedBy")
@@ -677,6 +697,12 @@ model Order {
   // Where a storefront order was placed from (the first X-Forwarded-For address), so one visitor can only hold so
   // many unpaid orders (and their stock) at a time. Null for staff orders.
   placedFromIp        String?
+  // Placed by an approved trade account: its discount is the order's (discountType PERCENTAGE), and the company's
+  // details are copied for the invoice, so later changes to the account don't alter the order
+  tradeAccountId      String?                    @db.Uuid
+  tradeAccount        TradeAccount?              @relation(fields: [tradeAccountId], references: [id], onDelete: SetNull)
+  tradeCompanyName    String?
+  tradeTin            String?
   // Null for an order without installation. installationDate is the booked day; installationHistory says who did what.
   installationStatus  InstallationStatus?
   installationDate    DateTime?                  @db.Date
@@ -705,6 +731,7 @@ model Order {
   @@index([userId])
   @@index([createdById])
   @@index([placedFromIp])
+  @@index([tradeAccountId])
   @@index([paymentRecordedById])
   @@index([exchangeRateId])
   @@index([status])
@@ -724,6 +751,36 @@ model OrderStatusHistory {
   @@index([orderId])
   @@index([changedById])
   @@map("order_status_history")
+}
+
+// One per customer account. Approving sets discountPercent, which every order the account places afterwards gets as
+// its discount (a percentage, before tax). A rejection's reason is shown to the customer, who can apply again.
+model TradeAccount {
+  id                 String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId             String             @unique @db.Uuid
+  user               User               @relation("TradeAccountUser", fields: [userId], references: [id], onDelete: Cascade)
+  companyName        String
+  registrationNumber String
+  // The Ghana Revenue Authority's taxpayer number, printed on the account's invoices
+  tin                String
+  phone              String
+  businessType       BusinessType
+  // What the business does and buys, in the applicant's words
+  details            String?
+  status             TradeAccountStatus @default(PENDING)
+  // 0.01-99.99, set while approved or suspended
+  discountPercent    Decimal?           @db.Decimal(5, 2)
+  rejectionReason    String?
+  reviewedById       String?            @db.Uuid
+  reviewedBy         User?              @relation("TradeAccountReviewedBy", fields: [reviewedById], references: [id], onDelete: SetNull)
+  reviewedAt         DateTime?
+  orders             Order[]
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  @@index([status])
+  @@index([reviewedById])
+  @@map("trade_account")
 }
 
 // Each change to an order's installation: arranged, booked (or moved) for a day, done, or cancelled

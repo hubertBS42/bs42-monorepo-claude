@@ -23,6 +23,7 @@ export const DEFAULT_APP_SETTINGS: AppSettingsData = {
   notifyRateFetchFailure: true,
   notifyStoreRefunds: true,
   notifyLowRatings: false,
+  notifyTradeApplications: true,
 }
 
 export const resolveConsoleName = (s: AppSettingsData) => s.consoleName ?? s.storeName
@@ -49,6 +50,7 @@ export async function readAppSettings(): Promise<AppSettingsData> {
         notifyRateFetchFailure: row.notifyRateFetchFailure,
         notifyStoreRefunds: row.notifyStoreRefunds,
         notifyLowRatings: row.notifyLowRatings,
+        notifyTradeApplications: row.notifyTradeApplications,
       }
     : DEFAULT_APP_SETTINGS
 }
