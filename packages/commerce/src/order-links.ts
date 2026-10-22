@@ -31,6 +31,11 @@ export function invoiceHref(reference: string, orderId: string) {
   return `/orders/${reference}/invoice?key=${orderKey(orderId)}`
 }
 
+// The invoice's full address, for the console's order pages
+export function invoiceUrl(reference: string, orderId: string) {
+  return new URL(invoiceHref(reference, orderId), authURLs.store).toString()
+}
+
 // The order page's full address, for emails
 export function orderUrl(reference: string, orderId: string) {
   return new URL(orderHref(reference, orderId), authURLs.store).toString()

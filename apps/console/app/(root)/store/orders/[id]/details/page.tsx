@@ -24,6 +24,7 @@ import {
 } from "@/components/orders/order-details"
 import { EditOrderCustomer, EditOrderDelivery, EditOrderNotes } from "@/components/orders/order-edits"
 import InstallationCard from "@/components/orders/installation-card"
+import { InvoiceButton } from "@/components/orders/invoice-button"
 import RecordPayment from "@/components/orders/record-payment"
 import OrderRefunds from "@/components/orders/refund-order"
 import RecordReturn from "@/components/orders/return-order"
@@ -75,7 +76,11 @@ export default async function StoreOrderDetailsPage({ params }: OrderDetailsPage
             {order.isMultiStore && <Badge variant="outline">With other stores</Badge>}
           </div>
         </div>
-        <BackButton link="/store/orders" />
+        <div className="flex items-center gap-2">
+          {/* The invoice shows the whole order, so only for one made of the store's own items */}
+          {!order.isMultiStore && <InvoiceButton reference={order.reference} orderId={order.id} />}
+          <BackButton link="/store/orders" />
+        </div>
       </div>
 
       <div className="grid items-start gap-4 lg:grid-cols-3">

@@ -22,6 +22,7 @@ import {
 } from "@/components/orders/order-details"
 import { EditOrderCustomer, EditOrderDelivery, EditOrderNotes } from "@/components/orders/order-edits"
 import InstallationCard from "@/components/orders/installation-card"
+import { InvoiceButton } from "@/components/orders/invoice-button"
 import RecordPayment from "@/components/orders/record-payment"
 import OrderRefunds from "@/components/orders/refund-order"
 import RecordReturn from "@/components/orders/return-order"
@@ -73,7 +74,10 @@ export default async function OrderDetailsPage({ params }: OrderDetailsPageProps
             {order.isMultiStore && <Badge variant="outline">{`${order.storeNames.length} stores`}</Badge>}
           </div>
         </div>
-        <BackButton link="/orders" />
+        <div className="flex items-center gap-2">
+          <InvoiceButton reference={order.reference} orderId={order.id} />
+          <BackButton link="/orders" />
+        </div>
       </div>
 
       <div className="grid items-start gap-4 lg:grid-cols-3">
