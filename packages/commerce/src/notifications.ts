@@ -6,6 +6,7 @@ import { prisma, readAppSettings, resolveConsoleName } from "@workspace/db"
 import { sendEmail, StaffAlertEmail } from "@workspace/email"
 import { formatCurrency } from "@workspace/utils/currency"
 import { formatDate } from "@workspace/utils/date"
+import { BUSINESS_TYPE_LABELS } from "./trade-account-status"
 
 // Staff notifications: emails to the addresses in Settings → Notifications, one switch per event. Callers schedule
 // them with after(), once the change has committed, and they never throw: a missing mailer or a bad address is logged,
@@ -202,6 +203,42 @@ export async function notifyLowRating(reviewId: string) {
     )
   } catch (error) {
     console.error(`Low rating notification for ${reviewId} failed:`, error)
+  }
+}
+
+// A business applied for a trade account on the storefront (again, after a rejection), for an admin to review
+export async function notifyTradeApplication(accountId: string) {
+  try {
+    const settings = await readAppSettings()
+    if (!settings.notifyTradeApplications || settings.notificationEmails.length === 0) return
+
+    const account = await prisma.tradeAccount.findUnique({
+      where: { id: accountId },
+      select: { companyName: true, registrationNumber: true, tin: true, phone: true, businessType: true, details: true, user: { select: { name: true, email: true } } },
+    })
+    if (!account) return
+
+    await send(
+      settings,
+      {
+        subject: `Trade account application: ${account.companyName}`,
+        preview: `${account.companyName} · ${BUSINESS_TYPE_LABELS[account.businessType]}`,
+        heading: "Trade account application",
+        intro: `${account.companyName} applied for a trade account. Approve it with a discount, or reject it with a reason.`,
+        details: [
+          { label: "Company", value: account.companyName },
+          { label: "Business", value: BUSINESS_TYPE_LABELS[account.businessType] },
+          { label: "Registration number", value: account.registrationNumber },
+          { label: "TIN", value: account.tin },
+          { label: "Contact", value: `${account.user.name ? `${account.user.name}, ` : ""}${account.user.email}, ${account.phone}` },
+          ...(account.details ? [{ label: "About the business", value: account.details }] : []),
+        ],
+        action: { label: "Review the application", url: new URL(`/trade-accounts/${accountId}`, authURLs.console).toString() },
+      },
+      "trade application"
+    )
+  } catch (error) {
+    console.error(`Trade application notification for ${accountId} failed:`, error)
   }
 }
 

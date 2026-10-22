@@ -40,6 +40,8 @@
     "./pricing": "./src/pricing.ts",
     "./reviews": "./src/reviews.ts",
     "./stock-movements": "./src/stock-movements.ts",
+    "./trade-account-status": "./src/trade-account-status.ts",
+    "./trade-accounts": "./src/trade-accounts.ts",
     "./visibility": "./src/visibility.ts"
   }
 }

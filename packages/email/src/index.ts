@@ -9,6 +9,7 @@ export { OrderLinkEmail } from "./templates/order-link-email.js"
 export { ExistingAccountEmail } from "./templates/existing-account-email.js"
 export { InviteMemberEmail } from "./templates/invite-member-email.js"
 export { StaffAlertEmail } from "./templates/staff-alert-email.js"
+export { TradeAccountDecisionEmail } from "./templates/trade-account-decision-email.js"
 export {
   sendOrderConfirmationEmail,
   sendOrderShippedEmail,

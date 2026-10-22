@@ -18,6 +18,7 @@ import { SetPasswordEmail } from "../dist/src/templates/set-password-email.js"
 import { StaffAlertEmail } from "../dist/src/templates/staff-alert-email.js"
 import { VerifyEmailEmail } from "../dist/src/templates/verify-email-email.js"
 import { OrderLinkEmail } from "../dist/src/templates/order-link-email.js"
+import { TradeAccountDecisionEmail } from "../dist/src/templates/trade-account-decision-email.js"
 
 const orderDetails = {
   customerName: "Alex Morgan",
@@ -67,6 +68,16 @@ const templates = [
     "ORDER-123",
   ],
   ["order confirmed", OrderConfirmed({ ...orderDetails }), "ORDER-123"],
+  [
+    "trade account approved",
+    TradeAccountDecisionEmail({ name: "Alex", companyName: "Zz Ltd", decision: { approved: true, percent: 10 }, url: "https://example.com/account/trade", appName: "BS42" }),
+    "Trade account approved",
+  ],
+  [
+    "trade account rejected",
+    TradeAccountDecisionEmail({ name: "Alex", companyName: "Zz Ltd", decision: { approved: false, reason: "The TIN doesn't match." }, url: "https://example.com/account/trade", appName: "BS42" }),
+    "The TIN doesn",
+  ],
   [
     "order confirmation with installation",
     OrderConfirmation({

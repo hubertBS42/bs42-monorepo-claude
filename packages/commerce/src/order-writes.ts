@@ -186,6 +186,8 @@ export interface NewOrder {
   shipping: { name: string; phone: string; line1: string; line2: string | null; region: string; town: string } | null
   notes: string | null
   discount: { type: "FIXED" | "PERCENTAGE"; value: Prisma.Decimal; reason: string } | null
+  // An approved trade account's order (its discount is the order's), with the company's details for the invoice
+  trade?: { accountId: string; companyName: string; tin: string } | null
   rate: { id: string; value: Prisma.Decimal }
   lines: ResolvedLine[]
   priced: PricedOrder
@@ -257,6 +259,9 @@ export async function createOrder(tx: Tx, order: NewOrder) {
       exchangeRateId: order.rate.id,
       createdById: order.createdById,
       placedFromIp: order.placedFromIp ?? null,
+      tradeAccountId: order.trade?.accountId ?? null,
+      tradeCompanyName: order.trade?.companyName ?? null,
+      tradeTin: order.trade?.tin ?? null,
       notes: order.notes,
       orderItems: {
         create: order.lines.map((line, index) => {

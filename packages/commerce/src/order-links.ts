@@ -26,6 +26,11 @@ export function orderHref(reference: string, orderId: string) {
   return `/orders/${reference}?key=${orderKey(orderId)}`
 }
 
+// The order's printable invoice, behind the same key
+export function invoiceHref(reference: string, orderId: string) {
+  return `/orders/${reference}/invoice?key=${orderKey(orderId)}`
+}
+
 // The order page's full address, for emails
 export function orderUrl(reference: string, orderId: string) {
   return new URL(orderHref(reference, orderId), authURLs.store).toString()

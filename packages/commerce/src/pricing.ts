@@ -127,6 +127,12 @@ export function shelfPrice(unitPriceUsd: Decimal, exchangeRate: Decimal, taxRate
   return { exTaxGhs, incTaxGhs: withTax(exTaxGhs, taxRate) }
 }
 
+// One unit's price for a trade account, before tax: the shelf's ex-tax price less the account's percentage, rounded as
+// priceOrder rounds a line of one with that discount
+export function tradePrice(exTaxGhs: Decimal, percent: Decimal) {
+  return exTaxGhs.minus(toCents(exTaxGhs.times(percent).dividedBy(100)))
+}
+
 // A GHS amount with its tax, rounded as priceOrder rounds it: an installation fee as the storefront shows it
 export function withTax(exTaxGhs: Decimal, taxRate: Decimal | null) {
   return taxRate ? exTaxGhs.plus(toCents(exTaxGhs.times(taxRate))) : exTaxGhs
