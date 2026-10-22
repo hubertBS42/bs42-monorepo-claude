@@ -242,6 +242,54 @@ export async function notifyTradeApplication(accountId: string) {
   }
 }
 
+// A customer made a quotation on the storefront, for staff who follow them up (off by default: they may be common)
+export async function notifyNewQuote(quoteId: string) {
+  try {
+    const settings = await readAppSettings()
+    if (!settings.notifyQuotes || settings.notificationEmails.length === 0) return
+
+    const quote = await prisma.quote.findUnique({
+      where: { id: quoteId },
+      select: {
+        reference: true,
+        customerName: true,
+        customerEmail: true,
+        customerPhone: true,
+        tradeCompanyName: true,
+        totalGhs: true,
+        validUntil: true,
+        shippingTown: true,
+        _count: { select: { items: true } },
+      },
+    })
+    if (!quote) return
+
+    await send(
+      settings,
+      {
+        subject: `New quotation ${quote.reference}`,
+        preview: `${quote.tradeCompanyName ?? quote.customerName} · ${ghs(quote.totalGhs)}`,
+        heading: "New quotation",
+        intro: `${quote.tradeCompanyName ?? quote.customerName} made a quotation on the storefront. It isn't an order until they accept it.`,
+        details: [
+          { label: "Reference", value: quote.reference },
+          { label: "Customer", value: `${quote.customerName}, ${quote.customerEmail}, ${quote.customerPhone}` },
+          ...(quote.tradeCompanyName ? [{ label: "Trade account", value: quote.tradeCompanyName }] : []),
+          { label: "Lines", value: String(quote._count.items) },
+          { label: "Total", value: ghs(quote.totalGhs) },
+          { label: "Deliver to", value: quote.shippingTown },
+          // The last day its prices hold: validUntil is the start of the day after
+          { label: "Valid until", value: formatDate(new Date(quote.validUntil.getTime() - 1), "MMM d, yyyy") },
+        ],
+        action: { label: "View quotations", url: new URL(`/quotes?search=${quote.reference}`, authURLs.console).toString() },
+      },
+      "new quote"
+    )
+  } catch (error) {
+    console.error(`New quote notification for ${quoteId} failed:`, error)
+  }
+}
+
 // The daily exchange-rate fetch failed. The last rate stays usable for a while, then orders stop until one is set.
 export async function notifyRateFetchFailed(date: string, error: string) {
   try {

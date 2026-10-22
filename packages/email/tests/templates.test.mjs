@@ -19,6 +19,7 @@ import { StaffAlertEmail } from "../dist/src/templates/staff-alert-email.js"
 import { VerifyEmailEmail } from "../dist/src/templates/verify-email-email.js"
 import { OrderLinkEmail } from "../dist/src/templates/order-link-email.js"
 import { TradeAccountDecisionEmail } from "../dist/src/templates/trade-account-decision-email.js"
+import { QuoteEmail } from "../dist/src/templates/quote-email.js"
 
 const orderDetails = {
   customerName: "Alex Morgan",
@@ -68,6 +69,11 @@ const templates = [
     "ORDER-123",
   ],
   ["order confirmed", OrderConfirmed({ ...orderDetails }), "ORDER-123"],
+  [
+    "quotation",
+    QuoteEmail({ name: "Alex", reference: "QT-20261022-00001", total: "GH₵1,234.50", validUntil: "Thursday 29 October", url: "https://example.com/quotes/QT-20261022-00001?key=x", appName: "BS42" }),
+    "https://example.com/quotes/QT-20261022-00001?key=x",
+  ],
   [
     "trade account approved",
     TradeAccountDecisionEmail({ name: "Alex", companyName: "Zz Ltd", decision: { approved: true, percent: 10 }, url: "https://example.com/account/trade", appName: "BS42" }),

@@ -3,23 +3,39 @@ import "server-only"
 import { createHmac, timingSafeEqual } from "node:crypto"
 import { authURLs } from "@workspace/auth/constants"
 
-// Who can see a storefront order without an account: whoever has its link (the storefront's /orders/[reference]). The link carries a key signed with the
-// auth secret, so an order can't be opened by guessing its reference.
+// Who can see a storefront order or quotation without an account: whoever has its link (the storefront's
+// /orders/[reference] and /quotes/[reference]). The link carries a key signed with the auth secret, so neither can be
+// opened by guessing its reference. Orders and quotes are signed apart, so one's key never opens the other.
 
-function sign(orderId: string) {
+function sign(kind: "order" | "quote", id: string) {
   const secret = process.env.BETTER_AUTH_SECRET
   if (!secret) throw new Error("BETTER_AUTH_SECRET is required")
-  return createHmac("sha256", secret).update(`order:${orderId}`).digest("base64url").slice(0, 32)
+  return createHmac("sha256", secret).update(`${kind}:${id}`).digest("base64url").slice(0, 32)
+}
+
+function isKey(kind: "order" | "quote", id: string, key: string | undefined) {
+  if (!key) return false
+  const expected = sign(kind, id)
+  return key.length === expected.length && timingSafeEqual(Buffer.from(key), Buffer.from(expected))
 }
 
 export function orderKey(orderId: string) {
-  return sign(orderId)
+  return sign("order", orderId)
 }
 
 export function isOrderKey(orderId: string, key: string | undefined) {
-  if (!key) return false
-  const expected = sign(orderId)
-  return key.length === expected.length && timingSafeEqual(Buffer.from(key), Buffer.from(expected))
+  return isKey("order", orderId, key)
+}
+
+export const isQuoteKey = (quoteId: string, key: string | undefined) => isKey("quote", quoteId, key)
+
+// A quotation's page, shareable with whoever approves the purchase
+export function quoteHref(reference: string, quoteId: string) {
+  return `/quotes/${reference}?key=${sign("quote", quoteId)}`
+}
+
+export function quoteUrl(reference: string, quoteId: string) {
+  return new URL(quoteHref(reference, quoteId), authURLs.store).toString()
 }
 
 export function orderHref(reference: string, orderId: string) {
