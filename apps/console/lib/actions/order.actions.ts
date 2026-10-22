@@ -7,9 +7,23 @@ import { prisma } from "@workspace/db"
 import { Prisma } from "@workspace/db/client"
 import { ShippingMethod } from "@workspace/db/enums"
 import { requireSystemPermission } from "@/lib/auth-guard"
-import { cancelWithRefund, editPendingOrder, giveRefund, orderForUpdateSelect, recordOrderPayment, recordReturn, toReturnInput, updateOrderStatus, type Failure } from "@/lib/order-updates"
+import {
+  cancelOrderInstallation,
+  cancelWithRefund,
+  editPendingOrder,
+  giveRefund,
+  orderForUpdateSelect,
+  recordOrderPayment,
+  recordReturn,
+  toReturnInput,
+  updateInstallation,
+  updateOrderStatus,
+  type Failure,
+} from "@/lib/order-updates"
 import {
   cancelAndRefundOrderSchema,
+  cancelInstallationSchema,
+  updateInstallationSchema,
   recordOrderPaymentSchema,
   refundOrderSchema,
   returnOrderSchema,
@@ -174,6 +188,47 @@ export async function returnOrderItemsAction(input: z.input<typeof returnOrderSc
     if (!parsed.success) return invalidInput(parsed.error)
 
     return await recordReturn(toReturnInput(parsed.data, session.user.id), null)
+  } catch (error) {
+    return { success: false, error: formatError(error) }
+  }
+}
+
+// ============================================
+// INSTALLATION (the platform's installers, so the platform's staff)
+// ============================================
+
+export async function updateInstallationAction(input: z.input<typeof updateInstallationSchema>): Promise<ActionResponse> {
+  const session = await requireSystemPermission({ order: ["update"] })
+
+  try {
+    const parsed = updateInstallationSchema.safeParse(input)
+    if (!parsed.success) return invalidInput(parsed.error)
+    const { orderId, currentStatus, status, date, note } = parsed.data
+
+    return await updateInstallation({ orderId, from: currentStatus, to: status, date, note: note || null, changedById: session.user.id })
+  } catch (error) {
+    return { success: false, error: formatError(error) }
+  }
+}
+
+// Money goes back, so it takes the refund permission
+export async function cancelInstallationAction(input: z.input<typeof cancelInstallationSchema>): Promise<ActionResponse> {
+  const session = await requireSystemPermission({ order: ["refund"] })
+
+  try {
+    const parsed = cancelInstallationSchema.safeParse(input)
+    if (!parsed.success) return invalidInput(parsed.error)
+    const { orderId, amountGhs, refundedGhs, currentStatus, method, reason } = parsed.data
+
+    return await cancelOrderInstallation({
+      orderId,
+      amountGhs: new Prisma.Decimal(amountGhs.toFixed(2)),
+      refundedGhs: new Prisma.Decimal(refundedGhs),
+      from: currentStatus,
+      method,
+      reason,
+      refundedById: session.user.id,
+    })
   } catch (error) {
     return { success: false, error: formatError(error) }
   }

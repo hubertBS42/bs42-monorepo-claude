@@ -51,6 +51,7 @@ export function OrderLinesTable({ lines, showStore }: { lines: OrderLine[]; show
                   {line.variantDescription && <span className="text-xs text-muted-foreground">{line.variantDescription}</span>}
                   {line.sku && <span className="font-mono text-[11px] text-muted-foreground">{line.sku}</span>}
                   {showStore && <span className="text-[11px] text-muted-foreground">{`From ${line.storeName}`}</span>}
+                  {line.installationGhs && <span className="text-xs text-muted-foreground">{`With installation, ${ghs(line.installationGhs)}`}</span>}
                   {line.returnedQuantity > 0 && <span className="text-xs text-muted-foreground">{line.returnedQuantity === line.quantity ? "Returned" : `${line.returnedQuantity} returned`}</span>}
                 </div>
               </div>
@@ -75,6 +76,7 @@ export function OrderTotalsSummary({ totals, exchangeRate }: { totals: OrderTota
       )}
       {totals.discountReason && <p className="text-right text-xs text-muted-foreground">{totals.discountReason}</p>}
       <TotalRow label="Shipping" amount={ghs(totals.shippingGhs)} />
+      {Number(totals.installationGhs) > 0 && <TotalRow label="Installation" amount={ghs(totals.installationGhs)} />}
       <TotalRow label={`Tax${Number(totals.taxRate) ? ` (${(Number(totals.taxRate) * 100).toFixed(2).replace(/\.?0+$/, "")}%)` : ""}`} amount={ghs(totals.taxGhs)} />
       <Separator className="my-1" />
       <TotalRow label="Total" amount={ghs(totals.totalGhs)} strong />

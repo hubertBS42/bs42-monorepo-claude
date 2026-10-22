@@ -5,6 +5,9 @@ import { Prisma } from "@workspace/db/client"
 import { formatCurrency } from "@workspace/utils/currency"
 import { returnedUnitsAmount } from "@workspace/commerce/pricing"
 import { returnedSoFar } from "./order-refunds"
+import { installationLeftGhs } from "./order-installation"
+import { InstallationStatus } from "@workspace/db/enums"
+import { formatDate } from "@workspace/utils/date"
 import { ORDER_STATUS_LABELS, PAYMENT_METHOD_LABELS } from "@workspace/commerce/order-status"
 
 // What the store's and the platform's order details loaders share: the query and turning its rows into page data
@@ -19,6 +22,7 @@ export const orderDetailsInclude = {
     },
   },
   statusHistory: { orderBy: { createdAt: "desc" }, include: { changedBy: { select: { name: true } } } },
+  installationHistory: { orderBy: { createdAt: "desc" }, include: { changedBy: { select: { name: true } } } },
   refunds: { orderBy: { createdAt: "desc" }, include: { refundedBy: { select: { name: true } }, return: { select: { id: true } } } },
   returns: {
     orderBy: { createdAt: "desc" },
@@ -62,6 +66,7 @@ export function toOrderLine(line: LineRow): OrderLine {
     totalPriceGhs: line.totalPriceGhs.toString(),
     discountGhs: line.discountGhs.toString(),
     taxGhs: line.taxGhs.toString(),
+    installationGhs: line.installationUnitGhs ? line.installationTotalGhs.toString() : null,
   }
 }
 
@@ -73,6 +78,7 @@ export function toOrderTotals(order: OrderWithDetails): OrderTotals {
     discountAmountGhs: order.discountAmountGhs?.toString() ?? null,
     discountReason: order.discountReason,
     shippingGhs: order.shippingGhs.toString(),
+    installationGhs: order.installationGhs.toString(),
     taxRate: order.taxRate.toString(),
     taxGhs: order.taxGhs.toString(),
     totalGhs: order.totalGhs.toString(),
@@ -80,6 +86,19 @@ export function toOrderTotals(order: OrderWithDetails): OrderTotals {
 }
 
 const units = (count: number) => (count === 1 ? "1 item" : `${count} items`)
+
+// A @db.Date comes back as midnight UTC, which formatDate's zone (Accra's) reads as the same day
+const day = (date: Date) => formatDate(date, "EEE d MMM yyyy")
+
+const INSTALLATION_TITLES: Record<InstallationStatus, (date: Date | null) => string> = {
+  TO_ARRANGE: () => "Installation to arrange",
+  BOOKED: (date) => (date ? `Installation booked for ${day(date)}` : "Installation booked"),
+  DONE: () => "Installation done",
+  CANCELLED: () => "Installation cancelled",
+}
+
+// Whether the installation is still to happen, so a return or a cancellation can refund it
+export const installationPending = (status: InstallationStatus | null) => status === InstallationStatus.TO_ARRANGE || status === InstallationStatus.BOOKED
 
 // Status changes, the recorded payment, refunds and returns, newest first. Amounts only when the viewer may see the
 // whole order's money: a store sharing an order with others sees neither the total nor the refunds. Returns count
@@ -105,6 +124,10 @@ export function toOrderTimeline(order: OrderWithDetails, showAmounts: boolean, l
           },
         ]
       : []),
+    // Arranging it starts with the order, so its first entry says nothing new
+    ...order.installationHistory
+      .filter((entry) => entry.status !== InstallationStatus.TO_ARRANGE)
+      .map((entry) => ({ id: entry.id, title: INSTALLATION_TITLES[entry.status](entry.date), note: entry.note, changedBy: staffName(entry.changedBy), createdAt: entry.createdAt })),
     // A return's refund shows on the return's entry
     ...(showAmounts
       ? order.refunds
@@ -157,6 +180,9 @@ export function toOrderDetailsBase(order: OrderWithDetails, lines: LineRow[], sh
     createdBy: staffName(order.createdBy),
     createdAt: order.createdAt,
     timeline: toOrderTimeline(order, showAmounts, new Set(lines.map((line) => line.id))),
+    installation: order.installationStatus
+      ? { status: order.installationStatus, date: order.installationDate?.toISOString().slice(0, 10) ?? null, leftGhs: installationLeftGhs(order.orderItems).toString() }
+      : null,
     paymentAttempts: order.paymentAttempts.map((attempt) => ({
       id: attempt.id,
       reference: attempt.reference,
@@ -198,13 +224,15 @@ function toOrderReturns(order: OrderWithDetails): OrderReturnEntry[] {
 }
 
 // The lines with units still to come back, for the return form: what each number of them is worth (the suggested
-// refund) and whether its listing tracks stock (it can be restocked)
+// refund, with their installation while it's still to happen) and whether its listing tracks stock (it can be restocked)
 function toReturnableLines(order: OrderWithDetails): ReturnableLine[] {
+  const withInstallation = installationPending(order.installationStatus)
   return order.orderItems.flatMap((line) => {
     const returned = returnedSoFar(line)
     const left = line.quantity - returned
     if (left <= 0) return []
-    const paid = line.totalPriceGhs.minus(line.discountGhs).plus(line.taxGhs)
+    const goods = line.totalPriceGhs.minus(line.discountGhs).plus(line.taxGhs)
+    const paid = withInstallation ? goods.plus(line.installationTotalGhs).plus(line.installationTaxGhs) : goods
     return [
       {
         orderItemId: line.id,

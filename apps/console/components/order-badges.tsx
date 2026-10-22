@@ -1,6 +1,6 @@
 import { Badge } from "@workspace/ui/components/badge"
-import type { OrderStatus, PaymentStatus, PurchaseOrderStatus } from "@workspace/db/enums"
-import { ORDER_STATUS_LABELS, PAYMENT_STATUS_LABELS } from "@workspace/commerce/order-status"
+import type { InstallationStatus, OrderStatus, PaymentStatus, PurchaseOrderStatus } from "@workspace/db/enums"
+import { INSTALLATION_STATUS_LABELS, ORDER_STATUS_LABELS, PAYMENT_STATUS_LABELS } from "@workspace/commerce/order-status"
 import { PURCHASE_ORDER_STATUS_LABELS } from "@/lib/purchase-order-status"
 
 // Finished states are success, a cancellation is muted rather than red (nothing went wrong), the rest are in progress
@@ -30,6 +30,18 @@ const PURCHASE_ORDER_STATUS_VARIANTS: Record<PurchaseOrderStatus, "outline" | "s
   RECEIVED: "success",
   CLOSED: "secondary",
   CANCELLED: "secondary",
+}
+
+// Like orders: done is success, cancelled is muted, the rest are still to happen
+const INSTALLATION_STATUS_VARIANTS: Record<InstallationStatus, "outline" | "secondary" | "success"> = {
+  TO_ARRANGE: "outline",
+  BOOKED: "outline",
+  DONE: "success",
+  CANCELLED: "secondary",
+}
+
+export function InstallationStatusBadge({ status }: { status: InstallationStatus }) {
+  return <Badge variant={INSTALLATION_STATUS_VARIANTS[status]}>{INSTALLATION_STATUS_LABELS[status]}</Badge>
 }
 
 export function OrderStatusBadge({ status }: { status: OrderStatus }) {

@@ -21,6 +21,7 @@ import {
   returnState,
 } from "@/components/orders/order-details"
 import { EditOrderCustomer, EditOrderDelivery, EditOrderNotes } from "@/components/orders/order-edits"
+import InstallationCard from "@/components/orders/installation-card"
 import RecordPayment from "@/components/orders/record-payment"
 import OrderRefunds from "@/components/orders/refund-order"
 import RecordReturn from "@/components/orders/return-order"
@@ -168,6 +169,10 @@ export default async function OrderDetailsPage({ params }: OrderDetailsPageProps
               )}
             </CardContent>
           </Card>
+
+          {order.installation && (
+            <InstallationCard storeId={null} orderId={order.id} installation={order.installation} order={order} refundedGhs={order.refundedGhs} refundableGhs={order.refundableGhs} />
+          )}
 
           <OrderCustomerCard
             customer={order.customer}

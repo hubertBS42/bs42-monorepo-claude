@@ -4,6 +4,7 @@ import {
   Condition,
   Currency,
   DiscountType,
+  InstallationStatus,
   OrderStatus,
   OrganizationStatus,
   PaymentAttemptStatus,
@@ -407,6 +408,8 @@ export interface OrderLine {
   totalPriceGhs: string
   discountGhs: string
   taxGhs: string
+  // Installation of every unit, before tax; null when not installed
+  installationGhs: string | null
 }
 
 // The whole order's amounts
@@ -417,9 +420,19 @@ export interface OrderTotals {
   discountAmountGhs: string | null
   discountReason: string | null
   shippingGhs: string
+  installationGhs: string
   taxRate: string
   taxGhs: string
   totalGhs: string
+}
+
+// An order's installation, which the platform's staff arrange
+export interface OrderInstallation {
+  status: InstallationStatus
+  // The booked day (yyyy-MM-dd)
+  date: string | null
+  // What cancelling it would refund: the installation of the units not brought back, with its tax
+  leftGhs: string
 }
 
 export interface OrderTimelineEntry {
@@ -452,6 +465,8 @@ interface OrderDetailsBase {
   timeline: OrderTimelineEntry[]
   // Each "Pay" on the storefront, newest first; none for a staff order
   paymentAttempts: OrderPaymentAttempt[]
+  // Null for an order without installation
+  installation: OrderInstallation | null
 }
 
 // One try at paying a storefront order on Paystack

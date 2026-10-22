@@ -23,6 +23,7 @@ import {
   TotalRow,
 } from "@/components/orders/order-details"
 import { EditOrderCustomer, EditOrderDelivery, EditOrderNotes } from "@/components/orders/order-edits"
+import InstallationCard from "@/components/orders/installation-card"
 import RecordPayment from "@/components/orders/record-payment"
 import OrderRefunds from "@/components/orders/refund-order"
 import RecordReturn from "@/components/orders/return-order"
@@ -179,6 +180,17 @@ export default async function StoreOrderDetailsPage({ params }: OrderDetailsPage
               {order.isMultiStore && <p className="text-sm text-muted-foreground">The platform handles refunds and returns on orders shared with other stores.</p>}
             </CardContent>
           </Card>
+
+          {order.installation && (
+            <InstallationCard
+              storeId={storeId}
+              orderId={order.id}
+              installation={order.installation}
+              order={order}
+              refundedGhs={afterSale?.refundedGhs ?? null}
+              refundableGhs={afterSale?.refundableGhs ?? null}
+            />
+          )}
 
           <OrderCustomerCard
             customer={order.customer}

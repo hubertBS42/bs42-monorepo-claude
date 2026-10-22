@@ -4,10 +4,11 @@ import { after } from "next/server"
 import type { ActionResponse } from "@workspace/contracts"
 import { prisma } from "@workspace/db"
 import { Prisma } from "@workspace/db/client"
-import { OrderStatus, PaymentStatus, type PaymentMethod } from "@workspace/db/enums"
+import { InstallationStatus, OrderStatus, PaymentStatus, type PaymentMethod } from "@workspace/db/enums"
 import { notifyStoreRefund } from "@workspace/commerce/notifications"
 import { sendOrderEmail, statusEmailEvent } from "@workspace/commerce/order-emails"
 import { cancelAndRefundOrder, recordOrderReturn, refundOrder, RefundError, type RefundInput, type ReturnInput } from "./order-refunds"
+import { cancelInstallation, changeInstallation, InstallationError, type InstallationChange } from "./order-installation"
 import { hasBeenPaid, isPaid, nextOrderStatuses } from "@workspace/commerce/order-status"
 import { changeOrderStatus, StatusChangedError } from "@workspace/commerce/order-writes"
 
@@ -118,7 +119,7 @@ export async function editPendingOrder(orderId: string, data: Prisma.OrderUpdate
 
 function refundFailure(error: unknown): Failure {
   if (error instanceof StatusChangedError) return STATUS_CHANGED
-  if (error instanceof RefundError) return { success: false, error: error.message, code: error.code }
+  if (error instanceof RefundError || error instanceof InstallationError) return { success: false, error: error.message, code: error.code }
   throw error
 }
 
@@ -173,6 +174,37 @@ export async function recordReturn(input: ReturnInput, storeId: string | null): 
     await sendOrderEmail(input.orderId, "RETURNED", input.reason, { refundAmountGhs: amountGhs, returnedItems: result.items })
     if (storeId && amountGhs) await notifyStoreRefund(input.orderId, storeId, { amountGhs, reason: input.reason, givenById: input.recordedById, kind: "return" })
   })
+  return { success: true }
+}
+
+// ============================================
+// INSTALLATION (the platform's staff only: its installers do the work)
+// ============================================
+
+// Books the installers for a day, or marks it done. A booking emails the customer the day and the note.
+export async function updateInstallation(change: InstallationChange): Promise<ActionResponse> {
+  try {
+    await prisma.$transaction((tx) => changeInstallation(tx, change), TRANSACTION_OPTIONS)
+  } catch (error) {
+    return refundFailure(error)
+  }
+
+  if (change.to === InstallationStatus.BOOKED) after(() => sendOrderEmail(change.orderId, "INSTALLATION_BOOKED", change.note))
+  return { success: true }
+}
+
+// Cancels the installation, refunding the amount given. The customer hears of the refund.
+export async function cancelOrderInstallation(input: RefundInput & { from: InstallationStatus; amountGhs: Prisma.Decimal }): Promise<ActionResponse> {
+  try {
+    await prisma.$transaction((tx) => cancelInstallation(tx, input), TRANSACTION_OPTIONS)
+  } catch (error) {
+    return refundFailure(error)
+  }
+
+  if (input.amountGhs.gt(0)) {
+    const amountGhs = input.amountGhs.toFixed(2)
+    after(() => sendOrderEmail(input.orderId, "REFUNDED", input.reason, { refundAmountGhs: amountGhs }))
+  }
   return { success: true }
 }
 

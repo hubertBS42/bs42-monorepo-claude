@@ -1,6 +1,6 @@
 import z from "zod"
 import { GEODATA } from "@workspace/contracts"
-import { DiscountType, OrderStatus, PaymentMethod, ShippingMethod } from "@workspace/db/enums"
+import { DiscountType, InstallationStatus, OrderStatus, PaymentMethod, ShippingMethod } from "@workspace/db/enums"
 import { isPossiblePhoneNumber } from "@workspace/utils/phone"
 import { decimalSchema } from "@/lib/schemas/product.schemas"
 
@@ -220,3 +220,35 @@ const storeTarget = { storeId: z.uuid("Invalid store ID") }
 export const refundStoreOrderSchema = refundOrderSchema.extend(storeTarget)
 export const cancelAndRefundStoreOrderSchema = cancelAndRefundOrderSchema.extend(storeTarget)
 export const returnStoreOrderSchema = returnOrderSchema.safeExtend(storeTarget)
+
+// ============================================
+// INSTALLATION (the platform's staff)
+// ============================================
+
+// Booking the installers for a day (again, to move it), or marking the installation done. The note goes to the
+// customer with a booking.
+const installationFields = {
+  status: z.enum([InstallationStatus.BOOKED, InstallationStatus.DONE]),
+  note: z.string().trim().max(500, "Keep the note under 500 characters"),
+}
+// The form's values: the date field holds a Date, sent as a plain day
+export const installationFormSchema = z
+  .object({ ...installationFields, date: z.date().nullable() })
+  .refine((data) => data.status !== InstallationStatus.BOOKED || data.date, { message: "Choose the day", path: ["date"] })
+export const updateInstallationSchema = z.object({
+  ...installationFields,
+  date: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date")
+    .nullable(),
+  orderId: z.uuid("Invalid order ID"),
+  // The installation status the page showed (INSTALLATION_CHANGED if it moved on)
+  currentStatus: z.enum(InstallationStatus),
+})
+
+// Cancelling it, with a refund of what it cost (suggested by the page, 0 for none)
+export const cancelInstallationFormSchema = z.object({
+  amountGhs: z.union([decimalSchema, z.literal("")]).transform((value) => (value === "" ? 0 : value)),
+  ...refundFields,
+})
+export const cancelInstallationSchema = cancelInstallationFormSchema.extend({ ...refundTarget, currentStatus: z.enum(InstallationStatus) })

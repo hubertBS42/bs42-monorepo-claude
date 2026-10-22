@@ -108,6 +108,7 @@ export default function OrderSummaryCard({ order, position, count, onPrevious, o
                   <Row label="Subtotal">{ghs(totals.subtotalGhs)}</Row>
                   {discount && <Row label="Discount">{`−${ghs(discount)}`}</Row>}
                   <Row label="Shipping">{ghs(totals.shippingGhs)}</Row>
+                  {Number(totals.installationGhs) > 0 && <Row label="Installation">{ghs(totals.installationGhs)}</Row>}
                   <Row label="Tax">{ghs(totals.taxGhs)}</Row>
                   <Row label="Total" strong>
                     {ghs(totals.totalGhs)}
