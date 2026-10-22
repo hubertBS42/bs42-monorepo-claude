@@ -24,6 +24,7 @@ export const navConfig: NavItem[] = [
       { title: "Products", url: "/catalogue/products" },
       { title: "Categories", url: "/catalogue/categories" },
       { title: "Brands", url: "/catalogue/brands" },
+      { title: "Reviews", url: "/catalogue/reviews" },
     ],
   },
   {

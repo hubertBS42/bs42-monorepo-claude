@@ -5,6 +5,7 @@ import { getBrandsForSelect } from "@/lib/data/brands.data"
 import { getCategoryOptions } from "@/lib/data/categories.data"
 import { getSpecFieldsByCategory } from "@/lib/data/category-specs.data"
 import { getProductForEdit } from "@/lib/data/products.data"
+import { getProductReviewStats } from "@/lib/data/reviews.data"
 import { getProductStorefrontLink } from "@/lib/data/storefront-links.data"
 import { requireSystemPermission } from "@/lib/auth-guard"
 
@@ -34,7 +35,7 @@ export default async function EditProductPage({ params }: Props) {
   // getBrandsForSelect leaves archived brands out, which would leave this product's brand field empty. It's offered
   // so the form shows it; saving still asks for an active brand.
   const { brand } = product.data
-  const storefrontLink = await getProductStorefrontLink(product.data.id)
+  const [storefrontLink, reviewStats] = await Promise.all([getProductStorefrontLink(product.data.id), getProductReviewStats(product.data.id)])
   const brandOptions = brand.isArchived ? [...brands.data, { id: brand.id, name: `${brand.name} (archived)` }] : brands.data
 
   return (
@@ -45,6 +46,7 @@ export default async function EditProductPage({ params }: Props) {
       disabledCategoryIds={categories.data.disabledIds}
       specFields={specFields.data}
       storefrontLink={storefrontLink}
+      reviewStats={reviewStats}
     />
   )
 }

@@ -10,7 +10,9 @@ import { Control, FieldErrors, SubmitErrorHandler, SubmitHandler, useFieldArray,
 import { z } from "zod"
 import { toast } from "@workspace/ui/components/toast"
 import SharedFormHeader from "@/components/shared-form-header"
+import { ProductReviewsCard } from "@/components/product-reviews-card"
 import { StorefrontLinkCard } from "@/components/storefront-link-card"
+import type { ProductReviewStats } from "@/lib/data/reviews.data"
 import type { StorefrontLink } from "@/lib/data/storefront-links.data"
 import SharedFormFooter from "@/components/shared-form-footer"
 import { Condition, Status } from "@workspace/db/enums"
@@ -51,8 +53,9 @@ interface ProductFormProps {
   specFields: Record<string, SpecField[]>
   // The product being edited; without it the form adds a new one
   product?: ProductFormData
-  // Its storefront page, when editing
+  // Its storefront page and its reviews, when editing
   storefrontLink?: StorefrontLink
+  reviewStats?: ProductReviewStats
 }
 
 const EMPTY_PRODUCT: FormInput = {
@@ -127,7 +130,7 @@ function describeRemoval(variants: VariantInput[], usage: Record<string, Variant
 
 type PendingChange = { kind: "removeVariant"; index: number } | { kind: "regenerate" } | { kind: "noVariants" }
 
-const ProductForm = ({ brands, categoryOptions, disabledCategoryIds, specFields, product, storefrontLink }: ProductFormProps) => {
+const ProductForm = ({ brands, categoryOptions, disabledCategoryIds, specFields, product, storefrontLink, reviewStats }: ProductFormProps) => {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [editingVariantIndex, setEditingVariantIndex] = useState<number | null>(null)
@@ -645,6 +648,8 @@ const ProductForm = ({ brands, categoryOptions, disabledCategoryIds, specFields,
               </Card>
 
               {storefrontLink && <StorefrontLinkCard link={storefrontLink} description="As customers see it, with the best offer across the stores selling it. Saved changes show within a minute." />}
+
+              {product && reviewStats && <ProductReviewsCard productId={product.id} stats={reviewStats} />}
 
               {product && (
                 <Card>

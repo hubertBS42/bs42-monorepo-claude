@@ -10,6 +10,7 @@ import {
   PaymentMethod,
   PaymentStatus,
   PurchaseOrderStatus,
+  ReviewStatus,
   ShippingMethod,
   SpecType,
   Status,
@@ -135,6 +136,31 @@ export interface BrandsParams extends PaginationParams {
 }
 
 export type BrandsData = PaginatedResult<Brand>
+
+export interface ReviewsParams extends PaginationParams {
+  // The product's name, the customer's name or email, or the review's title
+  search?: string
+  productId?: string
+  rating?: number
+  status?: ReviewStatus
+}
+
+// A review as the moderation table shows it
+export interface ReviewRow {
+  id: string
+  rating: number
+  title: string
+  body: string
+  variantLabel: string | null
+  status: ReviewStatus
+  hiddenReason: string | null
+  hiddenByName: string | null
+  createdAt: Date
+  product: { id: string; name: string }
+  customer: { name: string | null; email: string }
+}
+
+export type ReviewsData = PaginatedResult<ReviewRow>
 
 // A category with its subcategories, as the categories tree table shows them
 export type CategoryNode = Category & {
