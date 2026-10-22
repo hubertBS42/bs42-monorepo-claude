@@ -9,6 +9,7 @@ import { installationLeftGhs } from "./order-installation"
 import { InstallationStatus } from "@workspace/db/enums"
 import { formatDate } from "@workspace/utils/date"
 import { ORDER_STATUS_LABELS, PAYMENT_METHOD_LABELS } from "@workspace/commerce/order-status"
+import { quoteUrl } from "@workspace/commerce/order-links"
 
 // What the store's and the platform's order details loaders share: the query and turning its rows into page data
 
@@ -35,6 +36,7 @@ export const orderDetailsInclude = {
   createdBy: { select: { name: true } },
   paymentRecordedBy: { select: { name: true } },
   paymentAttempts: { orderBy: { createdAt: "desc" } },
+  quote: { select: { id: true, reference: true } },
 } satisfies Prisma.OrderInclude
 
 export type OrderWithDetails = Prisma.OrderGetPayload<{ include: typeof orderDetailsInclude }>
@@ -180,6 +182,7 @@ export function toOrderDetailsBase(order: OrderWithDetails, lines: LineRow[], sh
     createdBy: staffName(order.createdBy),
     createdAt: order.createdAt,
     timeline: toOrderTimeline(order, showAmounts, new Set(lines.map((line) => line.id))),
+    quote: order.quote && { reference: order.quote.reference, url: quoteUrl(order.quote.reference, order.quote.id) },
     trade: order.tradeCompanyName ? { accountId: order.tradeAccountId, companyName: order.tradeCompanyName, tin: order.tradeTin } : null,
     installation: order.installationStatus
       ? { status: order.installationStatus, date: order.installationDate?.toISOString().slice(0, 10) ?? null, leftGhs: installationLeftGhs(order.orderItems).toString() }

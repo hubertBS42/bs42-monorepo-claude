@@ -22,10 +22,10 @@ export async function setTodaysExchangeRateAction(input: z.input<typeof exchange
     const date = new Date(`${getRateDate()}T00:00:00Z`)
     const key = { from_to_date: { from: "USD", to: "GHS", date } }
 
-    // Orders link to the rate row they used, so its rate can't change under them
-    const existing = await prisma.exchangeRate.findUnique({ where: key, select: { rate: true, _count: { select: { orders: true } } } })
-    if (existing && existing._count.orders > 0 && !existing.rate.equals(parsed.data.rate)) {
-      return { success: false, error: "Orders have already been priced at today's rate, so it can't change until tomorrow.", code: "RATE_IN_USE" }
+    // Orders and quotes link to the rate row they used, so its rate can't change under them
+    const existing = await prisma.exchangeRate.findUnique({ where: key, select: { rate: true, _count: { select: { orders: true, quotes: true } } } })
+    if (existing && existing._count.orders + existing._count.quotes > 0 && !existing.rate.equals(parsed.data.rate)) {
+      return { success: false, error: "Orders or quotes have already been priced at today's rate, so it can't change until tomorrow.", code: "RATE_IN_USE" }
     }
 
     await prisma.exchangeRate.upsert({

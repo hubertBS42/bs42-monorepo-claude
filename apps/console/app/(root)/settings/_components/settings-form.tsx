@@ -42,6 +42,8 @@ export default function SettingsForm({ settings, version }: { settings: AppSetti
     notifyStoreRefunds: settings.notifyStoreRefunds,
     notifyLowRatings: settings.notifyLowRatings,
     notifyTradeApplications: settings.notifyTradeApplications,
+    notifyQuotes: settings.notifyQuotes,
+    quoteValidityDays: settings.quoteValidityDays,
     version,
   }
 
@@ -170,6 +172,18 @@ export default function SettingsForm({ settings, version }: { settings: AppSetti
 
               <Card>
                 <CardHeader>
+                  <CardTitle>Quotations</CardTitle>
+                  <CardDescription>Customers make quotations from their basket. A quotation&apos;s prices hold this long, whatever the exchange rate does; its stock isn&apos;t held.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="max-w-60">
+                    <NumberInputField control={form.control} name="quoteValidityDays" label="Valid for (days)" min={1} max={90} step={1} disabled={isPending} />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
                   <CardTitle>Notifications</CardTitle>
                   <CardDescription>Emails to staff when something needs attention. Nothing is sent until at least one address is added.</CardDescription>
                 </CardHeader>
@@ -224,6 +238,14 @@ export default function SettingsForm({ settings, version }: { settings: AppSetti
                         name="notifyTradeApplications"
                         label="Trade account applications"
                         description="When a business applies for a trade account on the storefront"
+                        variant="card"
+                        disabled={isPending}
+                      />
+                      <SwitchField
+                        control={form.control}
+                        name="notifyQuotes"
+                        label="Quotations"
+                        description="When a customer makes a quotation on the storefront"
                         variant="card"
                         disabled={isPending}
                       />

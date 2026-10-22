@@ -68,6 +68,11 @@ export default async function OrderDetailsPage({ params }: OrderDetailsPageProps
           <h1 className="font-mono text-xl font-bold md:text-2xl">{order.reference}</h1>
           <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
             <span>{`Placed ${formatDate(order.createdAt, "MMM d, yyyy, h:mm a")}${order.createdBy ? ` by ${order.createdBy}` : ""}`}</span>
+            {order.quote && (
+              <a href={order.quote.url} target="_blank" rel="noopener noreferrer" className="hover:text-foreground hover:underline hover:underline-offset-4">
+                {`From quotation ${order.quote.reference}`}
+              </a>
+            )}
             <OrderStatusBadge status={order.status} />
             <PaymentStatusBadge status={order.paymentStatus} />
             {returned && <Badge variant="secondary">{returned}</Badge>}

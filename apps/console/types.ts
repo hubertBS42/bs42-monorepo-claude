@@ -475,6 +475,8 @@ interface OrderDetailsBase {
   installation: OrderInstallation | null
   // Placed by a trade account: the company and TIN copied onto the order, and the account (null if since deleted)
   trade: { accountId: string | null; companyName: string; tin: string | null } | null
+  // Placed by accepting a quotation: its reference, and its storefront page (signed)
+  quote: { reference: string; url: string } | null
 }
 
 // One try at paying a storefront order on Paystack
@@ -836,3 +838,40 @@ export interface TradeAccountDetails extends TradeAccountRow {
   discountGivenGhs: string
   recentOrders: { id: string; reference: string; status: OrderStatus; paymentStatus: PaymentStatus; totalGhs: string; createdAt: Date }[]
 }
+
+// ============================================
+// QUOTATIONS
+// ============================================
+
+// "expired" is an open quote past its date, worked out rather than stored
+export type QuoteStatusFilter = "open" | "expired" | "accepted" | "cancelled"
+
+export interface QuotesParams extends PaginationParams {
+  // Reference, customer name or email, or the trade account's company
+  search?: string
+  status?: QuoteStatusFilter
+  // "true": only quotes made by a trade account; "false": only quotes without
+  trade?: "true" | "false"
+  // Plain yyyy-MM-dd days in the app's time zone, both inclusive
+  madeStart?: string
+  madeEnd?: string
+}
+
+export interface QuoteRow {
+  id: string
+  reference: string
+  // The storefront's quotation page, signed so staff can open it
+  url: string
+  customer: { name: string; email: string; phone: string }
+  tradeCompanyName: string | null
+  lineCount: number
+  totalGhs: string
+  status: QuoteStatusFilter
+  // The last day its prices hold
+  validUntil: Date
+  // The order accepting it placed
+  order: { id: string; reference: string } | null
+  createdAt: Date
+}
+
+export type QuotesData = PaginatedResult<QuoteRow>

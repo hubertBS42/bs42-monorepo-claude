@@ -28,6 +28,8 @@ export const appSettingsSchema = z
     notifyStoreRefunds: z.boolean(),
     notifyLowRatings: z.boolean(),
     notifyTradeApplications: z.boolean(),
+    notifyQuotes: z.boolean(),
+    quoteValidityDays: z.number("Enter a number of days").int("Use whole days").min(1, "At least 1 day").max(90, "At most 90 days"),
     // The version the form was opened with (getAppSettingsVersion); not a field the user sees
     version: z.string(),
   })
