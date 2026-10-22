@@ -18,6 +18,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   return [
     { url: siteUrl("/"), changeFrequency: "daily", priority: 1 },
+    { url: siteUrl("/trade"), changeFrequency: "yearly", priority: 0.3 },
     ...[...tree.byId.values()].map((node) => ({ url: siteUrl(categoryHref(tree, node.id)), changeFrequency: "daily" as const, priority: 0.8 })),
     ...brands.map((slug) => ({ url: siteUrl(`/b/${slug}`), changeFrequency: "weekly" as const, priority: 0.5 })),
     ...cards.map((card) => ({ url: siteUrl(`/p/${card.slug}`), changeFrequency: "daily" as const, priority: 0.7, ...(card.image && { images: [card.image] }) })),

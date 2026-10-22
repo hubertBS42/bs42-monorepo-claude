@@ -3,11 +3,12 @@ import "server-only"
 import type { PricingContext } from "@workspace/commerce/exchange-rates"
 import { loadInstallationFees } from "@workspace/commerce/installation"
 import { describeVariant } from "@workspace/commerce/order-writes"
-import { priceOrder, shelfPrice, withTax } from "@workspace/commerce/pricing"
+import { priceOrder, shelfPrice, tradePrice, withTax } from "@workspace/commerce/pricing"
+import type { TradeTerms } from "@workspace/commerce/trade-accounts"
 import { customerVisibleListingWhere, loadVisibleCategoryIds, variantOnSaleWhere } from "@workspace/commerce/visibility"
 import type { prisma } from "@workspace/db"
 import { Prisma } from "@workspace/db/client"
-import { MAX_LINE_QUANTITY } from "./basket-limits"
+import { MAX_LINE_QUANTITY, TRADE_LINE_QUANTITY } from "./basket-limits"
 
 // The basket: one line per thing customers can buy (a product without variants, or a variant), each held at one
 // store's listing. Adding picks the store (one already in the basket if it has the item in stock, else the offer the
@@ -54,7 +55,8 @@ interface Item {
 
 const itemKey = (item: Item) => `${item.productId}:${item.variantId ?? ""}`
 const rowKey = (row: { listingId: string; listingVariantId: string | null }) => `${row.listingId}:${row.listingVariantId ?? ""}`
-const limit = (candidate: Candidate) => Math.min(candidate.available ?? MAX_LINE_QUANTITY, MAX_LINE_QUANTITY)
+// maxLine is MAX_LINE_QUANTITY, or TRADE_LINE_QUANTITY for a trade account
+const limit = (candidate: Candidate, maxLine: number) => Math.min(candidate.available ?? maxLine, maxLine)
 
 // Every store's listing of each item that customers can buy (visibility.ts), by item
 async function loadCandidates(client: Client, items: Item[]): Promise<Map<string, Candidate[]>> {
@@ -184,9 +186,9 @@ export interface AddToCartInput {
   installation?: boolean
 }
 
-// Adds to the item's line, creating the basket on its first item. The quantity is capped at what the line's store has;
-// `added` says how many went in (0 when the line was already at the most there is).
-export async function addCartItem(client: Client, sessionCartId: string, input: AddToCartInput) {
+// Adds to the item's line, creating the basket on its first item. The quantity is capped at what the line's store has,
+// and at maxLine; `added` says how many went in (0 when the line was already at the most there is).
+export async function addCartItem(client: Client, sessionCartId: string, input: AddToCartInput, maxLine = MAX_LINE_QUANTITY) {
   // One after the other: a transaction has one connection
   const listing = await client.storeListing.findUnique({ where: { id: input.listingId }, select: { productId: true } })
   const variant = input.listingVariantId ? await client.storeListingVariant.findFirst({ where: { id: input.listingVariantId, storeListingId: input.listingId }, select: { variantId: true } }) : null
@@ -211,7 +213,7 @@ export async function addCartItem(client: Client, sessionCartId: string, input: 
   if (!chosen) throw new CartError("OUT_OF_STOCK")
 
   const before = existing?.quantity ?? 0
-  const quantity = Math.min(before + input.quantity, limit(chosen))
+  const quantity = Math.min(before + input.quantity, limit(chosen, maxLine))
   const row = { storeListingId: chosen.listingId, storeListingVariantId: chosen.listingVariantId, ...(input.installation && { withInstallation: true }) }
   if (existing) await client.cartItem.update({ where: { id: existing.id }, data: { ...row, quantity } })
   else await client.cartItem.create({ data: { cartId: cart.id, ...row, quantity } })
@@ -219,8 +221,8 @@ export async function addCartItem(client: Client, sessionCartId: string, input: 
   return { quantity, added: Math.max(quantity - before, 0), capped: before + input.quantity > quantity, count: await countCartItems(client, sessionCartId) }
 }
 
-// Sets a line's quantity, capped at what its store has; 0 removes it
-export async function setCartItemQuantity(client: Client, sessionCartId: string, lineId: string, quantity: number) {
+// Sets a line's quantity, capped at what its store has and at maxLine; 0 removes it
+export async function setCartItemQuantity(client: Client, sessionCartId: string, lineId: string, quantity: number, maxLine = MAX_LINE_QUANTITY) {
   const line = await client.cartItem.findFirst({ where: { id: lineId, cart: { sessionCartId } }, select: lineSelect })
   if (!line) throw new CartError("LINE_NOT_FOUND")
 
@@ -232,7 +234,7 @@ export async function setCartItemQuantity(client: Client, sessionCartId: string,
   const candidates = (await loadCandidates(client, [lineItem(line)])).get(itemKey(lineItem(line))) ?? []
   const current = candidates.find((candidate) => rowKey(candidate) === rowKey(lineRow(line)))
   // A line whose store has stopped selling it is moved or dropped when the basket is next shown (loadCart)
-  const capped = Math.min(quantity, current ? limit(current) : MAX_LINE_QUANTITY)
+  const capped = Math.min(quantity, current ? limit(current, maxLine) : maxLine)
   await client.cartItem.update({ where: { id: line.id }, data: { quantity: capped } })
   return { quantity: capped, capped: capped < quantity, count: await countCartItems(client, sessionCartId) }
 }
@@ -276,16 +278,19 @@ export interface CartLine {
   variantDescription: string | null
   image: string | null
   quantity: number
-  // What the line's store has, up to MAX_LINE_QUANTITY
+  // What the line's store has, up to MAX_LINE_QUANTITY (TRADE_LINE_QUANTITY for a trade account)
   maxQuantity: number
-  // GHS with tax when it's on, as the shelf shows it; null without a rate to sell at
+  // GHS as the shelf shows it, with tax when it's on (a trade account's: its price before tax); null without a rate
   unitGhs: string | null
-  // What the order would charge for the line: its GHS total plus its tax
+  // What the order would charge for the line: its GHS total plus its tax (a trade account's: after its discount, before
+  // tax)
   totalGhs: string | null
-  // Installing one unit, with tax when it's on; null when the product doesn't offer it (or without a rate to sell at)
+  // Installing one unit, with tax when it's on (before tax for a trade account); null when the product doesn't offer it
+  // (or without a rate to sell at)
   installationUnitGhs: string | null
   withInstallation: boolean
-  // What the order would charge for installing every unit, with its tax; null without installation
+  // What the order would charge for installing every unit, with its tax (before tax for a trade account); null without
+  // installation
   installationGhs: string | null
 }
 
@@ -294,24 +299,32 @@ export interface CartView {
   // What changed since the customer last looked, e.g. "Only 2 of Tee (Size: M) left, so we've lowered the quantity."
   notices: string[]
   count: number
+  // An approved trade account's discount (a percentage): amounts are then shown before tax
+  trade: { percent: string } | null
   // Null without a rate to sell at
   totals: {
-    // Before tax, which is what the free-delivery threshold compares with (quoteDelivery)
+    // The goods before tax and before the trade discount
     subtotalGhs: string
+    // The trade discount; null without one
+    discountGhs: string | null
+    // The goods after the discount, before tax: what the free-delivery threshold compares with (quoteDelivery)
+    thresholdGhs: string
     // Null when tax is off. Includes the installation's.
     taxGhs: string | null
-    // Installation with its tax; null when no line has it
+    // Installation with its tax (before tax for a trade account); null when no line has it
     installationGhs: string | null
     // With tax and installation, before delivery
     totalGhs: string
   } | null
 }
 
-const EMPTY: CartView = { lines: [], notices: [], count: 0, totals: null }
+const EMPTY: CartView = { lines: [], notices: [], count: 0, trade: null, totals: null }
 
 // The basket as it is now: every line checked against the stores, and moved, lowered or dropped (and saved so) when
-// its store can no longer sell it as it was, with a notice saying so. Priced at today's rate.
-export async function loadCart(client: Client, sessionCartId: string, pricing: PricingContext | null): Promise<CartView> {
+// its store can no longer sell it as it was, with a notice saying so. Priced at today's rate, with the trade account's
+// discount and line limit when the customer has one.
+export async function loadCart(client: Client, sessionCartId: string, pricing: PricingContext | null, trade: TradeTerms | null = null): Promise<CartView> {
+  const maxLine = trade ? TRADE_LINE_QUANTITY : MAX_LINE_QUANTITY
   const cart = await client.cart.findUnique({ where: { sessionCartId }, select: { items: { orderBy: { createdAt: "asc" }, select: viewSelect } } })
   if (!cart?.items.length) return EMPTY
 
@@ -342,7 +355,7 @@ export async function loadCart(client: Client, sessionCartId: string, pricing: P
       continue
     }
 
-    const quantity = Math.min(line.quantity, limit(chosen))
+    const quantity = Math.min(line.quantity, limit(chosen, maxLine))
     if (rowKey(chosen) !== rowKey(lineRow(line)) || quantity !== line.quantity) {
       await client.cartItem.updateMany({ where: { id: line.id }, data: { storeListingId: chosen.listingId, storeListingVariantId: chosen.listingVariantId, quantity } })
     }
@@ -357,7 +370,7 @@ export async function loadCart(client: Client, sessionCartId: string, pricing: P
     kept.push({ line, chosen, quantity, variantDescription, fee, withInstallation: line.withInstallation && !!fee })
   }
 
-  if (!kept.length) return { ...EMPTY, notices }
+  if (!kept.length) return { ...EMPTY, notices, trade: trade && { percent: trade.percent.toString() } }
 
   const rate = pricing && new Prisma.Decimal(pricing.rate.rate)
   const priced =
@@ -367,9 +380,10 @@ export async function loadCart(client: Client, sessionCartId: string, pricing: P
       lines: kept.map(({ chosen, quantity, fee, withInstallation }) => ({ unitPriceUsd: chosen.priceUsd, quantity, installationUnitGhs: withInstallation ? fee : null })),
       exchangeRate: rate,
       shippingGhs: new Prisma.Decimal(0),
-      discount: null,
+      discount: trade && { type: "PERCENTAGE", value: trade.percent },
       tax: pricing.tax,
     })
+  const taxRate = pricing?.tax?.rate ?? null
 
   return {
     lines: kept.map(({ line, chosen, quantity, variantDescription, fee, withInstallation }, index) => {
@@ -384,20 +398,23 @@ export async function loadCart(client: Client, sessionCartId: string, pricing: P
         variantDescription,
         image: line.storeListingVariant?.variant.images[0] ?? line.storeListing.product.images[0] ?? null,
         quantity,
-        maxQuantity: limit(chosen),
-        unitGhs: rate ? shelfPrice(chosen.priceUsd, rate, pricing.tax?.rate ?? null).incTaxGhs.toFixed(2) : null,
-        totalGhs: amounts ? amounts.totalPriceGhs.plus(amounts.taxGhs).toFixed(2) : null,
-        installationUnitGhs: fee && pricing ? withTax(fee, pricing.tax?.rate ?? null).toFixed(2) : null,
+        maxQuantity: limit(chosen, maxLine),
+        unitGhs: !rate ? null : trade ? tradePrice(shelfPrice(chosen.priceUsd, rate, null).exTaxGhs, trade.percent).toFixed(2) : shelfPrice(chosen.priceUsd, rate, taxRate).incTaxGhs.toFixed(2),
+        totalGhs: !amounts ? null : trade ? amounts.totalPriceGhs.minus(amounts.discountGhs).toFixed(2) : amounts.totalPriceGhs.plus(amounts.taxGhs).toFixed(2),
+        installationUnitGhs: fee && pricing ? (trade ? fee : withTax(fee, taxRate)).toFixed(2) : null,
         withInstallation,
-        installationGhs: amounts?.installationUnitGhs ? amounts.installationTotalGhs.plus(amounts.installationTaxGhs).toFixed(2) : null,
+        installationGhs: !amounts?.installationUnitGhs ? null : trade ? amounts.installationTotalGhs.toFixed(2) : amounts.installationTotalGhs.plus(amounts.installationTaxGhs).toFixed(2),
       }
     }),
     notices,
     count: kept.reduce((total, { quantity }) => total + quantity, 0),
+    trade: trade && { percent: trade.percent.toString() },
     totals: priced && {
       subtotalGhs: priced.subtotalGhs.toFixed(2),
+      discountGhs: priced.discountAmountGhs?.toFixed(2) ?? null,
+      thresholdGhs: priced.subtotalGhs.minus(priced.discountAmountGhs ?? 0).toFixed(2),
       taxGhs: pricing.tax ? priced.taxGhs.toFixed(2) : null,
-      installationGhs: priced.installationGhs.gt(0) ? sumInstallation(priced.lines).toFixed(2) : null,
+      installationGhs: !priced.installationGhs.gt(0) ? null : trade ? priced.installationGhs.toFixed(2) : sumInstallation(priced.lines).toFixed(2),
       totalGhs: priced.totalGhs.toFixed(2),
     },
   }

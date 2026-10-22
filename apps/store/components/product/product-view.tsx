@@ -10,7 +10,8 @@ import { cn } from "@workspace/ui/lib/utils"
 
 import { AddToBasketButton } from "@/components/basket/add-to-basket"
 import { QuantityStepper } from "@/components/basket/quantity-stepper"
-import { MAX_LINE_QUANTITY } from "@/lib/basket-limits"
+import { MAX_LINE_QUANTITY, TRADE_LINE_QUANTITY } from "@/lib/basket-limits"
+import { useTradePercent } from "@/components/trade/trade-state"
 import { CompareToggle } from "@/components/compare/compare-toggle"
 import { OfferPrice, OfferStock } from "@/components/offer-details"
 import { RatingLine } from "@/components/reviews/stars"
@@ -105,8 +106,10 @@ export function ProductView({
   ]
   const values = options.flatMap((option) => option.values.filter((value) => value.selected).map((value) => value.value))
   const label = values.length ? `${card.name} (${values.join(", ")})` : card.name
-  // The basket caps it at what the store has; this only stops the stepper going past a low stock count shown
-  const maxQuantity = offer.stock.kind === "in-stock" ? Math.min(offer.stock.left ?? MAX_LINE_QUANTITY, MAX_LINE_QUANTITY) : 1
+  // The basket caps it at what the store has; this only stops the stepper going past a low stock count shown. A trade
+  // account's lines hold more.
+  const maxLine = useTradePercent() === null ? MAX_LINE_QUANTITY : TRADE_LINE_QUANTITY
+  const maxQuantity = offer.stock.kind === "in-stock" ? Math.min(offer.stock.left ?? maxLine, maxLine) : 1
 
   const tabs = [...(description ? ["description"] : []), "specifications", ...(details.documents.length ? ["documents"] : [])]
 

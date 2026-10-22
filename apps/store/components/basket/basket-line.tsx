@@ -13,7 +13,8 @@ import { removeFromBasketAction, setBasketInstallationAction, setBasketQuantityA
 import type { CartLine } from "@/lib/cart"
 import { formatGhs } from "@/lib/money"
 
-export function BasketLine({ line }: { line: CartLine }) {
+// exTax: a trade account's basket, whose amounts are before tax
+export function BasketLine({ line, exTax = false }: { line: CartLine; exTax?: boolean }) {
   const [isPending, startTransition] = useTransition()
   const [quantity, setOptimisticQuantity] = useOptimistic(line.quantity)
   const [withInstallation, setOptimisticInstallation] = useOptimistic(line.withInstallation)
@@ -54,7 +55,11 @@ export function BasketLine({ line }: { line: CartLine }) {
             {line.productName}
           </Link>
           {line.variantDescription && <p className="text-sm text-muted-foreground">{line.variantDescription}</p>}
-          {line.unitGhs && <p className="text-sm text-muted-foreground tabular-nums">{formatGhs(line.unitGhs)} each</p>}
+          {line.unitGhs && (
+            <p className="text-sm text-muted-foreground tabular-nums">
+              {formatGhs(line.unitGhs)} each{exTax && ", ex. tax"}
+            </p>
+          )}
           {line.installationUnitGhs && (
             <label className="flex w-fit cursor-pointer items-center gap-2 pt-1 text-sm has-disabled:cursor-not-allowed">
               <Checkbox checked={withInstallation} onCheckedChange={changeInstallation} disabled={isPending} />

@@ -17,7 +17,7 @@ import { rememberAddress } from "@/lib/addresses"
 import { readCartId } from "@/lib/cart-cookie"
 import { CheckoutError, placeOrder, priceCheckout, type CheckoutSummary } from "@/lib/checkout"
 import { areaSchema, placeOrderSchema } from "@/lib/schemas/checkout.schemas"
-import { getStoreSession } from "@/lib/session"
+import { getStoreSession, getTradeTerms } from "@/lib/session"
 
 // Checkout's actions. Anyone can call them: the basket cookie is the key to a basket, and the order link's key to an
 // order (@workspace/commerce/order-links).
@@ -38,10 +38,10 @@ export async function quoteCheckoutAction(area: { region: string; town: string }
     const parsed = areaSchema.safeParse(area)
     if (!parsed.success) return { success: false, error: "Choose a region and town.", code: "INVALID_INPUT" }
 
-    const [cartId, pricing] = await Promise.all([readCartId(), getPricingContext()])
+    const [cartId, pricing, trade] = await Promise.all([readCartId(), getPricingContext(), getTradeTerms()])
     if (!cartId) return EMPTY_BASKET
     if (!pricing) return NO_RATE
-    const { basket, summary } = await priceCheckout(prisma, cartId, pricing, parsed.data)
+    const { basket, summary } = await priceCheckout(prisma, cartId, pricing, parsed.data, trade)
     // The basket was changed to match the stores (and saved so): the page's lines are out of date
     if (basket.notices.length) return { success: false, error: basket.notices.join(" "), code: "BASKET_CHANGED" }
     return { success: true, data: summary }

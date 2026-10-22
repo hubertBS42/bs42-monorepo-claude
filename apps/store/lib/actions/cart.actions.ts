@@ -8,14 +8,19 @@ import { formatError } from "@workspace/auth/format-error"
 import { z } from "zod"
 import { isOrderKey } from "@workspace/commerce/order-links"
 
-import { MAX_LINE_QUANTITY } from "@/lib/basket-limits"
+import { MAX_LINE_QUANTITY, TRADE_LINE_QUANTITY } from "@/lib/basket-limits"
 import { addCartItem, CartError, countCartItems, removeCartItem, setCartItemInstallation, setCartItemQuantity, type AddToCartInput } from "@/lib/cart"
 import { ensureCartId, readCartId } from "@/lib/cart-cookie"
+import { getTradeTerms } from "@/lib/session"
 
 // The basket's actions. Anyone can call them: the cookie is the only key to a basket, and every line is checked again
 // when the basket is shown and when the order is placed.
 
-const quantitySchema = z.number().int().min(0).max(MAX_LINE_QUANTITY)
+// Up to a trade account's limit here; the basket caps it at the customer's own (maxLine)
+const quantitySchema = z.number().int().min(0).max(TRADE_LINE_QUANTITY)
+
+// The most one of the customer's lines holds
+const maxLine = async () => ((await getTradeTerms()) ? TRADE_LINE_QUANTITY : MAX_LINE_QUANTITY)
 
 const addSchema = z.object({
   listingId: z.uuid(),
@@ -27,10 +32,11 @@ const addSchema = z.object({
 // Two adds at once (two tabs) can both try to create the basket or the item's line, and the second fails on the
 // unique key. Adding again then finds the row the first one made.
 async function addOnce(cartId: string, input: AddToCartInput) {
+  const max = await maxLine()
   try {
-    return await addCartItem(prisma, cartId, input)
+    return await addCartItem(prisma, cartId, input, max)
   } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") return addCartItem(prisma, cartId, input)
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") return addCartItem(prisma, cartId, input, max)
     throw error
   }
 }
@@ -60,7 +66,7 @@ export async function setBasketQuantityAction(lineId: string, quantity: number):
 
     const cartId = await readCartId()
     if (!cartId) return failure(new CartError("LINE_NOT_FOUND"))
-    const result = await setCartItemQuantity(prisma, cartId, parsed.data.lineId, parsed.data.quantity)
+    const result = await setCartItemQuantity(prisma, cartId, parsed.data.lineId, parsed.data.quantity, await maxLine())
     refresh()
     return { success: true, data: result }
   } catch (error) {
@@ -112,7 +118,7 @@ export async function reorderAction(orderId: string, key: string): Promise<DataR
     const missed: string[] = []
     for (const item of items) {
       try {
-        await addOnce(cartId, { listingId: item.storeListingId, listingVariantId: item.storeListingVariantId, quantity: Math.min(item.quantity, MAX_LINE_QUANTITY) })
+        await addOnce(cartId, { listingId: item.storeListingId, listingVariantId: item.storeListingVariantId, quantity: Math.min(item.quantity, TRADE_LINE_QUANTITY) })
       } catch (error) {
         if (!(error instanceof CartError)) throw error
         missed.push(item.variantDescription ? `${item.productName} (${item.variantDescription})` : item.productName)

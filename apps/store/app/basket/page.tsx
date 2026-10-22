@@ -14,6 +14,7 @@ import { loadCart } from "@/lib/cart"
 import { readCartId } from "@/lib/cart-cookie"
 import { formatGhs } from "@/lib/money"
 import { describeInstallationAreas } from "@workspace/commerce/installation-areas"
+import { getTradeTerms } from "@/lib/session"
 import { getFreeDeliveryFrom, getInstallationAreas } from "@/lib/settings"
 
 export const metadata: Metadata = { title: "Basket", robots: { index: false } }
@@ -22,13 +23,36 @@ export default async function BasketPage() {
   const cartId = await readCartId()
   // Priced fresh, not from the shelf's minute-long cache: this is what checkout will charge
   const [pricing, freeDeliveryFrom, installationAreas] = await Promise.all([getPricingContext(), getFreeDeliveryFrom(), getInstallationAreas()])
-  const basket = cartId ? await loadCart(prisma, cartId, pricing) : null
+  const basket = cartId ? await loadCart(prisma, cartId, pricing, await getTradeTerms()) : null
   const lines = basket?.lines ?? []
+  const trade = basket?.trade ?? null
 
-  // How much more would deliver free. The threshold counts the subtotal before tax, and shown prices include it, so the
-  // shortfall is shown with tax too, rounded up to the cent so spending it is always enough.
-  const shortBeforeTax = basket?.totals && freeDeliveryFrom ? new Prisma.Decimal(freeDeliveryFrom).minus(basket.totals.subtotalGhs) : null
-  const toFreeDelivery = shortBeforeTax && pricing?.tax ? shortBeforeTax.times(pricing.tax.rate.plus(1)).toDecimalPlaces(2, Prisma.Decimal.ROUND_UP) : shortBeforeTax
+  // How much more would deliver free. The threshold counts the subtotal after any trade discount, before tax. Shown
+  // prices include tax (except a trade account's), so the shortfall is shown with tax too, rounded up to the cent so
+  // spending it is always enough.
+  const shortBeforeTax = basket?.totals && freeDeliveryFrom ? new Prisma.Decimal(freeDeliveryFrom).minus(basket.totals.thresholdGhs) : null
+  const toFreeDelivery = shortBeforeTax && pricing?.tax && !trade ? shortBeforeTax.times(pricing.tax.rate.plus(1)).toDecimalPlaces(2, Prisma.Decimal.ROUND_UP) : shortBeforeTax
+
+  // Under the summary, trade account or not
+  const notes = basket?.totals && (
+    <>
+      {basket.totals.installationGhs && <p className="text-muted-foreground">We install in {describeInstallationAreas(installationAreas) ?? "a few towns"} and call you to arrange a day.</p>}
+      {toFreeDelivery &&
+        (toFreeDelivery.gt(0) ? (
+          <>
+            <Separator />
+            <p className="text-muted-foreground">
+              Spend {formatGhs(toFreeDelivery.toFixed(2))} more{trade && " before tax"} for free delivery.
+            </p>
+          </>
+        ) : (
+          <>
+            <Separator />
+            <p className="font-medium text-green-700 dark:text-green-500">Your order qualifies for free delivery.</p>
+          </>
+        ))}
+    </>
+  )
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 lg:px-6">
@@ -58,7 +82,7 @@ export default async function BasketPage() {
         <div className="mt-6 grid gap-8 lg:grid-cols-[1fr_22rem] lg:items-start">
           <ul className="divide-y border-y">
             {lines.map((line) => (
-              <BasketLine key={line.id} line={line} />
+              <BasketLine key={line.id} line={line} exTax={!!trade} />
             ))}
           </ul>
 
@@ -67,7 +91,43 @@ export default async function BasketPage() {
               <CardTitle>Order summary</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3 text-sm">
-              {basket?.totals ? (
+              {basket?.totals && trade ? (
+                <>
+                  {/* A trade account's amounts are before tax, then its discount, then the tax */}
+                  <div className="flex justify-between gap-4">
+                    <span>Items ({basket.count}), ex. tax</span>
+                    <span className="tabular-nums">{formatGhs(basket.totals.subtotalGhs)}</span>
+                  </div>
+                  {basket.totals.discountGhs && (
+                    <div className="flex justify-between gap-4 text-green-700 dark:text-green-500">
+                      <span>Trade discount ({Number(trade.percent)}%)</span>
+                      <span className="tabular-nums">−{formatGhs(basket.totals.discountGhs)}</span>
+                    </div>
+                  )}
+                  {basket.totals.installationGhs && (
+                    <div className="flex justify-between gap-4">
+                      <span>Installation</span>
+                      <span className="tabular-nums">{formatGhs(basket.totals.installationGhs)}</span>
+                    </div>
+                  )}
+                  {basket.totals.taxGhs && (
+                    <div className="flex justify-between gap-4">
+                      <span>Tax</span>
+                      <span className="tabular-nums">{formatGhs(basket.totals.taxGhs)}</span>
+                    </div>
+                  )}
+                  <Separator />
+                  <div className="flex justify-between gap-4">
+                    <span>Total</span>
+                    <span className="font-semibold tabular-nums">{formatGhs(basket.totals.totalGhs)}</span>
+                  </div>
+                  <div className="flex justify-between gap-4 text-muted-foreground">
+                    <span>Delivery</span>
+                    <span>Worked out at checkout</span>
+                  </div>
+                  {notes}
+                </>
+              ) : basket?.totals ? (
                 <>
                   <div className="flex justify-between gap-4">
                     <span>
@@ -91,21 +151,7 @@ export default async function BasketPage() {
                     <span>Delivery</span>
                     <span>Worked out at checkout</span>
                   </div>
-                  {basket.totals.installationGhs && (
-                    <p className="text-muted-foreground">We install in {describeInstallationAreas(installationAreas) ?? "a few towns"} and call you to arrange a day.</p>
-                  )}
-                  {toFreeDelivery &&
-                    (toFreeDelivery.gt(0) ? (
-                      <>
-                        <Separator />
-                        <p className="text-muted-foreground">Spend {formatGhs(toFreeDelivery.toFixed(2))} more for free delivery.</p>
-                      </>
-                    ) : (
-                      <>
-                        <Separator />
-                        <p className="font-medium text-green-700 dark:text-green-500">Your order qualifies for free delivery.</p>
-                      </>
-                    ))}
+                  {notes}
                 </>
               ) : (
                 <p className="text-muted-foreground">We're updating our prices. Please check back in a little while to place your order.</p>

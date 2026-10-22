@@ -14,7 +14,7 @@ const promises = [
 
 export function SiteFooter({ storeName, storeDescription, logoUrl, menu, legal }: { storeName: string; storeDescription: string | null; logoUrl: string | null; menu: MenuItem[]; legal: LegalLinks }) {
   return (
-    <footer className="mt-16 bg-muted">
+    <footer className="mt-16 bg-muted print:hidden">
       <div className="border-b">
         <ul className="mx-auto grid max-w-7xl grid-cols-2 gap-3 px-4 py-6 lg:grid-cols-4 lg:px-6">
           {promises.map(({ icon: Icon, label }) => (
@@ -50,25 +50,28 @@ export function SiteFooter({ storeName, storeDescription, logoUrl, menu, legal }
           <p>
             © {new Date().getFullYear()} {storeName}
           </p>
-          {/* Only the pages that have been written */}
-          {(legal.terms || legal.privacy) && (
-            <ul className="flex gap-4">
-              {legal.terms && (
-                <li>
-                  <Link href="/terms" className="hover:text-foreground hover:underline">
-                    Terms
-                  </Link>
-                </li>
-              )}
-              {legal.privacy && (
-                <li>
-                  <Link href="/privacy" className="hover:text-foreground hover:underline">
-                    Privacy Policy
-                  </Link>
-                </li>
-              )}
-            </ul>
-          )}
+          {/* The legal pages only once they've been written */}
+          <ul className="flex flex-wrap gap-4">
+            <li>
+              <Link href="/trade" className="hover:text-foreground hover:underline">
+                Trade accounts
+              </Link>
+            </li>
+            {legal.terms && (
+              <li>
+                <Link href="/terms" className="hover:text-foreground hover:underline">
+                  Terms
+                </Link>
+              </li>
+            )}
+            {legal.privacy && (
+              <li>
+                <Link href="/privacy" className="hover:text-foreground hover:underline">
+                  Privacy Policy
+                </Link>
+              </li>
+            )}
+          </ul>
         </div>
       </div>
     </footer>

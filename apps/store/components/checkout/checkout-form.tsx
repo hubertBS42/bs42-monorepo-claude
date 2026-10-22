@@ -318,10 +318,12 @@ export function CheckoutForm({
           </ul>
           <Separator />
           <div className="space-y-2">
-            <SummaryRow label="Items" value={formatGhs(summary.itemsGhs)} />
+            {/* A trade account's rows are before tax, then its discount, then the tax */}
+            <SummaryRow label={summary.trade ? "Items, ex. tax" : "Items"} value={formatGhs(summary.itemsGhs)} />
+            {summary.trade && summary.discountGhs && <SummaryRow label={`Trade discount (${Number(summary.trade.percent)}%)`} value={`−${formatGhs(summary.discountGhs)}`} />}
             {summary.installationGhs && <SummaryRow label="Installation" value={formatGhs(summary.installationGhs)} />}
             <SummaryRow label="Delivery" value={!quoted ? "Choose your town" : summary.freeDelivery ? "Free" : formatGhs(summary.deliveryGhs!)} muted={!quoted} />
-            {summary.taxGhs && <SummaryRow label="Includes tax" value={formatGhs(summary.taxGhs)} muted />}
+            {summary.taxGhs && <SummaryRow label={summary.trade ? "Tax" : "Includes tax"} value={formatGhs(summary.taxGhs)} muted={!summary.trade} />}
           </div>
           <Separator />
           <div className="flex items-baseline justify-between gap-4 text-base font-semibold">

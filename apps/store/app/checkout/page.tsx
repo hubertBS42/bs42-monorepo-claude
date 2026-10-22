@@ -17,7 +17,7 @@ import { legalLinks } from "@/components/legal-consent"
 import { getSavedAddresses } from "@/lib/addresses"
 import { readCartId } from "@/lib/cart-cookie"
 import { CheckoutError, priceCheckout } from "@/lib/checkout"
-import { getStoreSession } from "@/lib/session"
+import { getStoreSession, getTradeTerms } from "@/lib/session"
 import { getInstallationAreas, getLegalPages } from "@/lib/settings"
 
 export const metadata: Metadata = { title: "Checkout", robots: { index: false } }
@@ -27,7 +27,8 @@ export default async function CheckoutPage() {
   // Without a rate to sell at, the basket says so
   if (!cartId || !pricing) redirect("/basket")
 
-  const checkout = await priceCheckout(prisma, cartId, pricing, null).catch((error) => {
+  const trade = await getTradeTerms()
+  const checkout = await priceCheckout(prisma, cartId, pricing, null, trade).catch((error) => {
     if (error instanceof CheckoutError || error instanceof OrderItemError) return null
     throw error
   })

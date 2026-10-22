@@ -6,6 +6,7 @@ import { loadInstallationAreas } from "@workspace/commerce/installation"
 import { installsIn } from "@workspace/commerce/installation-areas"
 import { createOrder, resolveOrderLines } from "@workspace/commerce/order-writes"
 import { priceOrder } from "@workspace/commerce/pricing"
+import { loadTradeTerms, tradeDiscount, type TradeTerms } from "@workspace/commerce/trade-accounts"
 import type { prisma } from "@workspace/db"
 import { Prisma } from "@workspace/db/client"
 import { OrderStatus, PaymentMethod, PaymentStatus, ShippingMethod } from "@workspace/db/enums"
@@ -51,9 +52,10 @@ export interface Area {
 
 // The basket checked again (loadCart), its lines as an order would sell them, and their prices with delivery to the
 // area (or without delivery when there's no area yet). Throws CheckoutError for an empty basket, or an area with no
-// delivery or, when a line includes installation, none of that; and OrderItemError when a line can't be sold.
-export async function priceCheckout(client: Client, sessionCartId: string, pricing: PricingContext, area: Area | null) {
-  const basket = await loadCart(client, sessionCartId, pricing)
+// delivery or, when a line includes installation, none of that; and OrderItemError when a line can't be sold. An
+// approved trade account's discount (trade) comes off the goods, before tax.
+export async function priceCheckout(client: Client, sessionCartId: string, pricing: PricingContext, area: Area | null, trade: TradeTerms | null) {
+  const basket = await loadCart(client, sessionCartId, pricing, trade)
   if (!basket.lines.length) throw new CheckoutError("EMPTY_BASKET")
 
   const lines = await resolveOrderLines(
@@ -61,12 +63,13 @@ export async function priceCheckout(client: Client, sessionCartId: string, prici
     null,
     basket.lines.map((line) => ({ listingId: line.listingId, listingVariantId: line.listingVariantId, quantity: line.quantity, installation: line.withInstallation }))
   )
-  const input = { lines, exchangeRate: new Prisma.Decimal(pricing.rate.rate), discount: null, tax: pricing.tax }
+  const input = { lines, exchangeRate: new Prisma.Decimal(pricing.rate.rate), discount: trade && tradeDiscount(trade), tax: pricing.tax }
   const goods = priceOrder({ ...input, shippingGhs: new Prisma.Decimal(0) })
+  const discountGhs = goods.discountAmountGhs ?? new Prisma.Decimal(0)
 
   let quote: DeliveryQuote | null = null
   if (area) {
-    quote = quoteDelivery(await loadDeliverySettings(client), area.region, area.town, goods.subtotalGhs)
+    quote = quoteDelivery(await loadDeliverySettings(client), area.region, area.town, goods.subtotalGhs.minus(discountGhs))
     if (!quote) throw new CheckoutError("NO_DELIVERY")
     if (lines.some((line) => line.installationUnitGhs) && !installsIn(await loadInstallationAreas(client), area.region, area.town)) throw new CheckoutError("NO_INSTALLATION")
   }
@@ -77,11 +80,14 @@ export async function priceCheckout(client: Client, sessionCartId: string, prici
     lines,
     priced,
     quote,
-    // What the summary shows: the items, installation and delivery each with their tax, so the rows add up to the total
+    // What the summary shows, so the rows add up to the total: the items, installation and delivery each with their tax;
+    // for a trade account, each before tax, the discount, then the tax
     summary: {
-      itemsGhs: goods.subtotalGhs.plus(goods.lines.reduce((sum, line) => sum.plus(line.taxGhs), new Prisma.Decimal(0))).toFixed(2),
-      installationGhs: goods.installationGhs.gt(0) ? sumInstallation(goods.lines).toFixed(2) : null,
-      deliveryGhs: quote ? priced.shippingGhs.plus(priced.taxGhs).minus(goods.taxGhs).toFixed(2) : null,
+      trade: trade && { percent: trade.percent.toString() },
+      itemsGhs: (trade ? goods.subtotalGhs : goods.subtotalGhs.plus(goods.lines.reduce((sum, line) => sum.plus(line.taxGhs), new Prisma.Decimal(0)))).toFixed(2),
+      discountGhs: trade ? discountGhs.toFixed(2) : null,
+      installationGhs: !goods.installationGhs.gt(0) ? null : trade ? goods.installationGhs.toFixed(2) : sumInstallation(goods.lines).toFixed(2),
+      deliveryGhs: !quote ? null : trade ? priced.shippingGhs.toFixed(2) : priced.shippingGhs.plus(priced.taxGhs).minus(goods.taxGhs).toFixed(2),
       freeDelivery: quote?.isFree ?? false,
       taxGhs: pricing.tax ? priced.taxGhs.toFixed(2) : null,
       totalGhs: priced.totalGhs.toFixed(2),
@@ -121,7 +127,9 @@ export async function placeOrder(tx: Tx, sessionCartId: string, pricing: Pricing
   const byIp = input.ip ? await tx.order.count({ where: { ...unpaidStorefrontOrder, placedFromIp: input.ip } }) : 0
   if (byCustomer >= MAX_UNPAID_ORDERS || byIp >= MAX_UNPAID_ORDERS_PER_IP) throw new CheckoutError("TOO_MANY_UNPAID")
 
-  const { basket, lines, priced } = await priceCheckout(tx, sessionCartId, pricing, input)
+  // The account's terms as they are now, not as the page saw them: a suspension stops the discount (PRICE_CHANGED)
+  const trade = await loadTradeTerms(tx, input.userId)
+  const { basket, lines, priced } = await priceCheckout(tx, sessionCartId, pricing, input, trade)
   // loadCart moved, lowered or dropped lines: the customer hasn't seen this basket
   if (basket.notices.length) throw new CheckoutError("BASKET_CHANGED")
   if (!priced.totalGhs.eq(input.expectedTotalGhs)) throw new CheckoutError("PRICE_CHANGED")
@@ -135,7 +143,8 @@ export async function placeOrder(tx: Tx, sessionCartId: string, pricing: Pricing
     paymentMethod: PaymentMethod.CARD,
     shipping: { name: input.name, phone: input.phone, line1: input.line1, line2: input.line2 || null, region: input.region, town: input.town },
     notes: input.notes || null,
-    discount: null,
+    discount: trade && tradeDiscount(trade),
+    trade: trade && { accountId: trade.accountId, companyName: trade.companyName, tin: trade.tin },
     rate: { id: pricing.rate.id, value: new Prisma.Decimal(pricing.rate.rate) },
     lines,
     priced,
