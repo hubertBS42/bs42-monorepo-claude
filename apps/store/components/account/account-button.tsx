@@ -21,6 +21,7 @@ import { getNameInitials } from "@workspace/utils/name"
 
 import { ACCOUNT_LINKS } from "@/components/account/account-nav"
 import { refreshBasketCount } from "@/components/basket/basket-count"
+import { refreshWishList } from "@/components/wish-list/wish-list-state"
 import { signInHref } from "@/lib/auth-redirect"
 
 // The console's address for staff, null for customers (and while it's being asked)
@@ -97,6 +98,7 @@ export function AccountButton() {
       }
       // The basket was the account's: a signed-out visitor starts a new one
       void refreshBasketCount()
+      void refreshWishList()
       router.refresh()
     } catch (error) {
       console.error("Storefront sign-out failed:", error)

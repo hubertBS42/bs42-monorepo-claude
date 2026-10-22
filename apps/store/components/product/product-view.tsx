@@ -13,6 +13,7 @@ import { MAX_LINE_QUANTITY } from "@/lib/basket-limits"
 import { OfferPrice, OfferStock } from "@/components/offer-details"
 import { RatingLine } from "@/components/reviews/stars"
 import { useOfferPicker } from "@/components/use-offer-picker"
+import { WishListHeart } from "@/components/wish-list/wish-list-heart"
 import { CONDITION_LABELS } from "@/lib/conditions"
 import type { ProductDetails } from "@/lib/data/product-details"
 import { formatGhs } from "@/lib/money"
@@ -159,6 +160,7 @@ export function ProductView({
           <div className="flex flex-wrap items-center gap-3">
             {offer.price && isInStock(offer) && <QuantityStepper value={Math.min(quantity, maxQuantity)} max={maxQuantity} onChange={setQuantity} label="Quantity" className="h-10" />}
             <AddToBasketButton offer={offer} label={label} quantity={Math.min(quantity, maxQuantity)} onAdded={() => setQuantity(1)} size="lg" className="min-w-48 flex-1 sm:flex-none" />
+            <WishListHeart item={{ productId: card.id, variantId: offer.variantId }} label={label} appearance="button" />
           </div>
 
           {card.specs.length > 0 && (

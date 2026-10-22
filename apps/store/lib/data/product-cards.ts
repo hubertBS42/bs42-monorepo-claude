@@ -9,8 +9,8 @@ import { PurchaseOrderStatus, SpecType } from "@workspace/db/enums"
 import { pickOffers, type Offer, type ProductCardData, type SpecValue, type StockState } from "@/lib/product-cards"
 
 // Which products a page lists: a category's (with the categories under it), a brand's, a search's, those a store
-// features (the homepage), or one product (its page)
-export type ProductScope = { categoryIds: string[] } | { brandId: string } | { search: string } | { featured: true } | { slug: string }
+// features (the homepage), one product (its page), or a wish list's
+export type ProductScope = { categoryIds: string[] } | { brandId: string } | { search: string } | { featured: true } | { slug: string } | { productIds: string[] }
 
 const OPEN_PURCHASE_ORDER = [PurchaseOrderStatus.ORDERED, PurchaseOrderStatus.PARTIALLY_RECEIVED]
 
@@ -150,6 +150,7 @@ function scopeWhere(scope: ProductScope, visible: Prisma.StoreListingWhereInput)
   if ("categoryIds" in scope) return { product: { categoryId: { in: scope.categoryIds } } }
   if ("brandId" in scope) return { product: { brandId: scope.brandId } }
   if ("slug" in scope) return { product: { slug: scope.slug } }
+  if ("productIds" in scope) return { productId: { in: scope.productIds } }
   if ("featured" in scope) return { product: { storeListings: { some: { AND: [visible, { isFeatured: true }] } } } }
   // As the console's products search: the name, SKU or barcode, including the variants'
   const contains = { contains: scope.search, mode: "insensitive" as const }
@@ -158,53 +159,53 @@ function scopeWhere(scope: ProductScope, visible: Prisma.StoreListingWhereInput)
 
 // The products in a scope that customers can buy, each with its offers from every store selling it. Filtering,
 // sorting and paging happen on this list (lib/catalogue-filters.ts): a category's products are few enough to load at
-// once, and a filter's counts need them all anyway. Cached for a minute: an order checks stock and prices again.
-export const loadProductCards = unstable_cache(
-  async (scope: ProductScope): Promise<ProductCardData[]> => {
-    const categories = await prisma.category.findMany({ select: { id: true, parentId: true, status: true } })
-    const visibleIds = getVisibleCategoryIds(categories)
-    const visible = customerVisibleListingWhere(visibleIds)
-    const listings = await prisma.storeListing.findMany({ where: { AND: [visible, scopeWhere(scope, visible)] }, select: listingSelect })
+// once, and a filter's counts need them all anyway. Uncached: for a customer's own page (the wish list), where a cache
+// entry per customer would be wasted.
+export async function queryProductCards(scope: ProductScope): Promise<ProductCardData[]> {
+  const categories = await prisma.category.findMany({ select: { id: true, parentId: true, status: true } })
+  const visibleIds = getVisibleCategoryIds(categories)
+  const visible = customerVisibleListingWhere(visibleIds)
+  const listings = await prisma.storeListing.findMany({ where: { AND: [visible, scopeWhere(scope, visible)] }, select: listingSelect })
 
-    // How deep each category is, so a product's specs go top category first, as on the product form
-    const parents = new Map(categories.map((category) => [category.id, category.parentId]))
-    const depth = (id: string) => {
-      let levels = 0
-      for (let parent = parents.get(id); parent; parent = parents.get(parent)) levels++
-      return levels
-    }
+  // How deep each category is, so a product's specs go top category first, as on the product form
+  const parents = new Map(categories.map((category) => [category.id, category.parentId]))
+  const depth = (id: string) => {
+    let levels = 0
+    for (let parent = parents.get(id); parent; parent = parents.get(parent)) levels++
+    return levels
+  }
 
-    const byProduct = new Map<string, ListingRow[]>()
-    for (const listing of listings) byProduct.set(listing.product.id, [...(byProduct.get(listing.product.id) ?? []), listing])
+  const byProduct = new Map<string, ListingRow[]>()
+  for (const listing of listings) byProduct.set(listing.product.id, [...(byProduct.get(listing.product.id) ?? []), listing])
 
-    return [...byProduct.values()].flatMap((rows): ProductCardData[] => {
-      const offers = pickOffers(rows.flatMap(listingOffers))
-      if (!offers.length) return []
-      const { product } = rows[0]!
-      const offered = new Set(offers.flatMap((offer) => offer.optionValueIds))
+  return [...byProduct.values()].flatMap((rows): ProductCardData[] => {
+    const offers = pickOffers(rows.flatMap(listingOffers))
+    if (!offers.length) return []
+    const { product } = rows[0]!
+    const offered = new Set(offers.flatMap((offer) => offer.optionValueIds))
 
-      return [
-        {
-          id: product.id,
-          name: product.name,
-          slug: product.slug,
-          brand: product.brand,
-          categoryId: product.categoryId,
-          condition: product.condition,
-          image: product.images[0] ?? null,
-          isFeatured: rows.some((row) => row.isFeatured && offers.some((offer) => offer.listingId === row.id)),
-          createdAt: product.createdAt.getTime(),
-          rating: product.rating.toFixed(2),
-          numReviews: product.numReviews,
-          specs: [...product.specValues]
-            .sort((a, b) => depth(a.spec.categoryId) - depth(b.spec.categoryId) || a.spec.position - b.spec.position || a.spec.name.localeCompare(b.spec.name))
-            .flatMap((row) => toSpecValue(row) ?? []),
-          options: product.variantOptions.map((option) => ({ name: option.name, values: option.values.filter((value) => offered.has(value.id)) })).filter((option) => option.values.length > 0),
-          offers,
-        },
-      ]
-    })
-  },
-  ["store-product-cards"],
-  { revalidate: 60 }
-)
+    return [
+      {
+        id: product.id,
+        name: product.name,
+        slug: product.slug,
+        brand: product.brand,
+        categoryId: product.categoryId,
+        condition: product.condition,
+        image: product.images[0] ?? null,
+        isFeatured: rows.some((row) => row.isFeatured && offers.some((offer) => offer.listingId === row.id)),
+        createdAt: product.createdAt.getTime(),
+        rating: product.rating.toFixed(2),
+        numReviews: product.numReviews,
+        specs: [...product.specValues]
+          .sort((a, b) => depth(a.spec.categoryId) - depth(b.spec.categoryId) || a.spec.position - b.spec.position || a.spec.name.localeCompare(b.spec.name))
+          .flatMap((row) => toSpecValue(row) ?? []),
+        options: product.variantOptions.map((option) => ({ name: option.name, values: option.values.filter((value) => offered.has(value.id)) })).filter((option) => option.values.length > 0),
+        offers,
+      },
+    ]
+  })
+}
+
+// The same, cached for a minute, for the shared pages: an order checks stock and prices again
+export const loadProductCards = unstable_cache(queryProductCards, ["store-product-cards"], { revalidate: 60 })

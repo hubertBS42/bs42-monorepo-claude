@@ -7,6 +7,7 @@ import { CategoryMenu } from "@/components/category-menu"
 import { MobileMenu } from "@/components/mobile-menu"
 import { SearchForm } from "@/components/search-form"
 import { StoreLogo } from "@/components/store-logo"
+import { WishListButton } from "@/components/wish-list/wish-list-button"
 import type { MenuItem } from "@/lib/menu"
 
 export function SiteHeader({ storeName, logoUrl, menu }: { storeName: string; logoUrl: string | null; menu: MenuItem[] }) {
@@ -21,6 +22,8 @@ export function SiteHeader({ storeName, logoUrl, menu }: { storeName: string; lo
         <div className="ml-auto flex items-center gap-1">
           <ThemeToggle />
           <AccountButton />
+          {/* On phones the account menu has the link (it stays mounted to save an item after signing in) */}
+          <WishListButton className="max-sm:hidden" />
           <BasketButton />
         </div>
       </div>

@@ -9,6 +9,7 @@ import { AddToBasketButton } from "@/components/basket/add-to-basket"
 import { OfferPrice, OfferStock } from "@/components/offer-details"
 import { RatingLine } from "@/components/reviews/stars"
 import { useOfferPicker } from "@/components/use-offer-picker"
+import { WishListHeart } from "@/components/wish-list/wish-list-heart"
 import { CONDITION_LABELS } from "@/lib/conditions"
 import { isInStock, type PricedCard } from "@/lib/product-cards"
 
@@ -23,13 +24,16 @@ function keySpecs(card: PricedCard) {
     .join(" · ")
 }
 
-export function ProductCard({ card }: { card: PricedCard }) {
-  const { offer, options } = useOfferPicker(card)
+// `variantId` opens the card on that variant's offer (the wish list's saved one); `onWishListChange` runs after its heart
+// changes the list
+export function ProductCard({ card, variantId, onWishListChange }: { card: PricedCard; variantId?: string | null; onWishListChange?: () => void }) {
+  const { offer, options } = useOfferPicker(card, variantId)
 
   const href = `/p/${card.slug}${offer.variantId ? `?variant=${offer.variantId}` : ""}`
   const specs = keySpecs(card)
   const image = offer.image ?? card.image
   const values = options.flatMap((option) => option.values.filter((value) => value.selected).map((value) => value.value))
+  const label = values.length ? `${card.name} (${values.join(", ")})` : card.name
 
   return (
     <article className="group relative flex h-full flex-col gap-3 rounded-xl border bg-card p-3 transition-shadow hover:shadow-md">
@@ -44,6 +48,7 @@ export function ProductCard({ card }: { card: PricedCard }) {
           {offer.price?.wasGhs && <Badge variant="destructive">Sale</Badge>}
           {card.condition !== "NEW" && <Badge variant="secondary">{CONDITION_LABELS[card.condition]}</Badge>}
         </div>
+        <WishListHeart item={{ productId: card.id, variantId: offer.variantId }} label={label} onChange={onWishListChange} className="absolute top-2 right-2 z-10" />
       </div>
 
       <div className="flex flex-1 flex-col gap-1.5">
@@ -80,9 +85,7 @@ export function ProductCard({ card }: { card: PricedCard }) {
         <div className="mt-auto space-y-1.5 pt-2">
           <OfferPrice offer={offer} />
           <OfferStock offer={offer} />
-          {offer.price && isInStock(offer) && (
-            <AddToBasketButton offer={offer} label={values.length ? `${card.name} (${values.join(", ")})` : card.name} size="sm" className="relative z-10 mt-1 w-full" />
-          )}
+          {offer.price && isInStock(offer) && <AddToBasketButton offer={offer} label={label} size="sm" className="relative z-10 mt-1 w-full" />}
         </div>
       </div>
     </article>
