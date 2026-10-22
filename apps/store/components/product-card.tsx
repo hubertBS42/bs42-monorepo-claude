@@ -6,6 +6,7 @@ import { Badge } from "@workspace/ui/components/badge"
 import { cn } from "@workspace/ui/lib/utils"
 
 import { AddToBasketButton } from "@/components/basket/add-to-basket"
+import { CompareToggle } from "@/components/compare/compare-toggle"
 import { OfferPrice, OfferStock } from "@/components/offer-details"
 import { RatingLine } from "@/components/reviews/stars"
 import { useOfferPicker } from "@/components/use-offer-picker"
@@ -85,6 +86,7 @@ export function ProductCard({ card, variantId, onWishListChange }: { card: Price
         <div className="mt-auto space-y-1.5 pt-2">
           <OfferPrice offer={offer} />
           <OfferStock offer={offer} />
+          <CompareToggle pick={{ id: card.id, name: card.name, slug: card.slug, image: card.image, categoryId: card.categoryId }} className="relative z-10" />
           {offer.price && isInStock(offer) && <AddToBasketButton offer={offer} label={label} size="sm" className="relative z-10 mt-1 w-full" />}
         </div>
       </div>

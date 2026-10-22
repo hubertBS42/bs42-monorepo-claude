@@ -100,6 +100,20 @@ export const getFilterSpecs = unstable_cache(
   { revalidate: 60 }
 )
 
+// Every spec a category's products can have, in the same order: the comparison page's rows
+export const getCategorySpecs = unstable_cache(
+  async (pathIds: string[]) => {
+    const specs = await prisma.categorySpec.findMany({
+      where: { categoryId: { in: pathIds } },
+      orderBy: [{ position: "asc" }, { name: "asc" }],
+      select: { id: true, name: true, categoryId: true },
+    })
+    return specs.sort((a, b) => pathIds.indexOf(a.categoryId) - pathIds.indexOf(b.categoryId))
+  },
+  ["store-category-specs"],
+  { revalidate: 60 }
+)
+
 // The homepage carousel's slides: featured categories with something on sale, in menu order (each top-level category,
 // then the ones under it), at most this many
 const MAX_FEATURED_CATEGORIES = 6

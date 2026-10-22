@@ -10,6 +10,7 @@ import { cn } from "@workspace/ui/lib/utils"
 import { AddToBasketButton } from "@/components/basket/add-to-basket"
 import { QuantityStepper } from "@/components/basket/quantity-stepper"
 import { MAX_LINE_QUANTITY } from "@/lib/basket-limits"
+import { CompareToggle } from "@/components/compare/compare-toggle"
 import { OfferPrice, OfferStock } from "@/components/offer-details"
 import { RatingLine } from "@/components/reviews/stars"
 import { useOfferPicker } from "@/components/use-offer-picker"
@@ -161,6 +162,7 @@ export function ProductView({
             {offer.price && isInStock(offer) && <QuantityStepper value={Math.min(quantity, maxQuantity)} max={maxQuantity} onChange={setQuantity} label="Quantity" className="h-10" />}
             <AddToBasketButton offer={offer} label={label} quantity={Math.min(quantity, maxQuantity)} onAdded={() => setQuantity(1)} size="lg" className="min-w-48 flex-1 sm:flex-none" />
             <WishListHeart item={{ productId: card.id, variantId: offer.variantId }} label={label} appearance="button" />
+            <CompareToggle pick={{ id: card.id, name: card.name, slug: card.slug, image: card.image, categoryId: card.categoryId }} className="text-sm" />
           </div>
 
           {card.specs.length > 0 && (

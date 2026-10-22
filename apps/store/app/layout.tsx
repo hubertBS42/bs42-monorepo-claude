@@ -6,6 +6,7 @@ import { ThemeProvider } from "@workspace/ui/components/theme-provider"
 import { Toaster } from "@workspace/ui/components/toast"
 import { cn } from "@workspace/ui/lib/utils"
 
+import { CompareBar } from "@/components/compare/compare-bar"
 import { legalLinks } from "@/components/legal-consent"
 import { SiteFooter } from "@/components/site-footer"
 import { SiteHeader } from "@/components/site-header"
@@ -47,6 +48,7 @@ export default async function RootLayout({
           <SiteHeader storeName={storeName} logoUrl={settings.logoUrl} menu={menu} />
           <main className="flex-1">{children}</main>
           <SiteFooter storeName={storeName} storeDescription={settings.storeDescription} logoUrl={settings.logoUrl} menu={menu} legal={legalLinks(legal)} />
+          <CompareBar />
           <Toaster />
         </ThemeProvider>
       </body>
