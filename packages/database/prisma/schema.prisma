@@ -42,6 +42,7 @@ enum PaymentMethod {
   CASH
   CARD
   MOBILE_MONEY
+  BANK_TRANSFER
 }
 
 // The source of truth for money: whether the customer has paid and what was given back
@@ -186,7 +187,9 @@ model User {
   hiddenReviews         Review[]                   @relation("ReviewHiddenBy")
   wishListItems         WishListItem[]
   tradeAccount          TradeAccount?              @relation("TradeAccountUser")
-  quotes                Quote[]
+  quotes                Quote[]                    @relation("QuoteUser")
+  // Quotations they made for customers in the console
+  createdQuotes         Quote[]                    @relation("QuoteCreatedBy")
   tradeAccountsReviewed TradeAccount[]             @relation("TradeAccountReviewedBy")
   sessions              Session[]
   accounts              Account[]
@@ -785,8 +788,15 @@ model Quote {
   id                String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   // QT-20261022-00012, numbered by quote_reference_seq (see its migration)
   reference         String        @unique
+  // The account that made it on the storefront. A quote staff made has none: it belongs to whichever account has its
+  // email, verified (quoteOwnerWhere in @workspace/commerce/quotes).
   userId            String?       @db.Uuid
-  user              User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  user              User?         @relation("QuoteUser", fields: [userId], references: [id], onDelete: SetNull)
+  // The staff member who made it in the console; null for one the customer made from their basket
+  createdById       String?       @db.Uuid
+  createdBy         User?         @relation("QuoteCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  // Printed on the quote for the customer, e.g. lead times; staff-made quotes only
+  notes             String?
   // Who it's addressed to, and the delivery the order would make
   customerName      String
   customerEmail     String
@@ -826,6 +836,7 @@ model Quote {
   updatedAt         DateTime      @updatedAt
 
   @@index([userId])
+  @@index([createdById])
   @@index([status])
   @@index([tradeAccountId])
   @@index([exchangeRateId])

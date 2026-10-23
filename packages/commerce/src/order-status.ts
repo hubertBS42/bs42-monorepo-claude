@@ -25,6 +25,7 @@ export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
   CASH: "Cash",
   CARD: "Card",
   MOBILE_MONEY: "Mobile money",
+  BANK_TRANSFER: "Bank transfer",
 }
 
 // Shipped is only for delivery: a pickup order goes from processing to delivered (collected).
