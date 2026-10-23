@@ -4,12 +4,13 @@ import { useCallback, useEffect, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { formatDistanceToNowStrict } from "date-fns"
-import { BadgeAlertIcon, BellIcon, CoinsIcon, FileTextIcon, type LucideIcon, PackageIcon, ShoppingBagIcon, StarIcon, Undo2Icon, BriefcaseBusinessIcon } from "lucide-react"
+import { BadgeAlertIcon, BellIcon, CoinsIcon, FileTextIcon, type LucideIcon, PackageIcon, ShoppingBagIcon, StarIcon, Undo2Icon, BriefcaseBusinessIcon, XIcon } from "lucide-react"
+import type { ActionResponse } from "@workspace/contracts"
 import { Button } from "@workspace/ui/components/button"
 import { Popover, PopoverContent, PopoverTrigger } from "@workspace/ui/components/popover"
 import { toast } from "@workspace/ui/components/toast"
 import { cn } from "@workspace/ui/lib/utils"
-import { markAllNotificationsReadAction, markNotificationReadAction } from "@/lib/actions/notification.actions"
+import { clearReadNotificationsAction, dismissNotificationAction, markAllNotificationsReadAction, markNotificationReadAction } from "@/lib/actions/notification.actions"
 import type { BellNotification } from "@/lib/data/notifications.data"
 
 // How often the bell asks for new notifications while the tab is visible
@@ -82,22 +83,40 @@ export function NotificationBell() {
     else router.push(notification.href)
   }
 
-  const markAllRead = async () => {
+  // Shows the change at once and puts the list back if the action fails
+  const change = async (next: (current: BellState) => BellState, action: () => Promise<ActionResponse>, failure: string, reload = false) => {
     const before = state
-    setState((current) => current && { items: current.items.map((item) => ({ ...item, read: true })), unreadCount: 0 })
+    setState((current) => current && next(current))
     try {
-      const result = await markAllNotificationsReadAction()
-      if (result.success) return
+      const result = await action()
+      if (result.success) {
+        // Fills the list back up to its length with older ones
+        if (reload) load()
+        return
+      }
       setState(before)
-      toast.add({ title: "Couldn't mark them as read", description: result.error, type: "error" })
+      toast.add({ title: failure, description: result.error, type: "error" })
     } catch (error) {
-      console.error("Could not mark notifications as read:", error)
+      console.error(`${failure}:`, error)
       setState(before)
-      toast.add({ title: "Couldn't mark them as read", description: "Please try again.", type: "error" })
+      toast.add({ title: failure, description: "Please try again.", type: "error" })
     }
   }
 
+  const markAllRead = () => change((current) => ({ items: current.items.map((item) => ({ ...item, read: true })), unreadCount: 0 }), markAllNotificationsReadAction, "Couldn't mark them as read")
+
+  const dismiss = (notification: BellNotification) =>
+    change(
+      (current) => ({ items: current.items.filter((item) => item.id !== notification.id), unreadCount: current.unreadCount - (notification.read ? 0 : 1) }),
+      () => dismissNotificationAction(notification.id),
+      "Couldn't dismiss it",
+      true
+    )
+
+  const clearRead = () => change((current) => ({ ...current, items: current.items.filter((item) => !item.read) }), clearReadNotificationsAction, "Couldn't clear them", true)
+
   const unread = state?.unreadCount ?? 0
+  const anyRead = state?.items.some((item) => item.read) ?? false
 
   return (
     <Popover open={open} onOpenChange={changeOpen}>
@@ -117,11 +136,18 @@ export function NotificationBell() {
       <PopoverContent align="end" className="w-[min(24rem,calc(100vw-2rem))] gap-0 p-0">
         <div className="flex items-center justify-between gap-2 border-b px-4 py-3">
           <p className="font-medium">Notifications</p>
-          {unread > 0 && (
-            <Button variant="ghost" size="xs" onClick={markAllRead}>
-              Mark all as read
-            </Button>
-          )}
+          <div className="flex items-center gap-1">
+            {anyRead && (
+              <Button variant="ghost" size="xs" onClick={clearRead}>
+                Clear read
+              </Button>
+            )}
+            {unread > 0 && (
+              <Button variant="ghost" size="xs" onClick={markAllRead}>
+                Mark all as read
+              </Button>
+            )}
+          </div>
         </div>
         {state === null ? (
           <p className="px-4 py-8 text-center text-sm text-muted-foreground">Loading…</p>
@@ -135,12 +161,13 @@ export function NotificationBell() {
             {state.items.map((notification) => {
               const Icon = KIND_ICONS[notification.kind]
               return (
-                <li key={notification.id} className="border-b last:border-b-0">
+                // The dismiss button sits beside the row's button, since buttons can't nest
+                <li key={notification.id} className="group relative border-b last:border-b-0">
                   <button
                     type="button"
                     onClick={() => openNotification(notification)}
                     className={cn(
-                      "flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-accent focus-visible:bg-accent focus-visible:outline-none",
+                      "flex w-full items-start gap-3 py-3 pr-11 pl-4 text-left transition-colors hover:bg-accent focus-visible:bg-accent focus-visible:outline-none",
                       !notification.read && "bg-muted/50"
                     )}
                   >
@@ -154,6 +181,16 @@ export function NotificationBell() {
                     </span>
                     {!notification.read && <span className="mt-2 size-2 shrink-0 rounded-full bg-primary" aria-label="Unread" />}
                   </button>
+                  {/* Shown on hover or keyboard focus, and always on touch screens */}
+                  <Button
+                    variant="ghost"
+                    size="icon-xs"
+                    onClick={() => dismiss(notification)}
+                    className="absolute top-2.5 right-2 opacity-0 group-focus-within:opacity-100 group-hover:opacity-100 pointer-coarse:opacity-100"
+                  >
+                    <XIcon />
+                    <span className="sr-only">{`Dismiss "${notification.title}"`}</span>
+                  </Button>
                 </li>
               )
             })}
