@@ -20,7 +20,7 @@ interface DeliveryStepProps {
   form: UseFormReturn<QuoteFormInput, unknown, QuoteFormOutput>
   // The looked-up customer, whose saved addresses can fill the delivery in
   customer: QuoteCustomer | null
-  // The platform's delivery fees (Settings → Delivery) and installation areas (Settings → Installation)
+  // The platform's delivery fees (Settings → Delivery) and installation areas (also Settings → Delivery)
   delivery: DeliverySettingsView
   installationAreas: InstallationAreaRow[]
 }

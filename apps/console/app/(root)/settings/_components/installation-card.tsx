@@ -17,7 +17,7 @@ import { saveInstallationAreasAction } from "@/lib/actions/installation.actions"
 import type { InstallationAreasView } from "@/lib/data/installation.data"
 import { installationAreasFormSchema } from "@/lib/schemas/installation.schemas"
 
-// Its own form, not part of the settings form, like the Delivery card: the areas are replaced together
+// Its own form, saved apart from the settings row like the Delivery card: the areas are replaced together
 
 type FormInput = z.input<typeof installationAreasFormSchema>
 type FormOutput = z.output<typeof installationAreasFormSchema>
@@ -69,7 +69,7 @@ export default function InstallationCard({ settings }: { settings: InstallationA
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {/* Rendered next to the settings form, not inside it; stopPropagation keeps a submit from reaching any form around it */}
+        {/* stopPropagation keeps a submit from reaching any form around it */}
         <form
           onSubmit={(e) => {
             e.stopPropagation()

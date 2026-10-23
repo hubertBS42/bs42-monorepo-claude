@@ -17,7 +17,7 @@ import { saveDeliverySettingsAction } from "@/lib/actions/delivery.actions"
 import type { DeliverySettingsView } from "@/lib/data/delivery.data"
 import { deliverySettingsFormSchema } from "@/lib/schemas/delivery.schemas"
 
-// Its own form, not part of the settings form: fees are replaced together, and orders copy the fee they used
+// Its own form, saved apart from the settings row: fees are replaced together, and orders copy the fee they used
 
 type FormInput = z.input<typeof deliverySettingsFormSchema>
 type FormOutput = z.output<typeof deliverySettingsFormSchema>
@@ -73,7 +73,7 @@ export default function DeliveryCard({ settings }: { settings: DeliverySettingsV
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {/* Rendered next to the settings form, not inside it; stopPropagation keeps a submit from reaching any form around it */}
+        {/* stopPropagation keeps a submit from reaching any form around it */}
         <form
           onSubmit={(e) => {
             e.stopPropagation()

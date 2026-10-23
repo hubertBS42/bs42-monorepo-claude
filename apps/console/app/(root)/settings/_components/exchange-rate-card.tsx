@@ -17,7 +17,7 @@ import { exchangeRateFormSchema } from "@/lib/schemas/exchange-rate.schemas"
 
 type FormValues = z.infer<typeof exchangeRateFormSchema>
 
-// Its own form, not part of the settings form: a rate is saved per day and orders keep the one they used
+// Its own form, saved apart from the settings row: a rate is saved per day and orders keep the one they used
 export default function ExchangeRateCard({ latest, maxAgeDays }: { latest: ExchangeRateInfo | null; maxAgeDays: number }) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
@@ -50,7 +50,7 @@ export default function ExchangeRateCard({ latest, maxAgeDays }: { latest: Excha
         <CardDescription>{`Customers pay in GHS at this rate, fetched daily. Set it here to override today's. Orders refuse one over ${maxAgeDays} days old.`}</CardDescription>
       </CardHeader>
       <CardContent>
-        {/* Rendered next to the settings form, not inside it; stopPropagation keeps a submit from reaching any form around it */}
+        {/* stopPropagation keeps a submit from reaching any form around it */}
         <form
           onSubmit={(e) => {
             e.stopPropagation()

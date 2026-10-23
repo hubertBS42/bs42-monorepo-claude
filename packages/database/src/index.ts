@@ -32,31 +32,36 @@ export const DEFAULT_APP_SETTINGS: AppSettingsData = {
 export const resolveConsoleName = (s: AppSettingsData) => s.consoleName ?? s.storeName
 export const resolveStoreName = (s: AppSettingsData) => s.storeName
 
+type AppSettingsRow = NonNullable<Awaited<ReturnType<typeof prisma.appSettings.findUnique>>>
+
+// The row as plain values that can reach client components (decimals as numbers)
+export function toAppSettingsData(row: AppSettingsRow): AppSettingsData {
+  return {
+    storeName: row.storeName,
+    storeDescription: row.storeDescription,
+    consoleName: row.consoleName,
+    consoleDescription: row.consoleDescription,
+    logoUrl: row.logoUrl,
+    faviconUrl: row.faviconUrl,
+    taxEnabled: row.taxEnabled,
+    taxRate: row.taxRate.toNumber(),
+    taxShipping: row.taxShipping,
+    notificationEmails: row.notificationEmails,
+    notifyStorefrontOrders: row.notifyStorefrontOrders,
+    notifyStaffOrders: row.notifyStaffOrders,
+    notifyLowStock: row.notifyLowStock,
+    notifyOutOfStock: row.notifyOutOfStock,
+    notifyRateFetchFailure: row.notifyRateFetchFailure,
+    notifyStoreRefunds: row.notifyStoreRefunds,
+    notifyLowRatings: row.notifyLowRatings,
+    notifyTradeApplications: row.notifyTradeApplications,
+    notifyQuotes: row.notifyQuotes,
+    quoteValidityDays: row.quoteValidityDays,
+    exchangeRateMarkupPercent: row.exchangeRateMarkupPercent.toNumber(),
+  }
+}
+
 export async function readAppSettings(): Promise<AppSettingsData> {
   const row = await prisma.appSettings.findUnique({ where: { id: "singleton" } })
-  return row
-    ? {
-        storeName: row.storeName,
-        storeDescription: row.storeDescription,
-        consoleName: row.consoleName,
-        consoleDescription: row.consoleDescription,
-        logoUrl: row.logoUrl,
-        faviconUrl: row.faviconUrl,
-        taxEnabled: row.taxEnabled,
-        taxRate: row.taxRate.toNumber(),
-        taxShipping: row.taxShipping,
-        notificationEmails: row.notificationEmails,
-        notifyStorefrontOrders: row.notifyStorefrontOrders,
-        notifyStaffOrders: row.notifyStaffOrders,
-        notifyLowStock: row.notifyLowStock,
-        notifyOutOfStock: row.notifyOutOfStock,
-        notifyRateFetchFailure: row.notifyRateFetchFailure,
-        notifyStoreRefunds: row.notifyStoreRefunds,
-        notifyLowRatings: row.notifyLowRatings,
-        notifyTradeApplications: row.notifyTradeApplications,
-        notifyQuotes: row.notifyQuotes,
-        quoteValidityDays: row.quoteValidityDays,
-        exchangeRateMarkupPercent: row.exchangeRateMarkupPercent.toNumber(),
-      }
-    : DEFAULT_APP_SETTINGS
+  return row ? toAppSettingsData(row) : DEFAULT_APP_SETTINGS
 }

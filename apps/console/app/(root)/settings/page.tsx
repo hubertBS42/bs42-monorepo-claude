@@ -1,46 +1,22 @@
-import { Metadata } from "next"
-import SettingsForm from "./_components/settings-form"
-import ExchangeRateCard from "./_components/exchange-rate-card"
-import DeliveryCard from "./_components/delivery-card"
-import InstallationCard from "./_components/installation-card"
-import LegalCard from "./_components/legal-card"
-import { requireSystemPermission } from "@/lib/auth-guard"
+import type { Metadata } from "next"
 import { readAppSettings } from "@workspace/db"
-import { getAppSettingsVersion } from "@/lib/data/app-settings.data"
-import { getDeliverySettings } from "@/lib/data/delivery.data"
-import { getInstallationAreas } from "@/lib/data/installation.data"
-import { getLegalPages } from "@/lib/data/legal.data"
-import { authURLs } from "@workspace/auth/constants"
-import { EXCHANGE_RATE_MAX_AGE_DAYS, getLatestExchangeRate } from "@workspace/commerce/exchange-rates"
+import { BrandingCard, ConsoleCard, StorefrontCard } from "./_components/settings-cards"
+import SettingsSection from "./_components/settings-section"
+import { requireSystemPermission } from "@/lib/auth-guard"
 
 export const metadata: Metadata = {
-  title: "Platform Settings",
+  title: "Settings",
 }
 
-export default async function SettingsPage() {
+export default async function GeneralSettingsPage() {
   await requireSystemPermission({ appSettings: ["update"] })
-  const [settings, version, latestRate, delivery, installation, legal] = await Promise.all([
-    readAppSettings(),
-    getAppSettingsVersion(),
-    getLatestExchangeRate(),
-    getDeliverySettings(),
-    getInstallationAreas(),
-    getLegalPages(),
-  ])
+  const settings = await readAppSettings()
 
   return (
-    <div className="grid gap-6">
-      <SettingsForm settings={settings} version={version} />
-      {/* On the settings form's grid, as wide as its left column. Outside the form: each card saves on its own (the rate per
-          day, the delivery fees together, the installation areas together, the legal pages together) */}
-      <div className="grid items-start gap-4 lg:grid-cols-3">
-        <div className="grid gap-4 lg:col-span-2">
-          <ExchangeRateCard latest={latestRate} maxAgeDays={EXCHANGE_RATE_MAX_AGE_DAYS} />
-          <DeliveryCard settings={delivery} />
-          <InstallationCard settings={installation} />
-          <LegalCard pages={legal} storefrontUrl={authURLs.store} />
-        </div>
-      </div>
-    </div>
+    <SettingsSection title="General" description="What the storefront and the console are called, and how they look.">
+      <StorefrontCard settings={settings} />
+      <ConsoleCard settings={settings} />
+      <BrandingCard settings={settings} />
+    </SettingsSection>
   )
 }

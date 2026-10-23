@@ -469,7 +469,7 @@ const ProductForm = ({ brands, categoryOptions, disabledCategoryIds, specFields,
               <Card>
                 <CardHeader>
                   <CardTitle>Installation</CardTitle>
-                  <CardDescription>What customers pay to have one installed by the platform&apos;s installers, where Settings → Installation says they work.</CardDescription>
+                  <CardDescription>What customers pay to have one installed by the platform&apos;s installers, where Settings → Delivery says they work.</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="grid gap-5 sm:grid-cols-2">

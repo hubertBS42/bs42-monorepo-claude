@@ -8,6 +8,8 @@ interface Check {
   label: string
   detail: string
   state: "ok" | "warning" | "off"
+  // The settings page that changes it, for those who can open Settings
+  href?: string
 }
 
 const STATE_BADGES = {
@@ -28,15 +30,16 @@ interface PlatformHealthProps {
 export default function PlatformHealth({ rate, taxEnabled, mailerConfigured, notificationRecipients, canOpenSettings }: PlatformHealthProps) {
   const checks: Check[] = [
     !rate
-      ? { label: "Exchange rate", detail: "No USD to GHS rate yet, so no order can be created.", state: "warning" }
+      ? { label: "Exchange rate", detail: "No USD to GHS rate yet, so no order can be created.", state: "warning", href: "/settings/pricing" }
       : rate.isStale
-        ? { label: "Exchange rate", detail: `The latest rate is from ${formatDate(`${rate.date}T00:00:00Z`, "LLL dd")}, too old for orders to use.`, state: "warning" }
+        ? { label: "Exchange rate", detail: `The latest rate is from ${formatDate(`${rate.date}T00:00:00Z`, "LLL dd")}, too old for orders to use.`, state: "warning", href: "/settings/pricing" }
         : {
             label: "Exchange rate",
             detail: `GH₵${Number(rate.rate)} per $1 for ${formatDate(`${rate.date}T00:00:00Z`, "LLL dd")}, ${rate.source === "MANUAL" ? "set by hand" : "fetched"}.`,
             state: "ok",
+            href: "/settings/pricing",
           },
-    { label: "Tax", detail: taxEnabled ? "Charged on new orders." : "Not charged on orders.", state: taxEnabled ? "ok" : "off" },
+    { label: "Tax", detail: taxEnabled ? "Charged on new orders." : "Not charged on orders.", state: taxEnabled ? "ok" : "off", href: "/settings/pricing" },
     mailerConfigured
       ? { label: "Email", detail: "Customer and staff emails can be sent.", state: "ok" }
       : { label: "Email", detail: "SITE_MAILER_* isn't set, so no email is sent.", state: "warning" },
@@ -44,6 +47,7 @@ export default function PlatformHealth({ rate, taxEnabled, mailerConfigured, not
       label: "Staff notifications",
       detail: notificationRecipients ? `Sent to ${notificationRecipients} address${notificationRecipients === 1 ? "" : "es"}.` : "No recipients, so nobody hears about new orders or low stock.",
       state: notificationRecipients ? "ok" : "warning",
+      href: "/settings/notifications",
     },
   ]
 
@@ -69,7 +73,13 @@ export default function PlatformHealth({ rate, taxEnabled, mailerConfigured, not
         {checks.map((check) => (
           <div key={check.label} className="grid content-start gap-1">
             <div className="flex items-center justify-between gap-3">
-              <span className="text-sm font-medium">{check.label}</span>
+              {canOpenSettings && check.href ? (
+                <Link href={check.href} className="text-sm font-medium underline-offset-4 hover:underline">
+                  {check.label}
+                </Link>
+              ) : (
+                <span className="text-sm font-medium">{check.label}</span>
+              )}
               <Badge variant={STATE_BADGES[check.state].variant}>{STATE_BADGES[check.state].label}</Badge>
             </div>
             <span className="text-xs text-muted-foreground">{check.detail}</span>

@@ -16,7 +16,7 @@ import { saveLegalPagesAction } from "@/lib/actions/legal.actions"
 import type { LegalPagesView } from "@/lib/data/legal.data"
 import { legalPagesFormSchema } from "@/lib/schemas/legal.schemas"
 
-// Its own form, not part of the settings form, so the two can't undo each other's saves
+// Its own form, saved apart from the settings row (the LegalPages singleton)
 
 type FormInput = z.input<typeof legalPagesFormSchema>
 type FormOutput = z.output<typeof legalPagesFormSchema>
@@ -62,7 +62,7 @@ export default function LegalCard({ pages, storefrontUrl }: { pages: LegalPagesV
         <CardDescription>The storefront&apos;s Terms and Privacy Policy. Sign-up and checkout tell customers that continuing means agreeing to them. Leave one empty to not show it.</CardDescription>
       </CardHeader>
       <CardContent>
-        {/* Rendered next to the settings form, not inside it; stopPropagation keeps a submit from reaching any form around it */}
+        {/* stopPropagation keeps a submit from reaching any form around it */}
         <form
           onSubmit={(e) => {
             e.stopPropagation()
