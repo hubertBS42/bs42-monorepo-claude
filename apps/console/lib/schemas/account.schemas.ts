@@ -27,3 +27,12 @@ export const updatePasswordFormSchema = updatePasswordSchema
   })
 
 export const sessionIdSchema = z.uuid("Invalid session ID")
+
+// One switch on /account/notifications, for one of the user's stores
+export const STORE_NOTIFICATION_PREFERENCES = ["notifyOrders", "notifyStock", "notifyRefunds"] as const
+
+export const storeNotificationSchema = z.object({
+  storeId: z.uuid("Invalid store ID"),
+  preference: z.enum(STORE_NOTIFICATION_PREFERENCES),
+  enabled: z.boolean(),
+})

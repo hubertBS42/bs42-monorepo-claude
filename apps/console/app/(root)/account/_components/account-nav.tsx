@@ -9,6 +9,7 @@ const links = [
   { href: "/account/profile", label: "Profile" },
   { href: "/account/password", label: "Password" },
   { href: "/account/sessions", label: "Sessions" },
+  { href: "/account/notifications", label: "Notifications" },
 ]
 
 const CatalogueNav = () => {

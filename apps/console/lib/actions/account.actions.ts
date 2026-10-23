@@ -9,7 +9,7 @@ import { prisma } from "@workspace/db"
 import { isManagedFileUrl, removeFiles } from "@workspace/storage"
 import z from "zod"
 import { requireConsoleAccess } from "@/lib/auth-guard"
-import { sessionIdSchema, updatePasswordSchema, updateProfileSchema } from "@/lib/schemas/account.schemas"
+import { sessionIdSchema, storeNotificationSchema, updatePasswordSchema, updateProfileSchema } from "@/lib/schemas/account.schemas"
 
 // Every export here is a public endpoint, so every input is validated
 
@@ -116,6 +116,23 @@ export async function updatePasswordAction(input: z.input<typeof updatePasswordS
     if (error instanceof APIError && error.body?.code === "INVALID_PASSWORD") {
       return { success: false, error: "The current password is incorrect", code: "INVALID_PASSWORD" }
     }
+    return { success: false, error: formatError(error) }
+  }
+}
+
+// One switch on /account/notifications, saved as it's flipped. Only the user's own membership of that store changes.
+export async function setStoreNotificationAction(input: z.input<typeof storeNotificationSchema>): Promise<ActionResponse> {
+  const { user } = await requireConsoleAccess()
+
+  try {
+    const parsed = storeNotificationSchema.safeParse(input)
+    if (!parsed.success) return invalidInput(parsed.error)
+    const { storeId, preference, enabled } = parsed.data
+
+    const { count } = await prisma.member.updateMany({ where: { userId: user.id, organizationId: storeId }, data: { [preference]: enabled } })
+    if (count === 0) return { success: false, error: "You're no longer a member of this store.", code: "NOT_MEMBER" }
+    return { success: true }
+  } catch (error) {
     return { success: false, error: formatError(error) }
   }
 }

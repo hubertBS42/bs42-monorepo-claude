@@ -5,7 +5,7 @@ import type { ActionResponse } from "@workspace/contracts"
 import { prisma } from "@workspace/db"
 import { Prisma } from "@workspace/db/client"
 import { InstallationStatus, OrderStatus, PaymentStatus, type PaymentMethod } from "@workspace/db/enums"
-import { notifyStoreRefund } from "@workspace/commerce/notifications"
+import { notifyRefund } from "@workspace/commerce/notifications"
 import { sendOrderEmail, statusEmailEvent } from "@workspace/commerce/order-emails"
 import { cancelAndRefundOrder, recordOrderReturn, refundOrder, RefundError, type RefundInput, type ReturnInput } from "./order-refunds"
 import { cancelInstallation, changeInstallation, InstallationError, type InstallationChange } from "./order-installation"
@@ -107,7 +107,9 @@ export async function editPendingOrder(orderId: string, data: Prisma.OrderUpdate
 // ============================================
 
 // storeId is the store whose staff gave the money back (an owner or admin, through the store's actions), which tells
-// the platform; null for the platform's own, including a superAdmin's from a store's pages. The order's emails and that notice go out only once the change has committed.
+// the platform; null for the platform's own, including a superAdmin's from a store's pages. An order made only of one
+// store's items also tells that store's team (notifyRefund). The order's emails and those notices go out only once the
+// change has committed.
 
 function refundFailure(error: unknown): Failure {
   if (error instanceof StatusChangedError) return STATUS_CHANGED
@@ -125,7 +127,7 @@ export async function giveRefund(input: RefundInput & { amountGhs: Prisma.Decima
   const amountGhs = input.amountGhs.toFixed(2)
   after(async () => {
     await sendOrderEmail(input.orderId, "REFUNDED", input.reason, { refundAmountGhs: amountGhs })
-    if (storeId) await notifyStoreRefund(input.orderId, storeId, { amountGhs, reason: input.reason, givenById: input.refundedById, kind: "refund" })
+    await notifyRefund(input.orderId, storeId, { amountGhs, reason: input.reason, givenById: input.refundedById, kind: "refund" })
   })
   return { success: true }
 }
@@ -145,14 +147,14 @@ export async function cancelWithRefund(input: RefundInput & { currentStatus: Ord
     if (refunded.gt(0)) {
       const amountGhs = refunded.toFixed(2)
       await sendOrderEmail(input.orderId, "REFUNDED", input.reason, { refundAmountGhs: amountGhs })
-      if (storeId) await notifyStoreRefund(input.orderId, storeId, { amountGhs, reason: input.reason, givenById: input.refundedById, kind: "cancel" })
+      await notifyRefund(input.orderId, storeId, { amountGhs, reason: input.reason, givenById: input.refundedById, kind: "cancel" })
     }
   })
   return { success: true }
 }
 
 // Items brought back after delivery: restocks the ones chosen and refunds the amount given, if any. One customer email
-// for both; the platform hears only when money went back.
+// for both; staff hear only when money went back.
 export async function recordReturn(input: ReturnInput, storeId: string | null): Promise<ActionResponse> {
   let result: Awaited<ReturnType<typeof recordOrderReturn>>
   try {
@@ -164,7 +166,7 @@ export async function recordReturn(input: ReturnInput, storeId: string | null): 
   const amountGhs = result.refundedGhs.gt(0) ? result.refundedGhs.toFixed(2) : null
   after(async () => {
     await sendOrderEmail(input.orderId, "RETURNED", input.reason, { refundAmountGhs: amountGhs, returnedItems: result.items })
-    if (storeId && amountGhs) await notifyStoreRefund(input.orderId, storeId, { amountGhs, reason: input.reason, givenById: input.recordedById, kind: "return" })
+    if (amountGhs) await notifyRefund(input.orderId, storeId, { amountGhs, reason: input.reason, givenById: input.recordedById, kind: "return" })
   })
   return { success: true }
 }

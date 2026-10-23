@@ -1,25 +1,28 @@
 import "server-only"
 
 import { authURLs } from "@workspace/auth/constants"
+import { consoleAdminRoles, hasSystemRole } from "@workspace/auth/system-permissions"
 import type { AppSettingsData } from "@workspace/contracts"
 import { prisma, readAppSettings, resolveConsoleName } from "@workspace/db"
+import { Prisma } from "@workspace/db/client"
 import { sendEmail, StaffAlertEmail } from "@workspace/email"
 import { formatCurrency } from "@workspace/utils/currency"
 import { formatDate } from "@workspace/utils/date"
 import { BUSINESS_TYPE_LABELS } from "./trade-account-status"
 
-// Staff notifications: emails to the addresses in Settings → Notifications, one switch per event. Callers schedule
-// them with after(), once the change has committed, and they never throw: a missing mailer or a bad address is logged,
-// not raised into a request that already succeeded.
+// Staff notifications: emails to the addresses in Settings → Notifications, one switch per event, and a store's own
+// to its owners and admins, each with their own switches (Member.notifyOrders and the rest). Callers schedule them
+// with after(), once the change has committed, and they never throw: a missing mailer or a bad address is logged, not
+// raised into a request that already succeeded.
 
 type Alert = { subject: string; preview: string; heading: string; intro: string; details: { label: string; value: string }[]; action?: { label: string; url: string } }
 
 const ghs = (amount: { toString(): string }) => formatCurrency(amount.toString(), "GHS", "en-GH")
 
-async function send(settings: AppSettingsData, alert: Alert, context: string) {
+async function send(settings: AppSettingsData, alert: Alert, context: string, recipients = settings.notificationEmails) {
   const appName = resolveConsoleName(settings)
   const results = await Promise.allSettled(
-    settings.notificationEmails.map((to) =>
+    recipients.map((to) =>
       sendEmail({
         to,
         fromName: appName,
@@ -33,13 +36,39 @@ async function send(settings: AppSettingsData, alert: Alert, context: string) {
   }
 }
 
+type StorePreference = "notifyOrders" | "notifyStock" | "notifyRefunds"
+
+// A store's owners and admins who want this kind of email, leaving out whoever made the change (they know) and
+// platform staff: they belong to every store, and get the platform's emails instead
+async function storeTeamEmails(storeId: string, preference: StorePreference, exceptUserId: string | null = null) {
+  const members = await prisma.member.findMany({
+    where: {
+      organizationId: storeId,
+      role: { in: ["owner", "admin"] },
+      [preference]: true,
+      user: { OR: [{ banned: null }, { banned: false }], ...(exceptUserId && { id: { not: exceptUserId } }) },
+    },
+    select: { user: { select: { email: true, role: true } } },
+  })
+  return members.filter((member) => !hasSystemRole(member.user.role, consoleAdminRoles)).map((member) => member.user.email)
+}
+
+// A link to a page in a store's workspace. ?store= has the console switch to that store first (proxy.ts), for someone
+// in more than one.
+const storeUrl = (path: string, storeId: string) => {
+  const url = new URL(path, authURLs.console)
+  url.searchParams.set("store", storeId)
+  return url.toString()
+}
+
+// What a store's lines come to, as its orders list counts them: after their discount, with their tax
+type StoreLine = { totalPriceGhs: Prisma.Decimal; discountGhs: Prisma.Decimal; taxGhs: Prisma.Decimal }
+const sumLines = (lines: StoreLine[]) => lines.reduce((sum, line) => sum.plus(line.totalPriceGhs.minus(line.discountGhs).plus(line.taxGhs)), new Prisma.Decimal(0))
+
 // An order customers placed on the storefront, or staff created in a store's workspace
 export async function notifyNewOrder(orderId: string, source: "storefront" | "staff") {
   try {
     const settings = await readAppSettings()
-    const enabled = source === "storefront" ? settings.notifyStorefrontOrders : settings.notifyStaffOrders
-    if (!enabled || settings.notificationEmails.length === 0) return
-
     const order = await prisma.order.findUnique({
       where: { id: orderId },
       select: {
@@ -48,8 +77,21 @@ export async function notifyNewOrder(orderId: string, source: "storefront" | "st
         totalGhs: true,
         shippingMethod: true,
         installationGhs: true,
+        createdById: true,
         createdBy: { select: { name: true } },
-        orderItems: { select: { quantity: true, storeName: true, installationUnitGhs: true } },
+        orderItems: {
+          select: {
+            organizationId: true,
+            quantity: true,
+            storeName: true,
+            productName: true,
+            variantDescription: true,
+            totalPriceGhs: true,
+            discountGhs: true,
+            taxGhs: true,
+            installationUnitGhs: true,
+          },
+        },
       },
     })
     if (!order) return
@@ -57,6 +99,38 @@ export async function notifyNewOrder(orderId: string, source: "storefront" | "st
     const stores = [...new Set(order.orderItems.map((item) => item.storeName))]
     const itemCount = order.orderItems.reduce((sum, item) => sum + item.quantity, 0)
     const placedBy = source === "storefront" ? "A customer placed an order on the storefront." : `${order.createdBy?.name ?? "Staff"} created an order in ${stores.join(", ")}.`
+    const fulfilment = order.shippingMethod === "DELIVERY" ? "Delivery" : "Pickup"
+
+    // Each store hears about its own lines only, as its orders list shows them
+    for (const storeId of new Set(order.orderItems.map((item) => item.organizationId))) {
+      const recipients = await storeTeamEmails(storeId, "notifyOrders", order.createdById)
+      if (recipients.length === 0) continue
+      const lines = order.orderItems.filter((item) => item.organizationId === storeId)
+      const shared = lines.length < order.orderItems.length
+      const storeName = lines[0]!.storeName
+      await send(
+        settings,
+        {
+          subject: `New order ${order.reference}`,
+          preview: `${order.customerName} · ${lines.reduce((sum, item) => sum + item.quantity, 0)} items`,
+          heading: "New order",
+          intro: `${source === "storefront" ? `A customer placed an order on the storefront with ${storeName}'s items.` : `${order.createdBy?.name ?? "Staff"} created an order in ${storeName}.`}${shared ? " It has other stores' items too: only yours are listed here." : ""}`,
+          details: [
+            { label: "Reference", value: order.reference },
+            { label: "Customer", value: order.customerName },
+            ...lines.map((item) => ({ label: item.variantDescription ? `${item.productName} (${item.variantDescription})` : item.productName, value: `× ${item.quantity}` })),
+            { label: shared ? "Your items' total" : "Total", value: ghs(shared ? sumLines(lines) : order.totalGhs) },
+            { label: "Fulfilment", value: fulfilment },
+          ],
+          action: { label: "View order", url: storeUrl(`/store/orders/${orderId}/details`, storeId) },
+        },
+        "store new order",
+        recipients
+      )
+    }
+
+    const enabled = source === "storefront" ? settings.notifyStorefrontOrders : settings.notifyStaffOrders
+    if (!enabled || settings.notificationEmails.length === 0) return
 
     await send(
       settings,
@@ -71,7 +145,7 @@ export async function notifyNewOrder(orderId: string, source: "storefront" | "st
           { label: stores.length > 1 ? "Stores" : "Store", value: stores.join(", ") },
           { label: "Items", value: String(itemCount) },
           { label: "Total", value: ghs(order.totalGhs) },
-          { label: "Fulfilment", value: order.shippingMethod === "DELIVERY" ? "Delivery" : "Pickup" },
+          { label: "Fulfilment", value: fulfilment },
           // The platform's installers are needed: someone has to call the customer
           ...(order.installationGhs.gt(0)
             ? [
@@ -93,6 +167,7 @@ export async function notifyNewOrder(orderId: string, source: "storefront" | "st
 
 export interface StockAlert {
   kind: "low" | "out"
+  storeId: string
   storeName: string
   // "Tee (Size: M)"
   label: string
@@ -100,29 +175,53 @@ export interface StockAlert {
   threshold: number
 }
 
+const stockHeading = (alerts: StockAlert[]) => (alerts.some((alert) => alert.kind === "out") ? "Out of stock" : "Low stock")
+const stockSubject = (heading: string, alerts: StockAlert[]) => (alerts.length === 1 ? `${heading}: ${alerts[0]!.label}` : `${heading}: ${alerts.length} items`)
+const stockLevel = (alert: StockAlert) => (alert.kind === "out" ? "out of stock" : `${alert.stock} left (alert at ${alert.threshold})`)
+
 // Items a sale took down to their low-stock threshold, or to 0: one email for the lot, so an order selling several
-// items sends one, not one per item
+// items sends one, not one per item. Each store's team hears of its own (both kinds under one switch).
 export async function notifyStockAlerts(alerts: StockAlert[]) {
   try {
     if (alerts.length === 0) return
     const settings = await readAppSettings()
+
+    for (const storeId of new Set(alerts.map((alert) => alert.storeId))) {
+      const recipients = await storeTeamEmails(storeId, "notifyStock")
+      if (recipients.length === 0) continue
+      const own = alerts.filter((alert) => alert.storeId === storeId)
+      const heading = stockHeading(own)
+      await send(
+        settings,
+        {
+          subject: stockSubject(heading, own),
+          preview: own.map((alert) => alert.label).join(", "),
+          heading,
+          intro: `A sale left ${own.length === 1 ? "this item" : "these items"} in ${own[0]!.storeName} needing restocking.`,
+          details: own.map((alert) => ({ label: alert.label, value: stockLevel(alert) })),
+          action: { label: "View listings", url: storeUrl(`/store/listings?stock=${heading === "Out of stock" ? "out" : "low"}`, storeId) },
+        },
+        "store stock",
+        recipients
+      )
+    }
+
     if (settings.notificationEmails.length === 0) return
 
     const wanted = alerts.filter((alert) => (alert.kind === "out" ? settings.notifyOutOfStock : settings.notifyLowStock))
     if (wanted.length === 0) return
 
-    const anyOut = wanted.some((alert) => alert.kind === "out")
-    const heading = anyOut ? "Out of stock" : "Low stock"
+    const heading = stockHeading(wanted)
     await send(
       settings,
       {
-        subject: wanted.length === 1 ? `${heading}: ${wanted[0]!.label}` : `${heading}: ${wanted.length} items`,
+        subject: stockSubject(heading, wanted),
         preview: wanted.map((alert) => alert.label).join(", "),
         heading,
         intro: `A sale left ${wanted.length === 1 ? "this item" : "these items"} needing restocking.`,
         details: wanted.map((alert) => ({
           label: `${alert.label} (${alert.storeName})`,
-          value: alert.kind === "out" ? "out of stock" : `${alert.stock} left (alert at ${alert.threshold})`,
+          value: stockLevel(alert),
         })),
       },
       "stock"
@@ -132,21 +231,61 @@ export async function notifyStockAlerts(alerts: StockAlert[]) {
   }
 }
 
-// A store's owner or admin gave money back on one of its orders, on its own or with a return. Refunds by the
-// platform's superAdmins don't notify. Never more than one per refund, so no batching.
-export async function notifyStoreRefund(orderId: string, storeId: string, refund: { amountGhs: string; reason: string; givenById: string; kind: "refund" | "cancel" | "return" }) {
+export interface RefundNotice {
+  amountGhs: string
+  reason: string
+  givenById: string
+  kind: "refund" | "cancel" | "return"
+}
+
+// Money given back on an order, on its own, with a cancellation or with a return. storeId is the store whose own
+// owner or admin gave it, which tells the platform (a superAdmin's refunds don't: null). An order made only of one
+// store's items also tells that store's team, whoever gave it; an order shared between stores is the platform's.
+// Never more than one per refund, so no batching.
+export async function notifyRefund(orderId: string, storeId: string | null, refund: RefundNotice) {
   try {
     const settings = await readAppSettings()
-    if (!settings.notifyStoreRefunds || settings.notificationEmails.length === 0) return
-
-    const [order, store, givenBy] = await Promise.all([
-      prisma.order.findUnique({ where: { id: orderId }, select: { reference: true, customerName: true, totalGhs: true } }),
-      prisma.organization.findUnique({ where: { id: storeId }, select: { name: true } }),
+    const [order, givenBy] = await Promise.all([
+      prisma.order.findUnique({
+        where: { id: orderId },
+        select: { reference: true, customerName: true, totalGhs: true, orderItems: { select: { organizationId: true, storeName: true } } },
+      }),
       prisma.user.findUnique({ where: { id: refund.givenById }, select: { name: true } }),
     ])
     if (!order) return
 
     const what = refund.kind === "cancel" ? "cancelled and refunded" : refund.kind === "return" ? "recorded a return and refunded" : "refunded"
+    const details = [
+      { label: "Reference", value: order.reference },
+      { label: "Customer", value: order.customerName },
+      { label: "Refunded", value: ghs(refund.amountGhs) },
+      { label: "Order total", value: ghs(order.totalGhs) },
+      { label: "Reason", value: refund.reason },
+    ]
+
+    const storeIds = new Set(order.orderItems.map((item) => item.organizationId))
+    const [onlyStoreId] = storeIds
+    if (storeIds.size === 1 && onlyStoreId) {
+      const recipients = await storeTeamEmails(onlyStoreId, "notifyRefunds", refund.givenById)
+      if (recipients.length > 0) {
+        await send(
+          settings,
+          {
+            subject: `${ghs(refund.amountGhs)} refunded on ${order.reference}`,
+            preview: refund.reason,
+            heading: "Refund given",
+            intro: `${givenBy?.name ?? "Staff"} ${what} an order in ${order.orderItems[0]!.storeName}.`,
+            details,
+            action: { label: "View order", url: storeUrl(`/store/orders/${orderId}/details`, onlyStoreId) },
+          },
+          "store team refund",
+          recipients
+        )
+      }
+    }
+
+    if (!storeId || !settings.notifyStoreRefunds || settings.notificationEmails.length === 0) return
+    const store = await prisma.organization.findUnique({ where: { id: storeId }, select: { name: true } })
     await send(
       settings,
       {
@@ -154,19 +293,13 @@ export async function notifyStoreRefund(orderId: string, storeId: string, refund
         preview: refund.reason,
         heading: "Refund given by a store",
         intro: `${givenBy?.name ?? "Staff"} ${what} an order in ${store?.name ?? "a store"}.`,
-        details: [
-          { label: "Reference", value: order.reference },
-          { label: "Customer", value: order.customerName },
-          { label: "Refunded", value: ghs(refund.amountGhs) },
-          { label: "Order total", value: ghs(order.totalGhs) },
-          { label: "Reason", value: refund.reason },
-        ],
+        details,
         action: { label: "View order", url: new URL(`/orders/${orderId}/details`, authURLs.console).toString() },
       },
       "store refund"
     )
   } catch (error) {
-    console.error(`Store refund notification for ${orderId} failed:`, error)
+    console.error(`Refund notification for ${orderId} failed:`, error)
   }
 }
 

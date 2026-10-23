@@ -1419,6 +1419,11 @@ model Member {
   user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   role           String       @default("member")
   createdAt      DateTime     @default(now())
+  // The store's own emails, for its owners and admins (not platform staff, who get Settings → Notifications'):
+  // its new orders, stock a sale took low or out, and refunds on orders made only of its items
+  notifyOrders   Boolean      @default(true)
+  notifyStock    Boolean      @default(true)
+  notifyRefunds  Boolean      @default(true)
 
   @@unique([organizationId, userId])
   @@index([organizationId])

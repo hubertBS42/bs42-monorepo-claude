@@ -215,7 +215,7 @@ export async function createOrder(tx: Tx, order: NewOrder) {
       : (await tx.storeListing.findUniqueOrThrow({ where: { id: line.listingId }, select: { stock: true } })).stock
     const before = after + line.quantity
     sold.push({ line, stockAfter: after })
-    const alert = { storeName: line.storeName, label: line.label, stock: after, threshold: line.lowStockThreshold }
+    const alert = { storeId: line.storeId, storeName: line.storeName, label: line.label, stock: after, threshold: line.lowStockThreshold }
     if (after === 0) stockAlerts.push({ kind: "out", ...alert })
     else if (after <= line.lowStockThreshold && before > line.lowStockThreshold) stockAlerts.push({ kind: "low", ...alert })
   }

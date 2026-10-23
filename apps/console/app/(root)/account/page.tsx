@@ -3,7 +3,7 @@ import { Badge } from "@workspace/ui/components/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@workspace/ui/components/card"
 import { capitalizeWord } from "@workspace/utils/text"
 import { getNameInitials } from "@workspace/utils/name"
-import { UserIcon, KeyRoundIcon, MonitorIcon, ArrowRightIcon } from "lucide-react"
+import { UserIcon, KeyRoundIcon, MonitorIcon, BellIcon, ArrowRightIcon } from "lucide-react"
 import Link from "next/link"
 import {requireConsoleAccess} from "@/lib/auth-guard"
 import { buttonVariants } from "@workspace/ui/components/button"
@@ -26,6 +26,12 @@ const overviewLinks = [
     icon: MonitorIcon,
     title: "Sessions",
     description: "Manage your active devices and sessions",
+  },
+  {
+    href: "/account/notifications",
+    icon: BellIcon,
+    title: "Notifications",
+    description: "Choose the emails you get about your stores",
   },
 ]
 
@@ -52,7 +58,7 @@ const AccountPage = async () => {
       </Card>
 
       {/* Quick links */}
-      <div className="grid gap-4 @xl/main:grid-cols-3">
+      <div className="grid gap-4 @xl/main:grid-cols-2 @5xl/main:grid-cols-4">
         {overviewLinks.map((link) => {
           const Icon = link.icon
           return (
