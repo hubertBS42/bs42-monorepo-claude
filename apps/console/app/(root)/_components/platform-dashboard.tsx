@@ -23,7 +23,7 @@ export default async function PlatformDashboard({ period, canOpenSettings }: { p
   const [dashboard, recent, rate, settings] = await Promise.all([getPlatformDashboard(period), getRecentOrderDetails(RECENT_ORDERS), getLatestExchangeRate(), getAppSettings()])
   if (!dashboard.success) throw new Error(dashboard.error)
   if (!recent.success) throw new Error(recent.error)
-  const { orders, stockAlerts, sales } = dashboard.data
+  const { orders, stockAlerts, overduePurchaseOrders, sales } = dashboard.data
 
   const shown = stockAlerts.slice(0, STOCK_STORES_SHOWN)
   const others = stockAlerts.slice(STOCK_STORES_SHOWN)
@@ -45,11 +45,13 @@ export default async function PlatformDashboard({ period, canOpenSettings }: { p
             { label: "To prepare", hint: "Confirmed orders", count: orders.confirmed, href: "/orders?status=CONFIRMED" },
             { label: "To ship or hand over", hint: "Orders being processed", count: orders.processing, href: "/orders?status=PROCESSING" },
             { label: "Delivered, not paid", hint: "No payment recorded yet", count: orders.unpaidDelivered, href: "/orders?status=DELIVERED&paymentStatus=PENDING", urgent: true },
-            // Listings are managed in each store's workspace, so these have no link
+            // Listings are managed in each store's workspace, which ?workspace= switches to (proxy.ts)
             ...shown.map((store) => ({
               label: store.storeName,
               hint: [store.out && `${store.out} out of stock`, store.low && `${store.low} low on stock`].filter(Boolean).join(", "),
               count: store.out + store.low,
+              href: `/store/listings?stock=${store.out ? "out" : "low"}&workspace=${store.storeId}`,
+              switchesWorkspace: true,
               urgent: store.out > 0,
             })),
             ...(others.length
@@ -61,6 +63,7 @@ export default async function PlatformDashboard({ period, canOpenSettings }: { p
                   },
                 ]
               : []),
+            { label: "Purchase orders overdue", hint: "In every store: their expected delivery day has passed", count: overduePurchaseOrders, href: "/purchase-orders?overdue=true" },
           ]}
         />
       </div>

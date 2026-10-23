@@ -293,6 +293,21 @@ export const BREADCRUMB_DATA: BreadcrumbConfig[] = [
     ],
   },
   {
+    pathname: "/purchase-orders",
+    segments: [
+      { text: "Dashboard", href: "/" },
+      { text: "Purchase Orders", href: "#" },
+    ],
+  },
+  {
+    pathname: "/purchase-orders/[id]/details",
+    segments: [
+      { text: "Dashboard", href: "/" },
+      { text: "Purchase Orders", href: "/purchase-orders" },
+      { text: "Purchase Order", href: "#" },
+    ],
+  },
+  {
     pathname: "/store/purchase-orders",
     segments: [
       { text: "Dashboard", href: "/" },

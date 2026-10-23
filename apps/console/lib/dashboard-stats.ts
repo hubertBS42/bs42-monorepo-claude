@@ -6,6 +6,7 @@ import { OrderStatus, PaymentStatus } from "@workspace/db/enums"
 import { dayStart, formatDate } from "@workspace/utils/date"
 import type { DashboardChanges, DashboardOrderCounts, DashboardPeriod, DashboardSales, DashboardSalesTrend, PlatformDashboard, StoreDashboard } from "../types"
 import { sumLines } from "./order-details"
+import { overduePurchaseOrderWhere } from "./purchase-order-status"
 import { countStockAlerts } from "./stock-states"
 
 // The dashboard's numbers, apart from access checks (lib/data/dashboard.data.ts), so a script can run them in a
@@ -108,9 +109,10 @@ export async function getStoreStats(tx: Tx, storeId: string, period: DashboardPe
   // and returns on the others are the platform's, and can't be split between the stores.
   const ownOrder = { orderItems: { some: { organizationId: storeId }, every: { organizationId: storeId } } }
 
-  const [orders, stock, paidOrders, refunds, returns] = await Promise.all([
+  const [orders, stock, overduePurchaseOrders, paidOrders, refunds, returns] = await Promise.all([
     countOrders(tx, withStoreItems),
     countStockAlerts(tx, storeId),
+    tx.purchaseOrder.count({ where: { organizationId: storeId, ...overduePurchaseOrderWhere(formatDate(now, "yyyy-MM-dd")) } }),
     tx.order.findMany({
       where: { ...withStoreItems, paidAt: { gte: from }, paymentStatus: paidStatuses },
       select: { paidAt: true, totalGhs: true, orderItems: { select: { organizationId: true, totalPriceGhs: true, discountGhs: true, taxGhs: true } } },
@@ -129,6 +131,7 @@ export async function getStoreStats(tx: Tx, storeId: string, period: DashboardPe
     orders,
     lowStock: stock[0]?.low ?? 0,
     outOfStock: stock[0]?.out ?? 0,
+    overduePurchaseOrders,
     sales: toSalesTrend(period, { payments, refunds: refunds.map((row) => ({ at: row.createdAt, amountGhs: row.amountGhs })), returns: returns.map((row) => ({ at: row.createdAt })) }, now),
   }
 }
@@ -136,12 +139,13 @@ export async function getStoreStats(tx: Tx, storeId: string, period: DashboardPe
 export async function getPlatformStats(tx: Tx, period: DashboardPeriod, now = new Date()): Promise<PlatformDashboard> {
   const from = trendStart(period, now)
 
-  const [orders, pendingOrders, stockAlerts, paidOrders, refunds, returns] = await Promise.all([
+  const [orders, pendingOrders, stockAlerts, overduePurchaseOrders, paidOrders, refunds, returns] = await Promise.all([
     countOrders(tx, {}),
     // Prisma can't filter on how many stores an order's items come from, so the pending orders' stores are counted
     // here; there are only ever a handful
     tx.order.findMany({ where: { status: OrderStatus.PENDING }, select: { orderItems: { select: { organizationId: true } } } }),
     countStockAlerts(tx, null),
+    tx.purchaseOrder.count({ where: overduePurchaseOrderWhere(formatDate(now, "yyyy-MM-dd")) }),
     tx.order.findMany({ where: { paidAt: { gte: from }, paymentStatus: paidStatuses }, select: { paidAt: true, totalGhs: true } }),
     tx.orderRefund.findMany({ where: { createdAt: { gte: from } }, select: { createdAt: true, amountGhs: true } }),
     tx.orderReturn.findMany({ where: { createdAt: { gte: from } }, select: { createdAt: true } }),
@@ -157,6 +161,7 @@ export async function getPlatformStats(tx: Tx, period: DashboardPeriod, now = ne
     stockAlerts: stockAlerts
       .map((row) => ({ ...row, storeName: storeNames.get(row.storeId) ?? "Unknown store" }))
       .sort((a, b) => b.out - a.out || b.low - a.low || a.storeName.localeCompare(b.storeName)),
+    overduePurchaseOrders,
     sales: toSalesTrend(
       period,
       {

@@ -31,6 +31,7 @@ export default async function PurchaseOrdersPage({ searchParams }: PurchaseOrder
     status: getEnumParam(params.status, Object.values(PurchaseOrderStatus)),
     // Supplier.id is a uuid column, so anything else would make Prisma throw
     supplierId: supplierId && z.uuid().safeParse(supplierId).success ? supplierId : undefined,
+    overdue: getEnumParam(params.overdue, ["true"]),
     page: getPositiveIntegerParam(params.page, 1),
     pageSize: getPositiveIntegerParam(params.pageSize, 10, MAX_PURCHASE_ORDERS_PAGE_SIZE),
     sort: getSortParam(params.sort, PURCHASE_ORDER_SORT_FIELDS),

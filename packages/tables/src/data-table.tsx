@@ -1,6 +1,8 @@
 "use client"
 
+import type { ReactNode } from "react"
 import { flexRender, getCoreRowModel, useReactTable, type ColumnDef } from "@tanstack/react-table"
+import { Button } from "@workspace/ui/components/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@workspace/ui/components/table"
 import { cn } from "@workspace/ui/lib/utils"
 import { RowLink } from "./row-link"
@@ -36,9 +38,13 @@ interface DataTableProps<TData, TValue> {
   // The column whose cell holds the link. Defaults to the first column other than "select".
   rowLinkColumnId?: string
   enablePagination?: boolean
+  // Rows' ids, so a selection stays with its rows rather than their positions when the page changes
+  getRowId?: (row: TData) => string
+  // What can be done with the selected rows, shown in a bar above the table while any are ticked
+  selectionActions?: (rows: TData[]) => ReactNode
 }
 
-export function DataTable<TData, TValue>({ columns, data, filters = [], pagination, getRowHref, rowLinkColumnId, enablePagination = true }: DataTableProps<TData, TValue>) {
+export function DataTable<TData, TValue>({ columns, data, filters = [], pagination, getRowHref, rowLinkColumnId, enablePagination = true, getRowId, selectionActions }: DataTableProps<TData, TValue>) {
   const { handleRowClick, handleRowAuxClick } = useRowLink()
 
   // eslint-disable-next-line react-hooks/incompatible-library
@@ -46,6 +52,7 @@ export function DataTable<TData, TValue>({ columns, data, filters = [], paginati
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
+    getRowId,
     manualPagination: true,
     manualFiltering: true,
     manualSorting: true,
@@ -58,11 +65,24 @@ export function DataTable<TData, TValue>({ columns, data, filters = [], paginati
     },
   })
 
+  // Only the rows on this page: a selection from another page isn't shown, so it isn't acted on
+  const selected = table.getSelectedRowModel().rows.map((row) => row.original)
+
   const linkColumnId = getRowHref ? (rowLinkColumnId ?? table.getAllLeafColumns().find((column) => column.id !== "select")?.id) : undefined
 
   return (
     <div className="grid overflow-hidden rounded-md border">
       {filters.length > 0 && <FiltersToolbar filters={filters} />}
+
+      {selectionActions && selected.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2 border-t bg-muted/50 px-4 py-2">
+          <span className="text-sm font-medium">{`${selected.length} selected`}</span>
+          <Button variant="ghost" size="sm" onClick={() => table.resetRowSelection()}>
+            Clear
+          </Button>
+          <div className="ml-auto flex flex-wrap items-center gap-2">{selectionActions(selected)}</div>
+        </div>
+      )}
 
       <div className="relative w-full overflow-auto border border-r-0 border-l-0">
         <Table>

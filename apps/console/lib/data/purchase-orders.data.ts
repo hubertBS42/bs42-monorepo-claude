@@ -6,12 +6,13 @@ import { consoleAuth } from "@workspace/auth/console"
 import type { DataResponse } from "@workspace/contracts"
 import { prisma } from "@workspace/db"
 import { Prisma } from "@workspace/db/client"
-import { PurchaseOrderStatus } from "@workspace/db/enums"
+import { PurchaseOrderStatus, Status } from "@workspace/db/enums"
 import { getPaginationError } from "@workspace/utils/pagination"
+import { consoleAdminRoles, hasSystemRole } from "@workspace/auth/system-permissions"
 import { hasStorePermission } from "@/lib/auth-guard"
 import { getRateDate } from "@workspace/commerce/exchange-rates"
-import { isOpenPurchaseOrder, OPEN_PURCHASE_ORDER_STATUSES } from "@/lib/purchase-order-status"
-import type { PurchaseOrderDetails, PurchaseOrdersData, PurchaseOrdersParams, SelectItem } from "@/types"
+import { isOpenPurchaseOrder, OPEN_PURCHASE_ORDER_STATUSES, overduePurchaseOrderWhere } from "@/lib/purchase-order-status"
+import type { PurchasableListing, PurchaseOrderDetails, PurchaseOrdersData, PurchaseOrdersParams, SelectItem } from "@/types"
 
 export const MAX_PURCHASE_ORDERS_PAGE_SIZE = 100
 // Not the total: it adds up lines, which a sort can't follow
@@ -19,10 +20,13 @@ export const PURCHASE_ORDER_SORT_FIELDS = ["reference", "createdAt", "status", "
 
 type Client = Pick<typeof prisma, "purchaseOrderItem">
 
-async function checkAccess(storeId: string): Promise<DataResponse<never> | undefined> {
+// A store's own staff (purchaseOrder: read in that store), or, with storeId null, the platform's read-only view of every
+// store's, for system admins
+async function checkAccess(storeId: string | null): Promise<DataResponse<never> | undefined> {
   const session = await consoleAuth.api.getSession({ headers: await headers() })
   if (!session) return { success: false, error: "Unauthorized" }
-  if (!(await hasStorePermission(session.user.id, storeId, { purchaseOrder: ["read"] }))) return { success: false, error: "Forbidden" }
+  const allowed = storeId ? await hasStorePermission(session.user.id, storeId, { purchaseOrder: ["read"] }) : hasSystemRole(session.user.role, consoleAdminRoles)
+  if (!allowed) return { success: false, error: "Forbidden" }
   return undefined
 }
 
@@ -59,7 +63,8 @@ export async function getIncomingByListing(client: Client, listingIds: string[])
 
 const sumLines = (lines: { quantityOrdered: number; unitCost: Prisma.Decimal }[]) => lines.reduce((sum, line) => sum.plus(line.unitCost.times(line.quantityOrdered)), new Prisma.Decimal(0))
 
-export const getPurchaseOrders = async (storeId: string, filters: PurchaseOrdersParams = {}): Promise<DataResponse<PurchaseOrdersData>> => {
+// One store's, or every store's (storeId null, the platform's view, which can filter by store)
+export const getPurchaseOrders = async (storeId: string | null, filters: PurchaseOrdersParams = {}): Promise<DataResponse<PurchaseOrdersData>> => {
   try {
     const denied = await checkAccess(storeId)
     if (denied) return denied
@@ -67,12 +72,15 @@ export const getPurchaseOrders = async (storeId: string, filters: PurchaseOrders
     const paginationError = getPaginationError(filters, { maxPageSize: MAX_PURCHASE_ORDERS_PAGE_SIZE, allowedSortFields: PURCHASE_ORDER_SORT_FIELDS })
     if (paginationError) return { success: false, error: paginationError }
 
-    const { reference, status, supplierId, page = 1, pageSize = 10, sort, order } = filters
+    const { reference, status, supplierId, overdue, page = 1, pageSize = 10, sort, order } = filters
+    // A store's list is always its own; the platform's can filter by store
+    const organizationId = storeId ?? filters.storeId
     const where: Prisma.PurchaseOrderWhereInput = {
-      organizationId: storeId,
+      ...(organizationId && { organizationId }),
       ...(reference && { reference: { contains: reference, mode: "insensitive" } }),
-      ...(status && { status }),
       ...(supplierId && { supplierId }),
+      // Overdue sets the statuses it allows; a status filter narrows them further
+      AND: [...(status ? [{ status }] : []), ...(overdue ? [overduePurchaseOrderWhere(getRateDate())] : [])],
     }
 
     const direction = order === "desc" ? "desc" : "asc"
@@ -93,6 +101,7 @@ export const getPurchaseOrders = async (storeId: string, filters: PurchaseOrders
           shippingCost: true,
           expectedOn: true,
           createdAt: true,
+          organization: { select: { name: true } },
           supplier: { select: { name: true } },
           items: { select: { quantityOrdered: true, quantityReceived: true, unitCost: true } },
         },
@@ -103,8 +112,9 @@ export const getPurchaseOrders = async (storeId: string, filters: PurchaseOrders
     return {
       success: true,
       data: {
-        data: orders.map(({ items, supplier, shippingCost, expectedOn, ...order }) => ({
+        data: orders.map(({ items, organization, supplier, shippingCost, expectedOn, ...order }) => ({
           ...order,
+          storeName: organization.name,
           supplierName: supplier.name,
           total: sumLines(items).plus(shippingCost).toFixed(2),
           quantityOrdered: items.reduce((sum, item) => sum + item.quantityOrdered, 0),
@@ -125,14 +135,16 @@ export const getPurchaseOrders = async (storeId: string, filters: PurchaseOrders
 
 const label = (line: { productName: string; variantDescription: string | null }) => (line.variantDescription ? `${line.productName} (${line.variantDescription})` : line.productName)
 
-export const getPurchaseOrderDetails = async (storeId: string, id: string): Promise<DataResponse<PurchaseOrderDetails>> => {
+// One of a store's, or any store's (storeId null, the platform's read-only view)
+export const getPurchaseOrderDetails = async (storeId: string | null, id: string): Promise<DataResponse<PurchaseOrderDetails>> => {
   try {
     const denied = await checkAccess(storeId)
     if (denied) return denied
 
     const order = await prisma.purchaseOrder.findFirst({
-      where: { id, organizationId: storeId },
+      where: { id, ...(storeId && { organizationId: storeId }) },
       include: {
+        organization: { select: { id: true, name: true } },
         supplier: { select: { id: true, name: true, contactName: true, email: true, phone: true, isArchived: true } },
         createdBy: { select: { name: true, email: true } },
         orderedBy: { select: { name: true, email: true } },
@@ -163,6 +175,7 @@ export const getPurchaseOrderDetails = async (storeId: string, id: string): Prom
       data: {
         id: order.id,
         reference: order.reference,
+        store: order.organization,
         status: order.status,
         supplier: order.supplier,
         currency: order.currency,
@@ -229,4 +242,76 @@ export const getSupplierOptions = async (storeId: string, includeId?: string): P
   } catch (error) {
     return { success: false, error: formatError(error) }
   }
+}
+
+// Also the most the create page takes from the listings table's selection (?listings=)
+export const MAX_PURCHASABLE_LISTINGS = 30
+
+// The store's listings that can be bought in (not archived), matching a search or given ids, with their stock, what's
+// already on its way and the last buy price as a starting cost. The caller checks the store role.
+export async function findPurchasableListings(storeId: string, { search, listingIds }: { search?: string; listingIds?: string[] }): Promise<PurchasableListing[]> {
+  const contains = search ? { contains: search, mode: "insensitive" as const } : undefined
+  const listings = await prisma.storeListing.findMany({
+    where: {
+      organizationId: storeId,
+      status: { not: Status.ARCHIVED },
+      ...(listingIds && { id: { in: listingIds } }),
+      ...(contains && { product: { OR: [{ name: contains }, { sku: contains }, { variants: { some: { sku: contains } } }] } }),
+    },
+    orderBy: [{ product: { name: "asc" } }, { id: "asc" }],
+    take: MAX_PURCHASABLE_LISTINGS,
+    select: {
+      id: true,
+      buyPrice: true,
+      stock: true,
+      trackInventory: true,
+      lowStockThreshold: true,
+      product: { select: { name: true, sku: true, images: true, hasVariants: true, baseBuyPrice: true, brand: { select: { name: true } } } },
+      storeListingVariants: {
+        where: { variant: { status: { not: Status.ARCHIVED } } },
+        orderBy: [{ variant: { position: "asc" } }],
+        select: {
+          id: true,
+          buyPrice: true,
+          stock: true,
+          trackInventory: true,
+          variant: { select: { sku: true, variantValues: { select: { optionValue: { select: { value: true, option: { select: { name: true, position: true } } } } } } } },
+        },
+      },
+    },
+  })
+  const incoming = await getIncomingStock(
+    prisma,
+    listings.map((listing) => listing.id)
+  )
+
+  return listings.flatMap((listing) => {
+    const { product } = listing
+    const fallbackCost = listing.buyPrice ?? (product.baseBuyPrice.isZero() ? null : product.baseBuyPrice)
+    const rows = product.hasVariants
+      ? listing.storeListingVariants.map((row) => {
+          const values = [...row.variant.variantValues].sort((a, b) => a.optionValue.option.position - b.optionValue.option.position)
+          return {
+            listingVariantId: row.id,
+            variantDescription: values.map(({ optionValue }) => `${optionValue.option.name}: ${optionValue.value}`).join(" / "),
+            sku: row.variant.sku,
+            buyPriceUsd: (row.buyPrice ?? fallbackCost)?.toFixed(2) ?? null,
+            stock: row.trackInventory ? row.stock : null,
+            incoming: incoming.get(incomingKey(listing.id, row.id)) ?? 0,
+          }
+        })
+      : [
+          {
+            listingVariantId: null,
+            variantDescription: null,
+            sku: product.sku,
+            buyPriceUsd: fallbackCost?.toFixed(2) ?? null,
+            stock: listing.trackInventory ? listing.stock : null,
+            incoming: incoming.get(incomingKey(listing.id, null)) ?? 0,
+          },
+        ]
+    return rows.length
+      ? [{ listingId: listing.id, productName: product.name, brandName: product.brand.name, image: product.images[0] ?? null, lowStockThreshold: listing.lowStockThreshold, rows }]
+      : []
+  })
 }

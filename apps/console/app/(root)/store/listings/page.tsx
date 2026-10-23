@@ -49,7 +49,7 @@ export default async function StoreListingsPage({ searchParams }: StoreListingsP
 
         <StoreAddButton storeId={storeId} label="Add Listing" url="/store/listings/add" permission={{ listing: ["create"] }} deniedText="Your role in this store can't add listings." />
       </div>
-      <ListingsTable data={result.data} filterOptions={filterOptions.data} />
+      <ListingsTable storeId={storeId} data={result.data} filterOptions={filterOptions.data} />
     </main>
   )
 }

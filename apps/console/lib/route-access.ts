@@ -27,6 +27,7 @@ export const routeAccess: Record<string, RouteAccess> = {
   "/orders": { roles: adminRoles, contexts: ["global"] },
   "/trade-accounts": { roles: adminRoles, contexts: ["global"] },
   "/quotes": { roles: adminRoles, contexts: ["global"] },
+  "/purchase-orders": { roles: adminRoles, contexts: ["global"] },
   "/settings": { roles: ["superAdmin"], contexts: ["global"] },
 
   // Store workspace

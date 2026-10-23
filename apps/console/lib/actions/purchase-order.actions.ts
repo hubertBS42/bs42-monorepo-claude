@@ -5,10 +5,10 @@ import { formatError } from "@workspace/auth/format-error"
 import { ActionResponse, DataResponse } from "@workspace/contracts"
 import { prisma } from "@workspace/db"
 import { Prisma } from "@workspace/db/client"
-import { Currency, Status } from "@workspace/db/enums"
+import { Currency } from "@workspace/db/enums"
 import { hasStorePermission, requireConsoleAccess } from "@/lib/auth-guard"
 import { getLatestExchangeRate } from "@workspace/commerce/exchange-rates"
-import { getIncomingStock, incomingKey } from "@/lib/data/purchase-orders.data"
+import { findPurchasableListings } from "@/lib/data/purchase-orders.data"
 import {
   cancelPurchaseOrder,
   createPurchaseOrder,
@@ -52,7 +52,6 @@ const NO_RATE: Failure = {
 const NOTHING_RECEIVED: Failure = { success: false, error: "Enter how many of at least one item came in.", code: "INVALID" }
 
 const TRANSACTION_OPTIONS = { maxWait: 10_000, timeout: 30_000 }
-const MAX_PURCHASABLE_LISTINGS = 30
 
 function writeError(error: unknown): Failure {
   if (error instanceof PurchaseOrderError) return { success: false, error: error.message, code: error.code }
@@ -96,69 +95,7 @@ export async function searchPurchasableListingsAction(input: z.input<typeof sear
     ])
     if (!canCreate && !canUpdate) return FORBIDDEN
 
-    const contains = search ? { contains: search, mode: "insensitive" as const } : undefined
-    const listings = await prisma.storeListing.findMany({
-      where: {
-        organizationId: storeId,
-        status: { not: Status.ARCHIVED },
-        ...(contains && { product: { OR: [{ name: contains }, { sku: contains }, { variants: { some: { sku: contains } } }] } }),
-      },
-      orderBy: [{ product: { name: "asc" } }, { id: "asc" }],
-      take: MAX_PURCHASABLE_LISTINGS,
-      select: {
-        id: true,
-        buyPrice: true,
-        stock: true,
-        trackInventory: true,
-        product: { select: { name: true, sku: true, images: true, hasVariants: true, baseBuyPrice: true, brand: { select: { name: true } } } },
-        storeListingVariants: {
-          where: { variant: { status: { not: Status.ARCHIVED } } },
-          orderBy: [{ variant: { position: "asc" } }],
-          select: {
-            id: true,
-            buyPrice: true,
-            stock: true,
-            trackInventory: true,
-            variant: { select: { sku: true, variantValues: { select: { optionValue: { select: { value: true, option: { select: { name: true, position: true } } } } } } } },
-          },
-        },
-      },
-    })
-    const incoming = await getIncomingStock(
-      prisma,
-      listings.map((listing) => listing.id)
-    )
-
-    return {
-      success: true,
-      data: listings.flatMap((listing) => {
-        const { product } = listing
-        const fallbackCost = listing.buyPrice ?? (product.baseBuyPrice.isZero() ? null : product.baseBuyPrice)
-        const rows = product.hasVariants
-          ? listing.storeListingVariants.map((row) => {
-              const values = [...row.variant.variantValues].sort((a, b) => a.optionValue.option.position - b.optionValue.option.position)
-              return {
-                listingVariantId: row.id,
-                variantDescription: values.map(({ optionValue }) => `${optionValue.option.name}: ${optionValue.value}`).join(" / "),
-                sku: row.variant.sku,
-                buyPriceUsd: (row.buyPrice ?? fallbackCost)?.toFixed(2) ?? null,
-                stock: row.trackInventory ? row.stock : null,
-                incoming: incoming.get(incomingKey(listing.id, row.id)) ?? 0,
-              }
-            })
-          : [
-              {
-                listingVariantId: null,
-                variantDescription: null,
-                sku: product.sku,
-                buyPriceUsd: fallbackCost?.toFixed(2) ?? null,
-                stock: listing.trackInventory ? listing.stock : null,
-                incoming: incoming.get(incomingKey(listing.id, null)) ?? 0,
-              },
-            ]
-        return rows.length ? [{ listingId: listing.id, productName: product.name, brandName: product.brand.name, image: product.images[0] ?? null, rows }] : []
-      }),
-    }
+    return { success: true, data: await findPurchasableListings(storeId, { search }) }
   } catch (error) {
     return { success: false, error: formatError(error) }
   }

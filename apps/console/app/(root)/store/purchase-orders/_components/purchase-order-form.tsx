@@ -22,7 +22,7 @@ import { formatCurrency } from "@workspace/utils/currency"
 import SharedFormFooter from "@/components/shared-form-footer"
 import SharedFormHeader from "@/components/shared-form-header"
 import { createPurchaseOrderAction, searchPurchasableListingsAction, updatePurchaseOrderAction } from "@/lib/actions/purchase-order.actions"
-import { formatCost } from "@/lib/purchase-order-status"
+import { formatCost, type SuggestedLine } from "@/lib/purchase-order-status"
 import { purchaseOrderFormValuesSchema } from "@/lib/schemas/purchase-order.schemas"
 import type { PurchasableListing, PurchaseOrderDetails, SelectItem } from "@/types"
 
@@ -49,6 +49,8 @@ interface PurchaseOrderFormProps {
   rate: string | null
   // Null when creating
   order: PurchaseOrderDetails | null
+  // A new order's starting lines, for listings picked on the listings table
+  suggested?: SuggestedLine[]
 }
 
 const lineKey = (listingId: string, listingVariantId: string | null) => `${listingId}:${listingVariantId ?? ""}`
@@ -67,7 +69,10 @@ const toDay = (date: Date) => `${date.getFullYear()}-${String(date.getMonth() + 
 // Display only: costs have two decimal places, so they add up exactly in cents
 const toCents = (value: unknown) => Math.round((Number(value) || 0) * 100)
 
-export default function PurchaseOrderForm({ storeId, suppliers, rate, order }: PurchaseOrderFormProps) {
+// The listing row's label, as the search results and the saved lines show it
+const rowLabel = (productName: string, variantDescription: string | null) => (variantDescription ? `${productName} (${variantDescription})` : productName)
+
+export default function PurchaseOrderForm({ storeId, suppliers, rate, order, suggested = [] }: PurchaseOrderFormProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   // isPending turns false once the action returns, while the next page is still loading
@@ -83,7 +88,10 @@ export default function PurchaseOrderForm({ storeId, suppliers, rate, order }: P
       shippingCost: Number(order?.shippingCost ?? 0),
       expectedOn: order?.expectedOn ? toLocalDate(order.expectedOn) : null,
       notes: order?.notes ?? "",
-      lines: order?.lines.map((line) => ({ id: line.id, listingId: line.listingId, listingVariantId: line.listingVariantId, quantity: line.quantityOrdered, unitCost: Number(line.unitCost) })) ?? [],
+      // A new order is in USD to start with, so a suggested line starts at its last buy price as it is
+      lines:
+        order?.lines.map((line) => ({ id: line.id, listingId: line.listingId, listingVariantId: line.listingVariantId, quantity: line.quantityOrdered, unitCost: Number(line.unitCost) })) ??
+        suggested.map(({ listing, row, quantity }) => ({ listingId: listing.listingId, listingVariantId: row.listingVariantId, quantity, unitCost: Number(row.buyPriceUsd ?? 0) })),
     },
   })
   const { fields, append, remove } = useFieldArray({ control: form.control, name: "lines" })
@@ -92,18 +100,16 @@ export default function PurchaseOrderForm({ storeId, suppliers, rate, order }: P
   const shippingCost = useWatch({ control: form.control, name: "shippingCost" })
 
   const [lineInfo, setLineInfo] = useState<Record<string, LineInfo>>(() =>
-    Object.fromEntries(
-      (order?.lines ?? []).map((line) => [
+    Object.fromEntries([
+      ...(order?.lines ?? []).map((line) => [
         lineKey(line.listingId, line.listingVariantId),
-        {
-          label: line.variantDescription ? `${line.productName} (${line.variantDescription})` : line.productName,
-          sku: line.sku,
-          stock: line.stock,
-          incoming: null,
-          received: line.quantityReceived,
-        },
-      ])
-    )
+        { label: rowLabel(line.productName, line.variantDescription), sku: line.sku, stock: line.stock, incoming: null, received: line.quantityReceived },
+      ]),
+      ...suggested.map(({ listing, row }) => [
+        lineKey(listing.listingId, row.listingVariantId),
+        { label: rowLabel(listing.productName, row.variantDescription), sku: row.sku, stock: row.stock, incoming: row.incoming, received: 0 },
+      ]),
+    ])
   )
 
   // The store's listings, searched as the user types, a moment after they stop; the latest search wins
@@ -142,7 +148,7 @@ export default function PurchaseOrderForm({ storeId, suppliers, rate, order }: P
     setLineInfo({
       ...lineInfo,
       [lineKey(listing.listingId, row.listingVariantId)]: {
-        label: row.variantDescription ? `${listing.productName} (${row.variantDescription})` : listing.productName,
+        label: rowLabel(listing.productName, row.variantDescription),
         sku: row.sku,
         stock: row.stock,
         incoming: row.incoming,
@@ -194,7 +200,13 @@ export default function PurchaseOrderForm({ storeId, suppliers, rate, order }: P
         <SharedFormHeader
           heading={order ? `Edit ${order.reference}` : "Create Purchase Order"}
           description={
-            order ? (isDraft ? "This draft can change in every way." : "It has been ordered, so the supplier and currency stay as they are.") : "Saved as a draft until it's sent to the supplier."
+            order
+              ? isDraft
+                ? "This draft can change in every way."
+                : "It has been ordered, so the supplier and currency stay as they are."
+              : suggested.length
+                ? "Started from the listings you picked: low ones get enough to reach twice their low-stock level, counting what's already on its way. Saved as a draft until it's sent to the supplier."
+                : "Saved as a draft until it's sent to the supplier."
           }
           backTo={backTo}
           isPending={isBusy}

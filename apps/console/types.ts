@@ -631,6 +631,8 @@ export interface StoreDashboard {
   // Listings at or under their low-stock threshold, and out of stock
   lowStock: number
   outOfStock: number
+  // Open purchase orders whose expected day has passed
+  overduePurchaseOrders: number
   sales: DashboardSalesTrend
 }
 
@@ -641,6 +643,8 @@ export interface PlatformDashboard {
   }
   // Stores with listings low on or out of stock, most out of stock first
   stockAlerts: { storeId: string; storeName: string; low: number; out: number }[]
+  // Open purchase orders whose expected day has passed, in every store
+  overduePurchaseOrders: number
   sales: DashboardSalesTrend
 }
 
@@ -681,11 +685,17 @@ export interface PurchaseOrdersParams extends PaginationParams {
   reference?: string
   status?: PurchaseOrderStatus
   supplierId?: string
+  // "true": open, and expected before today
+  overdue?: "true"
+  // The platform's list only
+  storeId?: string
 }
 
 export interface PurchaseOrderListItem {
   id: string
   reference: string
+  // For the platform's list, which shows every store's
+  storeName: string
   supplierName: string
   status: PurchaseOrderStatus
   currency: Currency
@@ -731,6 +741,7 @@ export interface PurchaseOrderReceiptEntry {
 export interface PurchaseOrderDetails {
   id: string
   reference: string
+  store: { id: string; name: string }
   status: PurchaseOrderStatus
   supplier: { id: string; name: string; contactName: string | null; email: string | null; phone: string | null; isArchived: boolean }
   currency: Currency
@@ -762,6 +773,8 @@ export interface PurchasableListing {
   productName: string
   brandName: string
   image: string | null
+  // Applies to each row (saving a listing copies it to its variants)
+  lowStockThreshold: number
   rows: {
     listingVariantId: string | null
     variantDescription: string | null

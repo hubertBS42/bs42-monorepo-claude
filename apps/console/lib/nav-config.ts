@@ -59,18 +59,25 @@ export const navConfig: NavItem[] = [
     order: 5,
   },
   {
+    url: "/purchase-orders",
+    title: "Purchase Orders",
+    icon: ClipboardList,
+    group: "main",
+    order: 6,
+  },
+  {
     url: "/quotes",
     title: "Quotes",
     icon: FileText,
     group: "main",
-    order: 6,
+    order: 7,
   },
   {
     url: "/trade-accounts",
     title: "Trade Accounts",
     icon: Briefcase,
     group: "main",
-    order: 7,
+    order: 8,
   },
   {
     url: "/settings",

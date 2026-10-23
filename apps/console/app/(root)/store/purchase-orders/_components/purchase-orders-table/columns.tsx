@@ -10,7 +10,8 @@ import type { PurchaseOrderListItem } from "@/types"
 // A plain day (yyyy-MM-dd), read as noon UTC so no time zone moves it to another day
 const formatDay = (day: string) => formatDate(new Date(`${day}T12:00:00Z`), "MMM d, yyyy")
 
-export const columns: ColumnDef<PurchaseOrderListItem, unknown>[] = [
+// With a Store column on the platform's list
+export const getColumns = (showStore: boolean): ColumnDef<PurchaseOrderListItem, unknown>[] => [
   {
     id: "select",
     header: ({ table }) => (
@@ -29,6 +30,7 @@ export const columns: ColumnDef<PurchaseOrderListItem, unknown>[] = [
     header: () => <ColumnHeader title="Reference" sortKey="reference" />,
     cell: ({ row }) => <span className="font-mono">{row.original.reference}</span>,
   },
+  ...(showStore ? [{ accessorKey: "storeName", header: () => <ColumnHeader title="Store" /> } satisfies ColumnDef<PurchaseOrderListItem, unknown>] : []),
   {
     accessorKey: "supplierName",
     header: () => <ColumnHeader title="Supplier" />,
