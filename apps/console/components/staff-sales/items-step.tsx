@@ -2,7 +2,7 @@
 /* eslint-disable @next/next/no-img-element -- next/image would need the storage host in images.remotePatterns */
 
 import { useEffect, useState } from "react"
-import { useFieldArray, useWatch, type UseFormReturn } from "react-hook-form"
+import { useFieldArray, useWatch } from "react-hook-form"
 import { Search, Trash2 } from "lucide-react"
 import { NumberInputField, SwitchField } from "@workspace/forms"
 import { Button } from "@workspace/ui/components/button"
@@ -14,10 +14,11 @@ import { formatCurrency } from "@workspace/utils/currency"
 import { searchQuotableItemsAction } from "@/lib/actions/quote.actions"
 import type { QuotableProduct } from "@/lib/staff-quotes"
 import type { ChosenQuoteItem } from "@/types"
-import { itemKey, type QuoteFormInput, type QuoteFormOutput } from "../quote-form"
+import { asStaffSaleForm, itemKey, type StaffSaleFields, type StaffSaleForm, type StaffSaleKind } from "./form"
 
-interface ItemsStepProps {
-  form: UseFormReturn<QuoteFormInput, unknown, QuoteFormOutput>
+interface ItemsStepProps<T extends StaffSaleFields, O> {
+  kind: StaffSaleKind
+  form: StaffSaleForm<T, O>
   chosen: Record<string, ChosenQuoteItem>
   onChosenChange: (chosen: Record<string, ChosenQuoteItem>) => void
 }
@@ -31,7 +32,9 @@ function stockLine(row: QuotableProduct["rows"][number]) {
   return row.stock > 0 ? `${row.stock} in stock${onOrder}` : `Out of stock${onOrder}`
 }
 
-export default function ItemsStep({ form, chosen, onChosenChange }: ItemsStepProps) {
+// What customers can buy, from any store, each at the offer the storefront would sell, with installation where it's offered
+export default function ItemsStep<T extends StaffSaleFields, O>({ kind, form: wizardForm, chosen, onChosenChange }: ItemsStepProps<T, O>) {
+  const form = asStaffSaleForm(wizardForm)
   const { fields, append, remove } = useFieldArray({ control: form.control, name: "items" })
   const items = useWatch({ control: form.control, name: "items" })
   const [search, setSearch] = useState("")
@@ -159,7 +162,7 @@ export default function ItemsStep({ form, chosen, onChosenChange }: ItemsStepPro
 
       <Card>
         <CardHeader>
-          <CardTitle>In this quotation</CardTitle>
+          <CardTitle>{kind === "quote" ? "In this quotation" : "In this order"}</CardTitle>
           <CardDescription>{fields.length ? "Set how many of each, and whether we install them." : "Add items from the products on sale."}</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-2">
@@ -183,7 +186,7 @@ export default function ItemsStep({ form, chosen, onChosenChange }: ItemsStepPro
                         <div className="grid gap-1">
                           <span>{info?.label ?? "Item"}</span>
                           <span className="text-xs text-muted-foreground">{[info?.priceGhs && `${ghs(info.priceGhs)} each`, info?.sku].filter(Boolean).join(" · ")}</span>
-                          {/* A quote holds no stock: this is only a warning, checked again when it's accepted */}
+                          {/* Only a warning: stock is checked again when the order is made (for a quote, when it's accepted) */}
                           {overStock && <span className="text-xs text-amber-600 dark:text-amber-500">{`Only ${info?.stock} in stock now`}</span>}
                           {info?.installationFeeGhs && (
                             <SwitchField control={form.control} name={`items.${index}.installation`} size="sm" label={`Install, ${ghs(info.installationFeeGhs)} each`} className="mt-1" />

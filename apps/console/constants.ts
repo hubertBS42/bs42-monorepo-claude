@@ -170,6 +170,14 @@ export const BREADCRUMB_DATA: BreadcrumbConfig[] = [
     ],
   },
   {
+    pathname: "/orders/create",
+    segments: [
+      { text: "Dashboard", href: "/" },
+      { text: "Orders", href: "/orders" },
+      { text: "Create Order", href: "#" },
+    ],
+  },
+  {
     pathname: "/orders/[id]/details",
     segments: [
       { text: "Dashboard", href: "/" },

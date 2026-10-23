@@ -15,13 +15,16 @@ import { OPEN_PURCHASE_ORDER_STATUSES } from "./purchase-order-status"
 
 // Quotations staff make in the console (the shared rules are in @workspace/commerce/quotes): finding what to quote
 // across every store, pricing it as the storefront would, saving it, and placing the order from it for a customer
-// who pays by bank transfer. In its own module, with relative imports, so it can be tested against the database.
+// who pays by bank transfer. Orders staff make (staff-orders.ts) find and price their items the same way. In its own
+// module, with relative imports, so it can be tested against the database.
 
 type Tx = Parameters<Parameters<typeof prisma.$transaction>[0]>[0]
 type Client = typeof prisma | Tx
 
 const MESSAGES = {
-  NO_INSTALLATION: "We don't install in that town. Take installation off the items, or choose another address.",
+  // The town, not the items: OrderItemError's NO_INSTALLATION is a product that stopped offering it
+  OUTSIDE_INSTALLATION_AREAS: "We don't install in that town. Take installation off the items, or choose another address.",
+  PRICE_CHANGED: "The prices changed since you reviewed the order. Check the new total, then create it again.",
   DISCOUNT_TOO_LARGE: "The discount is more than the items cost.",
   CUSTOMER_NOT_FOUND: "That customer's account no longer exists. Look them up again.",
 }
@@ -197,7 +200,7 @@ export interface StaffQuoteLine {
   installation: boolean
 }
 
-export interface StaffQuotePricingInput {
+export interface StaffSalePricingInput {
   items: StaffQuoteLine[]
   region: string
   town: string
@@ -206,18 +209,18 @@ export interface StaffQuotePricingInput {
   discount: { type: "FIXED" | "PERCENTAGE"; value: Prisma.Decimal; reason: string } | null
 }
 
-// The lines as the storefront would sell them (any store's published listings customers can see) and their prices.
-// Throws OrderItemError for a line that can't be sold, or StaffQuoteError.
-export async function priceStaffQuote(client: Client, pricing: PricingContext, input: StaffQuotePricingInput) {
+// The lines as the storefront would sell them (any store's published listings customers can see) and their prices,
+// for a staff-made quote or order. Throws OrderItemError for a line that can't be sold, or StaffQuoteError.
+export async function priceStaffSale(client: Client, pricing: PricingContext, input: StaffSalePricingInput) {
   const lines = await resolveOrderLines(client, null, input.items)
-  if (lines.some((line) => line.installationUnitGhs) && !installsIn(await loadInstallationAreas(client), input.region, input.town)) throw new StaffQuoteError("NO_INSTALLATION")
+  if (lines.some((line) => line.installationUnitGhs) && !installsIn(await loadInstallationAreas(client), input.region, input.town)) throw new StaffQuoteError("OUTSIDE_INSTALLATION_AREAS")
 
   const priced = priceOrder({ lines, exchangeRate: new Prisma.Decimal(pricing.rate.rate), shippingGhs: input.shippingGhs, discount: input.discount, tax: pricing.tax })
   if (input.discount?.type === "FIXED" && input.discount.value.gt(priced.subtotalGhs)) throw new StaffQuoteError("DISCOUNT_TOO_LARGE")
   return { lines, priced }
 }
 
-export interface NewStaffQuote extends StaffQuotePricingInput {
+export interface NewStaffQuote extends StaffSalePricingInput {
   // The customer's account, when staff found them by email or phone
   customerUserId: string | null
   name: string
@@ -235,7 +238,7 @@ export interface NewStaffQuote extends StaffQuotePricingInput {
 export async function createStaffQuote(tx: Tx, pricing: PricingContext, input: NewStaffQuote, staffId: string) {
   if (input.customerUserId && !(await tx.user.findUnique({ where: { id: input.customerUserId }, select: { id: true } }))) throw new StaffQuoteError("CUSTOMER_NOT_FOUND")
   const trade = await loadTradeTerms(tx, input.customerUserId)
-  const { lines, priced } = await priceStaffQuote(tx, pricing, input)
+  const { lines, priced } = await priceStaffSale(tx, pricing, input)
 
   return tx.quote.create({
     data: {

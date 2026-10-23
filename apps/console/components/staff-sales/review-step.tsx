@@ -1,9 +1,10 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { useWatch, type UseFormReturn } from "react-hook-form"
+import { useEffect, useState, type ReactNode } from "react"
+import { useWatch } from "react-hook-form"
 import { DiscountType } from "@workspace/db/enums"
 import { NumberInputField, SelectField, TextInputField } from "@workspace/forms"
+import { Button } from "@workspace/ui/components/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@workspace/ui/components/card"
 import { FieldGroup } from "@workspace/ui/components/field"
 import { Separator } from "@workspace/ui/components/separator"
@@ -12,7 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { formatCurrency } from "@workspace/utils/currency"
 import { previewQuoteAction } from "@/lib/actions/quote.actions"
 import type { QuoteCustomer, QuotePreview } from "@/types"
-import type { QuoteFormInput, QuoteFormOutput } from "../quote-form"
+import { asStaffSaleForm, type StaffSaleFields, type StaffSaleForm, type StaffSaleKind } from "./form"
 
 const discountOptions = [
   { label: "No discount", value: "NONE" },
@@ -29,7 +30,44 @@ const TotalRow = ({ label, amount, strong }: { label: string; amount: string; st
   </div>
 )
 
-export default function ReviewStep({ form, customer }: { form: UseFormReturn<QuoteFormInput, unknown, QuoteFormOutput>; customer: QuoteCustomer | null }) {
+const COPY = {
+  quote: {
+    priced: "Sending it prices the quotation again, and its prices then hold.",
+    pricing: "Pricing the quotation…",
+    unpriced: "Unable to price the quotation.",
+    overStock: (stock: number) => `Only ${stock} in stock now: it must be in stock when the quotation is accepted`,
+    reasonPlaceholder: "Shown on the quotation",
+  },
+  order: {
+    priced: "Creating it prices the order again and reserves the stock.",
+    pricing: "Pricing the order…",
+    unpriced: "Unable to price the order.",
+    overStock: (stock: number) => `Only ${stock} in stock now: the order can't take more`,
+    reasonPlaceholder: "Shown on the invoice",
+  },
+}
+
+interface ReviewStepProps<T extends StaffSaleFields, O> {
+  kind: StaffSaleKind
+  form: StaffSaleForm<T, O>
+  customer: QuoteCustomer | null
+  // Under the address: the quotation's validity, or how the customer will pay for the order
+  terms: ReactNode
+  // Settings' free-delivery threshold, so the step can offer it when the order reaches it
+  freeDeliveryFromGhs: string | null
+  // Each new price, and null while it's being priced again, for a wizard that sends the total it showed
+  onPreviewChange?: (preview: QuotePreview | null) => void
+  // Changed by the wizard to price it again with nothing else changed (after a PRICE_CHANGED refusal)
+  refreshKey?: number
+}
+
+// Amounts as whole pesewas, to compare them without floating-point surprises
+const pesewas = (amount: string) => Math.round(Number(amount) * 100)
+
+// The prices, from the server, with the discount
+export default function ReviewStep<T extends StaffSaleFields, O>({ kind, form: wizardForm, customer, terms, freeDeliveryFromGhs, onPreviewChange, refreshKey = 0 }: ReviewStepProps<T, O>) {
+  const form = asStaffSaleForm(wizardForm)
+  const copy = COPY[kind]
   const values = useWatch({ control: form.control })
   const [preview, setPreview] = useState<QuotePreview | null>(null)
   const [previewError, setPreviewError] = useState<string | null>(null)
@@ -39,8 +77,10 @@ export default function ReviewStep({ form, customer }: { form: UseFormReturn<Quo
   // A stable key, so the preview only reloads when something that changes the price does
   const pricingKey = JSON.stringify({ items, shippingRegion, shippingTown, shippingGhs, discountType, discountValue })
 
-  // The server prices the quotation the same way it will when it's saved, a moment after the last change
+  // The server prices it the same way it will when it's saved, a moment after the last change
   useEffect(() => {
+    // The total shown is out of date until the new one arrives
+    onPreviewChange?.(null)
     if (!discountReady || typeof shippingGhs !== "number") return
     let isCurrent = true
     const timer = setTimeout(() => {
@@ -57,20 +97,27 @@ export default function ReviewStep({ form, customer }: { form: UseFormReturn<Quo
           if (response.success) {
             setPreview(response.data)
             setPreviewError(null)
+            onPreviewChange?.(response.data)
           } else {
             setPreview(null)
             setPreviewError(response.error)
           }
         })
-        .catch(() => isCurrent && setPreviewError("Unable to price the quotation."))
+        .catch(() => isCurrent && setPreviewError(copy.unpriced))
     }, 400)
     return () => {
       isCurrent = false
       clearTimeout(timer)
     }
-    // pricingKey covers the items, the area, the delivery fee and the discount
+    // pricingKey covers the items, the area, the delivery fee and the discount; copy follows kind and the callback is
+    // the wizard's state setter, neither of which changes
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pricingKey, discountReady])
+  }, [pricingKey, discountReady, refreshKey])
+
+  // Free delivery counts the goods after the discount, as on the storefront. Staff set the fee, so it's offered, not
+  // applied.
+  const reachesFreeDelivery =
+    !!preview && freeDeliveryFromGhs !== null && pesewas(preview.shippingGhs) > 0 && pesewas(preview.subtotalGhs) - pesewas(preview.discountAmountGhs ?? "0") >= pesewas(freeDeliveryFromGhs)
 
   const address = [values.shippingLine1, values.shippingLine2, values.shippingTown, values.shippingRegion].filter(Boolean).join(", ")
 
@@ -79,9 +126,7 @@ export default function ReviewStep({ form, customer }: { form: UseFormReturn<Quo
       <Card className="lg:col-span-2">
         <CardHeader>
           <CardTitle>Summary</CardTitle>
-          <CardDescription>
-            {preview ? `In GHS at GH₵${Number(preview.exchangeRate)} per $1. Sending it prices the quotation again, and its prices then hold.` : "Pricing the quotation…"}
-          </CardDescription>
+          <CardDescription>{preview ? `In GHS at GH₵${Number(preview.exchangeRate)} per $1. ${copy.priced}` : copy.pricing}</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4">
           {previewError ? (
@@ -108,9 +153,7 @@ export default function ReviewStep({ form, customer }: { form: UseFormReturn<Quo
                         <div className="grid">
                           <span>{line.label}</span>
                           {line.installationGhs && <span className="text-xs text-muted-foreground">{`Installation ${ghs(line.installationGhs)}`}</span>}
-                          {line.stock !== null && line.quantity > line.stock && (
-                            <span className="text-xs text-amber-600 dark:text-amber-500">{`Only ${line.stock} in stock now: it must be in stock when the quotation is accepted`}</span>
-                          )}
+                          {line.stock !== null && line.quantity > line.stock && <span className="text-xs text-amber-600 dark:text-amber-500">{copy.overStock(line.stock)}</span>}
                         </div>
                       </TableCell>
                       <TableCell className="text-right">{line.quantity}</TableCell>
@@ -129,6 +172,14 @@ export default function ReviewStep({ form, customer }: { form: UseFormReturn<Quo
                 <Separator className="my-1" />
                 <TotalRow label="Total" amount={ghs(preview.totalGhs)} strong />
               </div>
+              {reachesFreeDelivery && (
+                <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border p-3 text-sm">
+                  <span className="text-muted-foreground">{`The items come to ${ghs(freeDeliveryFromGhs!)} or more after any discount, so the storefront would deliver this free.`}</span>
+                  <Button type="button" variant="outline" size="sm" onClick={() => form.setValue("shippingGhs", 0, { shouldDirty: true })}>
+                    Deliver free
+                  </Button>
+                </div>
+              )}
             </>
           )}
 
@@ -142,7 +193,7 @@ export default function ReviewStep({ form, customer }: { form: UseFormReturn<Quo
             <div className="grid gap-1">
               <p className="text-xs text-muted-foreground">Delivery</p>
               <p className="font-medium">{address}</p>
-              <p className="text-muted-foreground">{`Prices hold for ${values.validityDays} ${values.validityDays === 1 ? "day" : "days"}`}</p>
+              <p className="text-muted-foreground">{terms}</p>
             </div>
           </div>
         </CardContent>
@@ -166,7 +217,7 @@ export default function ReviewStep({ form, customer }: { form: UseFormReturn<Quo
                   min={0}
                   prependText={discountType === DiscountType.PERCENTAGE ? "%" : "GH₵"}
                 />
-                <TextInputField control={form.control} label="Reason" name="discountReason" placeholder="Shown on the quotation" />
+                <TextInputField control={form.control} label="Reason" name="discountReason" placeholder={copy.reasonPlaceholder} />
               </>
             )}
           </FieldGroup>

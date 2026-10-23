@@ -251,7 +251,7 @@ export async function createStoreOrderAction(input: z.input<typeof createStoreOr
     // Only once the order is saved: after() also runs when an action fails
     after(async () => {
       await sendOrderEmail(order.id, "CREATED")
-      await notifyNewOrder(order.id, "staff")
+      await notifyNewOrder(order.id, "store")
       await notifyStockAlerts(stockAlerts)
     })
 

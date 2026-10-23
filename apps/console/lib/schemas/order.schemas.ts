@@ -3,6 +3,7 @@ import { GEODATA } from "@workspace/contracts"
 import { DiscountType, InstallationStatus, OrderStatus, PaymentMethod, ShippingMethod } from "@workspace/db/enums"
 import { isPossiblePhoneNumber } from "@workspace/utils/phone"
 import { decimalSchema } from "@/lib/schemas/product.schemas"
+import { quoteItemInputSchema } from "@/lib/schemas/quote.schemas"
 
 export const orderStatusFormSchema = z
   .object({
@@ -78,6 +79,34 @@ function checkDelivery(data: DeliveryInput, ctx: z.RefinementCtx) {
   else if (!region.towns.includes(data.shippingTown)) ctx.addIssue({ code: "custom", message: "Choose a town in the region", path: ["shippingTown"] })
 }
 
+const discountFields = {
+  // NONE rather than null, so the select always has a value
+  discountType: z.enum(["NONE", DiscountType.FIXED, DiscountType.PERCENTAGE]),
+  // GHS for FIXED, a percentage for PERCENTAGE
+  discountValue: decimalSchema,
+  discountReason: z.string().trim().max(500),
+}
+
+type DiscountInput = { discountType: "NONE" | "FIXED" | "PERCENTAGE"; discountValue: number; discountReason: string }
+
+// A discount needs an amount and a reason
+function checkDiscount(data: DiscountInput, ctx: z.RefinementCtx) {
+  if (data.discountType === "NONE") return
+  if (data.discountValue <= 0) ctx.addIssue({ code: "custom", message: "Enter the discount", path: ["discountValue"] })
+  if (data.discountType === DiscountType.PERCENTAGE && data.discountValue > 100) ctx.addIssue({ code: "custom", message: "At most 100%", path: ["discountValue"] })
+  if (!data.discountReason) ctx.addIssue({ code: "custom", message: "Say why the discount is given", path: ["discountReason"] })
+}
+
+// Each line once: a second one would be priced and reserved separately
+function checkDistinctItems(items: { listingId: string; listingVariantId: string | null }[], ctx: z.RefinementCtx) {
+  const keys = new Set<string>()
+  items.forEach((item, index) => {
+    const key = `${item.listingId}:${item.listingVariantId ?? ""}`
+    if (keys.has(key)) ctx.addIssue({ code: "custom", message: "This item is in the order twice", path: ["items", index, "quantity"] })
+    keys.add(key)
+  })
+}
+
 // The create wizard's form: one schema for every step, which each check their own fields before moving on
 export const createStoreOrderFormSchema = z
   .object({
@@ -89,29 +118,15 @@ export const createStoreOrderFormSchema = z
     ...deliveryFields,
     // GHS, set by staff
     shippingGhs: decimalSchema,
-    // NONE rather than null, so the select always has a value
-    discountType: z.enum(["NONE", DiscountType.FIXED, DiscountType.PERCENTAGE]),
-    // GHS for FIXED, a percentage for PERCENTAGE
-    discountValue: decimalSchema,
-    discountReason: z.string().trim().max(500),
+    ...discountFields,
     notes: z.string().trim().max(2000, "Keep the notes under 2,000 characters"),
   })
   .superRefine((data, ctx) => {
-    const keys = new Set<string>()
-    data.items.forEach((item, index) => {
-      const key = `${item.listingId}:${item.listingVariantId ?? ""}`
-      if (keys.has(key)) ctx.addIssue({ code: "custom", message: "This item is in the order twice", path: ["items", index, "quantity"] })
-      keys.add(key)
-    })
-
+    checkDistinctItems(data.items, ctx)
     if (data.shippingMethod === ShippingMethod.DELIVERY) checkDelivery(data, ctx)
     else if (data.shippingGhs > 0) ctx.addIssue({ code: "custom", message: "A pickup has no shipping fee", path: ["shippingGhs"] })
 
-    if (data.discountType !== "NONE") {
-      if (data.discountValue <= 0) ctx.addIssue({ code: "custom", message: "Enter the discount", path: ["discountValue"] })
-      if (data.discountType === DiscountType.PERCENTAGE && data.discountValue > 100) ctx.addIssue({ code: "custom", message: "At most 100%", path: ["discountValue"] })
-      if (!data.discountReason) ctx.addIssue({ code: "custom", message: "Say why the discount is given", path: ["discountReason"] })
-    }
+    checkDiscount(data, ctx)
   })
 
 // The store comes from the page, so an order can't land in a store the user switched to in another tab
@@ -169,6 +184,35 @@ const orderEditTarget = { orderId: z.uuid("Invalid order ID") }
 export const updateOrderCustomerSchema = orderCustomerFormSchema.extend(orderEditTarget)
 export const updateOrderDeliverySchema = z.object(deliveryFields).extend(orderEditTarget).superRefine(checkDelivery)
 export const updateOrderNotesSchema = orderNotesFormSchema.extend(orderEditTarget)
+
+// Ways a customer pays the platform for an order staff made: card payments go through the storefront's checkout
+export const STAFF_ORDER_PAYMENT_METHODS = [PaymentMethod.BANK_TRANSFER, PaymentMethod.MOBILE_MONEY, PaymentMethod.CASH] as const
+
+// The platform's create wizard (/orders/create): items from any store as the storefront sells them, with
+// installation, delivered. One schema for every step, which each check their own fields before moving on.
+export const createOrderFormSchema = z
+  .object({
+    // The customer's account, when they were found by email or phone
+    customerUserId: z.uuid().nullable(),
+    ...customerFields,
+    items: z.array(quoteItemInputSchema).min(1, "Add at least one item").max(50, "At most 50 lines in one order"),
+    ...deliveryFields,
+    // GHS, filled in from the delivery fees; staff can change it
+    shippingGhs: decimalSchema,
+    paymentMethod: z.enum(STAFF_ORDER_PAYMENT_METHODS, "Choose how the customer will pay"),
+    ...discountFields,
+    notes: z.string().trim().max(2000, "Keep the notes under 2,000 characters"),
+  })
+  .superRefine((data, ctx) => {
+    checkDistinctItems(data.items, ctx)
+    checkDelivery(data, ctx)
+    checkDiscount(data, ctx)
+  })
+
+// The total the review step showed: the action refuses if pricing it again comes to something else (PRICE_CHANGED)
+export const createOrderSchema = createOrderFormSchema.extend({
+  expectedTotalGhs: z.string().regex(/^\d+(\.\d{1,2})?$/, "Invalid total"),
+})
 
 // Refunds, by superAdmins on any order or a store's owners and admins on its own. The page sends the refunded total it showed: the action refuses if
 // someone refunded the order since (REFUNDS_CHANGED), so the same money can't go back twice.

@@ -15,7 +15,7 @@ import { prisma } from "@workspace/db"
 import { Prisma } from "@workspace/db/client"
 import { requireSystemPermission } from "@/lib/auth-guard"
 import { createQuoteFormSchema, findQuoteCustomerSchema, previewQuoteSchema, quoteTargetSchema, searchQuotableItemsSchema } from "@/lib/schemas/quote.schemas"
-import { cancelStaffQuote, createStaffQuote, placeOrderFromQuote, priceStaffQuote, searchQuotableItems, StaffQuoteError, type QuotableProduct } from "@/lib/staff-quotes"
+import { cancelStaffQuote, createStaffQuote, placeOrderFromQuote, priceStaffSale, searchQuotableItems, StaffQuoteError, type QuotableProduct } from "@/lib/staff-quotes"
 import type { QuoteCustomer, QuotePreview } from "@/types"
 
 // Quotations staff make for customers, in the global workspace (system permission order). Every export here is a
@@ -107,7 +107,7 @@ export async function previewQuoteAction(input: z.input<typeof previewQuoteSchem
     const pricing = await getPricingContext()
     if (!pricing) return NO_RATE
 
-    const { lines, priced } = await priceStaffQuote(prisma, pricing, {
+    const { lines, priced } = await priceStaffSale(prisma, pricing, {
       items: data.items,
       region: data.shippingRegion,
       town: data.shippingTown,
@@ -199,7 +199,7 @@ export async function placeOrderFromQuoteAction(input: z.input<typeof quoteTarge
     const { stockAlerts, ...order } = await prisma.$transaction((tx) => placeOrderFromQuote(tx, parsed.data.quoteId, session.user.id), TRANSACTION_OPTIONS)
     after(async () => {
       await sendOrderEmail(order.id, "CREATED")
-      await notifyNewOrder(order.id, "staff")
+      await notifyNewOrder(order.id, "platform")
       await notifyStockAlerts(stockAlerts)
     })
     return { success: true }

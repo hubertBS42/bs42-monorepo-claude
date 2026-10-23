@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import { OrderStatus, PaymentStatus } from "@workspace/db/enums"
 import { getDayParam, getEnumParam, getOrderParam, getPositiveIntegerParam, getSortParam, getStringParam } from "@workspace/utils/search-params"
+import AddButton from "@/components/add-button"
 import { requireSystemPermission } from "@/lib/auth-guard"
 import { getOrders, MAX_ORDERS_PAGE_SIZE, ORDER_SORT_FIELDS } from "@/lib/data/orders.data"
 import { getStoresForSelect } from "@/lib/data/stores.data"
@@ -44,11 +45,15 @@ export default async function OrdersPage({ searchParams }: OrdersPageProps) {
 
   return (
     <main className="flex flex-col gap-y-6">
-      <div className="grid">
-        <h1 className="text-xl font-bold md:text-2xl">Orders</h1>
-        <p className="text-sm text-muted-foreground">
-          Every order from every store, including those with more than one store&apos;s items. Refunds and returns can be given on any order here; stores handle those on their own orders.
-        </p>
+      <div className="flex items-end justify-between gap-4">
+        <div className="grid">
+          <h1 className="text-xl font-bold md:text-2xl">Orders</h1>
+          <p className="text-sm text-muted-foreground">
+            Every order from every store, including those with more than one store&apos;s items. Refunds and returns can be given on any order here; stores handle those on their own orders.
+          </p>
+        </div>
+        {/* Every role that reaches this page can create orders (system permission order: create) */}
+        <AddButton label="Create Order" url="/orders/create" />
       </div>
       <OrdersTable data={result.data} stores={stores.data.map((store) => ({ label: store.name, value: store.id }))} />
     </main>

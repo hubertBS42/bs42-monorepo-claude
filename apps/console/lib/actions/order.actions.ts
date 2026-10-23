@@ -1,8 +1,14 @@
 "use server"
 
+import { after } from "next/server"
 import z from "zod"
 import { formatError } from "@workspace/auth/format-error"
-import { ActionResponse } from "@workspace/contracts"
+import { hasSystemPermission } from "@workspace/auth/system-permissions"
+import { getPricingContext } from "@workspace/commerce/exchange-rates"
+import { notifyNewOrder, notifyStockAlerts } from "@workspace/commerce/notifications"
+import { sendOrderEmail } from "@workspace/commerce/order-emails"
+import { OrderItemError } from "@workspace/commerce/order-writes"
+import { ActionResponse, DataResponse } from "@workspace/contracts"
 import { prisma } from "@workspace/db"
 import { Prisma } from "@workspace/db/client"
 import { ShippingMethod } from "@workspace/db/enums"
@@ -23,6 +29,7 @@ import {
 import {
   cancelAndRefundOrderSchema,
   cancelInstallationSchema,
+  createOrderSchema,
   updateInstallationSchema,
   recordOrderPaymentSchema,
   refundOrderSchema,
@@ -32,6 +39,8 @@ import {
   updateOrderNotesSchema,
   updateOrderStatusSchema,
 } from "@/lib/schemas/order.schemas"
+import { createStaffOrder } from "@/lib/staff-orders"
+import { StaffQuoteError } from "@/lib/staff-quotes"
 
 // The platform's order actions: any order, whichever stores' items it has. Every export here is a public endpoint,
 // so every input is validated, and each one calls its guard before its try block (its redirect throws, which the
@@ -230,6 +239,74 @@ export async function cancelInstallationAction(input: z.input<typeof cancelInsta
       refundedById: session.user.id,
     })
   } catch (error) {
+    return { success: false, error: formatError(error) }
+  }
+}
+
+// ============================================
+// CREATING ORDERS
+// ============================================
+
+const TRANSACTION_OPTIONS = { maxWait: 10_000, timeout: 30_000 }
+
+// An order for a customer, made by the platform's staff: items from any store, as the storefront would sell them,
+// with installation where it's offered. It starts unpaid; staff record the payment when it arrives. The wizard's
+// other steps search, look the customer up and price through the quotation actions, which work the same way.
+export async function createOrderAction(input: z.input<typeof createOrderSchema>): Promise<DataResponse<{ id: string; reference: string }>> {
+  const session = await requireSystemPermission({ order: ["create"] })
+
+  try {
+    const parsed = createOrderSchema.safeParse(input)
+    if (!parsed.success) return invalidInput(parsed.error)
+    const data = parsed.data
+
+    // Creating an order alone doesn't allow a discount, as in a store's workspace
+    if (data.discountType !== "NONE" && !hasSystemPermission(session.user.role, { order: ["update"] })) {
+      return { success: false, error: "Your role can't give discounts.", code: "FORBIDDEN" }
+    }
+
+    const pricing = await getPricingContext()
+    if (!pricing) {
+      return { success: false, error: "There's no current exchange rate, so the order can't be priced. Ask a superAdmin to set today's rate in Settings.", code: "NO_RATE" }
+    }
+
+    const { stockAlerts, ...order } = await prisma.$transaction(
+      (tx) =>
+        createStaffOrder(
+          tx,
+          pricing,
+          {
+            customerUserId: data.customerUserId,
+            name: data.customerName,
+            email: data.customerEmail || null,
+            phone: data.customerPhone || null,
+            recipientName: data.shippingName,
+            recipientPhone: data.shippingPhone,
+            line1: data.shippingLine1,
+            line2: data.shippingLine2,
+            region: data.shippingRegion,
+            town: data.shippingTown,
+            items: data.items,
+            shippingGhs: new Prisma.Decimal(data.shippingGhs),
+            discount: data.discountType === "NONE" ? null : { type: data.discountType, value: new Prisma.Decimal(data.discountValue), reason: data.discountReason },
+            paymentMethod: data.paymentMethod,
+            notes: data.notes,
+            expectedTotalGhs: new Prisma.Decimal(data.expectedTotalGhs),
+          },
+          session.user.id
+        ),
+      TRANSACTION_OPTIONS
+    )
+
+    // Only once the order is saved: after() also runs when an action fails
+    after(async () => {
+      await sendOrderEmail(order.id, "CREATED")
+      await notifyNewOrder(order.id, "platform")
+      await notifyStockAlerts(stockAlerts)
+    })
+    return { success: true, data: order }
+  } catch (error) {
+    if (error instanceof OrderItemError || error instanceof StaffQuoteError) return { success: false, error: error.message, code: error.code }
     return { success: false, error: formatError(error) }
   }
 }

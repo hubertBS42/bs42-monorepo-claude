@@ -159,8 +159,9 @@ async function toStoreTeam(
 type StoreLine = { totalPriceGhs: Prisma.Decimal; discountGhs: Prisma.Decimal; taxGhs: Prisma.Decimal }
 const sumLines = (lines: StoreLine[]) => lines.reduce((sum, line) => sum.plus(line.totalPriceGhs.minus(line.discountGhs).plus(line.taxGhs)), new Prisma.Decimal(0))
 
-// An order customers placed on the storefront, or staff created in a store's workspace
-export async function notifyNewOrder(orderId: string, source: "storefront" | "staff") {
+// An order customers placed on the storefront, staff created in a store's workspace, or the platform's staff created
+// (from any stores' items, or from a quotation)
+export async function notifyNewOrder(orderId: string, source: "storefront" | "store" | "platform") {
   try {
     const settings = await readAppSettings()
     const order = await prisma.order.findUnique({
@@ -192,7 +193,12 @@ export async function notifyNewOrder(orderId: string, source: "storefront" | "st
 
     const stores = [...new Set(order.orderItems.map((item) => item.storeName))]
     const itemCount = order.orderItems.reduce((sum, item) => sum + item.quantity, 0)
-    const placedBy = source === "storefront" ? "A customer placed an order on the storefront." : `${order.createdBy?.name ?? "Staff"} created an order in ${stores.join(", ")}.`
+    const staffName = order.createdBy?.name ?? "Staff"
+    const placedBy = {
+      storefront: "A customer placed an order on the storefront.",
+      store: `${staffName} created an order in ${stores.join(", ")}.`,
+      platform: `${staffName} created an order for the platform, with items from ${stores.join(", ")}.`,
+    }[source]
     const fulfilment = order.shippingMethod === "DELIVERY" ? "Delivery" : "Pickup"
 
     // Each store hears about its own lines only, as its orders list shows them
@@ -209,7 +215,13 @@ export async function notifyNewOrder(orderId: string, source: "storefront" | "st
           subject: `New order ${order.reference}`,
           preview: `${order.customerName} · ${lines.reduce((sum, item) => sum + item.quantity, 0)} items`,
           heading: "New order",
-          intro: `${source === "storefront" ? `A customer placed an order on the storefront with ${storeName}'s items.` : `${order.createdBy?.name ?? "Staff"} created an order in ${storeName}.`}${shared ? " It has other stores' items too: only yours are listed here." : ""}`,
+          intro: `${
+            {
+              storefront: `A customer placed an order on the storefront with ${storeName}'s items.`,
+              store: `${staffName} created an order in ${storeName}.`,
+              platform: `${staffName}, of the platform's staff, created an order with ${storeName}'s items.`,
+            }[source]
+          }${shared ? " It has other stores' items too: only yours are listed here." : ""}`,
           details: [
             { label: "Reference", value: order.reference },
             { label: "Customer", value: order.customerName },

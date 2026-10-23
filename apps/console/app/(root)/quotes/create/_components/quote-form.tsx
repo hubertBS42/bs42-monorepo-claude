@@ -4,7 +4,7 @@ import { useState, useTransition } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { FieldPath, SubmitHandler, useForm } from "react-hook-form"
+import { FieldPath, SubmitHandler, useForm, useWatch } from "react-hook-form"
 import { z } from "zod"
 import type { InstallationAreaRow } from "@workspace/commerce/installation-areas"
 import { Button, buttonVariants } from "@workspace/ui/components/button"
@@ -15,18 +15,14 @@ import { createQuoteAction } from "@/lib/actions/quote.actions"
 import type { DeliverySettingsView } from "@/lib/data/delivery.data"
 import { createQuoteFormSchema } from "@/lib/schemas/quote.schemas"
 import type { ChosenQuoteItem, QuoteCopy, QuoteCustomer } from "@/types"
-import CustomerStep from "./steps/customer-step"
+import CustomerStep from "@/components/staff-sales/customer-step"
+import { unlinkCustomer } from "@/components/staff-sales/form"
+import ItemsStep from "@/components/staff-sales/items-step"
+import ReviewStep from "@/components/staff-sales/review-step"
 import DeliveryStep from "./steps/delivery-step"
-import ItemsStep from "./steps/items-step"
-import ReviewStep from "./steps/review-step"
 
 export type QuoteFormInput = z.input<typeof createQuoteFormSchema>
 export type QuoteFormOutput = z.output<typeof createQuoteFormSchema>
-
-export const itemKey = (listingId: string, listingVariantId: string | null) => `${listingId}:${listingVariantId ?? ""}`
-
-// "Trade discount (10%)", as the storefront words a trade account's discount
-export const tradeDiscountReason = (percent: string) => `Trade discount (${Number(percent)}%)`
 
 const STEPS: { title: string; fields: FieldPath<QuoteFormInput>[] }[] = [
   { title: "Customer", fields: ["customerName", "customerEmail", "customerPhone"] },
@@ -77,6 +73,7 @@ export default function QuoteForm({ delivery, installationAreas, validityDays, c
   })
 
   const isLast = step === STEPS.length - 1
+  const validity = useWatch({ control: form.control, name: "validityDays" })
 
   // Each step checks only its own fields before moving on
   const goNext = async () => {
@@ -89,8 +86,15 @@ export default function QuoteForm({ delivery, installationAreas, validityDays, c
 
       if (!response.success) {
         toast.add({ title: "Unable to make the quotation", description: response.error, type: "error" })
-        // A line that went off sale, or installation in a town without it, is fixed on its step
-        if (response.code === "ITEM_UNAVAILABLE" || response.code === "NO_INSTALLATION") setStep(response.code === "NO_INSTALLATION" ? 2 : 1)
+        // A line that went off sale or stopped offering installation, a town outside the installation areas, or a
+        // customer whose account went: each is fixed on its step
+        if (response.code === "ITEM_UNAVAILABLE" || response.code === "NO_INSTALLATION") setStep(1)
+        if (response.code === "OUTSIDE_INSTALLATION_AREAS") setStep(2)
+        if (response.code === "CUSTOMER_NOT_FOUND") {
+          setCustomer(null)
+          unlinkCustomer(form)
+          setStep(0)
+        }
         return
       }
 
@@ -133,10 +137,12 @@ export default function QuoteForm({ delivery, installationAreas, validityDays, c
         ))}
       </ol>
 
-      {step === 0 && <CustomerStep form={form} customer={customer} onCustomerChange={setCustomer} />}
-      {step === 1 && <ItemsStep form={form} chosen={chosen} onChosenChange={setChosen} />}
+      {step === 0 && <CustomerStep kind="quote" form={form} customer={customer} onCustomerChange={setCustomer} />}
+      {step === 1 && <ItemsStep kind="quote" form={form} chosen={chosen} onChosenChange={setChosen} />}
       {step === 2 && <DeliveryStep form={form} customer={customer} delivery={delivery} installationAreas={installationAreas} />}
-      {step === 3 && <ReviewStep form={form} customer={customer} />}
+      {step === 3 && (
+        <ReviewStep kind="quote" form={form} customer={customer} terms={`Prices hold for ${validity} ${validity === 1 ? "day" : "days"}`} freeDeliveryFromGhs={delivery.freeDeliveryFromGhs} />
+      )}
 
       <div className="flex flex-wrap items-center justify-between gap-2">
         <Link href="/quotes" className={buttonVariants({ variant: "ghost" })}>
