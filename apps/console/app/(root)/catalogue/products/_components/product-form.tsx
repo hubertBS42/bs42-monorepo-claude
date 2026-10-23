@@ -466,21 +466,6 @@ const ProductForm = ({ brands, categoryOptions, disabledCategoryIds, specFields,
                 </CardContent>
               </Card>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle>Installation</CardTitle>
-                  <CardDescription>What customers pay to have one installed by the platform&apos;s installers, where Settings → Delivery says they work.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid gap-5 sm:grid-cols-2">
-                    <SelectField control={form.control} label="Installation" name="installation" disabled={isBusy} options={installationOptions} />
-                    {installation === InstallationOption.OWN && (
-                      <NumberInputField control={form.control} label="Fee per item" name="installationFeeGhs" step={0.01} min={0} prependText="GH₵" disabled={isBusy} />
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-
               {!hasVariants && (
                 <Card>
                   <CardHeader>
@@ -624,6 +609,21 @@ const ProductForm = ({ brands, categoryOptions, disabledCategoryIds, specFields,
                   </CardContent>
                 </Card>
               )}
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Installation</CardTitle>
+                  <CardDescription>What customers pay to have one installed by the platform&apos;s installers, where Settings → Delivery says they work.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid gap-5">
+                    <SelectField control={form.control} label="Fee" name="installation" disabled={isBusy} options={installationOptions} />
+                    {installation === InstallationOption.OWN && (
+                      <NumberInputField control={form.control} label="Fee per item" name="installationFeeGhs" step={0.01} min={0} prependText="GH₵" disabled={isBusy} />
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
             </div>
 
             {/* Right column */}
