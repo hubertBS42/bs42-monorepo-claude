@@ -30,6 +30,8 @@ export default function ItemsStep({ storeId, form, chosen, onChosenChange }: Ite
   const [search, setSearch] = useState("")
   const [results, setResults] = useState<OrderableListing[] | null>(null)
   const [searchError, setSearchError] = useState<string | null>(null)
+  // A search typed but not answered yet: the results shown are for the previous one
+  const [isSearching, setIsSearching] = useState(false)
 
   // Searches as the user types, a moment after they stop; the latest search wins
   useEffect(() => {
@@ -40,10 +42,18 @@ export default function ItemsStep({ storeId, form, chosen, onChosenChange }: Ite
           if (!isCurrent) return
           if (response.success) {
             setResults(response.data)
+            setIsSearching(false)
             setSearchError(null)
-          } else setSearchError(response.error)
+          } else {
+            setSearchError(response.error)
+            setIsSearching(false)
+          }
         })
-        .catch(() => isCurrent && setSearchError("Unable to search the store's listings."))
+        .catch(() => {
+          if (!isCurrent) return
+          setIsSearching(false)
+          setSearchError("Unable to search the store's listings.")
+        })
     }, 300)
     return () => {
       isCurrent = false
@@ -75,7 +85,18 @@ export default function ItemsStep({ storeId, form, chosen, onChosenChange }: Ite
         <CardContent className="grid gap-4">
           <div className="relative">
             <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
-            <Input type="search" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search by name or SKU" aria-label="Search listings" className="pl-9" />
+            <Input
+              type="search"
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value)
+                setIsSearching(true)
+              }}
+              placeholder="Search by name or SKU"
+              aria-label="Search listings"
+              className="pr-9 pl-9"
+            />
+            {isSearching && <Spinner className="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground" aria-label="Searching" />}
           </div>
 
           {searchError && <p className="text-sm text-destructive">{searchError}</p>}
@@ -86,7 +107,7 @@ export default function ItemsStep({ storeId, form, chosen, onChosenChange }: Ite
           ) : results.length === 0 ? (
             <p className="text-sm text-muted-foreground">{search ? "No listings match your search." : "This store has no listings on sale."}</p>
           ) : (
-            <ul className="grid gap-3">
+            <ul className={isSearching ? "grid gap-3 opacity-60 transition-opacity" : "grid gap-3 transition-opacity"} aria-busy={isSearching}>
               {results.map((listing) => (
                 <li key={listing.listingId} className="grid gap-2 rounded-lg border p-3">
                   <div className="flex items-center gap-3">
