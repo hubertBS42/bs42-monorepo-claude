@@ -1,5 +1,5 @@
 import { Card, CardDescription, CardHeader, CardTitle } from "@workspace/ui/components/card"
-import { ShoppingBag, Tag, Building2, ArrowRightIcon } from "lucide-react"
+import { ShoppingBag, Tag, Building2, ArrowRightIcon, Star } from "lucide-react"
 import Link from "next/link"
 import type { Metadata } from "next"
 import { requireConsoleAdmin } from "@/lib/auth-guard"
@@ -25,6 +25,12 @@ const catalogueLinks = [
     title: "Brands",
     description: "Manage the brands associated with your products",
   },
+  {
+    href: "/catalogue/reviews",
+    icon: Star,
+    title: "Reviews",
+    description: "Read customers' product reviews and hide those that break the rules",
+  },
 ]
 
 const CataloguePage = async () => {
@@ -34,10 +40,10 @@ const CataloguePage = async () => {
     <main className="flex flex-col gap-y-6">
       <div className="grid">
         <h1 className="text-xl font-bold md:text-2xl">Catalogue</h1>
-        <p className="text-sm text-muted-foreground">Manage your products, categories and brands.</p>
+        <p className="text-sm text-muted-foreground">Manage your products, categories and brands, and their reviews.</p>
       </div>
 
-      <div className="grid gap-4 @xl/main:grid-cols-3">
+      <div className="grid gap-4 @xl/main:grid-cols-2 @5xl/main:grid-cols-4">
         {catalogueLinks.map((link) => {
           const Icon = link.icon
           return (
