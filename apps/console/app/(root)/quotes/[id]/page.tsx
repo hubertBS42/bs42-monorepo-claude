@@ -54,11 +54,11 @@ export default async function QuotePage({ params }: QuotePageProps) {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <BackButton link="/quotes" />
           <Button render={<a href={quote.url} target="_blank" rel="noopener noreferrer" />} variant="outline" size="sm">
             <ExternalLink data-icon="inline-start" aria-hidden />
             View on storefront
           </Button>
-          <BackButton link="/quotes" />
         </div>
       </div>
 

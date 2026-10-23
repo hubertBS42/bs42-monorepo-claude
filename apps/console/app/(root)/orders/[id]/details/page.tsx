@@ -82,8 +82,8 @@ export default async function OrderDetailsPage({ params }: OrderDetailsPageProps
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <InvoiceButton reference={order.reference} orderId={order.id} />
           <BackButton link="/orders" />
+          <InvoiceButton reference={order.reference} orderId={order.id} />
         </div>
       </div>
 

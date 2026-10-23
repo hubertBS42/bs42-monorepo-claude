@@ -83,8 +83,8 @@ export default async function StoreOrderDetailsPage({ params }: OrderDetailsPage
         </div>
         <div className="flex items-center gap-2">
           {/* The invoice shows the whole order, so only for one made of the store's own items */}
-          {!order.isMultiStore && <InvoiceButton reference={order.reference} orderId={order.id} />}
           <BackButton link="/store/orders" />
+          {!order.isMultiStore && <InvoiceButton reference={order.reference} orderId={order.id} />}
         </div>
       </div>
 
