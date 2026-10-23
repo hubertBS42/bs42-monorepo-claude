@@ -1,5 +1,5 @@
 import { Card, CardDescription, CardHeader, CardTitle } from "@workspace/ui/components/card"
-import { ShoppingBag, Tag, Building2, ArrowRightIcon, Star } from "lucide-react"
+import { ShoppingBag, Tag, Building2, ArrowRightIcon, Star, PackagePlus } from "lucide-react"
 import Link from "next/link"
 import type { Metadata } from "next"
 import { requireConsoleAdmin } from "@/lib/auth-guard"
@@ -31,6 +31,12 @@ const catalogueLinks = [
     title: "Reviews",
     description: "Read customers' product reviews and hide those that break the rules",
   },
+  {
+    href: "/catalogue/product-requests",
+    icon: PackagePlus,
+    title: "Product Requests",
+    description: "Add the products stores ask for, or tell them why not",
+  },
 ]
 
 const CataloguePage = async () => {
@@ -40,7 +46,7 @@ const CataloguePage = async () => {
     <main className="flex flex-col gap-y-6">
       <div className="grid">
         <h1 className="text-xl font-bold md:text-2xl">Catalogue</h1>
-        <p className="text-sm text-muted-foreground">Manage your products, categories and brands, and their reviews.</p>
+        <p className="text-sm text-muted-foreground">Manage your products, categories and brands, their reviews, and the products stores ask for.</p>
       </div>
 
       <div className="grid gap-4 @xl/main:grid-cols-2 @5xl/main:grid-cols-4">

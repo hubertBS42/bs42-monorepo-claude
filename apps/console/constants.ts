@@ -123,6 +123,23 @@ export const BREADCRUMB_DATA: BreadcrumbConfig[] = [
     ],
   },
   {
+    pathname: "/catalogue/product-requests",
+    segments: [
+      { text: "Dashboard", href: "/" },
+      { text: "Catalogue", href: "/catalogue" },
+      { text: "Product Requests", href: "#" },
+    ],
+  },
+  {
+    pathname: "/catalogue/product-requests/[id]",
+    segments: [
+      { text: "Dashboard", href: "/" },
+      { text: "Catalogue", href: "/catalogue" },
+      { text: "Product Requests", href: "/catalogue/product-requests" },
+      { text: "Request", href: "#" },
+    ],
+  },
+  {
     pathname: "/users",
     segments: [
       { text: "Dashboard", href: "/" },
@@ -345,6 +362,21 @@ export const BREADCRUMB_DATA: BreadcrumbConfig[] = [
       { text: "Purchase Orders", href: "/store/purchase-orders" },
       { text: "Purchase Order", href: "/store/purchase-orders/[id]/details" },
       { text: "Edit Purchase Order", href: "#" },
+    ],
+  },
+  {
+    pathname: "/store/product-requests",
+    segments: [
+      { text: "Dashboard", href: "/" },
+      { text: "Product Requests", href: "#" },
+    ],
+  },
+  {
+    pathname: "/store/product-requests/new",
+    segments: [
+      { text: "Dashboard", href: "/" },
+      { text: "Product Requests", href: "/store/product-requests" },
+      { text: "Request a Product", href: "#" },
     ],
   },
   {

@@ -1,4 +1,4 @@
-import { Briefcase, Building2, ClipboardList, FileText, LayoutDashboard, Mail, Settings, ShoppingBag, ShoppingCart, Store, Tag, Truck, Users, UsersIcon } from "lucide-react"
+import { Briefcase, Building2, ClipboardList, FileText, LayoutDashboard, Mail, Settings, ShoppingBag, ShoppingCart, Store, Tag, Truck, Users, UsersIcon, PackagePlus } from "lucide-react"
 import type { NavItem } from "@/types"
 
 /**
@@ -25,16 +25,18 @@ export const navConfig: NavItem[] = [
       { title: "Categories", url: "/catalogue/categories" },
       { title: "Brands", url: "/catalogue/brands" },
       { title: "Reviews", url: "/catalogue/reviews" },
+      { title: "Product Requests", url: "/catalogue/product-requests" },
     ],
   },
   // A store's workspace: each page is its own item, in the order staff use them. Never shown with the global
   // workspace's items (routeAccess ties each to its workspace), so their orders can overlap.
   { url: "/store/orders", title: "Orders", icon: ShoppingCart, group: "main", order: 2 },
   { url: "/store/listings", title: "Listings", icon: Tag, group: "main", order: 3 },
-  { url: "/store/purchase-orders", title: "Purchase Orders", icon: ClipboardList, group: "main", order: 4 },
-  { url: "/store/suppliers", title: "Suppliers", icon: Truck, group: "main", order: 5 },
-  { url: "/store/members", title: "Members", icon: Users, group: "main", order: 6 },
-  { url: "/store/invitations", title: "Invitations", icon: Mail, group: "main", order: 7 },
+  { url: "/store/product-requests", title: "Product Requests", icon: PackagePlus, group: "main", order: 4 },
+  { url: "/store/purchase-orders", title: "Purchase Orders", icon: ClipboardList, group: "main", order: 5 },
+  { url: "/store/suppliers", title: "Suppliers", icon: Truck, group: "main", order: 6 },
+  { url: "/store/members", title: "Members", icon: Users, group: "main", order: 7 },
+  { url: "/store/invitations", title: "Invitations", icon: Mail, group: "main", order: 8 },
   // The store's own details, with Leave and Delete: occasional, so at the bottom like the platform's Settings
   { url: "/store", title: "Store Details", icon: Store, group: "secondary", order: 1, exact: true },
   {

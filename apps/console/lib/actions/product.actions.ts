@@ -1,10 +1,12 @@
 "use server"
+import { after } from "next/server"
 import { z } from "zod"
 import { addProductFormSchema, moveProductsSchema, setProductsStatusSchema, updateProductFormSchema } from "@/lib/schemas/product.schemas"
 import { generateUniqueSku, prisma } from "@workspace/db"
 import { Prisma } from "@workspace/db/client"
-import { InstallationOption, Status } from "@workspace/db/enums"
+import { InstallationOption, ProductRequestStatus, Status } from "@workspace/db/enums"
 import { formatError } from "@workspace/auth/format-error"
+import { notifyProductRequestDecision } from "@workspace/commerce/notifications"
 import { ActionResponse } from "@workspace/contracts"
 import { isManagedFileUrl, removeFiles } from "@workspace/storage"
 import { sanitizeRichText } from "@workspace/utils/rich-text"
@@ -86,20 +88,23 @@ function getUniqueConflict(error: unknown): ActionResponse | undefined {
   return undefined
 }
 
-export async function createProductAction(input: z.input<typeof addProductFormSchema>): Promise<ActionResponse> {
+// requestId: a store's request the product answers, which it marks as done (and tells the store) while it's still
+// pending. One dealt with in the meantime doesn't stop the product being made.
+export async function createProductAction(input: z.input<typeof addProductFormSchema>, requestId?: string): Promise<ActionResponse> {
   // Outside the try block: redirect() works by throwing and must not be caught
-  await requireSystemPermission({ product: ["create"] })
+  const { user } = await requireSystemPermission({ product: ["create"] })
 
   try {
     const parsed = addProductFormSchema.safeParse(input)
     if (!parsed.success) return invalidInput(parsed.error)
+    if (requestId !== undefined && !z.uuid().safeParse(requestId).success) return { success: false, error: "Invalid request ID", code: "INVALID" }
 
     const problem = await checkProductInput(parsed.data)
     if (problem) return problem
 
     const { documents, variantOptions = [], variants = [], sku, barcode, weight, dimensions, banner, specs, ...fields } = parsed.data
 
-    await prisma.$transaction(async (tx) => {
+    const answered = await prisma.$transaction(async (tx) => {
       const product = await tx.product.create({
         data: {
           ...fields,
@@ -149,8 +154,16 @@ export async function createProductAction(input: z.input<typeof addProductFormSc
           },
         })
       }
+
+      if (!requestId) return false
+      const { count } = await tx.productRequest.updateMany({
+        where: { id: requestId, status: ProductRequestStatus.PENDING },
+        data: { status: ProductRequestStatus.CREATED, productId: product.id, reviewedById: user.id, reviewedAt: new Date() },
+      })
+      return count > 0
     }, TRANSACTION_OPTIONS)
 
+    if (answered && requestId) after(() => notifyProductRequestDecision(requestId))
     return { success: true }
   } catch (error) {
     const conflict = getUniqueConflict(error) ?? getSpecProblem(error)

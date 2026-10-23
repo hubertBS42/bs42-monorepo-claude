@@ -28,6 +28,7 @@ export function sectionValues<S extends SettingsSection>(settings: AppSettingsDa
       notifyLowRatings: settings.notifyLowRatings,
       notifyTradeApplications: settings.notifyTradeApplications,
       notifyQuotes: settings.notifyQuotes,
+      notifyProductRequests: settings.notifyProductRequests,
     },
   }
   return values[section]

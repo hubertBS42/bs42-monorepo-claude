@@ -25,6 +25,7 @@ export const DEFAULT_APP_SETTINGS: AppSettingsData = {
   notifyLowRatings: false,
   notifyTradeApplications: true,
   notifyQuotes: false,
+  notifyProductRequests: true,
   quoteValidityDays: 7,
   exchangeRateMarkupPercent: 0,
 }
@@ -56,6 +57,7 @@ export function toAppSettingsData(row: AppSettingsRow): AppSettingsData {
     notifyLowRatings: row.notifyLowRatings,
     notifyTradeApplications: row.notifyTradeApplications,
     notifyQuotes: row.notifyQuotes,
+    notifyProductRequests: row.notifyProductRequests,
     quoteValidityDays: row.quoteValidityDays,
     exchangeRateMarkupPercent: row.exchangeRateMarkupPercent.toNumber(),
   }

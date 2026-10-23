@@ -607,3 +607,98 @@ export async function notifyPaymentProblem(orderId: string, problem: PaymentProb
     console.error(`Payment problem notification for ${orderId} failed:`, error)
   }
 }
+
+// A store asked for a product the catalogue doesn't have, for an admin to make, match or decline
+export async function notifyProductRequest(requestId: string) {
+  try {
+    const settings = await readAppSettings()
+    const request = await prisma.productRequest.findUnique({
+      where: { id: requestId },
+      select: {
+        name: true,
+        brandName: true,
+        barcode: true,
+        link: true,
+        notes: true,
+        requestedById: true,
+        brand: { select: { name: true } },
+        category: { select: { name: true } },
+        organization: { select: { name: true } },
+        requestedBy: { select: { name: true, email: true } },
+      },
+    })
+    if (!request) return
+
+    const brand = request.brand?.name ?? (request.brandName ? `${request.brandName} (not in the catalogue)` : null)
+    await toPlatform(
+      settings,
+      NotificationKind.PRODUCT_REQUEST,
+      ["PRODUCT_REQUESTS"],
+      {
+        subject: `Product request: ${request.name}`,
+        preview: `${request.organization.name}${brand ? ` · ${brand}` : ""}`,
+        heading: "Product request",
+        intro: `${request.requestedBy?.name ?? "Someone"} in ${request.organization.name} asked for a product the catalogue doesn't have. Add it, link one that exists, or decline it.`,
+        details: [
+          { label: "Product", value: request.name },
+          ...(brand ? [{ label: "Brand", value: brand }] : []),
+          ...(request.category ? [{ label: "Category", value: request.category.name }] : []),
+          ...(request.barcode ? [{ label: "Barcode or part number", value: request.barcode }] : []),
+          ...(request.link ? [{ label: "Link", value: request.link }] : []),
+          ...(request.notes ? [{ label: "Notes", value: request.notes }] : []),
+          { label: "Store", value: request.organization.name },
+        ],
+      },
+      { label: "Review the request", path: `/catalogue/product-requests/${requestId}` },
+      "product request",
+      request.requestedById
+    )
+  } catch (error) {
+    console.error(`Product request notification for ${requestId} failed:`, error)
+  }
+}
+
+// What became of a product request, for the person who made it (not the store's whole team): the product to list,
+// or why not. Their bell and their email, unless they reviewed it themselves.
+export async function notifyProductRequestDecision(requestId: string) {
+  try {
+    const settings = await readAppSettings()
+    const request = await prisma.productRequest.findUnique({
+      where: { id: requestId },
+      select: {
+        name: true,
+        status: true,
+        declineReason: true,
+        organizationId: true,
+        reviewedById: true,
+        product: { select: { id: true, name: true } },
+        requestedBy: { select: { id: true, email: true, banned: true } },
+      },
+    })
+    const requester = request?.requestedBy
+    if (!request || !requester || requester.banned || requester.id === request.reviewedById) return
+
+    const added = request.status === "CREATED" || request.status === "MATCHED"
+    if (!added && request.status !== "DECLINED") return
+    const productName = request.product?.name ?? request.name
+    const alert: Alert = {
+      subject: added ? `${productName} is in the catalogue` : `Product request declined: ${request.name}`,
+      preview: added ? "You can list it in your store now" : (request.declineReason ?? ""),
+      heading: added ? "Product added" : "Product request declined",
+      intro: added
+        ? request.status === "CREATED"
+          ? `The product you asked for has been added to the catalogue as ${productName}. Add a listing to sell it in your store.`
+          : `The product you asked for was already in the catalogue, as ${productName}. Add a listing to sell it in your store.`
+        : `Your request for ${request.name} was declined.`,
+      details: added ? [{ label: "Product", value: productName }] : [{ label: "Reason", value: request.declineReason ?? "" }],
+      action:
+        added && request.product
+          ? { label: "List it", path: inWorkspace(`/store/listings/add?productId=${request.product.id}`, request.organizationId) }
+          : { label: "View your requests", path: inWorkspace("/store/product-requests", request.organizationId) },
+    }
+    await addNotifications([requester.id], NotificationKind.PRODUCT_REQUEST, alert, alert.action!.path)
+    await sendEmails(settings, alert, "product request decision", [requester.email])
+  } catch (error) {
+    console.error(`Product request decision notification for ${requestId} failed:`, error)
+  }
+}

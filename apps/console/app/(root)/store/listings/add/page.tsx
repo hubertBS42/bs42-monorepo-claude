@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import Link from "next/link"
 import { notFound, redirect } from "next/navigation"
 import z from "zod"
 import { organizationRoles } from "@workspace/auth/organization-permissions"
@@ -39,7 +40,12 @@ export default async function AddListingPage({ searchParams }: AddListingPagePro
       <main className="flex flex-col gap-y-6">
         <div className="grid">
           <h1 className="text-xl font-bold md:text-2xl">Add Listing</h1>
-          <p className="text-sm text-muted-foreground">Choose a published catalogue product this store doesn&apos;t list yet.</p>
+          <p className="text-sm text-muted-foreground">
+            Choose a published catalogue product this store doesn&apos;t list yet. Can&apos;t find it?{" "}
+            <Link href="/store/product-requests/new" className="font-medium text-foreground underline-offset-4 hover:underline">
+              Request it
+            </Link>
+          </p>
         </div>
         <ProductPicker products={products} total={total} search={search} nextLimit={nextLimit} />
       </main>

@@ -1,5 +1,5 @@
 import { Badge } from "@workspace/ui/components/badge"
-import type { InstallationStatus, OrderStatus, PaymentStatus, PurchaseOrderStatus, TradeAccountStatus } from "@workspace/db/enums"
+import type { InstallationStatus, OrderStatus, PaymentStatus, ProductRequestStatus, PurchaseOrderStatus, TradeAccountStatus } from "@workspace/db/enums"
 import { TRADE_ACCOUNT_STATUS_LABELS } from "@workspace/commerce/trade-account-status"
 import { INSTALLATION_STATUS_LABELS, ORDER_STATUS_LABELS, PAYMENT_STATUS_LABELS } from "@workspace/commerce/order-status"
 import { PURCHASE_ORDER_STATUS_LABELS } from "@/lib/purchase-order-status"
@@ -55,6 +55,27 @@ const TRADE_ACCOUNT_STATUS_VARIANTS: Record<TradeAccountStatus, "outline" | "sec
 
 export function TradeAccountStatusBadge({ status }: { status: TradeAccountStatus }) {
   return <Badge variant={TRADE_ACCOUNT_STATUS_VARIANTS[status]}>{TRADE_ACCOUNT_STATUS_LABELS[status]}</Badge>
+}
+
+// "Added" and "In the catalogue" both end in a product to list
+export const PRODUCT_REQUEST_STATUS_LABELS: Record<ProductRequestStatus, string> = {
+  PENDING: "Pending",
+  CREATED: "Added",
+  MATCHED: "In the catalogue",
+  DECLINED: "Declined",
+  CANCELLED: "Cancelled",
+}
+
+const PRODUCT_REQUEST_STATUS_VARIANTS: Record<ProductRequestStatus, "outline" | "secondary" | "success"> = {
+  PENDING: "outline",
+  CREATED: "success",
+  MATCHED: "success",
+  DECLINED: "secondary",
+  CANCELLED: "secondary",
+}
+
+export function ProductRequestStatusBadge({ status }: { status: ProductRequestStatus }) {
+  return <Badge variant={PRODUCT_REQUEST_STATUS_VARIANTS[status]}>{PRODUCT_REQUEST_STATUS_LABELS[status]}</Badge>
 }
 
 export function OrderStatusBadge({ status }: { status: OrderStatus }) {

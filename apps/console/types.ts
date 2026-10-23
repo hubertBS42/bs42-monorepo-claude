@@ -10,6 +10,7 @@ import {
   PaymentAttemptStatus,
   PaymentMethod,
   PaymentStatus,
+  ProductRequestStatus,
   PurchaseOrderStatus,
   ReviewStatus,
   ShippingMethod,
@@ -221,6 +222,62 @@ export interface StoreProductDetails {
   installationFeeGhs: string | null
   // This store's listing of it, if any
   listingId: string | null
+}
+
+// ============================================
+// PRODUCT REQUESTS
+// ============================================
+
+// A store's request for a product the catalogue doesn't have, as the lists show it
+export interface ProductRequestListItem {
+  id: string
+  name: string
+  // The brand's name, existing or typed; newBrand when the catalogue doesn't have it
+  brand: string | null
+  newBrand: boolean
+  storeName: string
+  requestedBy: string | null
+  status: ProductRequestStatus
+  // The product made or matched, once there is one
+  product: { id: string; name: string } | null
+  declineReason: string | null
+  createdAt: Date
+}
+
+export interface ProductRequestsParams extends PaginationParams {
+  status?: ProductRequestStatus
+  // The platform's list only
+  storeId?: string
+}
+
+export interface ProductRequestDetails extends ProductRequestListItem {
+  storeId: string
+  requestedByEmail: string | null
+  brandId: string | null
+  categoryPath: string | null
+  barcode: string | null
+  link: string | null
+  notes: string | null
+  reviewedBy: string | null
+  reviewedAt: Date | null
+}
+
+// A published catalogue product a store may mean, while it fills in a request
+export interface CatalogueMatch {
+  id: string
+  name: string
+  brandName: string
+  image: string | null
+  // This store's listing of it, if any
+  listingId: string | null
+}
+
+// Any catalogue product, for linking a request to it
+export interface CatalogueProductOption {
+  id: string
+  name: string
+  brandName: string
+  status: Status
 }
 
 export interface ProductsParams extends PaginationParams {
@@ -702,6 +759,8 @@ export interface PlatformDashboard {
   stockAlerts: { storeId: string; storeName: string; low: number; out: number }[]
   // Open purchase orders whose expected day has passed, in every store
   overduePurchaseOrders: number
+  // Stores' requests for products, waiting for an admin
+  pendingProductRequests: number
   sales: DashboardSalesTrend
   // Catalogue products, across every store selling them
   topSellers: DashboardTopSellers

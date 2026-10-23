@@ -2,7 +2,7 @@ import "server-only"
 
 import type { prisma } from "@workspace/db"
 import { Prisma } from "@workspace/db/client"
-import { OrderStatus, PaymentStatus } from "@workspace/db/enums"
+import { OrderStatus, PaymentStatus, ProductRequestStatus } from "@workspace/db/enums"
 import { dayStart, formatDate } from "@workspace/utils/date"
 import type { DashboardChanges, DashboardOrderCounts, DashboardPeriod, DashboardSales, DashboardSalesTrend, DashboardTopSellers, PlatformDashboard, StoreDashboard, TopSeller } from "../types"
 import { sumLines } from "./order-details"
@@ -213,13 +213,14 @@ export async function getStoreStats(tx: Tx, storeId: string, period: DashboardPe
 export async function getPlatformStats(tx: Tx, period: DashboardPeriod, now = new Date()): Promise<PlatformDashboard> {
   const from = trendStart(period, now)
 
-  const [orders, pendingOrders, stockAlerts, overduePurchaseOrders, paidOrders, refunds, returns, sellerLines] = await Promise.all([
+  const [orders, pendingOrders, stockAlerts, overduePurchaseOrders, pendingProductRequests, paidOrders, refunds, returns, sellerLines] = await Promise.all([
     countOrders(tx, {}),
     // Prisma can't filter on how many stores an order's items come from, so the pending orders' stores are counted
     // here; there are only ever a handful
     tx.order.findMany({ where: { status: OrderStatus.PENDING }, select: { orderItems: { select: { organizationId: true } } } }),
     countStockAlerts(tx, null),
     tx.purchaseOrder.count({ where: overduePurchaseOrderWhere(formatDate(now, "yyyy-MM-dd")) }),
+    tx.productRequest.count({ where: { status: ProductRequestStatus.PENDING } }),
     tx.order.findMany({ where: { paidAt: { gte: from }, paymentStatus: paidStatuses }, select: { paidAt: true, totalGhs: true } }),
     tx.orderRefund.findMany({ where: { createdAt: { gte: from } }, select: { createdAt: true, amountGhs: true } }),
     tx.orderReturn.findMany({ where: { createdAt: { gte: from } }, select: { createdAt: true } }),
@@ -237,6 +238,7 @@ export async function getPlatformStats(tx: Tx, period: DashboardPeriod, now = ne
       .map((row) => ({ ...row, storeName: storeNames.get(row.storeId) ?? "Unknown store" }))
       .sort((a, b) => b.out - a.out || b.low - a.low || a.storeName.localeCompare(b.storeName)),
     overduePurchaseOrders,
+    pendingProductRequests,
     sales: toSalesTrend(
       period,
       {

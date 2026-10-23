@@ -65,6 +65,7 @@ export const settingsSectionSchemas = {
     notifyLowRatings: z.boolean(),
     notifyTradeApplications: z.boolean(),
     notifyQuotes: z.boolean(),
+    notifyProductRequests: z.boolean(),
   }),
 }
 

@@ -31,6 +31,13 @@ export const PLATFORM_ALERTS = [
   },
   { alert: "QUOTES", settingsKey: "notifyQuotes", default: false, label: "Quotations", description: "When a customer makes a quotation on the storefront" },
   {
+    alert: "PRODUCT_REQUESTS",
+    settingsKey: "notifyProductRequests",
+    default: true,
+    label: "Product requests",
+    description: "When a store asks for a product the catalogue doesn't have",
+  },
+  {
     alert: "RATE_FETCH_FAILURE",
     settingsKey: "notifyRateFetchFailure",
     default: true,

@@ -131,6 +131,8 @@ model AppSettings {
   notifyTradeApplications   Boolean  @default(true)
   // A customer making a quotation on the storefront
   notifyQuotes              Boolean  @default(false)
+  // A store asking for a product to be added to the catalogue
+  notifyProductRequests     Boolean  @default(true)
   // Added to the rate fetched each day (0-10), to cover the cedi moving between quoting or pricing and paying.
   // A rate set by hand is used as typed.
   exchangeRateMarkupPercent Decimal  @default(0) @db.Decimal(4, 2)
@@ -203,13 +205,15 @@ model User {
   refundsGiven          OrderRefund[]              @relation("OrderRefundedBy")
   returnsRecorded       OrderReturn[]              @relation("OrderReturnRecordedBy")
 
-  purchaseOrdersCreated  PurchaseOrder[]        @relation("PurchaseOrderCreatedBy")
-  purchaseOrdersPlaced   PurchaseOrder[]        @relation("PurchaseOrderOrderedBy")
-  purchaseOrdersClosed   PurchaseOrder[]        @relation("PurchaseOrderClosedBy")
-  purchaseOrdersReceived PurchaseOrderReceipt[]
-  stockMovements         StockMovement[]
-  notifications          Notification[]
-  platformAlertSettings  PlatformAlertSetting[]
+  purchaseOrdersCreated   PurchaseOrder[]        @relation("PurchaseOrderCreatedBy")
+  purchaseOrdersPlaced    PurchaseOrder[]        @relation("PurchaseOrderOrderedBy")
+  purchaseOrdersClosed    PurchaseOrder[]        @relation("PurchaseOrderClosedBy")
+  purchaseOrdersReceived  PurchaseOrderReceipt[]
+  stockMovements          StockMovement[]
+  notifications           Notification[]
+  platformAlertSettings   PlatformAlertSetting[]
+  productRequests         ProductRequest[]       @relation("ProductRequestRequestedBy")
+  productRequestsReviewed ProductRequest[]       @relation("ProductRequestReviewedBy")
 
   @@map("user")
 }
@@ -314,30 +318,33 @@ model Brand {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @default(now()) @updatedAt
 
+  productRequests ProductRequest[]
+
   @@map("brand")
 }
 
 model Category {
-  id                 String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id                 String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name               String
-  slug               String         @unique
+  slug               String           @unique
   description        String?
   image              String?
   products           Product[]
   // Specifications its products (and those in the categories under it) can have
   specs              CategorySpec[]
-  parent             Category?      @relation("CategoriesHierarchy", fields: [parentId], references: [id], onDelete: NoAction)
-  parentId           String?        @db.Uuid
-  childCategories    Category[]     @relation("CategoriesHierarchy")
-  status             Status         @default(DRAFT)
-  isFeatured         Boolean        @default(false)
+  parent             Category?        @relation("CategoriesHierarchy", fields: [parentId], references: [id], onDelete: NoAction)
+  parentId           String?          @db.Uuid
+  childCategories    Category[]       @relation("CategoriesHierarchy")
+  status             Status           @default(DRAFT)
+  isFeatured         Boolean          @default(false)
   // Installing one of its products, in GHS (labour is paid in cedis). Categories under it use it unless they set their
   // own; null: none of its own.
-  installationFeeGhs Decimal?       @db.Decimal(12, 2)
+  installationFeeGhs Decimal?         @db.Decimal(12, 2)
   // Order among siblings, lowest first. Ties (all 0 until someone reorders) fall back to name order.
-  position           Int            @default(0)
-  createdAt          DateTime       @default(now())
-  updatedAt          DateTime       @default(now()) @updatedAt
+  position           Int              @default(0)
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @default(now()) @updatedAt
+  productRequests    ProductRequest[]
 
   // Names are unique among siblings, and the first index also serves lookups by parent. Postgres treats NULLs as
   // distinct, so top-level categories need their own partial index.
@@ -384,15 +391,16 @@ model Product {
   variants       ProductVariant[]
   variantOptions VariantOption[] // e.g., "Size", "Color"
 
-  orderItems    OrderItem[]
-  quoteItems    QuoteItem[]
-  reviews       Review[]
-  wishListItems WishListItem[]
-  storeListings StoreListing[]
-  documents     ProductDocument[]
-  specValues    ProductSpecValue[]
-  createdAt     DateTime           @default(now())
-  updatedAt     DateTime           @default(now()) @updatedAt
+  orderItems      OrderItem[]
+  quoteItems      QuoteItem[]
+  reviews         Review[]
+  wishListItems   WishListItem[]
+  storeListings   StoreListing[]
+  documents       ProductDocument[]
+  specValues      ProductSpecValue[]
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @default(now()) @updatedAt
+  productRequests ProductRequest[]
 
   @@index([brandId])
   @@index([categoryId])
@@ -1391,23 +1399,24 @@ model Verification {
 }
 
 model Organization {
-  id             String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name           String
-  slug           String
-  logo           String?
-  shippingPolicy String?
-  returnsPolicy  String?
-  status         OrganizationStatus @default(ACTIVE)
-  createdAt      DateTime           @default(now())
-  updatedAt      DateTime           @updatedAt
-  metadata       String?
-  members        Member[]
-  invitations    Invitation[]
-  listings       StoreListing[]
-  orderItems     OrderItem[]
-  quoteItems     QuoteItem[]
-  suppliers      Supplier[]
-  purchaseOrders PurchaseOrder[]
+  id              String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name            String
+  slug            String
+  logo            String?
+  shippingPolicy  String?
+  returnsPolicy   String?
+  status          OrganizationStatus @default(ACTIVE)
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+  metadata        String?
+  members         Member[]
+  invitations     Invitation[]
+  listings        StoreListing[]
+  orderItems      OrderItem[]
+  quoteItems      QuoteItem[]
+  suppliers       Supplier[]
+  purchaseOrders  PurchaseOrder[]
+  productRequests ProductRequest[]
 
   @@unique([slug])
   @@map("organization")
@@ -1482,6 +1491,7 @@ enum NotificationKind {
   TRADE_ACCOUNT
   QUOTE
   EXCHANGE_RATE
+  PRODUCT_REQUEST
 }
 
 // A console user's in-app notification (the header's bell), written with the staff emails
@@ -1498,6 +1508,7 @@ enum PlatformAlert {
   TRADE_APPLICATIONS
   QUOTES
   RATE_FETCH_FAILURE
+  PRODUCT_REQUESTS
 }
 
 // A platform admin's choice of whether an alert reaches their bell. Without a row, the alert's default
@@ -1510,6 +1521,56 @@ model PlatformAlertSetting {
 
   @@id([userId, alert])
   @@map("platform_alert_setting")
+}
+
+// What became of a store's request for a product to be added to the catalogue
+enum ProductRequestStatus {
+  PENDING
+  // An admin made the product from it (productId)
+  CREATED
+  // The product was already in the catalogue (productId)
+  MATCHED
+  // With declineReason, which the store sees
+  DECLINED
+  // Withdrawn by the store while pending
+  CANCELLED
+}
+
+// A store asking for a product the catalogue doesn't have. Platform admins make the product (the add form, filled in
+// from this), link one that exists, or decline it. A CHECK in the migration requires declineReason when DECLINED.
+model ProductRequest {
+  id             String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String       @db.Uuid
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  requestedById  String?      @db.Uuid
+  requestedBy    User?        @relation("ProductRequestRequestedBy", fields: [requestedById], references: [id], onDelete: SetNull)
+
+  name       String
+  // An existing brand, or the name of one the catalogue doesn't have yet
+  brandId    String?   @db.Uuid
+  brand      Brand?    @relation(fields: [brandId], references: [id], onDelete: SetNull)
+  brandName  String?
+  categoryId String?   @db.Uuid
+  category   Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  // A barcode or the manufacturer's part number
+  barcode    String?
+  link       String?
+  notes      String?
+
+  status        ProductRequestStatus @default(PENDING)
+  productId     String?              @db.Uuid
+  product       Product?             @relation(fields: [productId], references: [id], onDelete: SetNull)
+  declineReason String?
+  reviewedById  String?              @db.Uuid
+  reviewedBy    User?                @relation("ProductRequestReviewedBy", fields: [reviewedById], references: [id], onDelete: SetNull)
+  reviewedAt    DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@index([organizationId, createdAt])
+  @@index([status, createdAt])
+  @@map("product_request")
 }
 
 model Notification {

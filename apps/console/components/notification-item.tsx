@@ -2,7 +2,7 @@
 
 import type { useRouter } from "next/navigation"
 import { formatDistanceToNowStrict } from "date-fns"
-import { BadgeAlertIcon, BriefcaseBusinessIcon, CoinsIcon, FileTextIcon, type LucideIcon, PackageIcon, ShoppingBagIcon, StarIcon, Undo2Icon, XIcon } from "lucide-react"
+import { BadgeAlertIcon, BriefcaseBusinessIcon, CoinsIcon, FileTextIcon, type LucideIcon, PackageIcon, PackagePlusIcon, ShoppingBagIcon, StarIcon, Undo2Icon, XIcon } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
 import { cn } from "@workspace/ui/lib/utils"
 import type { BellNotification } from "@/lib/data/notifications.data"
@@ -18,6 +18,7 @@ export const KIND_ICONS: Record<BellNotification["kind"], LucideIcon> = {
   TRADE_ACCOUNT: BriefcaseBusinessIcon,
   QUOTE: FileTextIcon,
   EXCHANGE_RATE: CoinsIcon,
+  PRODUCT_REQUEST: PackagePlusIcon,
 }
 
 // Another workspace's page is a full load, so the sidebar and the store switcher follow the switch

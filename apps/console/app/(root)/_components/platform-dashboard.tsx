@@ -24,7 +24,7 @@ export default async function PlatformDashboard({ period, canOpenSettings }: { p
   const [dashboard, recent, rate, settings] = await Promise.all([getPlatformDashboard(period), getRecentOrderDetails(RECENT_ORDERS), getLatestExchangeRate(), getAppSettings()])
   if (!dashboard.success) throw new Error(dashboard.error)
   if (!recent.success) throw new Error(recent.error)
-  const { orders, stockAlerts, overduePurchaseOrders, sales, topSellers } = dashboard.data
+  const { orders, stockAlerts, overduePurchaseOrders, pendingProductRequests, sales, topSellers } = dashboard.data
 
   const shown = stockAlerts.slice(0, STOCK_STORES_SHOWN)
   const others = stockAlerts.slice(STOCK_STORES_SHOWN)
@@ -65,6 +65,7 @@ export default async function PlatformDashboard({ period, canOpenSettings }: { p
                 ]
               : []),
             { label: "Purchase orders overdue", hint: "In every store: their expected delivery day has passed", count: overduePurchaseOrders, href: "/purchase-orders?overdue=true" },
+            { label: "Product requests waiting", hint: "Products stores asked for that the catalogue doesn't have", count: pendingProductRequests, href: "/catalogue/product-requests?status=PENDING" },
           ]}
         />
       </div>

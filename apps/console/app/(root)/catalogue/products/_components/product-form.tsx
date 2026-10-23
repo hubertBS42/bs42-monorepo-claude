@@ -36,6 +36,8 @@ import {
 } from "@workspace/ui/components/alert-dialog"
 import type { ProductFormData, SelectItem, SpecField, VariantUsage } from "@/types"
 import VariantSheet from "./variant-sheet"
+import type { ProductRequestForForm } from "@/lib/data/product-requests.data"
+import ProductRequestCard from "./product-request-card"
 import ProductSpecs from "./product-specs"
 import DeleteProduct from "./delete-product"
 import { deleteDocuments, deleteFiles, deleteImages, uploadDocuments, uploadImages } from "@/lib/storage"
@@ -59,6 +61,8 @@ interface ProductFormProps {
   // Its storefront page and its reviews, when editing
   storefrontLink?: StorefrontLink
   reviewStats?: ProductReviewStats
+  // A store's pending request the new product answers: it fills the form in, and saving tells the store
+  request?: ProductRequestForForm
 }
 
 const EMPTY_PRODUCT: FormInput = {
@@ -135,7 +139,7 @@ function describeRemoval(variants: VariantInput[], usage: Record<string, Variant
 
 type PendingChange = { kind: "removeVariant"; index: number } | { kind: "regenerate" } | { kind: "noVariants" }
 
-const ProductForm = ({ brands, categoryOptions, disabledCategoryIds, specFields, categoryInstallationFees, product, storefrontLink, reviewStats }: ProductFormProps) => {
+const ProductForm = ({ brands, categoryOptions, disabledCategoryIds, specFields, categoryInstallationFees, product, storefrontLink, reviewStats, request }: ProductFormProps) => {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [editingVariantIndex, setEditingVariantIndex] = useState<number | null>(null)
@@ -149,7 +153,7 @@ const ProductForm = ({ brands, categoryOptions, disabledCategoryIds, specFields,
 
   const form = useForm<FormInput, unknown, FormOutput>({
     resolver: zodResolver(addProductFormSchema),
-    defaultValues: product?.values ?? EMPTY_PRODUCT,
+    defaultValues: product?.values ?? (request ? { ...EMPTY_PRODUCT, name: request.name, brandId: request.brandId, categoryId: request.categoryId, barcode: request.barcode ?? "" } : EMPTY_PRODUCT),
   })
 
   const { fields: optionFields, append: appendOption, remove: removeOption, replace: replaceOptions } = useFieldArray({ control: form.control, name: "variantOptions" })
@@ -320,15 +324,15 @@ const ProductForm = ({ brands, categoryOptions, disabledCategoryIds, specFields,
     }
 
     startTransition(async () => {
-      const response = product ? await updateProductAction({ ...payload, id: product.id }) : await createProductAction(payload)
+      const response = product ? await updateProductAction({ ...payload, id: product.id }) : await createProductAction(payload, request?.id)
 
       if (response.success) {
         toast.add(
           product
             ? { title: "Product updated", description: "Your changes have been saved.", type: "success" }
-            : { title: "Product created", description: `${productData.name} has been added to the catalogue.`, type: "success" }
+            : { title: "Product created", description: `${productData.name} has been added to the catalogue.${request ? ` ${request.storeName} has been told.` : ""}`, type: "success" }
         )
-        router.push("/catalogue/products")
+        router.push(request ? `/catalogue/product-requests/${request.id}` : "/catalogue/products")
         return
       }
 
@@ -628,6 +632,7 @@ const ProductForm = ({ brands, categoryOptions, disabledCategoryIds, specFields,
 
             {/* Right column */}
             <div className="grid auto-rows-max gap-y-4">
+              {request && <ProductRequestCard request={request} />}
               <Card>
                 <CardHeader>
                   <CardTitle>Status</CardTitle>
