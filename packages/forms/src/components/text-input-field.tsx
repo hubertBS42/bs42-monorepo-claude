@@ -8,11 +8,12 @@ import {
 
 import {
   Field,
-  FieldDescription,
   FieldError,
   FieldLabel,
 } from "@workspace/ui/components/field"
 import { Input } from "@workspace/ui/components/input"
+
+import FieldHint from "./field-hint"
 
 interface TextInputFieldProps<
   T extends FieldValues,
@@ -21,6 +22,8 @@ interface TextInputFieldProps<
   name: Path<T>
   label?: string
   description?: string
+  // Show "12 / 100" under the field; needs maxLength
+  showCount?: boolean
   autoComplete?: string
 }
 
@@ -30,6 +33,7 @@ const TextInputField = <T extends FieldValues>({
   label,
   description,
   autoComplete = "off",
+  showCount = false,
   id,
   ...inputProps
 }: TextInputFieldProps<T>) => {
@@ -52,7 +56,17 @@ const TextInputField = <T extends FieldValues>({
             aria-invalid={fieldState.invalid}
           />
 
-          {description && <FieldDescription>{description}</FieldDescription>}
+          <FieldHint
+            description={description}
+            count={
+              showCount && inputProps.maxLength !== undefined
+                ? {
+                    length: String(field.value ?? "").length,
+                    max: inputProps.maxLength,
+                  }
+                : undefined
+            }
+          />
           {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
         </Field>
       )}

@@ -5,7 +5,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Star } from "lucide-react"
-import { Controller, useForm, useWatch } from "react-hook-form"
+import { Controller, useForm } from "react-hook-form"
 import TextareaField from "@workspace/forms/components/textarea-field"
 import TextInputField from "@workspace/forms/components/text-input-field"
 import {
@@ -26,7 +26,7 @@ import { toast } from "@workspace/ui/components/toast"
 import { cn } from "@workspace/ui/lib/utils"
 
 import { deleteReviewAction, saveReviewAction } from "@/lib/actions/review.actions"
-import { REVIEW_BODY_MAX, reviewSchema, type ReviewValues } from "@/lib/schemas/review.schemas"
+import { REVIEW_BODY_MAX, REVIEW_BODY_MIN, REVIEW_TITLE_MAX, reviewSchema, type ReviewValues } from "@/lib/schemas/review.schemas"
 
 const RATING_WORDS = ["", "Poor", "Fair", "Good", "Very good", "Excellent"]
 
@@ -60,7 +60,6 @@ function StarPicker({ value, onChange, disabled, invalid }: { value: number; onC
 export function ReviewForm({ productId, productSlug, initial, isEdit }: { productId: string; productSlug: string; initial: ReviewValues; isEdit: boolean }) {
   const router = useRouter()
   const form = useForm<ReviewValues>({ resolver: zodResolver(reviewSchema), defaultValues: initial })
-  const body = useWatch({ control: form.control, name: "body" })
   const { isSubmitting } = form.formState
   const [isDeleteOpen, setIsDeleteOpen] = useState(false)
   const [isDeleting, startDelete] = useTransition()
@@ -121,7 +120,7 @@ export function ReviewForm({ productId, productSlug, initial, isEdit }: { produc
           </Field>
         )}
       />
-      <TextInputField control={form.control} name="title" label="Title" placeholder="Sum it up in a few words" disabled={busy} />
+      <TextInputField control={form.control} name="title" label="Title" placeholder="Sum it up in a few words" maxLength={REVIEW_TITLE_MAX} showCount disabled={busy} />
       <TextareaField
         control={form.control}
         name="body"
@@ -129,7 +128,8 @@ export function ReviewForm({ productId, productSlug, initial, isEdit }: { produc
         placeholder="What did you like or dislike? How are you using it?"
         rows={6}
         maxLength={REVIEW_BODY_MAX}
-        description={`${body.length} / ${REVIEW_BODY_MAX} characters. Your first name and last initial show with it.`}
+        showCount
+        description={`At least ${REVIEW_BODY_MIN} characters. Your first name and last initial show with it.`}
         disabled={busy}
       />
       {form.formState.errors.root && <FieldError errors={[form.formState.errors.root]} />}

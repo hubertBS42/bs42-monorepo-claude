@@ -10,11 +10,12 @@ import {
 
 import {
   Field,
-  FieldDescription,
   FieldError,
   FieldLabel,
 } from "@workspace/ui/components/field"
 import { Textarea } from "@workspace/ui/components/textarea"
+
+import FieldHint from "./field-hint"
 
 interface TextareaFieldProps<
   T extends FieldValues,
@@ -23,6 +24,8 @@ interface TextareaFieldProps<
   name: Path<T>
   label?: string
   description?: string
+  // Show "12 / 100" under the field; needs maxLength
+  showCount?: boolean
 }
 
 const TextareaField = <T extends FieldValues>({
@@ -30,6 +33,7 @@ const TextareaField = <T extends FieldValues>({
   name,
   label,
   description,
+  showCount = false,
   id,
   ...textareaProps
 }: TextareaFieldProps<T>) => {
@@ -51,7 +55,17 @@ const TextareaField = <T extends FieldValues>({
             aria-invalid={fieldState.invalid}
           />
 
-          {description && <FieldDescription>{description}</FieldDescription>}
+          <FieldHint
+            description={description}
+            count={
+              showCount && textareaProps.maxLength !== undefined
+                ? {
+                    length: String(field.value ?? "").length,
+                    max: textareaProps.maxLength,
+                  }
+                : undefined
+            }
+          />
           {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
         </Field>
       )}
