@@ -2,7 +2,7 @@ import "server-only"
 
 import { prisma } from "@workspace/db"
 import { accountOrdersWhere } from "@workspace/commerce/customer-orders"
-import { orderHref } from "@workspace/commerce/order-links"
+import { invoiceHref, orderHref } from "@workspace/commerce/order-links"
 
 export const ACCOUNT_ORDERS_PAGE_SIZE = 10
 
@@ -41,8 +41,9 @@ export async function getAccountOrders(user: { id: string; email: string; emailV
       ...order,
       totalGhs: totalGhs.toFixed(2),
       itemCount: _count.orderItems,
-      // The order page's link, with its key: the account is allowed to see it
+      // The order page's and invoice's links, with their keys: the account is allowed to see them
       href: orderHref(order.reference, order.id),
+      invoiceHref: invoiceHref(order.reference, order.id),
     })),
   }
 }

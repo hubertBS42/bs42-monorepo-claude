@@ -1,6 +1,6 @@
 import type { Metadata } from "next"
 import Link from "next/link"
-import { Package, PackageSearch } from "lucide-react"
+import { FileText, Package, PackageSearch } from "lucide-react"
 import { hasBeenPaid, ORDER_STATUS_LABELS, PAYMENT_STATUS_LABELS } from "@workspace/commerce/order-status"
 import { OrderStatus, PaymentStatus } from "@workspace/db/enums"
 import { Badge } from "@workspace/ui/components/badge"
@@ -58,20 +58,23 @@ export default async function AccountOrdersPage({ searchParams }: { searchParams
           const refunded = order.paymentStatus === PaymentStatus.REFUNDED || order.paymentStatus === PaymentStatus.PARTIALLY_REFUNDED
           return (
             <li key={order.id}>
-              <Link href={order.href} className="block rounded-xl transition-colors hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none">
-                <Card className="bg-transparent">
-                  <CardContent className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="flex min-w-0 flex-col gap-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="font-medium">{order.reference}</span>
-                        <Badge variant={order.status === OrderStatus.CANCELLED ? "outline" : "secondary"}>{statusLabel(order.status, order.paymentStatus)}</Badge>
-                        {refunded && <Badge variant="outline">{PAYMENT_STATUS_LABELS[order.paymentStatus]}</Badge>}
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        {formatDate(order.createdAt, "d MMM yyyy")} · {order.itemCount === 1 ? "1 item" : `${order.itemCount} items`} · {formatGhs(order.totalGhs)}
-                      </p>
+              {/* The reference's link covers the card, so the whole card opens the order; the invoice's sits above it */}
+              <Card className="relative bg-transparent transition-colors has-[a[data-order-link]:focus-visible]:ring-2 has-[a[data-order-link]:focus-visible]:ring-ring has-[a[data-order-link]:hover]:bg-muted/50">
+                <CardContent className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex min-w-0 flex-col gap-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Link href={order.href} data-order-link className="font-medium outline-none after:absolute after:inset-0 after:rounded-xl">
+                        {order.reference}
+                      </Link>
+                      <Badge variant={order.status === OrderStatus.CANCELLED ? "outline" : "secondary"}>{statusLabel(order.status, order.paymentStatus)}</Badge>
+                      {refunded && <Badge variant="outline">{PAYMENT_STATUS_LABELS[order.paymentStatus]}</Badge>}
                     </div>
-                    <div className="flex shrink-0 gap-2" aria-hidden>
+                    <p className="text-sm text-muted-foreground">
+                      {formatDate(order.createdAt, "d MMM yyyy")} · {order.itemCount === 1 ? "1 item" : `${order.itemCount} items`} · {formatGhs(order.totalGhs)}
+                    </p>
+                  </div>
+                  <div className="flex shrink-0 flex-wrap items-center gap-2">
+                    <div className="flex gap-2" aria-hidden>
                       {order.orderItems.map((item) => (
                         <div key={item.id} className="flex size-12 items-center justify-center overflow-hidden rounded-md border bg-muted" title={item.productName}>
                           {item.productImage ? (
@@ -83,9 +86,13 @@ export default async function AccountOrdersPage({ searchParams }: { searchParams
                         </div>
                       ))}
                     </div>
-                  </CardContent>
-                </Card>
-              </Link>
+                    <Button render={<Link href={order.invoiceHref} aria-label={`Invoice for ${order.reference}`} />} variant="outline" size="sm" className="relative z-10">
+                      <FileText aria-hidden />
+                      Invoice
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
             </li>
           )
         })}
