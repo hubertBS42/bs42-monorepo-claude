@@ -13,7 +13,7 @@ import type { SpecField } from "@/types"
 
 const label = (spec: SpecField) => (spec.type === SpecType.NUMBER && spec.unit ? `${spec.name} (${spec.unit})` : spec.name)
 
-export default function ProductSpecs<T extends FieldValues & { specs: Record<string, string | number> }>({
+export default function ProductSpecs<T extends FieldValues & { specs: Record<string, string | number | undefined> }>({
   control,
   fields,
   hasCategory,

@@ -78,7 +78,10 @@ export const addProductFormSchema = z
     documents: z.array(productDocumentSchema),
     // Values for the category's specs, by spec id: an option id, "true"/"false", text or a number ("" when not set).
     // The action checks them against the specs (lib/product-specs.ts).
-    specs: z.record(z.string(), z.union([z.string().max(200, "At most 200 characters"), z.number()])),
+    // A field the user never touched is registered without a value: not set, like "", so it's dropped
+    specs: z
+      .record(z.string(), z.union([z.string().max(200, "At most 200 characters"), z.number()]).optional())
+      .transform((values) => Object.fromEntries(Object.entries(values).filter((entry): entry is [string, string | number] => entry[1] !== undefined))),
 
     // Simple product fields (only when hasVariants is false)
     sku: z.string().nullable().optional().or(z.literal("")),
