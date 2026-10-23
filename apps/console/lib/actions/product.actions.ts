@@ -1,6 +1,6 @@
 "use server"
 import { z } from "zod"
-import { addProductFormSchema, updateProductFormSchema } from "@/lib/schemas/product.schemas"
+import { addProductFormSchema, moveProductsSchema, setProductsStatusSchema, updateProductFormSchema } from "@/lib/schemas/product.schemas"
 import { generateUniqueSku, prisma } from "@workspace/db"
 import { Prisma } from "@workspace/db/client"
 import { InstallationOption, Status } from "@workspace/db/enums"
@@ -10,7 +10,7 @@ import { isManagedFileUrl, removeFiles } from "@workspace/storage"
 import { sanitizeRichText } from "@workspace/utils/rich-text"
 import { requireSystemPermission } from "@/lib/auth-guard"
 import { loadProductForUpdate, syncProduct } from "@/lib/product-sync"
-import { saveProductSpecs, SpecValueError } from "@/lib/product-specs"
+import { getCategoryChain, saveProductSpecs, SpecValueError } from "@/lib/product-specs"
 
 // Every export here is a public endpoint, so every input is validated
 
@@ -216,6 +216,69 @@ export async function deleteProductAction(productId: string): Promise<ActionResp
       // Ordered between the check and the delete
       if (error.code === "P2003") return HAS_ORDERS
     }
+    return { success: false, error: formatError(error) }
+  }
+}
+
+// The products table's bulk actions, for the products ticked on one page
+
+// How many products a refusal names before "and N more"
+const NAMES_SHOWN = 5
+
+const nameList = (names: string[]) => (names.length > NAMES_SHOWN ? `${names.slice(0, NAMES_SHOWN).join(", ")} and ${names.length - NAMES_SHOWN} more` : names.join(", "))
+
+// All or none: publishing refuses, naming them, while any ticked product has no sell price
+export async function setProductsStatusAction(input: z.input<typeof setProductsStatusSchema>): Promise<ActionResponse> {
+  // Outside the try block: redirect() works by throwing and must not be caught
+  await requireSystemPermission({ product: ["update"] })
+
+  try {
+    const parsed = setProductsStatusSchema.safeParse(input)
+    if (!parsed.success) return invalidInput(parsed.error)
+    const { productIds, status } = parsed.data
+
+    if (status === Status.PUBLISHED) {
+      const unpriced = await prisma.product.findMany({ where: { id: { in: productIds }, baseSellPrice: { lte: 0 } }, select: { name: true }, orderBy: { name: "asc" } })
+      if (unpriced.length) {
+        return {
+          success: false,
+          error: `A published product needs a sell price above 0. Set one for ${nameList(unpriced.map((product) => product.name))}, or untick ${unpriced.length === 1 ? "it" : "them"}.`,
+          code: "NO_PRICE",
+        }
+      }
+    }
+
+    // The price condition again, in case one was set to 0 since the check
+    await prisma.product.updateMany({ where: { id: { in: productIds }, ...(status === Status.PUBLISHED && { baseSellPrice: { gt: 0 } }) }, data: { status } })
+    return { success: true }
+  } catch (error) {
+    return { success: false, error: formatError(error) }
+  }
+}
+
+// Moving clears the products' values for specs the new category doesn't have, as saving the product form does
+export async function moveProductsAction(input: z.input<typeof moveProductsSchema>): Promise<ActionResponse> {
+  // Outside the try block: redirect() works by throwing and must not be caught
+  await requireSystemPermission({ product: ["update"] })
+
+  try {
+    const parsed = moveProductsSchema.safeParse(input)
+    if (!parsed.success) return invalidInput(parsed.error)
+    const { productIds, categoryId } = parsed.data
+
+    const categories = await prisma.category.findMany({ select: { id: true, parentId: true, status: true } })
+    const category = categories.find((row) => row.id === categoryId)
+    if (!category || category.status === Status.ARCHIVED) return CATEGORY_UNAVAILABLE
+    if (categories.some((row) => row.parentId === categoryId)) return CATEGORY_NOT_LEAF
+    // Specs apply to their category and every category under it
+    const specCategoryIds = getCategoryChain(categories, categoryId)
+
+    await prisma.$transaction(async (tx) => {
+      await tx.product.updateMany({ where: { id: { in: productIds } }, data: { categoryId } })
+      await tx.productSpecValue.deleteMany({ where: { productId: { in: productIds }, spec: { categoryId: { notIn: specCategoryIds } } } })
+    }, TRANSACTION_OPTIONS)
+    return { success: true }
+  } catch (error) {
     return { success: false, error: formatError(error) }
   }
 }

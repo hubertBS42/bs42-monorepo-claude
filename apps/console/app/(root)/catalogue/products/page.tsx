@@ -1,6 +1,7 @@
 import { requireConsoleAdmin } from "@/lib/auth-guard"
 import type { Metadata } from "next"
 import type { ProductsParams } from "@/types"
+import { getCategoryOptions } from "@/lib/data/categories.data"
 import { getProductFilterOptions, getProductsForTable, MAX_PRODUCTS_PAGE_SIZE, PRODUCT_SORT_FIELDS } from "@/lib/data/products.data"
 import { getEnumParam, getOrderParam, getPositiveIntegerParam, getSortParam, getStringParam } from "@workspace/utils/search-params"
 import AddButton from "@/components/add-button"
@@ -39,9 +40,10 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
     order: getOrderParam(params.order),
   }
 
-  const [result, filterOptions] = await Promise.all([getProductsForTable(productsParams), getProductFilterOptions()])
+  const [result, filterOptions, categories] = await Promise.all([getProductsForTable(productsParams), getProductFilterOptions(), getCategoryOptions()])
   if (!result.success) throw new Error(result.error)
   if (!filterOptions.success) throw new Error(filterOptions.error)
+  if (!categories.success) throw new Error(categories.error)
 
   return (
     <main className="flex flex-col gap-y-6">
@@ -53,7 +55,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
 
         <AddButton label="Add Product" url="/catalogue/products/add" />
       </div>
-      <ProductsTable data={result.data} filterOptions={filterOptions.data} />
+      <ProductsTable data={result.data} filterOptions={filterOptions.data} categoryChoices={{ options: categories.data.options, disabledIds: categories.data.disabledIds }} />
     </main>
   )
 }

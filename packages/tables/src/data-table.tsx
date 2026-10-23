@@ -40,8 +40,9 @@ interface DataTableProps<TData, TValue> {
   enablePagination?: boolean
   // Rows' ids, so a selection stays with its rows rather than their positions when the page changes
   getRowId?: (row: TData) => string
-  // What can be done with the selected rows, shown in a bar above the table while any are ticked
-  selectionActions?: (rows: TData[]) => ReactNode
+  // What can be done with the selected rows, shown in a bar above the table while any are ticked. clear() unticks
+  // them, e.g. once an action has dealt with them.
+  selectionActions?: (rows: TData[], clear: () => void) => ReactNode
 }
 
 export function DataTable<TData, TValue>({ columns, data, filters = [], pagination, getRowHref, rowLinkColumnId, enablePagination = true, getRowId, selectionActions }: DataTableProps<TData, TValue>) {
@@ -80,7 +81,7 @@ export function DataTable<TData, TValue>({ columns, data, filters = [], paginati
           <Button variant="ghost" size="sm" onClick={() => table.resetRowSelection()}>
             Clear
           </Button>
-          <div className="ml-auto flex flex-wrap items-center gap-2">{selectionActions(selected)}</div>
+          <div className="ml-auto flex flex-wrap items-center gap-2">{selectionActions(selected, () => table.resetRowSelection())}</div>
         </div>
       )}
 

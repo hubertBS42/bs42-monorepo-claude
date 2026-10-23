@@ -217,3 +217,11 @@ export const addProductFormSchema = z
 export const updateProductFormSchema = addProductFormSchema.extend({
   id: z.uuid("ID is required"),
 })
+
+// The products ticked on one page of the products table, which shows at most MAX_PRODUCTS_PAGE_SIZE
+export const MAX_BULK_PRODUCTS = 100
+const bulkProductIdsSchema = z.array(z.uuid("Invalid product ID")).min(1, "Tick at least one product").max(MAX_BULK_PRODUCTS, `At most ${MAX_BULK_PRODUCTS} products at a time`)
+
+export const setProductsStatusSchema = z.object({ productIds: bulkProductIdsSchema, status: z.enum(Status) })
+
+export const moveProductsSchema = z.object({ productIds: bulkProductIdsSchema, categoryId: z.uuid("Choose a category") })
