@@ -1,4 +1,5 @@
 import z from "zod"
+import { PLATFORM_ALERTS } from "@workspace/contracts"
 import { optionalHttpUrl } from "./common.schemas"
 
 // The signed-in user's own account (/account/*)
@@ -30,6 +31,12 @@ export const sessionIdSchema = z.uuid("Invalid session ID")
 
 // One switch on /account/notifications, for one of the user's stores
 export const STORE_NOTIFICATION_PREFERENCES = ["notifyOrders", "notifyStock", "notifyRefunds"] as const
+
+// A platform admin's own bell for one of the platform's alerts
+export const platformAlertSchema = z.object({
+  alert: z.enum(PLATFORM_ALERTS.map((item) => item.alert)),
+  bell: z.boolean(),
+})
 
 export const storeNotificationSchema = z.object({
   storeId: z.uuid("Invalid store ID"),

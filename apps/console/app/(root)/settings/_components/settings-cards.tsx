@@ -2,7 +2,7 @@
 
 import { useRef } from "react"
 import { useWatch, type UseFormReturn } from "react-hook-form"
-import type { AppSettingsData } from "@workspace/contracts"
+import { PLATFORM_ALERTS, type AppSettingsData } from "@workspace/contracts"
 import { ImageField, NumberInputField, SwitchField, TagsField, TextareaField, TextInputField } from "@workspace/forms"
 import type { SectionInput, SectionOutput } from "@/lib/schemas/app-settings.schemas"
 import { deleteImages, uploadImages } from "@/lib/storage"
@@ -145,17 +145,8 @@ export function QuotationsCard({ settings }: CardProps) {
   )
 }
 
-const NOTIFICATION_SWITCHES = [
-  { name: "notifyStorefrontOrders", label: "Storefront orders", description: "When a customer places an order on the storefront" },
-  { name: "notifyStaffOrders", label: "Orders created by staff", description: "When staff create an order in a store's workspace" },
-  { name: "notifyLowStock", label: "Low stock", description: "When a sale takes an item down to its low-stock threshold" },
-  { name: "notifyOutOfStock", label: "Out of stock", description: "When a sale takes an item's stock to 0" },
-  { name: "notifyStoreRefunds", label: "Refunds given by stores", description: "When a store's owner or admin refunds an order, on its own or with a return" },
-  { name: "notifyLowRatings", label: "Low ratings", description: "When a customer posts a 1 or 2 star review" },
-  { name: "notifyTradeApplications", label: "Trade account applications", description: "When a business applies for a trade account on the storefront" },
-  { name: "notifyQuotes", label: "Quotations", description: "When a customer makes a quotation on the storefront" },
-  { name: "notifyRateFetchFailure", label: "Exchange rate fetch failed", description: "When the daily rate couldn't be fetched, so today's needs setting by hand" },
-] as const
+// The same alerts and words as each admin's own switches for their bell (Account → Notifications)
+const NOTIFICATION_SWITCHES = PLATFORM_ALERTS.map(({ settingsKey, label, description }) => ({ name: settingsKey, label, description }))
 
 export function NotificationsCard({ settings }: CardProps) {
   return (
@@ -163,7 +154,7 @@ export function NotificationsCard({ settings }: CardProps) {
       section="notifications"
       settings={settings}
       title="Notifications"
-      description="When something needs attention: emails to these addresses, and the bell at the top of the console for every platform admin. The switches choose both."
+      description="When something needs attention: emails to these addresses, for the events switched on below. Each platform admin chooses what reaches their own bell in Account → Notifications."
     >
       {(form, isPending) => (
         <>

@@ -3,29 +3,17 @@
 import { useCallback, useEffect, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { formatDistanceToNowStrict } from "date-fns"
-import { BadgeAlertIcon, BellIcon, CoinsIcon, FileTextIcon, type LucideIcon, PackageIcon, ShoppingBagIcon, StarIcon, Undo2Icon, BriefcaseBusinessIcon, XIcon } from "lucide-react"
+import { BellIcon } from "lucide-react"
 import type { ActionResponse } from "@workspace/contracts"
 import { Button } from "@workspace/ui/components/button"
 import { Popover, PopoverContent, PopoverTrigger } from "@workspace/ui/components/popover"
 import { toast } from "@workspace/ui/components/toast"
-import { cn } from "@workspace/ui/lib/utils"
 import { clearReadNotificationsAction, dismissNotificationAction, markAllNotificationsReadAction, markNotificationReadAction } from "@/lib/actions/notification.actions"
 import type { BellNotification } from "@/lib/data/notifications.data"
+import { goToNotification, NotificationItem } from "./notification-item"
 
-// How often the bell asks for new notifications while the tab is visible
-const POLL_MS = 60_000
-
-const KIND_ICONS: Record<BellNotification["kind"], LucideIcon> = {
-  ORDER: ShoppingBagIcon,
-  STOCK: PackageIcon,
-  REFUND: Undo2Icon,
-  PAYMENT_PROBLEM: BadgeAlertIcon,
-  REVIEW: StarIcon,
-  TRADE_ACCOUNT: BriefcaseBusinessIcon,
-  QUOTE: FileTextIcon,
-  EXCHANGE_RATE: CoinsIcon,
-}
+// How often the bell asks for new notifications while the tab is visible: a small query, close enough to live
+const POLL_MS = 15_000
 
 type BellState = { items: BellNotification[]; unreadCount: number }
 
@@ -44,7 +32,7 @@ export function NotificationBell() {
       .catch((error) => console.error("Could not load notifications:", error))
   }, [])
 
-  // On load, every minute while the tab is visible, and as soon as it's shown again
+  // On load, every POLL_MS while the tab is visible, and as soon as it's shown again
   useEffect(() => {
     load()
     const timer = setInterval(() => {
@@ -78,9 +66,7 @@ export function NotificationBell() {
       markRead(notification.id)
       void markNotificationReadAction(notification.id).catch((error) => console.error("Could not mark a notification as read:", error))
     }
-    // Another workspace's page: a full load, so the sidebar and the store switcher follow the switch
-    if (notification.switchesWorkspace) window.location.assign(notification.href)
-    else router.push(notification.href)
+    goToNotification(notification, router)
   }
 
   // Shows the change at once and puts the list back if the action fails
@@ -158,47 +144,17 @@ export function NotificationBell() {
           </div>
         ) : (
           <ul className="max-h-96 overflow-y-auto">
-            {state.items.map((notification) => {
-              const Icon = KIND_ICONS[notification.kind]
-              return (
-                // The dismiss button sits beside the row's button, since buttons can't nest
-                <li key={notification.id} className="group relative border-b last:border-b-0">
-                  <button
-                    type="button"
-                    onClick={() => openNotification(notification)}
-                    className={cn(
-                      "flex w-full items-start gap-3 py-3 pr-11 pl-4 text-left transition-colors hover:bg-accent focus-visible:bg-accent focus-visible:outline-none",
-                      !notification.read && "bg-muted/50"
-                    )}
-                  >
-                    <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-md bg-muted">
-                      <Icon className="size-4 text-muted-foreground" />
-                    </span>
-                    <span className="grid min-w-0 flex-1 gap-0.5">
-                      <span className={cn("line-clamp-1 text-sm", !notification.read && "font-medium")}>{notification.title}</span>
-                      <span className="line-clamp-2 text-xs text-muted-foreground">{notification.body}</span>
-                      <span className="text-xs text-muted-foreground">{formatDistanceToNowStrict(notification.createdAt, { addSuffix: true })}</span>
-                    </span>
-                    {!notification.read && <span className="mt-2 size-2 shrink-0 rounded-full bg-primary" aria-label="Unread" />}
-                  </button>
-                  {/* Shown on hover or keyboard focus, and always on touch screens */}
-                  <Button
-                    variant="ghost"
-                    size="icon-xs"
-                    onClick={() => dismiss(notification)}
-                    className="absolute top-2.5 right-2 opacity-0 group-focus-within:opacity-100 group-hover:opacity-100 pointer-coarse:opacity-100"
-                  >
-                    <XIcon />
-                    <span className="sr-only">{`Dismiss "${notification.title}"`}</span>
-                  </Button>
-                </li>
-              )
-            })}
+            {state.items.map((notification) => (
+              <NotificationItem key={notification.id} notification={notification} onOpen={() => openNotification(notification)} onDismiss={() => dismiss(notification)} />
+            ))}
           </ul>
         )}
-        <div className="border-t px-4 py-2">
+        <div className="flex items-center justify-between gap-2 border-t px-4 py-2">
+          <Link href="/notifications" onClick={() => setOpen(false)} className="text-xs font-medium hover:underline">
+            View all
+          </Link>
           <Link href="/account/notifications" onClick={() => setOpen(false)} className="text-xs text-muted-foreground hover:text-foreground">
-            Choose which notifications you get
+            Choose which you get
           </Link>
         </div>
       </PopoverContent>

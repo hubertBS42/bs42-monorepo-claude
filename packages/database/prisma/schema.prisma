@@ -209,6 +209,7 @@ model User {
   purchaseOrdersReceived PurchaseOrderReceipt[]
   stockMovements         StockMovement[]
   notifications          Notification[]
+  platformAlertSettings  PlatformAlertSetting[]
 
   @@map("user")
 }
@@ -1485,6 +1486,32 @@ enum NotificationKind {
 
 // A console user's in-app notification (the header's bell), written with the staff emails
 // (@workspace/commerce/notifications) and deleted after NOTIFICATION_LIFETIME_DAYS by the unpaid-orders job
+// The platform's alerts with a switch in Settings → Notifications. Settings' switch decides the emails to its
+// recipient list; each platform admin decides their own bell (PlatformAlertSetting). Payment problems have no switch.
+enum PlatformAlert {
+  STOREFRONT_ORDERS
+  STAFF_ORDERS
+  LOW_STOCK
+  OUT_OF_STOCK
+  STORE_REFUNDS
+  LOW_RATINGS
+  TRADE_APPLICATIONS
+  QUOTES
+  RATE_FETCH_FAILURE
+}
+
+// A platform admin's choice of whether an alert reaches their bell. Without a row, the alert's default
+// (PLATFORM_ALERT_DEFAULTS in @workspace/contracts, Settings' own defaults) applies.
+model PlatformAlertSetting {
+  userId String        @db.Uuid
+  user   User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  alert  PlatformAlert
+  bell   Boolean
+
+  @@id([userId, alert])
+  @@map("platform_alert_setting")
+}
+
 model Notification {
   id        String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   userId    String           @db.Uuid

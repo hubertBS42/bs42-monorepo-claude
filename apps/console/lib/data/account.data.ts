@@ -1,7 +1,7 @@
 import "server-only"
 
 import { consoleAdminRoles, hasSystemRole } from "@workspace/auth/system-permissions"
-import { PLATFORM_ORGANIZATION_SLUG } from "@workspace/contracts"
+import { PLATFORM_ALERTS, PLATFORM_ORGANIZATION_SLUG, type PlatformAlertKey } from "@workspace/contracts"
 import { prisma } from "@workspace/db"
 
 // The caller's own sessions that haven't expired. Selects only what the sessions page shows: a session row also holds
@@ -15,6 +15,13 @@ export const getUserSessions = async (userId: string) => {
 }
 
 export type UserSession = Awaited<ReturnType<typeof getUserSessions>>[number]
+
+// A platform admin's bell for each of the platform's alerts: their own choice, else the alert's default
+export const getPlatformAlertSettings = async (userId: string): Promise<{ alert: PlatformAlertKey; bell: boolean }[]> => {
+  const rows = await prisma.platformAlertSetting.findMany({ where: { userId }, select: { alert: true, bell: true } })
+  const own = new Map(rows.map((row) => [row.alert, row.bell]))
+  return PLATFORM_ALERTS.map((item) => ({ alert: item.alert, bell: own.get(item.alert) ?? item.default }))
+}
 
 // The stores whose emails the user gets: where they're an owner or admin. None for platform staff, who are members of
 // every store but get the platform's emails instead (Settings → Notifications).

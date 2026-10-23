@@ -5,6 +5,41 @@ export const SESSION_CACHE_EXPIRATION_SECONDS = 60 // 1 minute
 export const CART_LIFETIME_DAYS = 30 // a storefront basket left alone this long is cleared out (its cookie lapses too)
 export const NOTIFICATION_LIFETIME_DAYS = 90 // the console bell's notifications are deleted after this long, read or not
 export const PLATFORM_ORGANIZATION_SLUG = "global"
+
+// The platform's alerts with a switch (the PlatformAlert enum). settingsKey is Settings' switch, which decides the
+// emails to its recipient list; each platform admin decides their own bell, starting from the default (Settings' own
+// default) until they change it (PlatformAlertSetting). Payment problems have no switch: they always go out.
+export const PLATFORM_ALERTS = [
+  { alert: "STOREFRONT_ORDERS", settingsKey: "notifyStorefrontOrders", default: true, label: "Storefront orders", description: "When a customer places an order on the storefront" },
+  { alert: "STAFF_ORDERS", settingsKey: "notifyStaffOrders", default: false, label: "Orders created by staff", description: "When staff create an order in a store's workspace" },
+  { alert: "LOW_STOCK", settingsKey: "notifyLowStock", default: true, label: "Low stock", description: "When a sale takes an item down to its low-stock threshold" },
+  { alert: "OUT_OF_STOCK", settingsKey: "notifyOutOfStock", default: true, label: "Out of stock", description: "When a sale takes an item's stock to 0" },
+  {
+    alert: "STORE_REFUNDS",
+    settingsKey: "notifyStoreRefunds",
+    default: true,
+    label: "Refunds given by stores",
+    description: "When a store's owner or admin refunds an order, on its own or with a return",
+  },
+  { alert: "LOW_RATINGS", settingsKey: "notifyLowRatings", default: false, label: "Low ratings", description: "When a customer posts a 1 or 2 star review" },
+  {
+    alert: "TRADE_APPLICATIONS",
+    settingsKey: "notifyTradeApplications",
+    default: true,
+    label: "Trade account applications",
+    description: "When a business applies for a trade account on the storefront",
+  },
+  { alert: "QUOTES", settingsKey: "notifyQuotes", default: false, label: "Quotations", description: "When a customer makes a quotation on the storefront" },
+  {
+    alert: "RATE_FETCH_FAILURE",
+    settingsKey: "notifyRateFetchFailure",
+    default: true,
+    label: "Exchange rate fetch failed",
+    description: "When the daily rate couldn't be fetched, so today's needs setting by hand",
+  },
+] as const
+
+export type PlatformAlertKey = (typeof PLATFORM_ALERTS)[number]["alert"]
 // Ghana's regions and their towns, for address forms. Town names are unique within a region and sorted, because
 // the selects use the name as both the option value and the React key.
 export const GEODATA = [

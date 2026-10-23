@@ -31,7 +31,7 @@ const overviewLinks = [
     href: "/account/notifications",
     icon: BellIcon,
     title: "Notifications",
-    description: "Choose the emails you get about your stores",
+    description: "Choose the alerts you get",
   },
 ]
 

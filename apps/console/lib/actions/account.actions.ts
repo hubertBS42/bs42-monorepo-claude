@@ -8,8 +8,9 @@ import type { ActionResponse } from "@workspace/contracts"
 import { prisma } from "@workspace/db"
 import { isManagedFileUrl, removeFiles } from "@workspace/storage"
 import z from "zod"
+import { consoleAdminRoles, hasSystemRole } from "@workspace/auth/system-permissions"
 import { requireConsoleAccess } from "@/lib/auth-guard"
-import { sessionIdSchema, storeNotificationSchema, updatePasswordSchema, updateProfileSchema } from "@/lib/schemas/account.schemas"
+import { platformAlertSchema, sessionIdSchema, storeNotificationSchema, updatePasswordSchema, updateProfileSchema } from "@/lib/schemas/account.schemas"
 
 // Every export here is a public endpoint, so every input is validated
 
@@ -121,6 +122,23 @@ export async function updatePasswordAction(input: z.input<typeof updatePasswordS
 }
 
 // One switch on /account/notifications, saved as it's flipped. Only the user's own membership of that store changes.
+// Whether one of the platform's alerts reaches the caller's own bell. Platform admins only: the alerts go to them.
+export async function setPlatformAlertAction(input: z.input<typeof platformAlertSchema>): Promise<ActionResponse> {
+  const { user } = await requireConsoleAccess()
+  if (!hasSystemRole(user.role, consoleAdminRoles)) return { success: false, error: "Only platform admins get the platform's alerts.", code: "NOT_PLATFORM_STAFF" }
+
+  try {
+    const parsed = platformAlertSchema.safeParse(input)
+    if (!parsed.success) return invalidInput(parsed.error)
+    const { alert, bell } = parsed.data
+
+    await prisma.platformAlertSetting.upsert({ where: { userId_alert: { userId: user.id, alert } }, create: { userId: user.id, alert, bell }, update: { bell } })
+    return { success: true }
+  } catch (error) {
+    return { success: false, error: formatError(error) }
+  }
+}
+
 export async function setStoreNotificationAction(input: z.input<typeof storeNotificationSchema>): Promise<ActionResponse> {
   const { user } = await requireConsoleAccess()
 

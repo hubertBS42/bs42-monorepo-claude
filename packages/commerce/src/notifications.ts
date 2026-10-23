@@ -2,7 +2,7 @@ import "server-only"
 
 import { authURLs } from "@workspace/auth/constants"
 import { consoleAdminRoles, hasSystemRole } from "@workspace/auth/system-permissions"
-import { PLATFORM_ORGANIZATION_SLUG, type AppSettingsData } from "@workspace/contracts"
+import { PLATFORM_ALERTS, PLATFORM_ORGANIZATION_SLUG, type AppSettingsData, type PlatformAlertKey } from "@workspace/contracts"
 import { prisma, readAppSettings, resolveConsoleName } from "@workspace/db"
 import { Prisma } from "@workspace/db/client"
 import { NotificationKind } from "@workspace/db/enums"
@@ -12,8 +12,8 @@ import { formatDate } from "@workspace/utils/date"
 import { BUSINESS_TYPE_LABELS } from "./trade-account-status"
 
 // Staff notifications, each an email and a notification in the console's bell (the Notification table):
-// - the platform's: emails to the addresses in Settings → Notifications and the bell of every platform admin, one
-//   switch per event for both;
+// - the platform's: emails to the addresses in Settings → Notifications, by Settings' switch for the event, and the
+//   bell of every platform admin, by each admin's own switch (PLATFORM_ALERTS, PlatformAlertSetting);
 // - a store's own: its owners and admins, each with their own switches per store (Member.notifyOrders and the rest).
 // Whoever made the change isn't told about it. Callers schedule these with after(), once the change has committed, and
 // they never throw: a missing mailer or a bad address is logged, not raised into a request that already succeeded.
@@ -64,31 +64,55 @@ const inWorkspace = (path: string, workspaceId: string | undefined) => {
   return `${url.pathname}${url.search}`
 }
 
-// To the platform: Settings' addresses, and the bell of every platform admin (admins and superAdmins) but exceptUserId.
-// The caller checks the event's switch. path is a page in the global workspace.
+// What a platform notice says, given which of its alerts the reader wants: most have one alert, and say nothing
+// when it isn't wanted; a stock notice lists only the kinds (low, out) its reader wants, or says nothing
+type PlatformContent = Omit<Alert, "action"> | ((wants: (alert: PlatformAlertKey) => boolean) => Omit<Alert, "action"> | null)
+
+const settingsWant = (settings: AppSettingsData) => (alert: PlatformAlertKey) => settings[PLATFORM_ALERTS.find((item) => item.alert === alert)!.settingsKey]
+
+// To the platform: Settings' addresses when Settings' switch for one of alerts is on, and the bell of every platform
+// admin (admins and superAdmins) but exceptUserId whose own switch is (PlatformAlertSetting, else the alert's
+// default). No alerts (payment problems): always. path is a page in the global workspace.
 async function toPlatform(
   settings: AppSettingsData,
   kind: NotificationKind,
-  alert: Omit<Alert, "action">,
+  alerts: PlatformAlertKey[],
+  content: PlatformContent,
   action: { label: string; path: string } | null,
   context: string,
   exceptUserId: string | null = null
 ) {
   const workspaceId = await platformWorkspaceId()
-  const full = { ...alert, action: action && { ...action, path: inWorkspace(action.path, workspaceId) } }
+  const withAction = (alert: Omit<Alert, "action">): Alert => ({ ...alert, action: action && { ...action, path: inWorkspace(action.path, workspaceId) } })
+  const contentFor = (wants: (alert: PlatformAlertKey) => boolean) => {
+    if (alerts.length && !alerts.some(wants)) return null
+    return typeof content === "function" ? content(wants) : content
+  }
+
   // Role strings can be comma-separated: contains narrows the rows, hasSystemRole decides
   const staff = await prisma.user.findMany({
     where: { AND: [{ OR: consoleAdminRoles.map((role) => ({ role: { contains: role } })) }, notBanned], ...(exceptUserId && { id: { not: exceptUserId } }) },
-    select: { id: true, role: true },
+    select: { id: true, role: true, platformAlertSettings: { where: { alert: { in: alerts } }, select: { alert: true, bell: true } } },
   })
-  await addNotifications(
-    staff.filter((user) => hasSystemRole(user.role, consoleAdminRoles)).map((user) => user.id),
-    kind,
-    full,
+
+  // Admins who want the same alerts get the same notice
+  const groups = new Map<string, { wants: (alert: PlatformAlertKey) => boolean; userIds: string[] }>()
+  for (const user of staff.filter((user) => hasSystemRole(user.role, consoleAdminRoles))) {
+    const own = new Map(user.platformAlertSettings.map((row) => [row.alert, row.bell]))
+    const wants = (alert: PlatformAlertKey) => own.get(alert) ?? PLATFORM_ALERTS.find((item) => item.alert === alert)!.default
+    const key = alerts.map((alert) => (wants(alert) ? 1 : 0)).join("")
+    const group = groups.get(key) ?? { wants, userIds: [] }
+    group.userIds.push(user.id)
+    groups.set(key, group)
+  }
+  for (const { wants, userIds } of groups.values()) {
+    const alert = contentFor(wants)
     // Without a page of its own (stock alerts across stores), the platform's dashboard, which lists them
-    inWorkspace("/", workspaceId)
-  )
-  await sendEmails(settings, full, context, settings.notificationEmails)
+    if (alert) await addNotifications(userIds, kind, withAction(alert), inWorkspace("/", workspaceId))
+  }
+
+  const emailed = contentFor(settingsWant(settings))
+  if (emailed) await sendEmails(settings, withAction(emailed), context, settings.notificationEmails)
 }
 
 type StorePreference = "notifyOrders" | "notifyStock" | "notifyRefunds"
@@ -200,10 +224,10 @@ export async function notifyNewOrder(orderId: string, source: "storefront" | "st
       )
     }
 
-    if (!(source === "storefront" ? settings.notifyStorefrontOrders : settings.notifyStaffOrders)) return
     await toPlatform(
       settings,
       NotificationKind.ORDER,
+      [source === "storefront" ? "STOREFRONT_ORDERS" : "STAFF_ORDERS"],
       {
         subject: `New order ${order.reference}`,
         preview: `${order.customerName} · ${ghs(order.totalGhs)}`,
@@ -277,22 +301,25 @@ export async function notifyStockAlerts(alerts: StockAlert[]) {
       )
     }
 
-    const wanted = alerts.filter((alert) => (alert.kind === "out" ? settings.notifyOutOfStock : settings.notifyLowStock))
-    if (wanted.length === 0) return
-
-    const heading = stockHeading(wanted)
     await toPlatform(
       settings,
       NotificationKind.STOCK,
-      {
-        subject: stockSubject(heading, wanted),
-        preview: wanted.map((alert) => alert.label).join(", "),
-        heading,
-        intro: `A sale left ${wanted.length === 1 ? "this item" : "these items"} needing restocking.`,
-        details: wanted.map((alert) => ({
-          label: `${alert.label} (${alert.storeName})`,
-          value: stockLevel(alert),
-        })),
+      ["LOW_STOCK", "OUT_OF_STOCK"],
+      // Each reader hears of the kinds they want
+      (wants) => {
+        const wanted = alerts.filter((alert) => wants(alert.kind === "out" ? "OUT_OF_STOCK" : "LOW_STOCK"))
+        if (wanted.length === 0) return null
+        const heading = stockHeading(wanted)
+        return {
+          subject: stockSubject(heading, wanted),
+          preview: wanted.map((alert) => alert.label).join(", "),
+          heading,
+          intro: `A sale left ${wanted.length === 1 ? "this item" : "these items"} needing restocking.`,
+          details: wanted.map((alert) => ({
+            label: `${alert.label} (${alert.storeName})`,
+            value: stockLevel(alert),
+          })),
+        }
       },
       // Stock is kept in each store's workspace, so there's no one page to open
       null,
@@ -356,11 +383,12 @@ export async function notifyRefund(orderId: string, storeId: string | null, refu
       )
     }
 
-    if (!storeId || !settings.notifyStoreRefunds) return
+    if (!storeId) return
     const store = await prisma.organization.findUnique({ where: { id: storeId }, select: { name: true } })
     await toPlatform(
       settings,
       NotificationKind.REFUND,
+      ["STORE_REFUNDS"],
       {
         subject: `${store?.name ?? "A store"} refunded ${ghs(refund.amountGhs)} on ${order.reference}`,
         preview: refund.reason,
@@ -381,7 +409,6 @@ export async function notifyRefund(orderId: string, storeId: string | null, refu
 export async function notifyLowRating(reviewId: string) {
   try {
     const settings = await readAppSettings()
-    if (!settings.notifyLowRatings) return
 
     const review = await prisma.review.findUnique({
       where: { id: reviewId },
@@ -392,6 +419,7 @@ export async function notifyLowRating(reviewId: string) {
     await toPlatform(
       settings,
       NotificationKind.REVIEW,
+      ["LOW_RATINGS"],
       {
         subject: `${review.rating}★ review of ${review.product.name}`,
         preview: review.title,
@@ -417,7 +445,6 @@ export async function notifyLowRating(reviewId: string) {
 export async function notifyTradeApplication(accountId: string) {
   try {
     const settings = await readAppSettings()
-    if (!settings.notifyTradeApplications) return
 
     const account = await prisma.tradeAccount.findUnique({
       where: { id: accountId },
@@ -428,6 +455,7 @@ export async function notifyTradeApplication(accountId: string) {
     await toPlatform(
       settings,
       NotificationKind.TRADE_ACCOUNT,
+      ["TRADE_APPLICATIONS"],
       {
         subject: `Trade account application: ${account.companyName}`,
         preview: `${account.companyName} · ${BUSINESS_TYPE_LABELS[account.businessType]}`,
@@ -454,7 +482,6 @@ export async function notifyTradeApplication(accountId: string) {
 export async function notifyNewQuote(quoteId: string) {
   try {
     const settings = await readAppSettings()
-    if (!settings.notifyQuotes) return
 
     const quote = await prisma.quote.findUnique({
       where: { id: quoteId },
@@ -475,6 +502,7 @@ export async function notifyNewQuote(quoteId: string) {
     await toPlatform(
       settings,
       NotificationKind.QUOTE,
+      ["QUOTES"],
       {
         subject: `New quotation ${quote.reference}`,
         preview: `${quote.tradeCompanyName ?? quote.customerName} · ${ghs(quote.totalGhs)}`,
@@ -503,12 +531,12 @@ export async function notifyNewQuote(quoteId: string) {
 export async function notifyRateFetchFailed(date: string, error: string) {
   try {
     const settings = await readAppSettings()
-    if (!settings.notifyRateFetchFailure) return
 
     const day = formatDate(`${date}T12:00:00Z`, "MMM d, yyyy")
     await toPlatform(
       settings,
       NotificationKind.EXCHANGE_RATE,
+      ["RATE_FETCH_FAILURE"],
       {
         subject: `Exchange rate for ${day} wasn't fetched`,
         preview: error,
@@ -558,6 +586,7 @@ export async function notifyPaymentProblem(orderId: string, problem: PaymentProb
     await toPlatform(
       settings,
       NotificationKind.PAYMENT_PROBLEM,
+      [],
       {
         subject: `${heading}: ${order.reference}`,
         preview: `${order.customerName} · ${ghs(amountGhs)}`,

@@ -438,6 +438,13 @@ export const BREADCRUMB_DATA: BreadcrumbConfig[] = [
       { text: "Notifications", href: "#" },
     ],
   },
+  {
+    pathname: "/notifications",
+    segments: [
+      { text: "Dashboard", href: "/" },
+      { text: "Notifications", href: "#" },
+    ],
+  },
 ]
 
 export const STORE_STATUS_OPTIONS = Object.values(StoreStatus).map((value) => ({
