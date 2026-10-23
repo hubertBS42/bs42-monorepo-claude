@@ -3,7 +3,7 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 import { ArrowLeft, Circle, CircleCheck, CircleX, Clock, Package } from "lucide-react"
 import { canStartPayment, paymentDeadline } from "@workspace/commerce/online-payments"
-import { hasBeenPaid, ORDER_STATUS_LABELS, PAYMENT_METHOD_LABELS } from "@workspace/commerce/order-status"
+import { awaitsBankTransfer, hasBeenPaid, ORDER_STATUS_LABELS, PAYMENT_METHOD_LABELS } from "@workspace/commerce/order-status"
 import { prisma } from "@workspace/db"
 import { OrderStatus, PaymentStatus, ShippingMethod } from "@workspace/db/enums"
 import { Badge } from "@workspace/ui/components/badge"
@@ -14,10 +14,12 @@ import { getStringParam } from "@workspace/utils/search-params"
 import { invoiceHref, isOrderKey } from "@workspace/commerce/order-links"
 import { accountOrdersWhere } from "@workspace/commerce/customer-orders"
 
+import { BankTransferDetails } from "@/components/orders/bank-transfer-details"
 import { PayNowButton, ReorderButton } from "@/components/orders/order-actions"
 import type { SearchParams } from "@/lib/catalogue-filters"
 import { formatGhs } from "@/lib/money"
 import { orderTimeline, type TimelineStep } from "@/lib/order-timeline"
+import { getAppSettings } from "@/lib/settings"
 import { getStoreSession } from "@/lib/session"
 
 export const metadata: Metadata = { title: "Your order", robots: { index: false } }
@@ -117,6 +119,11 @@ export default async function OrderPage({ params, searchParams }: OrderPageProps
   const inMyOrders = !!session && (await prisma.order.count({ where: { AND: [{ id: order.id }, accountOrdersWhere(session.user)] } })) > 0
 
   const paid = hasBeenPaid(order.paymentStatus)
+  // Made by staff, so paid as arranged with them (by bank transfer, cash or mobile money), never online here
+  const staffMade = order.createdById !== null
+  const method = PAYMENT_METHOD_LABELS[order.paymentMethod].toLowerCase()
+  // Where to send it, from Settings (null details when none are set)
+  const bankTransfer = awaitsBankTransfer(order) && order.status !== OrderStatus.CANCELLED ? { details: (await getAppSettings()).bankTransferDetails } : null
   const cancelled = order.status === OrderStatus.CANCELLED
   // A paid order's heading follows its delivery
   const firstName = order.customerName.split(" ")[0]
@@ -159,9 +166,11 @@ export default async function OrderPage({ params, searchParams }: OrderPageProps
                 ? order.paymentStatus === PaymentStatus.REFUNDED
                   ? "It was cancelled after your payment came in, and we've refunded you. If you have questions, contact us with your order reference."
                   : "It was cancelled after your payment came in. We'll refund you; if you have questions, contact us with your order reference."
-                : "It wasn't paid for in time, so we released the items. You can put them back in your basket and order again."}
+                : staffMade
+                  ? "It was cancelled before it was paid for. If you have questions, contact us with your order reference."
+                  : "It wasn't paid for in time, so we released the items. You can put them back in your basket and order again."}
             </p>
-            {!paid && (
+            {!paid && !staffMade && (
               <div>
                 <ReorderButton orderId={order.id} orderKey={key} />
               </div>
@@ -176,6 +185,16 @@ export default async function OrderPage({ params, searchParams }: OrderPageProps
             ) : (
               <p className="text-muted-foreground">Thank you for shopping with us, {firstName}.</p>
             )}
+          </>
+        ) : staffMade ? (
+          <>
+            <Clock className="size-10 text-amber-500" aria-hidden />
+            <h1 className="text-2xl font-bold tracking-tight md:text-3xl">Your order is waiting for payment</h1>
+            <p className="text-muted-foreground">
+              {bankTransfer
+                ? `Please pay ${formatGhs(order.totalGhs.toFixed(2))} by bank transfer: our details are under Payment. We'll confirm it here once it arrives.`
+                : `Please pay ${formatGhs(order.totalGhs.toFixed(2))} by ${method}, as arranged with us. We'll confirm it here once it arrives.`}
+            </p>
           </>
         ) : (
           <>
@@ -257,7 +276,12 @@ export default async function OrderPage({ params, searchParams }: OrderPageProps
               <CardTitle>Payment</CardTitle>
             </CardHeader>
             <CardContent className="space-y-1 text-sm">
-              <p>{paid ? `Paid by ${PAYMENT_METHOD_LABELS[order.paymentMethod].toLowerCase()}` : "Not paid yet"}</p>
+              <p>{paid ? `Paid by ${method}` : staffMade ? `Not paid yet: to pay by ${method}` : "Not paid yet"}</p>
+              {bankTransfer && (
+                <div className="py-2">
+                  <BankTransferDetails details={bankTransfer.details} reference={order.reference} />
+                </div>
+              )}
               <p className="text-muted-foreground">Placed {formatDate(order.createdAt, "d MMM yyyy, HH:mm")}</p>
               <Link href={invoiceHref(order.reference, order.id)} className="inline-block pt-1 underline underline-offset-4 hover:text-muted-foreground">
                 View invoice

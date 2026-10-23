@@ -145,6 +145,30 @@ export function QuotationsCard({ settings }: CardProps) {
   )
 }
 
+export function BankTransferCard({ settings }: CardProps) {
+  return (
+    <SettingsCard
+      section="bankTransfer"
+      settings={settings}
+      title="Bank Transfer"
+      description="Where customers send a bank transfer for an order staff made. Shown, as typed, on its confirmation email, order page and invoice until it's paid."
+    >
+      {(form, isPending) => (
+        <TextareaField
+          control={form.control}
+          name="bankTransferDetails"
+          label="Bank details"
+          placeholder={"Bank name\nAccount name\nAccount number\nBranch"}
+          rows={5}
+          maxLength={1000}
+          showCount
+          disabled={isPending}
+        />
+      )}
+    </SettingsCard>
+  )
+}
+
 // The same alerts and words as each admin's own switches for their bell (Account → Notifications)
 const NOTIFICATION_SWITCHES = PLATFORM_ALERTS.map(({ settingsKey, label, description }) => ({ name: settingsKey, label, description }))
 

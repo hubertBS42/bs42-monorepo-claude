@@ -58,6 +58,12 @@ export function hasBeenPaid(paymentStatus: PaymentStatus) {
   return paymentStatus !== PaymentStatus.PENDING && paymentStatus !== PaymentStatus.FAILED
 }
 
+// An order still to be paid by bank transfer (staff-made: storefront orders pay online), whose customer needs the
+// platform's bank details (Settings → Pricing): its confirmation email, its order page and its invoice show them
+export function awaitsBankTransfer(order: { paymentMethod: PaymentMethod; paymentStatus: PaymentStatus }) {
+  return order.paymentMethod === PaymentMethod.BANK_TRANSFER && !hasBeenPaid(order.paymentStatus)
+}
+
 // Items come back only once the customer has them: before that, the order is cancelled instead
 export function canBeReturned(status: OrderStatus) {
   return status === OrderStatus.DELIVERED || status === OrderStatus.COMPLETED

@@ -138,6 +138,9 @@ model AppSettings {
   exchangeRateMarkupPercent Decimal  @default(0) @db.Decimal(4, 2)
   // How long a quotation's prices hold, in days
   quoteValidityDays         Int      @default(7)
+  // Where customers send a bank transfer (bank, account name and number, branch), as typed; shown to a customer whose
+  // staff-made order is unpaid by bank transfer
+  bankTransferDetails       String?
 
   updatedAt DateTime @updatedAt
 

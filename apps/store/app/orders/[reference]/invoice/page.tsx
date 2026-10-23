@@ -2,13 +2,14 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { isOrderKey, orderHref } from "@workspace/commerce/order-links"
-import { hasBeenPaid, PAYMENT_METHOD_LABELS } from "@workspace/commerce/order-status"
+import { awaitsBankTransfer, hasBeenPaid, PAYMENT_METHOD_LABELS } from "@workspace/commerce/order-status"
 import { prisma } from "@workspace/db"
 import { Prisma } from "@workspace/db/client"
-import { ShippingMethod } from "@workspace/db/enums"
+import { OrderStatus, ShippingMethod } from "@workspace/db/enums"
 import { formatDate } from "@workspace/utils/date"
 import { getStringParam } from "@workspace/utils/search-params"
 
+import { BankTransferDetails } from "@/components/orders/bank-transfer-details"
 import { PrintButton } from "@/components/orders/print-button"
 import type { SearchParams } from "@/lib/catalogue-filters"
 import { formatGhs } from "@/lib/money"
@@ -44,6 +45,7 @@ export default async function InvoicePage({ params, searchParams }: InvoicePageP
       id: true,
       reference: true,
       createdAt: true,
+      status: true,
       paymentStatus: true,
       paymentMethod: true,
       paidAt: true,
@@ -161,6 +163,12 @@ export default async function InvoicePage({ params, searchParams }: InvoicePageP
 
         <footer className="mt-10 space-y-1 border-t pt-4 text-muted-foreground">
           <p>{paid && order.paidAt ? `Paid by ${PAYMENT_METHOD_LABELS[order.paymentMethod].toLowerCase()} on ${formatDate(order.paidAt, "d MMMM yyyy")}.` : "Not paid yet."}</p>
+          {awaitsBankTransfer(order) && order.status !== OrderStatus.CANCELLED && (
+            <div className="py-2 text-foreground">
+              <p className="font-semibold">Pay by bank transfer</p>
+              <BankTransferDetails details={settings.bankTransferDetails} reference={order.reference} />
+            </div>
+          )}
           <p>Amounts in Ghana cedis (GHS). Thank you for your order.</p>
         </footer>
       </article>

@@ -22,7 +22,7 @@ import {
   type ReviewRequestItem,
 } from "@workspace/email"
 import { formatDate } from "@workspace/utils/date"
-import { hasBeenPaid, PAYMENT_METHOD_LABELS } from "./order-status"
+import { awaitsBankTransfer, hasBeenPaid, PAYMENT_METHOD_LABELS } from "./order-status"
 import { unreviewedOrderProducts } from "./reviews"
 
 // Customer emails for orders. Actions schedule them with after(), once the order is saved, so a slow or failed
@@ -87,8 +87,9 @@ const amount = (value: Prisma.Decimal) => Number(value.toFixed(2))
 
 // What a refund or a return adds to its email: the amount given back, and for a return what came back. An unpaid
 // order's cancellation adds the order page's address and how long there was to pay. A completed order adds the
-// products to ask for reviews of.
+// products to ask for reviews of. A new order adds Settings' bank details, for one paid by bank transfer.
 export interface OrderEmailExtra {
+  bankTransferDetails?: string | null
   refundAmountGhs?: string | null
   returnedItems?: ReturnedItem[]
   orderUrl?: string
@@ -103,7 +104,7 @@ export function buildOrderEmail(
   event: OrderEmailEvent,
   note: string | null,
   brand: { appName: string; logoUrl: string | null },
-  { refundAmountGhs = null, returnedItems = [], orderUrl, paymentMinutes, reviewItems = [] }: OrderEmailExtra = {}
+  { refundAmountGhs = null, returnedItems = [], orderUrl, paymentMinutes, reviewItems = [], bankTransferDetails = null }: OrderEmailExtra = {}
 ): OrderEmail | null {
   // Walk-in customers may give no email; an account can turn order emails off
   if (!order.customerEmail || order.user?.getOrderEmails === false) return null
@@ -139,6 +140,7 @@ export function buildOrderEmail(
           shippingAddress: isDelivery ? address : null,
           paymentMethod: PAYMENT_METHOD_LABELS[order.paymentMethod],
           paid: hasBeenPaid(order.paymentStatus),
+          bankTransfer: awaitsBankTransfer(order) ? { details: bankTransferDetails } : null,
         },
       }
     case "REFUNDED":
@@ -211,6 +213,8 @@ export async function sendOrderEmail(orderId: string, event: OrderEmailEvent, no
       const products = await unreviewedOrderProducts(prisma, orderId)
       extra = { ...extra, reviewItems: products.map((product) => ({ productName: product.name, imageUrl: product.image, reviewUrl: reviewUrl(product.slug) })) }
     }
+
+    if (event === "CREATED") extra = { ...extra, bankTransferDetails: settings.bankTransferDetails }
 
     // Customer emails carry the storefront's name and logo, not the console's
     const email = buildOrderEmail(order, event, note, { appName: resolveStoreName(settings), logoUrl: settings.logoUrl }, extra)

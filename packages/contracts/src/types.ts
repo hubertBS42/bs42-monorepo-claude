@@ -58,6 +58,8 @@ export type AppSettingsData = {
   notifyProductRequests: boolean
   // How long a storefront quotation's prices hold
   quoteValidityDays: number
+  // Where customers send a bank transfer, as typed in Settings; null when none are set
+  bankTransferDetails: string | null
   // Added to the rate fetched each day, a percentage (2 is 2%), as a plain number like taxRate
   exchangeRateMarkupPercent: number
 }

@@ -27,6 +27,7 @@ export const DEFAULT_APP_SETTINGS: AppSettingsData = {
   notifyQuotes: false,
   notifyProductRequests: true,
   quoteValidityDays: 7,
+  bankTransferDetails: null,
   exchangeRateMarkupPercent: 0,
 }
 
@@ -59,6 +60,7 @@ export function toAppSettingsData(row: AppSettingsRow): AppSettingsData {
     notifyQuotes: row.notifyQuotes,
     notifyProductRequests: row.notifyProductRequests,
     quoteValidityDays: row.quoteValidityDays,
+    bankTransferDetails: row.bankTransferDetails,
     exchangeRateMarkupPercent: row.exchangeRateMarkupPercent.toNumber(),
   }
 }

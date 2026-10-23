@@ -38,6 +38,8 @@ export interface OrderConfirmationEmail extends BaseOrderEmail {
   paymentMethod: string
   // Paid when the order was placed (online), rather than due on delivery
   paid?: boolean
+  // An unpaid order the customer pays by bank transfer: where to send it, or null when Settings has none
+  bankTransfer?: { details: string | null } | null
 }
 
 export async function sendOrderConfirmationEmail(data: OrderConfirmationEmail) {
@@ -62,6 +64,7 @@ export async function sendOrderConfirmationEmail(data: OrderConfirmationEmail) {
       shippingAddress: data.shippingAddress,
       paymentMethod: data.paymentMethod,
       paid: data.paid,
+      bankTransfer: data.bankTransfer,
       appName: data.appName,
       logoUrl: data.logoUrl,
     }),
