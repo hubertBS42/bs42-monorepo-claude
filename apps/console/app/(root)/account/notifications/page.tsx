@@ -9,14 +9,14 @@ export default async function NotificationsPage() {
   const stores = await getStoreNotificationSettings(user.id, user.role)
 
   const empty = hasSystemRole(user.role, consoleAdminRoles)
-    ? "Store emails go to each store's own owners and admins. Platform staff get the platform's emails, sent to the addresses in Settings → Notifications."
-    : "Store emails go to each store's owners and admins. You'll be able to choose yours here once you're an owner or admin of a store."
+    ? "Store notifications go to each store's own owners and admins. Platform staff get the platform's in the bell, chosen in Settings → Notifications."
+    : "Store notifications go to each store's owners and admins. You'll be able to choose yours here once you're an owner or admin of a store."
 
   return (
     <Card>
       <CardHeader>
         <CardTitle>Notifications</CardTitle>
-        <CardDescription>Emails about your stores, sent to {user.email}. Each switch saves as you flip it.</CardDescription>
+        <CardDescription>Emails to {user.email} and the bell at the top of the console, about your stores. Each switch saves as you flip it.</CardDescription>
       </CardHeader>
       <CardContent>{stores.length === 0 ? <p className="text-sm text-muted-foreground">{empty}</p> : <StoreNotifications stores={stores} />}</CardContent>
     </Card>

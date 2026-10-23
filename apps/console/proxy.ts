@@ -73,16 +73,16 @@ export async function proxy(request: NextRequest) {
 
   const activeOrganizationId = session.session.activeOrganizationId
 
-  // A link into a store's workspace from an email names the store (?store=), for someone in more than one: switch to
-  // it, then the same page without the parameter. Better Auth refuses a store the user isn't a member of, and the page
-  // then goes on in the workspace the session had.
-  const linkedStoreId = request.nextUrl.searchParams.get("store")
-  if (linkedStoreId !== null) {
+  // A link from a notification names the workspace its page belongs to (?workspace=, a store's or the platform's id),
+  // for someone signed in to another: switch to it, then the same page without the parameter. Better Auth refuses an
+  // organization the user isn't a member of, and the page then goes on in the workspace the session had.
+  const linkedWorkspaceId = request.nextUrl.searchParams.get("workspace")
+  if (linkedWorkspaceId !== null) {
     const target = request.nextUrl.clone()
-    target.searchParams.delete("store")
-    if (linkedStoreId === activeOrganizationId || !UUID.test(linkedStoreId)) return NextResponse.redirect(target)
+    target.searchParams.delete("workspace")
+    if (linkedWorkspaceId === activeOrganizationId || !UUID.test(linkedWorkspaceId)) return NextResponse.redirect(target)
     try {
-      return await switchWorkspace(request, linkedStoreId, target)
+      return await switchWorkspace(request, linkedWorkspaceId, target)
     } catch {
       return NextResponse.redirect(target)
     }

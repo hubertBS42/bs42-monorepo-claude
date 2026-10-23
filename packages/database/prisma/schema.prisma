@@ -208,6 +208,7 @@ model User {
   purchaseOrdersClosed   PurchaseOrder[]        @relation("PurchaseOrderClosedBy")
   purchaseOrdersReceived PurchaseOrderReceipt[]
   stockMovements         StockMovement[]
+  notifications          Notification[]
 
   @@map("user")
 }
@@ -1469,4 +1470,33 @@ model WishListItem {
   @@index([productId])
   @@index([variantId])
   @@map("wish_list_item")
+}
+
+enum NotificationKind {
+  ORDER
+  STOCK
+  REFUND
+  PAYMENT_PROBLEM
+  REVIEW
+  TRADE_ACCOUNT
+  QUOTE
+  EXCHANGE_RATE
+}
+
+// A console user's in-app notification (the header's bell), written with the staff emails
+// (@workspace/commerce/notifications) and deleted after NOTIFICATION_LIFETIME_DAYS by the unpaid-orders job
+model Notification {
+  id        String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String           @db.Uuid
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind      NotificationKind
+  title     String
+  body      String
+  // A console path, with ?workspace= for the store (or the platform) it belongs to
+  href      String
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+
+  @@index([userId, createdAt])
+  @@map("notification")
 }

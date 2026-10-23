@@ -10,6 +10,7 @@ import { Fragment } from "react/jsx-runtime"
 import { cn } from "@workspace/ui/lib/utils"
 import Link from "next/link"
 import ThemeToggle from "@workspace/ui/components/theme-toggle"
+import { NotificationBell } from "@/components/notification-bell"
 
 export function AppHeader() {
   const pathname = usePathname()
@@ -44,7 +45,10 @@ export function AppHeader() {
             })}
           </BreadcrumbList>
         </Breadcrumb>
-        <ThemeToggle className="ml-auto" />
+        <div className="ml-auto flex items-center gap-1">
+          <NotificationBell />
+          <ThemeToggle />
+        </div>
       </div>
     </header>
   )

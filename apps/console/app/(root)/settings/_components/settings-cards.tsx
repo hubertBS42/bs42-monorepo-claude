@@ -159,7 +159,12 @@ const NOTIFICATION_SWITCHES = [
 
 export function NotificationsCard({ settings }: CardProps) {
   return (
-    <SettingsCard section="notifications" settings={settings} title="Notifications" description="Emails to staff when something needs attention. Nothing is sent until at least one address is added.">
+    <SettingsCard
+      section="notifications"
+      settings={settings}
+      title="Notifications"
+      description="When something needs attention: emails to these addresses, and the bell at the top of the console for every platform admin. The switches choose both."
+    >
       {(form, isPending) => (
         <>
           <TagsField

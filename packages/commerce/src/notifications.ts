@@ -2,32 +2,38 @@ import "server-only"
 
 import { authURLs } from "@workspace/auth/constants"
 import { consoleAdminRoles, hasSystemRole } from "@workspace/auth/system-permissions"
-import type { AppSettingsData } from "@workspace/contracts"
+import { PLATFORM_ORGANIZATION_SLUG, type AppSettingsData } from "@workspace/contracts"
 import { prisma, readAppSettings, resolveConsoleName } from "@workspace/db"
 import { Prisma } from "@workspace/db/client"
+import { NotificationKind } from "@workspace/db/enums"
 import { sendEmail, StaffAlertEmail } from "@workspace/email"
 import { formatCurrency } from "@workspace/utils/currency"
 import { formatDate } from "@workspace/utils/date"
 import { BUSINESS_TYPE_LABELS } from "./trade-account-status"
 
-// Staff notifications: emails to the addresses in Settings → Notifications, one switch per event, and a store's own
-// to its owners and admins, each with their own switches (Member.notifyOrders and the rest). Callers schedule them
-// with after(), once the change has committed, and they never throw: a missing mailer or a bad address is logged, not
-// raised into a request that already succeeded.
+// Staff notifications, each an email and a notification in the console's bell (the Notification table):
+// - the platform's: emails to the addresses in Settings → Notifications and the bell of every platform admin, one
+//   switch per event for both;
+// - a store's own: its owners and admins, each with their own switches per store (Member.notifyOrders and the rest).
+// Whoever made the change isn't told about it. Callers schedule these with after(), once the change has committed, and
+// they never throw: a missing mailer or a bad address is logged, not raised into a request that already succeeded.
 
-type Alert = { subject: string; preview: string; heading: string; intro: string; details: { label: string; value: string }[]; action?: { label: string; url: string } }
+// action.path is a console path with ?workspace=, which has the console switch to the store (or the platform) the
+// page belongs to first (proxy.ts), for someone signed in to another
+type Alert = { subject: string; preview: string; heading: string; intro: string; details: { label: string; value: string }[]; action: { label: string; path: string } | null }
 
 const ghs = (amount: { toString(): string }) => formatCurrency(amount.toString(), "GHS", "en-GH")
 
-async function send(settings: AppSettingsData, alert: Alert, context: string, recipients = settings.notificationEmails) {
+async function sendEmails(settings: AppSettingsData, alert: Alert, context: string, recipients: string[]) {
   const appName = resolveConsoleName(settings)
+  const action = alert.action && { label: alert.action.label, url: new URL(alert.action.path, authURLs.console).toString() }
   const results = await Promise.allSettled(
     recipients.map((to) =>
       sendEmail({
         to,
         fromName: appName,
         subject: alert.subject,
-        reactTemplate: StaffAlertEmail({ ...alert, action: alert.action ?? null, appName, logoUrl: settings.logoUrl }),
+        reactTemplate: StaffAlertEmail({ ...alert, action, appName, logoUrl: settings.logoUrl }),
       })
     )
   )
@@ -36,29 +42,93 @@ async function send(settings: AppSettingsData, alert: Alert, context: string, re
   }
 }
 
+// The bell shows the email's subject and preview, and opens the email's page, or else href
+async function addNotifications(userIds: string[], kind: NotificationKind, alert: Alert, href: string) {
+  if (userIds.length === 0) return
+  await prisma.notification.createMany({ data: userIds.map((userId) => ({ userId, kind, title: alert.subject, body: alert.preview, href: alert.action?.path ?? href })) })
+}
+
+const notBanned = { OR: [{ banned: null }, { banned: false }] }
+
+// The platform organization's id never changes
+let platformId: string | undefined
+async function platformWorkspaceId() {
+  platformId ??= (await prisma.organization.findUnique({ where: { slug: PLATFORM_ORGANIZATION_SLUG }, select: { id: true } }))?.id
+  return platformId
+}
+
+const inWorkspace = (path: string, workspaceId: string | undefined) => {
+  if (!workspaceId) return path
+  const url = new URL(path, authURLs.console)
+  url.searchParams.set("workspace", workspaceId)
+  return `${url.pathname}${url.search}`
+}
+
+// To the platform: Settings' addresses, and the bell of every platform admin (admins and superAdmins) but exceptUserId.
+// The caller checks the event's switch. path is a page in the global workspace.
+async function toPlatform(
+  settings: AppSettingsData,
+  kind: NotificationKind,
+  alert: Omit<Alert, "action">,
+  action: { label: string; path: string } | null,
+  context: string,
+  exceptUserId: string | null = null
+) {
+  const workspaceId = await platformWorkspaceId()
+  const full = { ...alert, action: action && { ...action, path: inWorkspace(action.path, workspaceId) } }
+  // Role strings can be comma-separated: contains narrows the rows, hasSystemRole decides
+  const staff = await prisma.user.findMany({
+    where: { AND: [{ OR: consoleAdminRoles.map((role) => ({ role: { contains: role } })) }, notBanned], ...(exceptUserId && { id: { not: exceptUserId } }) },
+    select: { id: true, role: true },
+  })
+  await addNotifications(
+    staff.filter((user) => hasSystemRole(user.role, consoleAdminRoles)).map((user) => user.id),
+    kind,
+    full,
+    // Without a page of its own (stock alerts across stores), the platform's dashboard, which lists them
+    inWorkspace("/", workspaceId)
+  )
+  await sendEmails(settings, full, context, settings.notificationEmails)
+}
+
 type StorePreference = "notifyOrders" | "notifyStock" | "notifyRefunds"
 
-// A store's owners and admins who want this kind of email, leaving out whoever made the change (they know) and
-// platform staff: they belong to every store, and get the platform's emails instead
-async function storeTeamEmails(storeId: string, preference: StorePreference, exceptUserId: string | null = null) {
+// To a store's owners and admins who want this kind, but exceptUserId, and not platform staff: they belong to every
+// store, and get the platform's instead. path is a page in the store's workspace.
+async function toStoreTeam(
+  settings: AppSettingsData,
+  storeId: string,
+  preference: StorePreference,
+  kind: NotificationKind,
+  alert: Omit<Alert, "action">,
+  action: { label: string; path: string },
+  context: string,
+  exceptUserId: string | null = null
+) {
   const members = await prisma.member.findMany({
     where: {
       organizationId: storeId,
       role: { in: ["owner", "admin"] },
       [preference]: true,
-      user: { OR: [{ banned: null }, { banned: false }], ...(exceptUserId && { id: { not: exceptUserId } }) },
+      user: { ...notBanned, ...(exceptUserId && { id: { not: exceptUserId } }) },
     },
-    select: { user: { select: { email: true, role: true } } },
+    select: { user: { select: { id: true, email: true, role: true } } },
   })
-  return members.filter((member) => !hasSystemRole(member.user.role, consoleAdminRoles)).map((member) => member.user.email)
-}
-
-// A link to a page in a store's workspace. ?store= has the console switch to that store first (proxy.ts), for someone
-// in more than one.
-const storeUrl = (path: string, storeId: string) => {
-  const url = new URL(path, authURLs.console)
-  url.searchParams.set("store", storeId)
-  return url.toString()
+  const team = members.map((member) => member.user).filter((user) => !hasSystemRole(user.role, consoleAdminRoles))
+  if (team.length === 0) return
+  const full = { ...alert, action: { ...action, path: inWorkspace(action.path, storeId) } }
+  await addNotifications(
+    team.map((user) => user.id),
+    kind,
+    full,
+    full.action.path
+  )
+  await sendEmails(
+    settings,
+    full,
+    context,
+    team.map((user) => user.email)
+  )
 }
 
 // What a store's lines come to, as its orders list counts them: after their discount, with their tax
@@ -103,13 +173,14 @@ export async function notifyNewOrder(orderId: string, source: "storefront" | "st
 
     // Each store hears about its own lines only, as its orders list shows them
     for (const storeId of new Set(order.orderItems.map((item) => item.organizationId))) {
-      const recipients = await storeTeamEmails(storeId, "notifyOrders", order.createdById)
-      if (recipients.length === 0) continue
       const lines = order.orderItems.filter((item) => item.organizationId === storeId)
       const shared = lines.length < order.orderItems.length
       const storeName = lines[0]!.storeName
-      await send(
+      await toStoreTeam(
         settings,
+        storeId,
+        "notifyOrders",
+        NotificationKind.ORDER,
         {
           subject: `New order ${order.reference}`,
           preview: `${order.customerName} · ${lines.reduce((sum, item) => sum + item.quantity, 0)} items`,
@@ -122,18 +193,17 @@ export async function notifyNewOrder(orderId: string, source: "storefront" | "st
             { label: shared ? "Your items' total" : "Total", value: ghs(shared ? sumLines(lines) : order.totalGhs) },
             { label: "Fulfilment", value: fulfilment },
           ],
-          action: { label: "View order", url: storeUrl(`/store/orders/${orderId}/details`, storeId) },
         },
+        { label: "View order", path: `/store/orders/${orderId}/details` },
         "store new order",
-        recipients
+        order.createdById
       )
     }
 
-    const enabled = source === "storefront" ? settings.notifyStorefrontOrders : settings.notifyStaffOrders
-    if (!enabled || settings.notificationEmails.length === 0) return
-
-    await send(
+    if (!(source === "storefront" ? settings.notifyStorefrontOrders : settings.notifyStaffOrders)) return
+    await toPlatform(
       settings,
+      NotificationKind.ORDER,
       {
         subject: `New order ${order.reference}`,
         preview: `${order.customerName} · ${ghs(order.totalGhs)}`,
@@ -156,9 +226,10 @@ export async function notifyNewOrder(orderId: string, source: "storefront" | "st
               ]
             : []),
         ],
-        action: { label: "View order", url: new URL(`/orders/${orderId}/details`, authURLs.console).toString() },
       },
-      "new order"
+      { label: "View order", path: `/orders/${orderId}/details` },
+      "new order",
+      order.createdById
     )
   } catch (error) {
     console.error(`New order notification for ${orderId} failed:`, error)
@@ -179,7 +250,7 @@ const stockHeading = (alerts: StockAlert[]) => (alerts.some((alert) => alert.kin
 const stockSubject = (heading: string, alerts: StockAlert[]) => (alerts.length === 1 ? `${heading}: ${alerts[0]!.label}` : `${heading}: ${alerts.length} items`)
 const stockLevel = (alert: StockAlert) => (alert.kind === "out" ? "out of stock" : `${alert.stock} left (alert at ${alert.threshold})`)
 
-// Items a sale took down to their low-stock threshold, or to 0: one email for the lot, so an order selling several
+// Items a sale took down to their low-stock threshold, or to 0: one notice for the lot, so an order selling several
 // items sends one, not one per item. Each store's team hears of its own (both kinds under one switch).
 export async function notifyStockAlerts(alerts: StockAlert[]) {
   try {
@@ -187,33 +258,32 @@ export async function notifyStockAlerts(alerts: StockAlert[]) {
     const settings = await readAppSettings()
 
     for (const storeId of new Set(alerts.map((alert) => alert.storeId))) {
-      const recipients = await storeTeamEmails(storeId, "notifyStock")
-      if (recipients.length === 0) continue
       const own = alerts.filter((alert) => alert.storeId === storeId)
       const heading = stockHeading(own)
-      await send(
+      await toStoreTeam(
         settings,
+        storeId,
+        "notifyStock",
+        NotificationKind.STOCK,
         {
           subject: stockSubject(heading, own),
           preview: own.map((alert) => alert.label).join(", "),
           heading,
           intro: `A sale left ${own.length === 1 ? "this item" : "these items"} in ${own[0]!.storeName} needing restocking.`,
           details: own.map((alert) => ({ label: alert.label, value: stockLevel(alert) })),
-          action: { label: "View listings", url: storeUrl(`/store/listings?stock=${heading === "Out of stock" ? "out" : "low"}`, storeId) },
         },
-        "store stock",
-        recipients
+        { label: "View listings", path: `/store/listings?stock=${heading === "Out of stock" ? "out" : "low"}` },
+        "store stock"
       )
     }
-
-    if (settings.notificationEmails.length === 0) return
 
     const wanted = alerts.filter((alert) => (alert.kind === "out" ? settings.notifyOutOfStock : settings.notifyLowStock))
     if (wanted.length === 0) return
 
     const heading = stockHeading(wanted)
-    await send(
+    await toPlatform(
       settings,
+      NotificationKind.STOCK,
       {
         subject: stockSubject(heading, wanted),
         preview: wanted.map((alert) => alert.label).join(", "),
@@ -224,6 +294,8 @@ export async function notifyStockAlerts(alerts: StockAlert[]) {
           value: stockLevel(alert),
         })),
       },
+      // Stock is kept in each store's workspace, so there's no one page to open
+      null,
       "stock"
     )
   } catch (error) {
@@ -266,36 +338,37 @@ export async function notifyRefund(orderId: string, storeId: string | null, refu
     const storeIds = new Set(order.orderItems.map((item) => item.organizationId))
     const [onlyStoreId] = storeIds
     if (storeIds.size === 1 && onlyStoreId) {
-      const recipients = await storeTeamEmails(onlyStoreId, "notifyRefunds", refund.givenById)
-      if (recipients.length > 0) {
-        await send(
-          settings,
-          {
-            subject: `${ghs(refund.amountGhs)} refunded on ${order.reference}`,
-            preview: refund.reason,
-            heading: "Refund given",
-            intro: `${givenBy?.name ?? "Staff"} ${what} an order in ${order.orderItems[0]!.storeName}.`,
-            details,
-            action: { label: "View order", url: storeUrl(`/store/orders/${orderId}/details`, onlyStoreId) },
-          },
-          "store team refund",
-          recipients
-        )
-      }
+      await toStoreTeam(
+        settings,
+        onlyStoreId,
+        "notifyRefunds",
+        NotificationKind.REFUND,
+        {
+          subject: `${ghs(refund.amountGhs)} refunded on ${order.reference}`,
+          preview: refund.reason,
+          heading: "Refund given",
+          intro: `${givenBy?.name ?? "Staff"} ${what} an order in ${order.orderItems[0]!.storeName}.`,
+          details,
+        },
+        { label: "View order", path: `/store/orders/${orderId}/details` },
+        "store team refund",
+        refund.givenById
+      )
     }
 
-    if (!storeId || !settings.notifyStoreRefunds || settings.notificationEmails.length === 0) return
+    if (!storeId || !settings.notifyStoreRefunds) return
     const store = await prisma.organization.findUnique({ where: { id: storeId }, select: { name: true } })
-    await send(
+    await toPlatform(
       settings,
+      NotificationKind.REFUND,
       {
         subject: `${store?.name ?? "A store"} refunded ${ghs(refund.amountGhs)} on ${order.reference}`,
         preview: refund.reason,
         heading: "Refund given by a store",
         intro: `${givenBy?.name ?? "Staff"} ${what} an order in ${store?.name ?? "a store"}.`,
         details,
-        action: { label: "View order", url: new URL(`/orders/${orderId}/details`, authURLs.console).toString() },
       },
+      { label: "View order", path: `/orders/${orderId}/details` },
       "store refund"
     )
   } catch (error) {
@@ -308,7 +381,7 @@ export async function notifyRefund(orderId: string, storeId: string | null, refu
 export async function notifyLowRating(reviewId: string) {
   try {
     const settings = await readAppSettings()
-    if (!settings.notifyLowRatings || settings.notificationEmails.length === 0) return
+    if (!settings.notifyLowRatings) return
 
     const review = await prisma.review.findUnique({
       where: { id: reviewId },
@@ -316,8 +389,9 @@ export async function notifyLowRating(reviewId: string) {
     })
     if (!review) return
 
-    await send(
+    await toPlatform(
       settings,
+      NotificationKind.REVIEW,
       {
         subject: `${review.rating}★ review of ${review.product.name}`,
         preview: review.title,
@@ -330,8 +404,8 @@ export async function notifyLowRating(reviewId: string) {
           { label: "Title", value: review.title },
           { label: "Review", value: review.body },
         ],
-        action: { label: "View reviews", url: new URL(`/catalogue/reviews?product=${review.productId}`, authURLs.console).toString() },
       },
+      { label: "View reviews", path: `/catalogue/reviews?product=${review.productId}` },
       "low rating"
     )
   } catch (error) {
@@ -343,7 +417,7 @@ export async function notifyLowRating(reviewId: string) {
 export async function notifyTradeApplication(accountId: string) {
   try {
     const settings = await readAppSettings()
-    if (!settings.notifyTradeApplications || settings.notificationEmails.length === 0) return
+    if (!settings.notifyTradeApplications) return
 
     const account = await prisma.tradeAccount.findUnique({
       where: { id: accountId },
@@ -351,8 +425,9 @@ export async function notifyTradeApplication(accountId: string) {
     })
     if (!account) return
 
-    await send(
+    await toPlatform(
       settings,
+      NotificationKind.TRADE_ACCOUNT,
       {
         subject: `Trade account application: ${account.companyName}`,
         preview: `${account.companyName} · ${BUSINESS_TYPE_LABELS[account.businessType]}`,
@@ -366,8 +441,8 @@ export async function notifyTradeApplication(accountId: string) {
           { label: "Contact", value: `${account.user.name ? `${account.user.name}, ` : ""}${account.user.email}, ${account.phone}` },
           ...(account.details ? [{ label: "About the business", value: account.details }] : []),
         ],
-        action: { label: "Review the application", url: new URL(`/trade-accounts/${accountId}`, authURLs.console).toString() },
       },
+      { label: "Review the application", path: `/trade-accounts/${accountId}` },
       "trade application"
     )
   } catch (error) {
@@ -379,7 +454,7 @@ export async function notifyTradeApplication(accountId: string) {
 export async function notifyNewQuote(quoteId: string) {
   try {
     const settings = await readAppSettings()
-    if (!settings.notifyQuotes || settings.notificationEmails.length === 0) return
+    if (!settings.notifyQuotes) return
 
     const quote = await prisma.quote.findUnique({
       where: { id: quoteId },
@@ -397,8 +472,9 @@ export async function notifyNewQuote(quoteId: string) {
     })
     if (!quote) return
 
-    await send(
+    await toPlatform(
       settings,
+      NotificationKind.QUOTE,
       {
         subject: `New quotation ${quote.reference}`,
         preview: `${quote.tradeCompanyName ?? quote.customerName} · ${ghs(quote.totalGhs)}`,
@@ -414,8 +490,8 @@ export async function notifyNewQuote(quoteId: string) {
           // The last day its prices hold: validUntil is the start of the day after
           { label: "Valid until", value: formatDate(new Date(quote.validUntil.getTime() - 1), "MMM d, yyyy") },
         ],
-        action: { label: "View quotations", url: new URL(`/quotes?search=${quote.reference}`, authURLs.console).toString() },
       },
+      { label: "View quotations", path: `/quotes?search=${quote.reference}` },
       "new quote"
     )
   } catch (error) {
@@ -427,11 +503,12 @@ export async function notifyNewQuote(quoteId: string) {
 export async function notifyRateFetchFailed(date: string, error: string) {
   try {
     const settings = await readAppSettings()
-    if (!settings.notifyRateFetchFailure || settings.notificationEmails.length === 0) return
+    if (!settings.notifyRateFetchFailure) return
 
     const day = formatDate(`${date}T12:00:00Z`, "MMM d, yyyy")
-    await send(
+    await toPlatform(
       settings,
+      NotificationKind.EXCHANGE_RATE,
       {
         subject: `Exchange rate for ${day} wasn't fetched`,
         preview: error,
@@ -441,8 +518,8 @@ export async function notifyRateFetchFailed(date: string, error: string) {
           { label: "Day", value: day },
           { label: "Reason", value: error },
         ],
-        action: { label: "Open Settings", url: new URL("/settings", authURLs.console).toString() },
       },
+      { label: "Open Settings", path: "/settings" },
       "exchange rate"
     )
   } catch (failure) {
@@ -472,16 +549,15 @@ const PAYMENT_PROBLEMS: Record<PaymentProblem, { heading: string; intro: string 
 export async function notifyPaymentProblem(orderId: string, problem: PaymentProblem, paystackReference: string, amountGhs: string) {
   try {
     const settings = await readAppSettings()
-    if (settings.notificationEmails.length === 0) {
-      console.error(`Payment problem (${problem}) on order ${orderId}, Paystack reference ${paystackReference}, and no one to tell`)
-      return
-    }
     const order = await prisma.order.findUnique({ where: { id: orderId }, select: { reference: true, customerName: true, totalGhs: true } })
     if (!order) return
 
+    // Logged as well, in case no one is listening
+    console.error(`Payment problem (${problem}) on order ${orderId}, Paystack reference ${paystackReference}`)
     const { heading, intro } = PAYMENT_PROBLEMS[problem]
-    await send(
+    await toPlatform(
       settings,
+      NotificationKind.PAYMENT_PROBLEM,
       {
         subject: `${heading}: ${order.reference}`,
         preview: `${order.customerName} · ${ghs(amountGhs)}`,
@@ -494,8 +570,8 @@ export async function notifyPaymentProblem(orderId: string, problem: PaymentProb
           { label: "Paid", value: ghs(amountGhs) },
           { label: "Paystack reference", value: paystackReference },
         ],
-        action: { label: "View order", url: new URL(`/orders/${orderId}/details`, authURLs.console).toString() },
       },
+      { label: "View order", path: `/orders/${orderId}/details` },
       "payment problem"
     )
   } catch (error) {
