@@ -192,6 +192,37 @@ export interface ProductListItem {
   missing: string[]
 }
 
+// A catalogue product as a store's staff see it (/store/products/[id]), read-only. Amounts are plain strings.
+export interface StoreProductDetails {
+  id: string
+  name: string
+  brandName: string
+  categoryPath: string
+  status: Status
+  condition: Condition
+  // Rich text (TipTap JSON), rendered with RichTextContent
+  description: string | null
+  images: string[]
+  // The catalogue's suggested prices in USD; each store sets its own
+  baseSellPrice: string
+  baseBuyPrice: string
+  // A product without variants keeps these itself; with variants, each variant does
+  sku: string | null
+  barcode: string | null
+  weight: string | null
+  dimensions: string | null
+  hasVariants: boolean
+  // Not archived ones; label is "Size: M / Colour: Red"
+  variants: { id: string; label: string; sku: string; barcode: string | null; weight: string | null; dimensions: string | null; status: Status }[]
+  // The values set, in the storefront's order
+  specs: { name: string; value: string }[]
+  documents: { id: string; name: string; url: string }[]
+  // Installing one, in GHS, from the product or its category; null when not offered
+  installationFeeGhs: string | null
+  // This store's listing of it, if any
+  listingId: string | null
+}
+
 export interface ProductsParams extends PaginationParams {
   // Matches the name, the SKU or barcode, or any variant's SKU or barcode
   search?: string
@@ -269,7 +300,7 @@ export interface ListingsParams extends PaginationParams {
 // A store listings table row. Prices are strings because Decimal can't be passed to client components
 export interface ListingListItem {
   id: string
-  // The ids open the catalogue's product and brand pages, for system admins
+  // The ids open the product's details page (/store/products/[id]) and, for system admins, the brand's
   product: { id: string; name: string; image: string | null; brandId: string; brandName: string; categoryPath: string; hasVariants: boolean }
   sellPrice: string
   // The lowest and highest price a customer can pay, when variants have their own prices

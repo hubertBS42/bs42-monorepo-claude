@@ -1,5 +1,6 @@
 /* eslint-disable @next/next/no-img-element -- next/image would need the storage host in images.remotePatterns */
 import type { ColumnDef } from "@tanstack/react-table"
+import Link from "next/link"
 import { Star } from "lucide-react"
 import { formatDate } from "@workspace/utils/date"
 import { formatCurrency } from "@workspace/utils/currency"
@@ -50,14 +51,15 @@ export const columns: ColumnDef<ListingListItem, unknown>[] = [
             <RowLink href={getListingHref(row.original)} className="w-fit">
               {product.name}
             </RowLink>
-            {/* The catalogue is global: these switch workspace for system admins, and are plain text for store staff */}
+            {/* The catalogue is global: the brand switches workspace for system admins, and is plain text for store
+                staff. The product's details are a store page, for everyone (with a way to the catalogue for admins). */}
             <div className="flex flex-wrap gap-x-2 text-[11px] text-muted-foreground">
               <GlobalWorkspaceLink href={`/catalogue/brands/${product.brandId}/edit`} className="w-fit">
                 {product.brandName}
               </GlobalWorkspaceLink>
-              <GlobalWorkspaceLink href={`/catalogue/products/${product.id}/edit`} className="w-fit" hideWithoutAccess>
-                View in catalogue
-              </GlobalWorkspaceLink>
+              <Link href={`/store/products/${product.id}`} className="w-fit underline-offset-4 hover:text-foreground hover:underline">
+                Product details
+              </Link>
             </div>
           </div>
         </div>

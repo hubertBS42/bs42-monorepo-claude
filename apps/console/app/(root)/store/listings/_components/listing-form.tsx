@@ -153,6 +153,9 @@ const ListingForm = ({ storeId, data, storefrontLink }: ListingFormProps) => {
                       <p className="font-medium">{product.name}</p>
                       <p className="text-xs text-muted-foreground">{product.brandName}</p>
                       <p className="text-xs text-muted-foreground">{product.categoryPath}</p>
+                      <Link href={`/store/products/${product.id}`} className="w-fit text-xs underline-offset-4 hover:underline">
+                        Product details
+                      </Link>
                     </div>
                   </div>
                   {productStatusNote && <p className="text-sm text-destructive">{productStatusNote}</p>}
