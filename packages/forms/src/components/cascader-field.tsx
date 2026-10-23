@@ -189,7 +189,9 @@ const CascaderField = <T extends FieldValues>({
                 }
               }}
             >
-              <div className="relative">
+              {/* Its width comes from the field, never from the chosen path: without containment the path's full
+                  length widens every grid around it (a dialog's too), so it never truncates */}
+              <div className="relative contain-inline-size">
                 <PopoverTrigger
                   render={
                     <Button
