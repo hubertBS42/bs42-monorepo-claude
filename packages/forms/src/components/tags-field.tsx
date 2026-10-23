@@ -168,7 +168,8 @@ const TagsField = <T extends FieldValues>({
                 <Badge
                   key={`${tag.toLocaleLowerCase()}-${index}`}
                   variant="secondary"
-                  className="h-auto max-w-full gap-1 whitespace-normal"
+                  // text-sm like the input, with no vertical padding so the badge stays 22px and the field 36px
+                  className="h-auto max-w-full gap-1 py-0 text-sm whitespace-normal"
                 >
                   <span className="break-all">{tag}</span>
                   {!disabled && (
