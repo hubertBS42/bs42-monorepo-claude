@@ -4,7 +4,6 @@ import { useRef } from "react"
 import { useWatch, type UseFormReturn } from "react-hook-form"
 import type { AppSettingsData } from "@workspace/contracts"
 import { ImageField, NumberInputField, SwitchField, TagsField, TextareaField, TextInputField } from "@workspace/forms"
-import { FieldGroup } from "@workspace/ui/components/field"
 import type { SectionInput, SectionOutput } from "@/lib/schemas/app-settings.schemas"
 import { deleteImages, uploadImages } from "@/lib/storage"
 import SettingsCard from "./settings-card"
@@ -111,9 +110,11 @@ function TaxFields({ form, isPending }: { form: UseFormReturn<SectionInput<"tax"
   const taxEnabled = useWatch({ control: form.control, name: "taxEnabled" })
   return (
     <>
-      <SwitchField control={form.control} name="taxEnabled" label="Charge tax" description="Add tax to every order" variant="card" disabled={isPending} />
+      <div className="flex flex-col gap-3">
+        <SwitchField control={form.control} name="taxEnabled" label="Charge tax" description="Add tax to every order" variant="card" disabled={isPending} />
+        <SwitchField control={form.control} name="taxShipping" label="Tax delivery fees" description="Charge tax on the delivery fee too" variant="card" disabled={isPending || !taxEnabled} />
+      </div>
       <NumberInputField control={form.control} name="taxRatePercent" label="Tax rate (%)" min={0} max={100} step={0.01} disabled={isPending || !taxEnabled} />
-      <SwitchField control={form.control} name="taxShipping" label="Tax delivery fees" description="Charge tax on the delivery fee too" variant="card" disabled={isPending || !taxEnabled} />
     </>
   )
 }
@@ -126,11 +127,7 @@ export function MarkupCard({ settings }: CardProps) {
       title="Exchange Rate Markup"
       description="Added to the rate fetched each day, to cover the cedi weakening between pricing and payment (quotations hold their prices for days). A rate set by hand above is used as typed. 0 adds nothing."
     >
-      {(form, isPending) => (
-        <div className="max-w-60">
-          <NumberInputField control={form.control} name="exchangeRateMarkupPercent" label="Markup (%)" min={0} max={10} step={0.01} disabled={isPending} />
-        </div>
-      )}
+      {(form, isPending) => <NumberInputField control={form.control} name="exchangeRateMarkupPercent" label="Markup (%)" min={0} max={10} step={0.01} disabled={isPending} />}
     </SettingsCard>
   )
 }
@@ -143,11 +140,7 @@ export function QuotationsCard({ settings }: CardProps) {
       title="Quotations"
       description="How long a quotation's prices hold, whatever the exchange rate does; its stock isn't held. Staff can choose another length on a quotation they make."
     >
-      {(form, isPending) => (
-        <div className="max-w-60">
-          <NumberInputField control={form.control} name="quoteValidityDays" label="Valid for (days)" min={1} max={90} step={1} disabled={isPending} />
-        </div>
-      )}
+      {(form, isPending) => <NumberInputField control={form.control} name="quoteValidityDays" label="Valid for (days)" min={1} max={90} step={1} disabled={isPending} />}
     </SettingsCard>
   )
 }
@@ -178,11 +171,11 @@ export function NotificationsCard({ settings }: CardProps) {
             maxTags={10}
             disabled={isPending}
           />
-          <FieldGroup className="gap-3">
+          <div className="flex flex-col gap-3">
             {NOTIFICATION_SWITCHES.map((item) => (
               <SwitchField key={item.name} control={form.control} name={item.name} label={item.label} description={item.description} variant="card" disabled={isPending} />
             ))}
-          </FieldGroup>
+          </div>
         </>
       )}
     </SettingsCard>

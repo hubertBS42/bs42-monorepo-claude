@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm, type SubmitHandler } from "react-hook-form"
 import type { z } from "zod"
-import { ExternalLink } from "lucide-react"
+import { ExternalLink, Save } from "lucide-react"
 import RichTextField from "@workspace/forms/components/rich-text-editor/rich-text-field"
 import { Button } from "@workspace/ui/components/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@workspace/ui/components/card"
@@ -81,7 +81,13 @@ export default function LegalCard({ pages, storefrontUrl }: { pages: LegalPagesV
 
           <div className="flex justify-end">
             <Button type="submit" disabled={isPending || !form.formState.isDirty}>
-              {isPending ? <Spinner /> : "Save legal pages"}
+              {isPending ? (
+                <Spinner />
+              ) : (
+                <>
+                  <Save /> Save
+                </>
+              )}
             </Button>
           </div>
         </form>

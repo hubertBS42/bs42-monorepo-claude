@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useFieldArray, useForm, useWatch, type SubmitHandler, type UseFormReturn } from "react-hook-form"
 import type { z } from "zod"
-import { PlusCircle, X } from "lucide-react"
+import { PlusCircle, Save, X } from "lucide-react"
 import { GEODATA } from "@workspace/contracts"
 import { ComboboxField, SwitchField } from "@workspace/forms"
 import { Button } from "@workspace/ui/components/button"
@@ -87,7 +87,13 @@ export default function InstallationCard({ settings }: { settings: InstallationA
 
           <div className="flex justify-end">
             <Button type="submit" disabled={isPending || !form.formState.isDirty}>
-              {isPending ? <Spinner /> : "Save installation areas"}
+              {isPending ? (
+                <Spinner />
+              ) : (
+                <>
+                  <Save /> Save
+                </>
+              )}
             </Button>
           </div>
         </form>

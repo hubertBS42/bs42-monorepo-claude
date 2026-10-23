@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { SubmitHandler, useForm } from "react-hook-form"
 import { z } from "zod"
+import { Save } from "lucide-react"
 import { NumberInputField } from "@workspace/forms"
 import { Button } from "@workspace/ui/components/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@workspace/ui/components/card"
@@ -63,14 +64,18 @@ export default function ExchangeRateCard({ latest, maxAgeDays }: { latest: Excha
               ? `Latest: GH₵${Number(latest.rate)} per $1 for ${formatDate(`${latest.date}T12:00:00Z`, "MMM d, yyyy")}, ${latest.source === "MANUAL" ? "set by hand" : `fetched from Open Exchange Rates${latest.marketRate && latest.marketRate !== latest.rate ? ` (market rate GH₵${Number(latest.marketRate)}, plus the markup)` : ""}`}.${latest.isStale ? " It's too old for new orders." : ""}`
               : "No rate has been set, so no order can be priced yet."}
           </p>
-          <div className="flex items-end gap-2">
-            <div className="max-w-56 flex-1">
-              {/* The field rounds to its step when it loses focus, so the step matches the six decimals rates are stored
-                  (and fetched) with: a coarser one would change a fetched rate just by clicking in and out */}
-              <NumberInputField control={form.control} label="Today's rate (GHS per $1)" name="rate" step={0.000001} min={0} prependText="GH₵" disabled={isPending} />
-            </div>
+          {/* The field rounds to its step when it loses focus, so the step matches the six decimals rates are stored
+              (and fetched) with: a coarser one would change a fetched rate just by clicking in and out */}
+          <NumberInputField control={form.control} label="Today's rate (GHS per $1)" name="rate" step={0.000001} min={0} prependText="GH₵" disabled={isPending} />
+          <div className="flex justify-end">
             <Button type="submit" disabled={isPending || !form.formState.isDirty}>
-              {isPending ? <Spinner /> : "Save rate"}
+              {isPending ? (
+                <Spinner />
+              ) : (
+                <>
+                  <Save /> Save
+                </>
+              )}
             </Button>
           </div>
         </form>

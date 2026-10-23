@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useFieldArray, useForm, type SubmitHandler, type UseFormReturn } from "react-hook-form"
 import type { z } from "zod"
-import { PlusCircle, X } from "lucide-react"
+import { PlusCircle, Save, X } from "lucide-react"
 import { GEODATA } from "@workspace/contracts"
 import { ComboboxField, NumberInputField } from "@workspace/forms"
 import { Button } from "@workspace/ui/components/button"
@@ -81,18 +81,16 @@ export default function DeliveryCard({ settings }: { settings: DeliverySettingsV
           }}
           className="grid gap-6"
         >
-          <div className="max-w-72">
-            <NumberInputField
-              control={form.control}
-              label="Free delivery from"
-              name="freeDeliveryFromGhs"
-              step={0.01}
-              min={0}
-              prependText="GH₵"
-              description="For orders whose subtotal, after any discount, reaches this. Leave empty to always charge."
-              disabled={isPending}
-            />
-          </div>
+          <NumberInputField
+            control={form.control}
+            label="Free delivery from"
+            name="freeDeliveryFromGhs"
+            step={0.01}
+            min={0}
+            prependText="GH₵"
+            description="For orders whose subtotal, after any discount, reaches this. Leave empty to always charge."
+            disabled={isPending}
+          />
 
           <div className="grid gap-1">
             <div className="grid grid-cols-[minmax(0,1fr)_10rem] gap-4 px-1 text-sm font-medium text-muted-foreground">
@@ -107,7 +105,13 @@ export default function DeliveryCard({ settings }: { settings: DeliverySettingsV
 
           <div className="flex justify-end">
             <Button type="submit" disabled={isPending || !form.formState.isDirty}>
-              {isPending ? <Spinner /> : "Save delivery fees"}
+              {isPending ? (
+                <Spinner />
+              ) : (
+                <>
+                  <Save /> Save
+                </>
+              )}
             </Button>
           </div>
         </form>

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm, type DefaultValues, type UseFormReturn } from "react-hook-form"
 import type { z } from "zod"
+import { Save } from "lucide-react"
 import type { AppSettingsData } from "@workspace/contracts"
 import { Button } from "@workspace/ui/components/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@workspace/ui/components/card"
@@ -73,7 +74,13 @@ function SettingsCardForm<S extends SettingsSection>({ section, settings, title,
           <FieldGroup>{children(form, isPending)}</FieldGroup>
           <div className="flex justify-end">
             <Button type="submit" disabled={isPending || !form.formState.isDirty}>
-              {isPending ? <Spinner /> : "Save"}
+              {isPending ? (
+                <Spinner />
+              ) : (
+                <>
+                  <Save /> Save
+                </>
+              )}
             </Button>
           </div>
         </form>
