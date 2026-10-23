@@ -188,6 +188,8 @@ export interface ProductListItem {
   // Archived variants and listings aren't counted; 0 variants means a simple product
   variantCount: number
   storeCount: number
+  // What it lacks that customers would see (PRODUCT_DETAILS in lib/data/products.data.ts), e.g. ["pictures"]
+  missing: string[]
 }
 
 export interface ProductsParams extends PaginationParams {
@@ -199,6 +201,8 @@ export interface ProductsParams extends PaginationParams {
   categoryId?: string
   condition?: Condition
   hasVariants?: boolean
+  // true: missing a picture, a description or a sell price; false: has all three
+  incomplete?: boolean
 }
 export type ProductsData = PaginatedResult<ProductListItem>
 

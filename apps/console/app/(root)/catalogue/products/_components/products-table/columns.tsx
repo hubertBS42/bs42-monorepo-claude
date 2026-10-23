@@ -101,7 +101,12 @@ export const columns: ColumnDef<ProductListItem, unknown>[] = [
   {
     accessorKey: "status",
     header: () => <ColumnHeader title="Status" sortKey="status" />,
-    cell: ({ row }) => genStatusBadge(row.original.status),
+    cell: ({ row }) => (
+      <div className="grid justify-items-start gap-y-0.5">
+        {genStatusBadge(row.original.status)}
+        {row.original.missing.length > 0 && <span className="text-[11px] text-muted-foreground">{`Missing ${row.original.missing.join(", ")}`}</span>}
+      </div>
+    ),
   },
   {
     accessorKey: "updatedAt",

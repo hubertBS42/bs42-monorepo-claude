@@ -7,7 +7,7 @@ export function getProductFilters({ brands, categories }: ProductFilterOptions):
     { key: "search", label: "Search", type: "text", placeholder: "Search name, SKU or barcode" },
     { key: "brandId", label: "Brand", type: "select", placeholder: "All brands", options: [{ label: "All brands", value: "all" }, ...brands] },
     // Choosing a category also shows the products in the categories under it
-    { key: "categoryId", label: "Category", type: "select", placeholder: "All categories", options: [{ label: "All categories", value: "all" }, ...categories] },
+    { key: "categoryId", label: "Category", type: "tree", placeholder: "All categories", tree: categories },
     { key: "condition", label: "Condition", type: "select", placeholder: "All conditions", options: [{ label: "All conditions", value: "all" }, ...CONDITION_OPTIONS] },
     {
       key: "hasVariants",
@@ -20,5 +20,15 @@ export function getProductFilters({ brands, categories }: ProductFilterOptions):
       ],
     },
     { key: "status", label: "Status", type: "select", placeholder: "All statuses", options: [{ label: "All statuses", value: "all" }, ...STATUS_OPTIONS] },
+    {
+      key: "incomplete",
+      label: "Details",
+      type: "boolean",
+      placeholder: "All products",
+      options: [
+        { label: "Missing details", value: "true" },
+        { label: "Complete", value: "false" },
+      ],
+    },
   ]
 }

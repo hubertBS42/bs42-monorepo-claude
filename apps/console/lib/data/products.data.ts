@@ -7,6 +7,8 @@ import { headers } from "next/headers"
 import { prisma } from "@workspace/db"
 import { Status } from "@workspace/db/enums"
 import type { DataResponse } from "@workspace/contracts"
+import { Prisma } from "@workspace/db/client"
+import type { CascaderOption } from "@workspace/ui/components/cascader"
 import { getPaginationError } from "@workspace/utils/pagination"
 import { z } from "zod"
 import { toSpecFormValue } from "@/lib/product-specs"
@@ -48,6 +50,19 @@ export function getSubtreeIds(categories: CategoryRow[], rootId: string) {
   return ids
 }
 
+// What a product needs before it looks finished to customers, each with its check for the "Details" filter. A
+// published product with no price is refused anyway, but a draft can lack one.
+const PRODUCT_DETAILS = [
+  // Products created without pictures (the seed's) hold NULL, which Prisma reads as [] but isEmpty doesn't match
+  { label: "pictures", missing: { OR: [{ images: { isEmpty: true } }, { images: { equals: null } }] }, present: { images: { isEmpty: false } } },
+  // An empty editor is saved as null
+  { label: "description", missing: { description: null }, present: { description: { not: null } } },
+  { label: "sell price", missing: { baseSellPrice: { lte: 0 } }, present: { baseSellPrice: { gt: 0 } } },
+] satisfies { label: string; missing: Prisma.ProductWhereInput; present: Prisma.ProductWhereInput }[]
+
+const missingDetails = (product: { images: string[]; description: string | null; baseSellPrice: Prisma.Decimal }) =>
+  [product.images.length === 0 && "pictures", product.description === null && "description", product.baseSellPrice.lte(0) && "sell price"].filter((label) => label !== false)
+
 export const getProductsForTable = async (filters: ProductsParams = {}): Promise<DataResponse<ProductsData>> => {
   try {
     const session = await getSession()
@@ -60,13 +75,14 @@ export const getProductsForTable = async (filters: ProductsParams = {}): Promise
     if (paginationError) {
       return { success: false, error: paginationError }
     }
-    const { search, status, brandId, categoryId, condition, hasVariants, page = 1, pageSize = 10, sort, order } = filters
+    const { search, status, brandId, categoryId, condition, hasVariants, incomplete, page = 1, pageSize = 10, sort, order } = filters
 
     // The whole tree is small: one read gives every row's path and the category filter's subtree
     const categories = await prisma.category.findMany({ select: { id: true, name: true, parentId: true } })
 
     const contains = search ? { contains: search, mode: "insensitive" as const } : undefined
-    const where = {
+    const where: Prisma.ProductWhereInput = {
+      ...(incomplete !== undefined && (incomplete ? { AND: [{ OR: PRODUCT_DETAILS.map((detail) => detail.missing) }] } : { AND: PRODUCT_DETAILS.map((detail) => detail.present) })),
       ...(contains && {
         OR: [{ name: contains }, { sku: contains }, { barcode: contains }, { variants: { some: { OR: [{ sku: contains }, { barcode: contains }] } } }],
       }),
@@ -88,6 +104,7 @@ export const getProductsForTable = async (filters: ProductsParams = {}): Promise
           id: true,
           name: true,
           images: true,
+          description: true,
           brand: { select: { id: true, name: true } },
           baseSellPrice: true,
           baseBuyPrice: true,
@@ -108,8 +125,9 @@ export const getProductsForTable = async (filters: ProductsParams = {}): Promise
     return {
       success: true,
       data: {
-        data: products.map(({ _count, categoryId, baseSellPrice, baseBuyPrice, ...product }) => ({
+        data: products.map(({ _count, categoryId, baseSellPrice, baseBuyPrice, description, ...product }) => ({
           ...product,
+          missing: missingDetails({ images: product.images, description, baseSellPrice }),
           baseSellPrice: baseSellPrice.toString(),
           baseBuyPrice: baseBuyPrice.toString(),
           categoryPath: categoryPaths.get(categoryId) ?? "",
@@ -129,7 +147,8 @@ export const getProductsForTable = async (filters: ProductsParams = {}): Promise
 
 export interface ProductFilterOptions {
   brands: { label: string; value: string }[]
-  categories: { label: string; value: string }[]
+  // The tree, for the category filter
+  categories: CascaderOption[]
 }
 
 // Archived brands and categories still have products, so they're offered too, marked as archived
@@ -140,17 +159,19 @@ export const getProductFilterOptions = async (): Promise<DataResponse<ProductFil
 
     const [brands, categories] = await Promise.all([
       prisma.brand.findMany({ select: { id: true, name: true, status: true }, orderBy: [{ name: "asc" }, { id: "asc" }] }),
-      prisma.category.findMany({ select: { id: true, name: true, parentId: true, status: true } }),
+      prisma.category.findMany({ select: { id: true, name: true, parentId: true, status: true }, orderBy: [{ position: "asc" }, { name: "asc" }, { id: "asc" }] }),
     ])
 
     const archived = (name: string, status: Status) => (status === Status.ARCHIVED ? `${name} (archived)` : name)
-    const paths = getCategoryPaths(categories)
+    // The tree is small, so each level filters the whole list
+    const toTree = (parentId: string | null): CascaderOption[] =>
+      categories.filter((category) => category.parentId === parentId).map((category) => ({ label: archived(category.name, category.status), value: category.id, children: toTree(category.id) }))
 
     return {
       success: true,
       data: {
         brands: brands.map((brand) => ({ label: archived(brand.name, brand.status), value: brand.id })),
-        categories: categories.map((category) => ({ label: archived(paths.get(category.id) ?? category.name, category.status), value: category.id })).sort((a, b) => a.label.localeCompare(b.label)),
+        categories: toTree(null),
       },
     }
   } catch (error) {

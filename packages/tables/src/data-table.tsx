@@ -1,6 +1,7 @@
 "use client"
 
 import type { ReactNode } from "react"
+import type { CascaderOption } from "@workspace/ui/components/cascader"
 import { flexRender, getCoreRowModel, useReactTable, type ColumnDef } from "@tanstack/react-table"
 import { Button } from "@workspace/ui/components/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@workspace/ui/components/table"
@@ -10,7 +11,7 @@ import FiltersToolbar from "./filters-toolbar"
 import Pagination from "./pagination"
 import { useRowLink } from "./use-row-link"
 
-export type FilterType = "text" | "select" | "date" | "dateRange" | "number" | "numberRange" | "boolean"
+export type FilterType = "text" | "select" | "tree" | "date" | "dateRange" | "number" | "numberRange" | "boolean"
 
 export interface FilterConfig {
   key: string
@@ -18,6 +19,8 @@ export interface FilterConfig {
   type: FilterType
   placeholder?: string
   options?: Array<{ label: string; value: string }>
+  // For "tree": nested options (categories), any level of which can be chosen
+  tree?: CascaderOption[]
 }
 
 export interface PaginationConfig {

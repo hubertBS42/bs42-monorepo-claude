@@ -1,7 +1,6 @@
 "use client"
 
 import * as React from "react"
-import { Check, ChevronRight, ChevronsUpDown, X } from "lucide-react"
 import {
   Controller,
   type Control,
@@ -9,34 +8,19 @@ import {
   type Path,
 } from "react-hook-form"
 
-import { Button } from "@workspace/ui/components/button"
 import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-  CommandShortcut,
-} from "@workspace/ui/components/command"
+  Cascader,
+  type CascaderOption,
+} from "@workspace/ui/components/cascader"
 import {
   Field,
   FieldDescription,
   FieldError,
   FieldLabel,
 } from "@workspace/ui/components/field"
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@workspace/ui/components/popover"
 import { cn } from "@workspace/ui/lib/utils"
 
-export type CascaderOption = {
-  label: string
-  value: string
-  children?: CascaderOption[]
-}
+export type { CascaderOption }
 
 interface CascaderFieldProps<T extends FieldValues> {
   control: Control<T>
@@ -54,56 +38,7 @@ interface CascaderFieldProps<T extends FieldValues> {
   clearable?: boolean
 }
 
-type SearchResult = {
-  item: CascaderOption
-  fullPath: string
-}
-
-const isSelectable = (item: CascaderOption, leafOnly: boolean) =>
-  !leafOnly || !item.children || item.children.length === 0
-
-const findPathByValue = (
-  value: string,
-  items: CascaderOption[],
-  currentPath: CascaderOption[] = []
-): CascaderOption[] | null => {
-  for (const item of items) {
-    const nextPath = [...currentPath, item]
-    if (item.value === value) return nextPath
-    if (item.children) {
-      const result = findPathByValue(value, item.children, nextPath)
-      if (result) return result
-    }
-  }
-  return null
-}
-
-const searchOptions = (
-  items: CascaderOption[],
-  term: string,
-  leafOnly: boolean,
-  parentLabels: string[] = []
-): SearchResult[] => {
-  const results: SearchResult[] = []
-
-  for (const item of items) {
-    const labels = [...parentLabels, item.label]
-
-    if (
-      isSelectable(item, leafOnly) &&
-      item.label.toLowerCase().includes(term.toLowerCase())
-    ) {
-      results.push({ item, fullPath: labels.join(" / ") })
-    }
-
-    if (item.children) {
-      results.push(...searchOptions(item.children, term, leafOnly, labels))
-    }
-  }
-
-  return results
-}
-
+// The Cascader as a react-hook-form field, with its label, description and error
 const CascaderField = <T extends FieldValues>({
   control,
   name,
@@ -125,31 +60,6 @@ const CascaderField = <T extends FieldValues>({
   const descriptionId = `${inputId}-description`
   const errorId = `${inputId}-error`
 
-  const [open, setOpen] = React.useState(false)
-  const [path, setPath] = React.useState<CascaderOption[]>([])
-  const [searchTerm, setSearchTerm] = React.useState("")
-  const searchMode = searchTerm.length > 0
-
-  const getDisplayValue = (value: string | null | undefined) => {
-    if (!value) return null
-    const fullPath = findPathByValue(value, options)
-    return fullPath ? fullPath.map((item) => item.label).join(" / ") : null
-  }
-
-  const getColumn = (level: number) =>
-    level === 0 ? options : (path[level - 1]?.children ?? [])
-
-  const handleSelect = (
-    item: CascaderOption,
-    level: number,
-    onChange: (value: string | null) => void
-  ) => {
-    setPath([...path.slice(0, level), item])
-    if (isSelectable(item, leafOnly)) onChange(item.value)
-  }
-
-  const numColumns = path.length + 1
-
   return (
     <Controller
       control={control}
@@ -162,7 +72,6 @@ const CascaderField = <T extends FieldValues>({
           ]
             .filter(Boolean)
             .join(" ") || undefined
-        const displayValue = getDisplayValue(field.value)
 
         return (
           <Field
@@ -172,192 +81,22 @@ const CascaderField = <T extends FieldValues>({
           >
             {label && <FieldLabel htmlFor={inputId}>{label}</FieldLabel>}
 
-            <Popover
-              open={open}
-              onOpenChange={(isOpen) => {
-                setOpen(isOpen)
-                if (isOpen) {
-                  setPath(
-                    field.value
-                      ? (findPathByValue(field.value, options) ?? [])
-                      : []
-                  )
-                } else {
-                  setSearchTerm("")
-                  setPath([])
-                  field.onBlur()
-                }
-              }}
-            >
-              {/* Its width comes from the field, never from the chosen path: without containment the path's full
-                  length widens every grid around it (a dialog's too), so it never truncates */}
-              <div className="relative contain-inline-size">
-                <PopoverTrigger
-                  render={
-                    <Button
-                      type="button"
-                      id={inputId}
-                      ref={field.ref}
-                      variant="outline"
-                      role="combobox"
-                      disabled={disabled}
-                      aria-expanded={open}
-                      aria-invalid={fieldState.invalid}
-                      aria-describedby={describedBy}
-                      className={cn(
-                        "w-full justify-between font-normal",
-                        displayValue && clearable && "pe-8",
-                        size === "sm" && "h-9 text-xs"
-                      )}
-                    />
-                  }
-                >
-                  <span
-                    className={cn(
-                      "min-w-0 truncate text-left",
-                      !displayValue && "text-muted-foreground"
-                    )}
-                  >
-                    {displayValue ?? placeholder}
-                  </span>
-                  {!(displayValue && clearable) && (
-                    <ChevronsUpDown className="size-4 shrink-0 opacity-50" />
-                  )}
-                </PopoverTrigger>
-                {displayValue && clearable && (
-                  <button
-                    type="button"
-                    aria-label="Clear selection"
-                    disabled={disabled}
-                    className="inset-e-2 absolute top-1/2 -translate-y-1/2 rounded-xs opacity-50 hover:opacity-100 disabled:pointer-events-none"
-                    onClick={(event) => {
-                      event.stopPropagation()
-                      setPath([])
-                      field.onChange(null)
-                    }}
-                  >
-                    <X className="size-4" />
-                  </button>
-                )}
-              </div>
-
-              <PopoverContent
-                align="start"
-                className="w-auto max-w-[min(90vw,48rem)] gap-0 p-0"
-              >
-                <Command shouldFilter={false}>
-                  <CommandInput
-                    placeholder="Search..."
-                    value={searchTerm}
-                    onValueChange={setSearchTerm}
-                  />
-                  <CommandList className="px-1 pt-1.25">
-                    <CommandEmpty>No results found.</CommandEmpty>
-                    {searchMode ? (
-                      <CommandGroup>
-                        {searchOptions(options, searchTerm, leafOnly).map(
-                          ({ item, fullPath }) => {
-                            const isSelected = field.value === item.value
-                            const isDisabled = disabledOptions.includes(
-                              item.value
-                            )
-
-                            return (
-                              <CommandItem
-                                key={item.value}
-                                value={fullPath}
-                                disabled={isDisabled}
-                                className="rounded-none"
-                                onSelect={() => {
-                                  field.onChange(item.value)
-                                  setOpen(false)
-                                }}
-                              >
-                                <Check
-                                  aria-hidden="true"
-                                  className={cn(
-                                    "size-4",
-                                    isSelected ? "opacity-100" : "opacity-0"
-                                  )}
-                                />
-                                <span className="min-w-0 flex-1 truncate">
-                                  {fullPath}
-                                </span>
-                              </CommandItem>
-                            )
-                          }
-                        )}
-                      </CommandGroup>
-                    ) : (
-                      <div className="flex max-h-75">
-                        {Array.from({ length: numColumns }).map((_, level) => {
-                          const items = getColumn(level)
-                          if (items.length === 0) return null
-
-                          return (
-                            <CommandGroup
-                              key={level}
-                              className="min-w-45 overflow-y-auto border-e-0 p-0"
-                            >
-                              {items.map((item) => {
-                                const isActiveBranch =
-                                  path[level]?.value === item.value
-                                const isFinalSelected =
-                                  field.value === item.value
-                                const isDisabled = disabledOptions.includes(
-                                  item.value
-                                )
-                                const selectable = isSelectable(item, leafOnly)
-
-                                return (
-                                  <CommandItem
-                                    key={item.value}
-                                    value={item.value}
-                                    disabled={isDisabled}
-                                    className={cn(
-                                      "rounded-none",
-                                      isActiveBranch && "bg-accent",
-                                      !selectable && "cursor-default"
-                                    )}
-                                    onSelect={() =>
-                                      handleSelect(item, level, field.onChange)
-                                    }
-                                  >
-                                    <span className="min-w-0 flex-1 truncate">
-                                      {item.label}
-                                    </span>
-                                    <CommandShortcut className="flex items-center gap-1">
-                                      {isFinalSelected && (
-                                        <Check
-                                          aria-hidden="true"
-                                          className="size-4"
-                                        />
-                                      )}
-                                      {item.children &&
-                                        item.children.length > 0 && (
-                                          <ChevronRight
-                                            aria-hidden="true"
-                                            className={cn(
-                                              "size-4",
-                                              leafOnly
-                                                ? "opacity-30"
-                                                : "opacity-50"
-                                            )}
-                                          />
-                                        )}
-                                    </CommandShortcut>
-                                  </CommandItem>
-                                )
-                              })}
-                            </CommandGroup>
-                          )
-                        })}
-                      </div>
-                    )}
-                  </CommandList>
-                </Command>
-              </PopoverContent>
-            </Popover>
+            <Cascader
+              id={inputId}
+              triggerRef={field.ref}
+              value={field.value}
+              onChange={field.onChange}
+              onClose={field.onBlur}
+              options={options}
+              disabledOptions={disabledOptions}
+              leafOnly={leafOnly}
+              clearable={clearable}
+              disabled={disabled}
+              placeholder={placeholder}
+              size={size}
+              aria-invalid={fieldState.invalid}
+              aria-describedby={describedBy}
+            />
 
             {description && (
               <FieldDescription id={descriptionId}>

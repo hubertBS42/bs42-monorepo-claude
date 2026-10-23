@@ -6,6 +6,7 @@ import { Button } from "@workspace/ui/components/button"
 import { FieldLabel } from "@workspace/ui/components/field"
 import { Input } from "@workspace/ui/components/input"
 import ClientOnlySelect from "@workspace/ui/components/client-only-select"
+import { Cascader } from "@workspace/ui/components/cascader"
 import { X } from "lucide-react"
 import type { FilterConfig } from "./data-table"
 import DateFilter from "./filters/date-filter"
@@ -132,6 +133,23 @@ const FiltersToolbar = ({ filters }: FiltersToolbarProps) => {
                 loadingPlaceholder="All"
                 placeholder={filter.placeholder ?? "Select..."}
                 className="w-full"
+              />
+            )}
+            {filter.type === "tree" && (
+              <Cascader
+                id={filter.key}
+                value={values[filter.key] || null}
+                onChange={(value) => {
+                  const newValues = { ...values, [filter.key]: value ?? "" }
+                  setValues(newValues)
+                  applyFilters(newValues)
+                }}
+                options={filter.tree ?? []}
+                leafOnly={false}
+                clearable
+                size="xs"
+                disabled={isPending}
+                placeholder={filter.placeholder ?? "All"}
               />
             )}
             {filter.type === "number" && (
