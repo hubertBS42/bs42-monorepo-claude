@@ -10,6 +10,7 @@ import PhoneField from "@workspace/forms/components/phone-field"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@workspace/ui/components/card"
 import { FieldGroup } from "@workspace/ui/components/field"
 import { toast } from "@workspace/ui/components/toast"
+import { cn } from "@workspace/ui/lib/utils"
 import SharedFormFooter from "@/components/shared-form-footer"
 import SharedFormHeader from "@/components/shared-form-header"
 import { createSupplierAction, updateSupplierAction } from "@/lib/actions/supplier.actions"
@@ -82,8 +83,8 @@ export default function SupplierForm({ storeId, supplier }: SupplierFormProps) {
 
         <div className="grid gap-8">
           <div className="grid items-start gap-4 lg:grid-cols-3">
-            {/* Left column */}
-            <div className="grid gap-4 lg:col-span-2">
+            {/* Left column, the whole width when adding: the right column's cards are for a saved supplier */}
+            <div className={cn("grid gap-4", supplier ? "lg:col-span-2" : "lg:col-span-3")}>
               <Card>
                 <CardHeader>
                   <CardTitle>Supplier Details</CardTitle>
