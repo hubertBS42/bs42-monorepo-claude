@@ -18,7 +18,7 @@ export function StorefrontCard({ settings }: CardProps) {
       {(form, isPending) => (
         <>
           <TextInputField control={form.control} name="storeName" label="Name" disabled={isPending} />
-          <TextareaField control={form.control} name="storeDescription" label="Description" placeholder="A short description (160 characters maximum)" disabled={isPending} />
+          <TextareaField control={form.control} name="storeDescription" label="Description" placeholder="A short description" showCount maxLength={160} disabled={isPending} />
         </>
       )}
     </SettingsCard>
@@ -31,7 +31,7 @@ export function ConsoleCard({ settings }: CardProps) {
       {(form, isPending) => (
         <>
           <TextInputField control={form.control} name="consoleName" label="Name" placeholder="Leave empty to use the storefront name" disabled={isPending} />
-          <TextareaField control={form.control} name="consoleDescription" label="Description" placeholder="A short description (160 characters maximum)" disabled={isPending} />
+          <TextareaField control={form.control} name="consoleDescription" label="Description" placeholder="A short description" showCount maxLength={160} disabled={isPending} />
         </>
       )}
     </SettingsCard>
