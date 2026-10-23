@@ -10,7 +10,8 @@ import { Card, CardContent } from "@workspace/ui/components/card"
 import { formatDate } from "@workspace/utils/date"
 
 import { formatGhs } from "@/lib/money"
-import { isExpired, MAX_OPEN_QUOTES } from "@/lib/quotes"
+import { isExpired, quoteOwnerWhere } from "@workspace/commerce/quotes"
+import { MAX_OPEN_QUOTES } from "@/lib/quotes"
 import { requireCustomer } from "@/lib/session"
 
 export const metadata: Metadata = { title: "Quotations", robots: { index: false } }
@@ -19,7 +20,8 @@ export const metadata: Metadata = { title: "Quotations", robots: { index: false 
 export default async function AccountQuotesPage() {
   const session = await requireCustomer("/account/quotes")
   const quotes = await prisma.quote.findMany({
-    where: { userId: session.user.id },
+    // Those it made, and those staff made for its email
+    where: quoteOwnerWhere(session.user),
     orderBy: { createdAt: "desc" },
     take: 50,
     select: {
@@ -52,7 +54,7 @@ export default async function AccountQuotesPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <p className="text-sm text-muted-foreground">{`You can have up to ${MAX_OPEN_QUOTES} open quotations at once.`}</p>
+      <p className="text-sm text-muted-foreground">{`You can make up to ${MAX_OPEN_QUOTES} open quotations at once. Quotations we prepare for you don't count.`}</p>
       <ul className="flex flex-col gap-3">
         {quotes.map((quote) => {
           const expired = isExpired(quote)

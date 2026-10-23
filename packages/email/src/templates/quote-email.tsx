@@ -11,11 +11,13 @@ interface QuoteEmailProps {
   appName: string
   /** Absolute https URL of the uploaded logo. When missing, the app name is shown as text instead. */
   logoUrl?: string | null
+  /** The staff member's first name when the quotation was made for the customer; left out when they made it themselves */
+  preparedBy?: string | null
 }
 
-// Sent when a customer makes a quotation from their basket: its link, which they can forward to whoever approves the
-// purchase
-export const QuoteEmail = ({ name, reference, total, validUntil, url, appName, logoUrl }: QuoteEmailProps) => {
+// Sent when a customer makes a quotation from their basket, or staff make one for them: its link, which they can forward
+// to whoever approves the purchase
+export const QuoteEmail = ({ name, reference, total, validUntil, url, appName, logoUrl, preparedBy }: QuoteEmailProps) => {
   const previewText = `Your quotation ${reference}, valid until ${validUntil}`
 
   return (
@@ -35,8 +37,9 @@ export const QuoteEmail = ({ name, reference, total, validUntil, url, appName, l
               <Heading className="m-0 mb-2 text-xl font-semibold text-[#18181b]">Quotation {reference}</Heading>
               <Text className="mt-0 text-sm leading-relaxed text-[#71717a]">Hi {name},</Text>
               <Text className="mt-0 text-sm leading-relaxed text-[#71717a]">
-                Here&apos;s your quotation for <strong className="text-[#18181b]">{total}</strong>. Its prices hold until <strong className="text-[#18181b]">{validUntil}</strong>; the items
-                aren&apos;t reserved, so they&apos;re subject to availability. Print it or forward this link to whoever approves the purchase, then accept it to pay.
+                {preparedBy ? `${preparedBy} at ${appName} has prepared a quotation for you, for ` : "Here's your quotation for "}
+                <strong className="text-[#18181b]">{total}</strong>. Its prices hold until <strong className="text-[#18181b]">{validUntil}</strong>; the items aren&apos;t reserved, so they&apos;re
+                subject to availability. Print it or forward this link to whoever approves the purchase, then accept it to pay.
               </Text>
 
               <Section className="my-8 text-center">
@@ -47,7 +50,11 @@ export const QuoteEmail = ({ name, reference, total, validUntil, url, appName, l
 
               <Hr className="my-6 border-[#e4e4e7]" />
 
-              <Text className="text-xs leading-relaxed text-[#71717a]">Anyone with this link can see the quotation, but only you can accept it.</Text>
+              <Text className="text-xs leading-relaxed text-[#71717a]">
+                {preparedBy
+                  ? "Anyone with this link can see the quotation. To accept it, sign in with this email address, or create an account with it. To pay by bank transfer instead, reply to us."
+                  : "Anyone with this link can see the quotation, but only you can accept it."}
+              </Text>
 
               <Text className="mt-0 text-xs text-[#71717a]">If the button above doesn&apos;t work, copy and paste this URL into your browser:</Text>
               <Text className="mt-0 text-xs break-all text-[#18181b]">{url}</Text>
@@ -58,7 +65,9 @@ export const QuoteEmail = ({ name, reference, total, validUntil, url, appName, l
               <Text className="m-0 text-center text-xs text-[#a1a1aa]">
                 © {new Date().getFullYear()} {appName}. All rights reserved.
               </Text>
-              <Text className="m-0 mt-1 text-center text-xs text-[#a1a1aa]">You&apos;re receiving this email because you made a quotation on our website.</Text>
+              <Text className="m-0 mt-1 text-center text-xs text-[#a1a1aa]">
+                {preparedBy ? "You're receiving this email because we prepared a quotation for you." : "You're receiving this email because you made a quotation on our website."}
+              </Text>
             </Section>
           </Container>
         </Body>

@@ -38,6 +38,8 @@
     "./order-writes": "./src/order-writes.ts",
     "./paystack": "./src/paystack.ts",
     "./pricing": "./src/pricing.ts",
+    "./quote-emails": "./src/quote-emails.ts",
+    "./quotes": "./src/quotes.ts",
     "./reviews": "./src/reviews.ts",
     "./stock-movements": "./src/stock-movements.ts",
     "./trade-account-status": "./src/trade-account-status.ts",

@@ -2,7 +2,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
 import { notFound } from "next/navigation"
-import { isQuoteKey, orderHref } from "@workspace/commerce/order-links"
+import { isQuoteKey, orderHref, quoteHref } from "@workspace/commerce/order-links"
 import { prisma } from "@workspace/db"
 import { Prisma } from "@workspace/db/client"
 import { QuoteStatus } from "@workspace/db/enums"
@@ -12,9 +12,10 @@ import { getStringParam } from "@workspace/utils/search-params"
 
 import { PrintButton } from "@/components/orders/print-button"
 import { AcceptQuoteButton, CancelQuoteButton, QuoteToBasketButton } from "@/components/quotes/quote-actions"
+import { signInHref } from "@/lib/auth-redirect"
 import type { SearchParams } from "@/lib/catalogue-filters"
 import { formatGhs } from "@/lib/money"
-import { isExpired } from "@/lib/quotes"
+import { isExpired, isQuoteOwner } from "@workspace/commerce/quotes"
 import { getStoreSession } from "@/lib/session"
 import { getAppSettings, getStoreName } from "@/lib/settings"
 
@@ -37,20 +38,23 @@ function TotalRow({ label, amount, strong }: { label: string; amount: string; st
 }
 
 // A quotation, laid out for printing like the invoice, behind its signed link so it can be forwarded to whoever
-// approves the purchase. Only the account that made it can accept or cancel it.
+// approves the purchase. Only its owner can accept or cancel it: the account that made it, or for one staff made, the
+// account with its email (isQuoteOwner).
 export default async function QuotePage({ params, searchParams }: QuotePageProps) {
   const [{ reference }, query] = await Promise.all([params, searchParams])
   const key = getStringParam(query.key)
 
   const quote = await prisma.quote.findUnique({
     where: { reference },
-    include: { items: { orderBy: { id: "asc" } }, order: { select: { id: true, reference: true } } },
+    include: { items: { orderBy: { id: "asc" } }, order: { select: { id: true, reference: true } }, createdBy: { select: { name: true } } },
   })
   // The same answer for a wrong key as for no quote, so references can't be probed
   if (!quote || !key || !isQuoteKey(quote.id, key)) notFound()
 
   const [settings, storeName, session] = await Promise.all([getAppSettings(), getStoreName(), getStoreSession()])
-  const isOwner = !!session && session.user.id === quote.userId
+  const isOwner = isQuoteOwner(quote, session?.user ?? null)
+  // Staff made it for the customer, who may not have signed in, or have an account, yet
+  const preparedBy = quote.createdById ? (quote.createdBy?.name?.trim().split(/\s+/)[0] ?? null) : null
   const expired = isExpired(quote)
   const isOpen = quote.status === QuoteStatus.OPEN && !expired
   // validUntil is the start of the day after the last one its prices hold
@@ -97,7 +101,30 @@ export default async function QuotePage({ params, searchParams }: QuotePageProps
             .
           </p>
         )}
-        {!isOwner && isOpen && <p className="text-sm text-muted-foreground">Only the account that made this quotation can accept it.</p>}
+        {!isOwner && isOpen && !session && (
+          <p className="text-sm text-muted-foreground">
+            To accept it,{" "}
+            <Link href={signInHref("/sign-in", quoteHref(quote.reference, quote.id))} className="text-foreground underline underline-offset-4">
+              sign in
+            </Link>{" "}
+            {quote.createdById ? (
+              <>
+                with {quote.customerEmail}, or{" "}
+                <Link href={signInHref("/sign-up", quoteHref(quote.reference, quote.id))} className="text-foreground underline underline-offset-4">
+                  create an account
+                </Link>{" "}
+                with it.
+              </>
+            ) : (
+              "to the account that made it."
+            )}
+          </p>
+        )}
+        {!isOwner && isOpen && session && (
+          <p className="text-sm text-muted-foreground">
+            {quote.createdById ? `Only the account with ${quote.customerEmail}, once its email is confirmed, can accept this quotation.` : "Only the account that made this quotation can accept it."}
+          </p>
+        )}
       </div>
 
       <article className="rounded-xl border bg-card p-6 text-sm md:p-10 print:rounded-none print:border-0 print:bg-white print:p-0 print:text-black">
@@ -115,6 +142,7 @@ export default async function QuotePage({ params, searchParams }: QuotePageProps
             <p className="font-mono">{quote.reference}</p>
             <p className="text-muted-foreground">{formatDate(quote.createdAt, "d MMMM yyyy")}</p>
             <p className="font-medium">Valid until {lastDay}</p>
+            {preparedBy && <p className="text-muted-foreground">Prepared by {preparedBy}</p>}
           </div>
         </header>
 
@@ -172,9 +200,20 @@ export default async function QuotePage({ params, searchParams }: QuotePageProps
           <TotalRow label="Total" amount={money(quote.totalGhs)} strong />
         </section>
 
+        {quote.notes && (
+          <section className="mt-8 space-y-1">
+            <h2 className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">Notes</h2>
+            <p className="whitespace-pre-line">{quote.notes}</p>
+          </section>
+        )}
+
         <footer className="mt-10 space-y-1 border-t pt-4 text-muted-foreground">
           <p>{`Prices hold until ${lastDay}. Items are subject to availability until the quotation is accepted and paid.`}</p>
-          <p>Amounts in Ghana cedis (GHS). Payment by mobile money or card when accepted.</p>
+          <p>
+            {quote.createdById
+              ? "Amounts in Ghana cedis (GHS). Payment by mobile money or card when accepted online, or by bank transfer arranged with us."
+              : "Amounts in Ghana cedis (GHS). Payment by mobile money or card when accepted."}
+          </p>
         </footer>
       </article>
     </div>

@@ -75,6 +75,19 @@ const templates = [
     "https://example.com/quotes/QT-20261022-00001?key=x",
   ],
   [
+    "staff quotation",
+    QuoteEmail({
+      name: "Alex",
+      reference: "QT-20261022-00002",
+      total: "GH₵1,234.50",
+      validUntil: "Thursday 29 October",
+      url: "https://example.com/quotes/QT-20261022-00002?key=y",
+      appName: "BS42",
+      preparedBy: "Kofi",
+    }),
+    "Kofi at BS42 has prepared a quotation for you",
+  ],
+  [
     "trade account approved",
     TradeAccountDecisionEmail({ name: "Alex", companyName: "Zz Ltd", decision: { approved: true, percent: 10 }, url: "https://example.com/account/trade", appName: "BS42" }),
     "Trade account approved",
