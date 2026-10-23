@@ -475,8 +475,9 @@ interface OrderDetailsBase {
   installation: OrderInstallation | null
   // Placed by a trade account: the company and TIN copied onto the order, and the account (null if since deleted)
   trade: { accountId: string | null; companyName: string; tin: string | null } | null
-  // Placed by accepting a quotation: its reference, and its storefront page (signed)
-  quote: { reference: string; url: string } | null
+  // Placed by accepting a quotation: its reference, and its storefront page (signed) for store staff, who can't open
+  // the console's quotation pages
+  quote: { id: string; reference: string; url: string } | null
 }
 
 // One try at paying a storefront order on Paystack
@@ -855,13 +856,13 @@ export interface QuotesParams extends PaginationParams {
   // Plain yyyy-MM-dd days in the app's time zone, both inclusive
   madeStart?: string
   madeEnd?: string
+  // "customer": made from a basket on the storefront; "staff": made in the console
+  madeBy?: "customer" | "staff"
 }
 
 export interface QuoteRow {
   id: string
   reference: string
-  // The storefront's quotation page, signed so staff can open it
-  url: string
   customer: { name: string; email: string; phone: string }
   tradeCompanyName: string | null
   lineCount: number
@@ -871,7 +872,97 @@ export interface QuoteRow {
   validUntil: Date
   // The order accepting it placed
   order: { id: string; reference: string } | null
+  // The staff member who made it; null when the customer did
+  createdBy: string | null
   createdAt: Date
 }
 
 export type QuotesData = PaginatedResult<QuoteRow>
+
+// A customer found by exact email or phone for a quotation, with their approved trade account's terms when they have
+// one (the discount the form starts from)
+export interface QuoteCustomer extends OrderCustomer {
+  trade: { percent: string; companyName: string } | null
+}
+
+// The review step's prices, from the same code that prices the quotation when it's saved. GHS strings.
+export interface QuotePreview {
+  lines: {
+    key: string
+    label: string
+    quantity: number
+    unitPriceGhs: string
+    totalPriceGhs: string
+    // The line's installation, or null without
+    installationGhs: string | null
+    // Null when the row doesn't track stock
+    stock: number | null
+  }[]
+  subtotalGhs: string
+  discountAmountGhs: string | null
+  installationGhs: string
+  shippingGhs: string
+  taxRate: string
+  taxGhs: string
+  totalGhs: string
+  exchangeRate: string
+}
+
+// What the create form shows for a chosen line. The form itself holds only ids, quantities and installation: prices
+// are looked up on the server.
+export interface ChosenQuoteItem {
+  label: string
+  sku: string | null
+  // Before tax at today's rate; null for a line copied from another quotation until it's priced
+  priceGhs: string | null
+  stock: number | null
+  // Installing one unit; null when the product doesn't offer it
+  installationFeeGhs: string | null
+}
+
+// "Copy to a new quotation": the create form's starting values
+export interface QuoteCopy {
+  reference: string
+  customer: QuoteCustomer | null
+  values: {
+    customerUserId: string | null
+    customerName: string
+    customerEmail: string
+    customerPhone: string
+    items: { listingId: string; listingVariantId: string | null; quantity: number; installation: boolean }[]
+    shippingLine1: string
+    shippingLine2: string
+    shippingRegion: string
+    shippingTown: string
+    shippingGhs: number
+    notes: string
+    discountType: "NONE" | "FIXED" | "PERCENTAGE"
+    discountValue: number
+    discountReason: string
+  }
+  chosen: Record<string, ChosenQuoteItem>
+  // Lines left out because their listing is gone
+  left: number
+}
+
+// A quotation as its console page shows it
+export interface QuoteDetails {
+  id: string
+  reference: string
+  // The storefront's quotation page, signed so staff can open it
+  url: string
+  status: QuoteStatusFilter
+  createdAt: Date
+  // The last day its prices hold
+  validUntil: Date
+  // The staff member who made it; null when the customer did
+  createdBy: string | null
+  customer: { name: string; email: string; phone: string; hasAccount: boolean }
+  trade: { companyName: string; tin: string | null } | null
+  address: string
+  notes: string | null
+  exchangeRate: string
+  lines: { id: string; label: string; sku: string | null; storeName: string; quantity: number; unitPriceGhs: string; totalPriceGhs: string; installationGhs: string | null }[]
+  totals: { subtotalGhs: string; discountAmountGhs: string | null; discountReason: string | null; installationGhs: string; shippingGhs: string; taxRate: string; taxGhs: string; totalGhs: string }
+  order: { id: string; reference: string } | null
+}

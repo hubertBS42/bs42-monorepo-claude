@@ -4,10 +4,11 @@ import type { QuotesData } from "@/types"
 import { columns } from "./columns"
 import { filters } from "./filters"
 
-// No row links: the reference opens the storefront's quotation, and the order cell the order
+// Rows open the quotation's page; the order cell links to the order
 const QuotesTable = ({ data }: { data: QuotesData }) => {
   return (
     <DataTable
+      getRowHref={(quote) => `/quotes/${quote.id}`}
       columns={columns}
       filters={filters}
       data={data.data}

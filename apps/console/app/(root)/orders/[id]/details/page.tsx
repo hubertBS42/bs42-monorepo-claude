@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import Link from "next/link"
 import { notFound } from "next/navigation"
 import z from "zod"
 import { OrderStatus, PaymentStatus } from "@workspace/db/enums"
@@ -69,9 +70,9 @@ export default async function OrderDetailsPage({ params }: OrderDetailsPageProps
           <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
             <span>{`Placed ${formatDate(order.createdAt, "MMM d, yyyy, h:mm a")}${order.createdBy ? ` by ${order.createdBy}` : ""}`}</span>
             {order.quote && (
-              <a href={order.quote.url} target="_blank" rel="noopener noreferrer" className="hover:text-foreground hover:underline hover:underline-offset-4">
+              <Link href={`/quotes/${order.quote.id}`} className="hover:text-foreground hover:underline hover:underline-offset-4">
                 {`From quotation ${order.quote.reference}`}
-              </a>
+              </Link>
             )}
             <OrderStatusBadge status={order.status} />
             <PaymentStatusBadge status={order.paymentStatus} />

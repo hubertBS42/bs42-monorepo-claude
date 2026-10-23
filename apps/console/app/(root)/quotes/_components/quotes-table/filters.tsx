@@ -25,5 +25,16 @@ export const filters: FilterConfig[] = [
       { label: "Not trade", value: "false" },
     ],
   },
+  {
+    key: "madeBy",
+    label: "Made by",
+    type: "select",
+    placeholder: "Anyone",
+    options: [
+      { label: "Anyone", value: "all" },
+      { label: "The customer", value: "customer" },
+      { label: "Staff", value: "staff" },
+    ],
+  },
   { key: "made", label: "Made", type: "dateRange" },
 ]

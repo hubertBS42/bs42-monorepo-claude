@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import { getDayParam, getEnumParam, getOrderParam, getPositiveIntegerParam, getSortParam, getStringParam } from "@workspace/utils/search-params"
 import QuotesTable from "./_components/quotes-table"
+import AddButton from "@/components/add-button"
 import { requireSystemPermission } from "@/lib/auth-guard"
 import { getQuotes, MAX_QUOTES_PAGE_SIZE, QUOTE_SORT_FIELDS } from "@/lib/data/quotes.data"
 
@@ -14,8 +15,8 @@ type QuotesPageProps = {
   }>
 }
 
-// Customers' quotations, for following up the ones not yet accepted. Customers make, accept and cancel them on the
-// storefront, so this page only reads.
+// Every quotation: those customers made from their basket and those staff made for them, for following up the ones
+// not yet accepted
 export default async function QuotesPage({ searchParams }: QuotesPageProps) {
   await requireSystemPermission({ order: ["read"] })
   const params = await searchParams
@@ -26,6 +27,7 @@ export default async function QuotesPage({ searchParams }: QuotesPageProps) {
     trade: getEnumParam(params.trade, ["true", "false"]),
     madeStart: getDayParam(params.madeStart),
     madeEnd: getDayParam(params.madeEnd),
+    madeBy: getEnumParam(params.madeBy, ["customer", "staff"]),
     page: getPositiveIntegerParam(params.page, 1),
     pageSize: getPositiveIntegerParam(params.pageSize, 10, MAX_QUOTES_PAGE_SIZE),
     sort: getSortParam(params.sort, QUOTE_SORT_FIELDS),
@@ -35,9 +37,15 @@ export default async function QuotesPage({ searchParams }: QuotesPageProps) {
 
   return (
     <main className="flex flex-col gap-y-6">
-      <div className="grid">
-        <h1 className="text-xl font-bold md:text-2xl">Quotes</h1>
-        <p className="text-sm text-muted-foreground">Quotations customers made from their basket. Prices hold until each one lapses; stock isn&apos;t held. Accepting one places an order.</p>
+      <div className="flex items-end justify-between gap-4">
+        <div className="grid">
+          <h1 className="text-xl font-bold md:text-2xl">Quotes</h1>
+          <p className="text-sm text-muted-foreground">
+            Quotations customers made from their basket, and those made for them here. Prices hold until each one lapses; stock isn&apos;t held. Accepting one places an order.
+          </p>
+        </div>
+        {/* Every role that reaches this page can make quotations (system permission order: create) */}
+        <AddButton label="New Quotation" url="/quotes/create" />
       </div>
       <QuotesTable data={result.data} />
     </main>

@@ -1,20 +1,12 @@
 import Link from "next/link"
 import type { ColumnDef } from "@tanstack/react-table"
-import { ExternalLink } from "lucide-react"
 import { ColumnHeader } from "@workspace/tables"
 import { Badge } from "@workspace/ui/components/badge"
 import { Checkbox } from "@workspace/ui/components/checkbox"
 import { formatCurrency } from "@workspace/utils/currency"
 import { formatDate } from "@workspace/utils/date"
-import type { QuoteRow, QuoteStatusFilter } from "@/types"
-
-// Like orders: accepted is done, expired and cancelled are muted, open is still in play
-const STATUS: Record<QuoteStatusFilter, { label: string; variant: "outline" | "secondary" | "success" }> = {
-  open: { label: "Open", variant: "outline" },
-  expired: { label: "Expired", variant: "secondary" },
-  accepted: { label: "Accepted", variant: "success" },
-  cancelled: { label: "Cancelled", variant: "secondary" },
-}
+import { QUOTE_STATUS } from "@/components/quote-status"
+import type { QuoteRow } from "@/types"
 
 export const columns: ColumnDef<QuoteRow, unknown>[] = [
   {
@@ -33,12 +25,7 @@ export const columns: ColumnDef<QuoteRow, unknown>[] = [
   {
     accessorKey: "reference",
     header: () => <ColumnHeader title="Reference" />,
-    cell: ({ row }) => (
-      <a href={row.original.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 font-mono text-xs hover:underline hover:underline-offset-4">
-        {row.original.reference}
-        <ExternalLink className="size-3 text-muted-foreground" aria-label="(opens the storefront's quotation)" />
-      </a>
-    ),
+    cell: ({ row }) => <span className="font-mono text-xs">{row.original.reference}</span>,
   },
   {
     id: "customer",
@@ -68,7 +55,7 @@ export const columns: ColumnDef<QuoteRow, unknown>[] = [
   {
     accessorKey: "status",
     header: () => <ColumnHeader title="Status" />,
-    cell: ({ row }) => <Badge variant={STATUS[row.original.status].variant}>{STATUS[row.original.status].label}</Badge>,
+    cell: ({ row }) => <Badge variant={QUOTE_STATUS[row.original.status].variant}>{QUOTE_STATUS[row.original.status].label}</Badge>,
   },
   {
     id: "order",
@@ -81,6 +68,11 @@ export const columns: ColumnDef<QuoteRow, unknown>[] = [
       ) : (
         <span className="text-muted-foreground">—</span>
       ),
+  },
+  {
+    id: "createdBy",
+    header: () => <ColumnHeader title="Made By" />,
+    cell: ({ row }) => row.original.createdBy ?? <span className="text-muted-foreground">Customer</span>,
   },
   {
     accessorKey: "createdAt",
