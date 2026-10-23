@@ -22,7 +22,7 @@ const FieldHint = ({ description, count }: FieldHintProps) => {
       )}
       <p
         className={cn(
-          "ml-auto shrink-0 text-sm text-muted-foreground tabular-nums",
+          "ml-auto shrink-0 text-xs text-muted-foreground tabular-nums",
           count.length >= count.max && "text-destructive"
         )}
       >
