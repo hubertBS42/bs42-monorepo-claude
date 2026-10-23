@@ -4,7 +4,7 @@ import type { prisma } from "@workspace/db"
 import { Prisma } from "@workspace/db/client"
 import { OrderStatus, PaymentStatus } from "@workspace/db/enums"
 import { dayStart, formatDate } from "@workspace/utils/date"
-import type { DashboardChanges, DashboardOrderCounts, DashboardPeriod, DashboardSales, DashboardSalesTrend, PlatformDashboard, StoreDashboard } from "../types"
+import type { DashboardChanges, DashboardOrderCounts, DashboardPeriod, DashboardSales, DashboardSalesTrend, DashboardTopSellers, PlatformDashboard, StoreDashboard, TopSeller } from "../types"
 import { sumLines } from "./order-details"
 import { overduePurchaseOrderWhere } from "./purchase-order-status"
 import { countStockAlerts } from "./stock-states"
@@ -31,6 +31,77 @@ function trendDays(period: DashboardPeriod, now: Date) {
 // Where the rows for a trend start: the first day of the previous period
 export function trendStart(period: DashboardPeriod, now = new Date()) {
   return dayStart(trendDays(period, now)[0]!)
+}
+
+// Where the current period starts
+function periodStart(period: DashboardPeriod, now: Date) {
+  return dayStart(trendDays(period, now)[PERIOD_DAYS[period]]!)
+}
+
+// How many best sellers the dashboard lists
+const TOP_SELLERS = 5
+
+// The lines a best-seller list adds up: sold on orders paid in the period and not cancelled since (a paid order is
+// cancelled only with a refund), with the units returned since
+const topSellerLines = (tx: Tx, period: DashboardPeriod, now: Date, storeId: string | null) =>
+  tx.orderItem.findMany({
+    where: {
+      ...(storeId ? { organizationId: storeId } : {}),
+      order: { paidAt: { gte: periodStart(period, now) }, paymentStatus: paidStatuses, status: { not: OrderStatus.CANCELLED } },
+    },
+    select: {
+      storeListingId: true,
+      productId: true,
+      productName: true,
+      productImage: true,
+      quantity: true,
+      totalPriceGhs: true,
+      discountGhs: true,
+      returns: { select: { quantity: true } },
+      order: { select: { paidAt: true } },
+    },
+  })
+
+type TopSellerLine = Awaited<ReturnType<typeof topSellerLines>>[number]
+
+// Adds the lines up per listing or product, each line's goods after its discount shared over the units not returned.
+// The name and picture are the latest sale's, so a renamed product shows its current name.
+function toTopSellers(lines: TopSellerLine[], group: (line: TopSellerLine) => { id: string; href: string | null }): DashboardTopSellers {
+  const sellers = new Map<string, Omit<TopSeller, "revenueGhs"> & { revenue: Prisma.Decimal; latest: Date }>()
+  for (const line of lines) {
+    const units = line.quantity - line.returns.reduce((sum, row) => sum + row.quantity, 0)
+    if (units <= 0) continue
+    const revenue = line.totalPriceGhs.minus(line.discountGhs).times(units).dividedBy(line.quantity)
+    const { id, href } = group(line)
+    const paidAt = line.order.paidAt!
+    const seller = sellers.get(id)
+    if (!seller) {
+      sellers.set(id, { id, href, name: line.productName, image: line.productImage, units, revenue, latest: paidAt })
+      continue
+    }
+    seller.units += units
+    seller.revenue = seller.revenue.plus(revenue)
+    if (paidAt > seller.latest) Object.assign(seller, { name: line.productName, image: line.productImage, latest: paidAt })
+  }
+  const all = [...sellers.values()]
+  const toSeller = (seller: (typeof all)[number]): TopSeller => ({
+    id: seller.id,
+    name: seller.name,
+    image: seller.image,
+    href: seller.href,
+    units: seller.units,
+    revenueGhs: seller.revenue.toFixed(2),
+  })
+  return {
+    byUnits: [...all]
+      .sort((a, b) => b.units - a.units || b.revenue.comparedTo(a.revenue) || a.name.localeCompare(b.name))
+      .slice(0, TOP_SELLERS)
+      .map(toSeller),
+    byRevenue: [...all]
+      .sort((a, b) => b.revenue.comparedTo(a.revenue) || b.units - a.units || a.name.localeCompare(b.name))
+      .slice(0, TOP_SELLERS)
+      .map(toSeller),
+  }
 }
 
 // What happened on the trend's days: payments (an order's amount, by when it was paid), refunds and returns
@@ -109,7 +180,7 @@ export async function getStoreStats(tx: Tx, storeId: string, period: DashboardPe
   // and returns on the others are the platform's, and can't be split between the stores.
   const ownOrder = { orderItems: { some: { organizationId: storeId }, every: { organizationId: storeId } } }
 
-  const [orders, stock, overduePurchaseOrders, paidOrders, refunds, returns] = await Promise.all([
+  const [orders, stock, overduePurchaseOrders, paidOrders, refunds, returns, sellerLines] = await Promise.all([
     countOrders(tx, withStoreItems),
     countStockAlerts(tx, storeId),
     tx.purchaseOrder.count({ where: { organizationId: storeId, ...overduePurchaseOrderWhere(formatDate(now, "yyyy-MM-dd")) } }),
@@ -119,6 +190,8 @@ export async function getStoreStats(tx: Tx, storeId: string, period: DashboardPe
     }),
     tx.orderRefund.findMany({ where: { createdAt: { gte: from }, order: ownOrder }, select: { createdAt: true, amountGhs: true } }),
     tx.orderReturn.findMany({ where: { createdAt: { gte: from }, order: ownOrder }, select: { createdAt: true } }),
+    // Its own lines, on shared orders too, as its sales count them
+    topSellerLines(tx, period, now, storeId),
   ])
 
   // An order with other stores' items counts only the store's lines, as the orders list shows it
@@ -133,13 +206,14 @@ export async function getStoreStats(tx: Tx, storeId: string, period: DashboardPe
     outOfStock: stock[0]?.out ?? 0,
     overduePurchaseOrders,
     sales: toSalesTrend(period, { payments, refunds: refunds.map((row) => ({ at: row.createdAt, amountGhs: row.amountGhs })), returns: returns.map((row) => ({ at: row.createdAt })) }, now),
+    topSellers: toTopSellers(sellerLines, (line) => ({ id: line.storeListingId, href: `/store/listings/${line.storeListingId}/edit` })),
   }
 }
 
 export async function getPlatformStats(tx: Tx, period: DashboardPeriod, now = new Date()): Promise<PlatformDashboard> {
   const from = trendStart(period, now)
 
-  const [orders, pendingOrders, stockAlerts, overduePurchaseOrders, paidOrders, refunds, returns] = await Promise.all([
+  const [orders, pendingOrders, stockAlerts, overduePurchaseOrders, paidOrders, refunds, returns, sellerLines] = await Promise.all([
     countOrders(tx, {}),
     // Prisma can't filter on how many stores an order's items come from, so the pending orders' stores are counted
     // here; there are only ever a handful
@@ -149,6 +223,7 @@ export async function getPlatformStats(tx: Tx, period: DashboardPeriod, now = ne
     tx.order.findMany({ where: { paidAt: { gte: from }, paymentStatus: paidStatuses }, select: { paidAt: true, totalGhs: true } }),
     tx.orderRefund.findMany({ where: { createdAt: { gte: from } }, select: { createdAt: true, amountGhs: true } }),
     tx.orderReturn.findMany({ where: { createdAt: { gte: from } }, select: { createdAt: true } }),
+    topSellerLines(tx, period, now, null),
   ])
 
   const multiStorePending = pendingOrders.filter((order) => new Set(order.orderItems.map((line) => line.organizationId)).size > 1).length
@@ -171,5 +246,7 @@ export async function getPlatformStats(tx: Tx, period: DashboardPeriod, now = ne
       },
       now
     ),
+    // A product sold by several stores counts once. Lines always have a product; productId is optional only in the schema.
+    topSellers: toTopSellers(sellerLines, (line) => (line.productId ? { id: line.productId, href: `/catalogue/products/${line.productId}/edit` } : { id: line.storeListingId, href: null })),
   }
 }

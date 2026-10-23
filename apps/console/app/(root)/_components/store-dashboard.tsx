@@ -6,6 +6,7 @@ import { toOrderSummary } from "./order-summary"
 import RecentOrders from "./recent-orders"
 import SalesChart from "./sales-chart"
 import SectionCards from "./section-cards"
+import TopSellers from "./top-sellers"
 
 // The orders the table lists and the card browses
 const RECENT_ORDERS = 10
@@ -14,7 +15,7 @@ export default async function StoreDashboard({ storeId, period }: { storeId: str
   const [dashboard, recent] = await Promise.all([getStoreDashboard(storeId, period), getRecentStoreOrderDetails(storeId, RECENT_ORDERS)])
   if (!dashboard.success) throw new Error(dashboard.error)
   if (!recent.success) throw new Error(recent.error)
-  const { orders, lowStock, outOfStock, overduePurchaseOrders, sales } = dashboard.data
+  const { orders, lowStock, outOfStock, overduePurchaseOrders, sales, topSellers } = dashboard.data
 
   return (
     <div className="flex flex-col gap-4 md:gap-6">
@@ -33,6 +34,7 @@ export default async function StoreDashboard({ storeId, period }: { storeId: str
           ]}
         />
       </div>
+      <TopSellers sellers={topSellers} period={period} description="This store's listings" />
       <RecentOrders
         listHref="/store/orders"
         description="The latest orders with this store's items."

@@ -50,6 +50,7 @@ export default function SalesChart({ days, period }: { days: DashboardSalesTrend
             value={[period]}
             onValueChange={(value) => setPeriod(value[0])}
             variant="outline"
+            size="sm"
             // Joined, as in the block's Radix version; Base UI's group spaces its items apart by default
             spacing={0}
             disabled={isPending}

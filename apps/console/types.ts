@@ -626,6 +626,23 @@ export interface DashboardOrderCounts {
   unpaidDelivered: number
 }
 
+// A best seller in the period: what was sold on orders paid in it (not cancelled since), less the units returned since.
+// Revenue is the goods after their share of the discount, before tax, delivery and installation.
+export interface TopSeller {
+  id: string
+  name: string
+  image: string | null
+  // Its listing in a store's workspace, its catalogue product on the platform's
+  href: string | null
+  units: number
+  revenueGhs: string
+}
+
+export interface DashboardTopSellers {
+  byUnits: TopSeller[]
+  byRevenue: TopSeller[]
+}
+
 export interface StoreDashboard {
   orders: DashboardOrderCounts
   // Listings at or under their low-stock threshold, and out of stock
@@ -634,6 +651,8 @@ export interface StoreDashboard {
   // Open purchase orders whose expected day has passed
   overduePurchaseOrders: number
   sales: DashboardSalesTrend
+  // The store's listings
+  topSellers: DashboardTopSellers
 }
 
 export interface PlatformDashboard {
@@ -646,6 +665,8 @@ export interface PlatformDashboard {
   // Open purchase orders whose expected day has passed, in every store
   overduePurchaseOrders: number
   sales: DashboardSalesTrend
+  // Catalogue products, across every store selling them
+  topSellers: DashboardTopSellers
 }
 
 // ============================================

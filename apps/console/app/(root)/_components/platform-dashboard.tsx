@@ -9,6 +9,7 @@ import PlatformHealth from "./platform-health"
 import RecentOrders from "./recent-orders"
 import SalesChart from "./sales-chart"
 import SectionCards from "./section-cards"
+import TopSellers from "./top-sellers"
 
 // The orders the table lists and the card browses
 const RECENT_ORDERS = 10
@@ -23,7 +24,7 @@ export default async function PlatformDashboard({ period, canOpenSettings }: { p
   const [dashboard, recent, rate, settings] = await Promise.all([getPlatformDashboard(period), getRecentOrderDetails(RECENT_ORDERS), getLatestExchangeRate(), getAppSettings()])
   if (!dashboard.success) throw new Error(dashboard.error)
   if (!recent.success) throw new Error(recent.error)
-  const { orders, stockAlerts, overduePurchaseOrders, sales } = dashboard.data
+  const { orders, stockAlerts, overduePurchaseOrders, sales, topSellers } = dashboard.data
 
   const shown = stockAlerts.slice(0, STOCK_STORES_SHOWN)
   const others = stockAlerts.slice(STOCK_STORES_SHOWN)
@@ -67,6 +68,7 @@ export default async function PlatformDashboard({ period, canOpenSettings }: { p
           ]}
         />
       </div>
+      <TopSellers sellers={topSellers} period={period} description="Products from every store" />
       <PlatformHealth
         rate={rate}
         taxEnabled={settings.taxEnabled}
