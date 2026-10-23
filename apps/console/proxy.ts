@@ -33,6 +33,18 @@ async function chooseWorkspace(userId: string) {
   return (memberships.find((membership) => membership.organizationId === platformId) ?? memberships[0])?.organizationId
 }
 
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+// Through Better Auth, which saves the session and returns its cookies: the console caches the session in a cookie for
+// a minute, and the cached copy still has the old workspace. The redirect then reads the new cookies; this request's
+// are the old ones. Throws when the user isn't a member of the organization.
+async function switchWorkspace(request: NextRequest, organizationId: string, to: URL) {
+  const { headers } = await consoleAuth.api.setActiveOrganization({ headers: request.headers, body: { organizationId }, returnHeaders: true })
+  const response = NextResponse.redirect(to)
+  for (const cookie of headers.getSetCookie()) response.headers.append("set-cookie", cookie)
+  return response
+}
+
 function redirectToLogin(request: NextRequest) {
   const loginUrl = new URL("/login", request.url)
   loginUrl.searchParams.set("callbackURL", `${request.nextUrl.pathname}${request.nextUrl.search}`)
@@ -60,17 +72,27 @@ export async function proxy(request: NextRequest) {
   }
 
   const activeOrganizationId = session.session.activeOrganizationId
+
+  // A link into a store's workspace from an email names the store (?store=), for someone in more than one: switch to
+  // it, then the same page without the parameter. Better Auth refuses a store the user isn't a member of, and the page
+  // then goes on in the workspace the session had.
+  const linkedStoreId = request.nextUrl.searchParams.get("store")
+  if (linkedStoreId !== null) {
+    const target = request.nextUrl.clone()
+    target.searchParams.delete("store")
+    if (linkedStoreId === activeOrganizationId || !UUID.test(linkedStoreId)) return NextResponse.redirect(target)
+    try {
+      return await switchWorkspace(request, linkedStoreId, target)
+    } catch {
+      return NextResponse.redirect(target)
+    }
+  }
+
   if (!activeOrganizationId) {
     const organizationId = await chooseWorkspace(session.user.id)
     if (organizationId) {
       try {
-        // Through Better Auth, which saves the session and returns its cookies: the console caches the session in a
-        // cookie for a minute, and the cached copy says there's no workspace. The same page again then reads the new
-        // cookies; this request's are the old ones.
-        const { headers } = await consoleAuth.api.setActiveOrganization({ headers: request.headers, body: { organizationId }, returnHeaders: true })
-        const response = NextResponse.redirect(request.nextUrl)
-        for (const cookie of headers.getSetCookie()) response.headers.append("set-cookie", cookie)
-        return response
+        return await switchWorkspace(request, organizationId, request.nextUrl)
       } catch (error) {
         console.error("Could not choose a workspace for the session:", error)
       }
