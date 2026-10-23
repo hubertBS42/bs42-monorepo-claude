@@ -73,7 +73,7 @@ export default async function AccountOrdersPage({ searchParams }: { searchParams
                       {formatDate(order.createdAt, "d MMM yyyy")} · {order.itemCount === 1 ? "1 item" : `${order.itemCount} items`} · {formatGhs(order.totalGhs)}
                     </p>
                   </div>
-                  <div className="flex shrink-0 flex-wrap items-center gap-2">
+                  <div className="flex shrink-0 flex-col items-start gap-3 sm:flex-row sm:items-center sm:gap-2">
                     <div className="flex gap-2" aria-hidden>
                       {order.orderItems.map((item) => (
                         <div key={item.id} className="flex size-12 items-center justify-center overflow-hidden rounded-md border bg-muted" title={item.productName}>
