@@ -79,7 +79,7 @@ export default async function PlatformDashboard({ period, canOpenSettings }: { p
       <RecentOrders
         listHref="/orders"
         description="The latest orders from every store."
-        orders={recent.data.map((order) => toOrderSummary(order, { href: `/orders/${order.id}/details`, totalGhs: order.totals.totalGhs, note: order.storeNames.join(", ") }))}
+        orders={recent.data.map((order) => toOrderSummary(order, { href: `/orders/${order.id}/details`, totalGhs: order.totals.totalGhs, note: order.stores.map((store) => store.name).join(", ") }))}
       />
     </div>
   )

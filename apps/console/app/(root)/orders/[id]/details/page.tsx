@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import { Fragment } from "react"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import z from "zod"
@@ -77,7 +78,7 @@ export default async function OrderDetailsPage({ params }: OrderDetailsPageProps
             <OrderStatusBadge status={order.status} />
             <PaymentStatusBadge status={order.paymentStatus} />
             {returned && <Badge variant="secondary">{returned}</Badge>}
-            {order.isMultiStore && <Badge variant="outline">{`${order.storeNames.length} stores`}</Badge>}
+            {order.isMultiStore && <Badge variant="outline">{`${order.stores.length} stores`}</Badge>}
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -93,7 +94,16 @@ export default async function OrderDetailsPage({ params }: OrderDetailsPageProps
             <CardHeader>
               <CardTitle>Items</CardTitle>
               <CardDescription>
-                {order.isMultiStore ? `From ${order.storeNames.join(", ")}. In GHS, at the order's exchange rate.` : `From ${order.storeNames[0]}. In GHS, at the order's exchange rate.`}
+                {"From "}
+                {order.stores.map((store, index) => (
+                  <Fragment key={store.id}>
+                    {index > 0 && ", "}
+                    <Link href={`/stores/${store.id}/edit`} className="underline-offset-4 hover:text-foreground hover:underline">
+                      {store.name}
+                    </Link>
+                  </Fragment>
+                ))}
+                {". In GHS, at the order's exchange rate."}
               </CardDescription>
             </CardHeader>
             <CardContent className="grid gap-4">

@@ -99,6 +99,7 @@ export const getOrders = async (filters: OrdersParams = {}): Promise<DataRespons
           totalGhs: true,
           createdAt: true,
           orderItems: { orderBy: { id: "asc" }, select: { quantity: true, storeName: true, returns: { select: { quantity: true } } } },
+          refunds: { select: { amountGhs: true } },
         },
       }),
       prisma.order.count({ where }),
@@ -107,12 +108,13 @@ export const getOrders = async (filters: OrdersParams = {}): Promise<DataRespons
     return {
       success: true,
       data: {
-        data: orders.map(({ orderItems, totalGhs, ...order }) => {
+        data: orders.map(({ orderItems, totalGhs, refunds, ...order }) => {
           const itemCount = orderItems.reduce((sum, line) => sum + line.quantity, 0)
           const returned = orderItems.reduce((sum, line) => sum + line.returns.reduce((total, row) => total + row.quantity, 0), 0)
           return {
             ...order,
             totalGhs: totalGhs.toString(),
+            refundedGhs: refunds.length ? refunds.reduce((sum, row) => sum.plus(row.amountGhs), new Prisma.Decimal(0)).toFixed(2) : null,
             itemCount,
             storeNames: [...new Set(orderItems.map((line) => line.storeName))],
             returned: returnLabel(itemCount, returned),
@@ -133,7 +135,8 @@ function toOrderDetails(order: OrderWithDetails): OrderDetails {
   return {
     ...toOrderDetailsBase(order, order.orderItems, true),
     totals: toOrderTotals(order),
-    storeNames: [...new Set(order.orderItems.map((line) => line.storeName))],
+    // One per store, named as on its first line
+    stores: [...new Map(order.orderItems.map((line) => [line.organizationId, line.storeName])).entries()].map(([id, name]) => ({ id, name })),
     ...toOrderAfterSale(order),
   }
 }

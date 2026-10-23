@@ -71,7 +71,12 @@ export const columns: ColumnDef<OrderListItem, unknown>[] = [
   {
     accessorKey: "totalGhs",
     header: () => <ColumnHeader title="Total" sortKey="totalGhs" />,
-    cell: ({ row }) => <span>{formatCurrency(row.original.totalGhs, "GHS", "en-GH")}</span>,
+    cell: ({ row }) => (
+      <div className="grid gap-y-0.5">
+        <span>{formatCurrency(row.original.totalGhs, "GHS", "en-GH")}</span>
+        {row.original.refundedGhs && <span className="text-xs text-muted-foreground">{`${formatCurrency(row.original.refundedGhs, "GHS", "en-GH")} refunded`}</span>}
+      </div>
+    ),
   },
   {
     accessorKey: "itemCount",

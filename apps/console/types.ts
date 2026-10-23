@@ -392,6 +392,8 @@ export interface OrderListItem {
   paymentStatus: PaymentStatus
   shippingMethod: ShippingMethod
   totalGhs: string
+  // What has been refunded, once anything has
+  refundedGhs: string | null
   itemCount: number
   // The stores whose items are on the order, by the name they had when it was placed
   storeNames: string[]
@@ -541,7 +543,8 @@ export interface OrderAfterSale {
 // The platform's view: every line, from every store
 export interface OrderDetails extends OrderDetailsBase, OrderAfterSale {
   totals: OrderTotals
-  storeNames: string[]
+  // The stores whose items are on the order, by the name they had when it was placed
+  stores: { id: string; name: string }[]
 }
 
 // A store listing as the create order wizard offers it: one row per way to buy it (the listing, or each variant)

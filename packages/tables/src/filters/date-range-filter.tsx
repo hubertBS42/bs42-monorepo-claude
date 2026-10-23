@@ -43,6 +43,8 @@ const DateRangeFilter = ({
   const from = parseDay(values[startKey])
   const to = parseDay(values[endKey])
   const date: DateRange | undefined = from && to ? { from, to } : undefined
+  // Only from a URL typed or edited by hand: the calendar always puts the earlier day first
+  const reversed = !!(from && to && from > to)
 
   const handleSelect = (range: DateRange | undefined) => {
     if (range?.from) {
@@ -69,58 +71,66 @@ const DateRangeFilter = ({
   }
 
   return (
-    <div className="relative">
-      <Popover>
-        <PopoverTrigger
-          id={id}
-          render={
-            <Button
-              variant="outline"
-              disabled={isPending}
-              className={cn(
-                "h-8 w-full justify-start text-left font-light",
-                !date && "text-muted-foreground",
-                date && "pe-8"
-              )}
-            >
-              <CalendarIcon className="mr-px size-4 opacity-50" />
-              {date?.from ? (
-                date.to ? (
-                  <>
-                    {format(date.from, "LLL dd, y")} -{" "}
-                    {format(date.to, "LLL dd, y")}
-                  </>
+    <div>
+      <div className="relative">
+        <Popover>
+          <PopoverTrigger
+            id={id}
+            render={
+              <Button
+                variant="outline"
+                disabled={isPending}
+                className={cn(
+                  "h-8 w-full justify-start text-left font-light",
+                  !date && "text-muted-foreground",
+                  date && "pe-8"
+                )}
+              >
+                <CalendarIcon className="mr-px size-4 opacity-50" />
+                {date?.from ? (
+                  date.to ? (
+                    <>
+                      {format(date.from, "LLL dd, y")} -{" "}
+                      {format(date.to, "LLL dd, y")}
+                    </>
+                  ) : (
+                    format(date.from, "LLL dd, y")
+                  )
                 ) : (
-                  format(date.from, "LLL dd, y")
-                )
-              ) : (
-                <span>Pick a date range</span>
-              )}
-            </Button>
-          }
-        />
-        <PopoverContent className="w-auto overflow-hidden p-0" align="start">
-          <Calendar
-            autoFocus
-            defaultMonth={date?.from}
-            mode="range"
-            selected={date}
-            captionLayout="dropdown"
-            onSelect={handleSelect}
+                  <span>Pick a date range</span>
+                )}
+              </Button>
+            }
           />
-        </PopoverContent>
-      </Popover>
+          <PopoverContent className="w-auto overflow-hidden p-0" align="start">
+            <Calendar
+              autoFocus
+              defaultMonth={date?.from}
+              mode="range"
+              selected={date}
+              captionLayout="dropdown"
+              onSelect={handleSelect}
+            />
+          </PopoverContent>
+        </Popover>
 
-      {date && (
-        <button
-          type="button"
-          aria-label="Clear date range"
-          disabled={isPending}
-          className="inset-e-2 absolute top-1/2 -translate-y-1/2 rounded-xs opacity-50 hover:opacity-100 disabled:pointer-events-none"
-          onClick={handleClear}
-        >
-          <X className="size-3.5" />
-        </button>
+        {date && (
+          <button
+            type="button"
+            aria-label="Clear date range"
+            disabled={isPending}
+            className="inset-e-2 absolute top-1/2 -translate-y-1/2 rounded-xs opacity-50 hover:opacity-100 disabled:pointer-events-none"
+            onClick={handleClear}
+          >
+            <X className="size-3.5" />
+          </button>
+        )}
+      </div>
+
+      {reversed && (
+        <p className="mt-1 text-xs text-destructive">
+          The start is after the end, so nothing matches.
+        </p>
       )}
     </div>
   )
