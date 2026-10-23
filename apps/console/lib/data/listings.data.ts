@@ -341,7 +341,7 @@ export const getListingFormData = async (storeId: string, listingId: string): Pr
           product: { select: listingProductSelect },
           storeListingVariants: { select: { variantId: true, sellPrice: true, stock: true, status: true } },
           // Purchase order lines restrict the delete like order lines
-          _count: { select: { purchaseOrderItems: true } },
+          _count: { select: { purchaseOrderItems: true, transfersOut: true, transfersIn: true } },
         },
       }),
       prisma.orderItem.findFirst({ where: { storeListingId: listingId }, select: { id: true } }),
@@ -375,7 +375,7 @@ export const getListingFormData = async (storeId: string, listingId: string): Pr
               : { variantId, sellPrice: null, stock: 0, status: Status.PUBLISHED }
           }),
         },
-        hasOrders: !!ordered || listing._count.purchaseOrderItems > 0,
+        hasOrders: !!ordered || listing._count.purchaseOrderItems > 0 || listing._count.transfersOut > 0 || listing._count.transfersIn > 0,
       },
     }
   } catch (error) {

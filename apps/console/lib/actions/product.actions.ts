@@ -219,6 +219,8 @@ export async function deleteProductAction(productId: string): Promise<ActionResp
     if (ordered) return HAS_ORDERS
     // So do stores' purchase order lines, through their listings
     if (await prisma.purchaseOrderItem.findFirst({ where: { storeListing: { productId } }, select: { id: true } })) return HAS_ORDERS
+    // And transfer lines, from or to any store's listing of it
+    if (await prisma.stockTransferItem.findFirst({ where: { fromListing: { productId } }, select: { id: true } })) return HAS_ORDERS
 
     // Variants, documents and store listings cascade; the Prisma hook removes the files once the delete commits
     await prisma.product.delete({ where: { id: productId } })

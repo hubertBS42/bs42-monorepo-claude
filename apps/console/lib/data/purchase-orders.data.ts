@@ -6,7 +6,7 @@ import { consoleAuth } from "@workspace/auth/console"
 import type { DataResponse } from "@workspace/contracts"
 import { prisma } from "@workspace/db"
 import { Prisma } from "@workspace/db/client"
-import { PurchaseOrderStatus, Status } from "@workspace/db/enums"
+import { PurchaseOrderStatus, Status, StockTransferStatus } from "@workspace/db/enums"
 import { getPaginationError } from "@workspace/utils/pagination"
 import { consoleAdminRoles, hasSystemRole } from "@workspace/auth/system-permissions"
 import { hasStorePermission } from "@/lib/auth-guard"
@@ -18,7 +18,7 @@ export const MAX_PURCHASE_ORDERS_PAGE_SIZE = 100
 // Not the total: it adds up lines, which a sort can't follow
 export const PURCHASE_ORDER_SORT_FIELDS = ["reference", "createdAt", "status", "expectedOn"] as const
 
-type Client = Pick<typeof prisma, "purchaseOrderItem">
+type Client = Pick<typeof prisma, "purchaseOrderItem" | "stockTransferItem">
 
 // A store's own staff (purchaseOrder: read in that store), or, with storeId null, the platform's read-only view of every
 // store's, for system admins
@@ -38,27 +38,47 @@ const isOverdue = (status: PurchaseOrderStatus, expectedOn: Date | null) => isOp
 
 export const incomingKey = (listingId: string, listingVariantId: string | null) => `${listingId}:${listingVariantId ?? ""}`
 
-// What's still to come on open purchase orders, per listing row (incomingKey). Not stored anywhere: ordered less
-// received, over the orders that are ordered or partly received.
+// Adds n to a key's count
+const addTo = (counts: Map<string, number>, key: string, n: number) => counts.set(key, (counts.get(key) ?? 0) + n)
+
+// What's still to come, per listing row (incomingKey): on open purchase orders (ordered less received, over the orders
+// that are ordered or partly received) and on transfers sent to the store and not yet received. Not stored anywhere.
+// The storefront's "Due" lines count purchase orders only (they have an expected day).
 export async function getIncomingStock(client: Client, listingIds: string[]): Promise<Map<string, number>> {
   if (!listingIds.length) return new Map()
-  const groups = await client.purchaseOrderItem.groupBy({
-    by: ["storeListingId", "storeListingVariantId"],
-    where: { storeListingId: { in: listingIds }, purchaseOrder: { status: { in: OPEN_PURCHASE_ORDER_STATUSES } } },
-    _sum: { quantityOrdered: true, quantityReceived: true },
-  })
-  return new Map(groups.map((group) => [incomingKey(group.storeListingId, group.storeListingVariantId), (group._sum.quantityOrdered ?? 0) - (group._sum.quantityReceived ?? 0)]))
+  const [ordered, inTransit] = await Promise.all([
+    client.purchaseOrderItem.groupBy({
+      by: ["storeListingId", "storeListingVariantId"],
+      where: { storeListingId: { in: listingIds }, purchaseOrder: { status: { in: OPEN_PURCHASE_ORDER_STATUSES } } },
+      _sum: { quantityOrdered: true, quantityReceived: true },
+    }),
+    client.stockTransferItem.groupBy({
+      by: ["toListingId", "toListingVariantId"],
+      where: { toListingId: { in: listingIds }, transfer: { status: StockTransferStatus.SENT } },
+      _sum: { quantity: true },
+    }),
+  ])
+  const counts = new Map<string, number>()
+  for (const group of ordered) addTo(counts, incomingKey(group.storeListingId, group.storeListingVariantId), (group._sum.quantityOrdered ?? 0) - (group._sum.quantityReceived ?? 0))
+  for (const group of inTransit) addTo(counts, incomingKey(group.toListingId, group.toListingVariantId), group._sum.quantity ?? 0)
+  return counts
 }
 
 // The same, per listing (its variants added together), for the listings table
 export async function getIncomingByListing(client: Client, listingIds: string[]): Promise<Map<string, number>> {
   if (!listingIds.length) return new Map()
-  const groups = await client.purchaseOrderItem.groupBy({
-    by: ["storeListingId"],
-    where: { storeListingId: { in: listingIds }, purchaseOrder: { status: { in: OPEN_PURCHASE_ORDER_STATUSES } } },
-    _sum: { quantityOrdered: true, quantityReceived: true },
-  })
-  return new Map(groups.map((group) => [group.storeListingId, (group._sum.quantityOrdered ?? 0) - (group._sum.quantityReceived ?? 0)]))
+  const [ordered, inTransit] = await Promise.all([
+    client.purchaseOrderItem.groupBy({
+      by: ["storeListingId"],
+      where: { storeListingId: { in: listingIds }, purchaseOrder: { status: { in: OPEN_PURCHASE_ORDER_STATUSES } } },
+      _sum: { quantityOrdered: true, quantityReceived: true },
+    }),
+    client.stockTransferItem.groupBy({ by: ["toListingId"], where: { toListingId: { in: listingIds }, transfer: { status: StockTransferStatus.SENT } }, _sum: { quantity: true } }),
+  ])
+  const counts = new Map<string, number>()
+  for (const group of ordered) addTo(counts, group.storeListingId, (group._sum.quantityOrdered ?? 0) - (group._sum.quantityReceived ?? 0))
+  for (const group of inTransit) addTo(counts, group.toListingId, group._sum.quantity ?? 0)
+  return counts
 }
 
 const sumLines = (lines: { quantityOrdered: number; unitCost: Prisma.Decimal }[]) => lines.reduce((sum, line) => sum.plus(line.unitCost.times(line.quantityOrdered)), new Prisma.Decimal(0))

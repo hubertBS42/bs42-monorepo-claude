@@ -25,6 +25,7 @@ const KIND_LABELS: Record<NotificationKind, string> = {
   QUOTE: "Quotations",
   EXCHANGE_RATE: "Exchange rate",
   PRODUCT_REQUEST: "Product requests",
+  TRANSFER: "Transfers",
 }
 
 const KIND_OPTIONS = [{ label: "All kinds", value: "all" }, ...Object.entries(KIND_LABELS).map(([value, label]) => ({ label, value }))]

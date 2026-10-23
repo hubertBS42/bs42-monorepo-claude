@@ -70,6 +70,7 @@ export const getStockHistory = async (storeId: string, listingId: string, filter
               storeListingVariant: { select: { variant: { select: variantValuesSelect } } },
               order: { select: { id: true, reference: true } },
               purchaseOrderReceipt: { select: { purchaseOrder: { select: { id: true, reference: true } } } },
+              stockTransfer: { select: { id: true, reference: true } },
             },
           }),
       isKnownVariant ? prisma.stockMovement.count({ where }) : 0,
@@ -85,7 +86,7 @@ export const getStockHistory = async (storeId: string, listingId: string, filter
           variants: listing.storeListingVariants.map((row) => ({ id: row.id, name: describe(row.variant) })),
         },
         movements: {
-          data: movements.map(({ createdBy, storeListingVariant, order, purchaseOrderReceipt, ...movement }) => {
+          data: movements.map(({ createdBy, storeListingVariant, order, purchaseOrderReceipt, stockTransfer, ...movement }) => {
             const purchaseOrder = purchaseOrderReceipt?.purchaseOrder
             return {
               ...movement,
@@ -95,7 +96,9 @@ export const getStockHistory = async (storeId: string, listingId: string, filter
                 ? { label: order.reference, href: `/store/orders/${order.id}/details` }
                 : purchaseOrder
                   ? { label: purchaseOrder.reference, href: `/store/purchase-orders/${purchaseOrder.id}/details` }
-                  : null,
+                  : stockTransfer
+                    ? { label: stockTransfer.reference, href: `/store/transfers/${stockTransfer.id}` }
+                    : null,
             }
           }),
           total,

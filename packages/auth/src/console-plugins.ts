@@ -81,6 +81,13 @@ export const consolePlugins = [
             code: "HAS_ORDERS",
           })
         }
+        // So do stock transfers, which restrict deleting both stores
+        if (await prisma.stockTransfer.findFirst({ where: { OR: [{ fromStoreId: organization.id }, { toStoreId: organization.id }] }, select: { id: true } })) {
+          throw new APIError("BAD_REQUEST", {
+            message: "This store has sent or received stock transfers, so it can't be deleted. Suspend it instead.",
+            code: "HAS_ORDERS",
+          })
+        }
       },
       // System admins belong to every store with a role that follows their system role. The console's own
       // flows keep that up through Prisma (store creation above, promote/demote), so these endpoints, which

@@ -243,7 +243,7 @@ export default function PurchaseOrderForm({ storeId, suppliers, rate, order, sug
                           const details = [
                             info?.sku,
                             info?.stock === null ? "Stock not tracked" : info && `${info.stock} in stock`,
-                            info?.incoming ? `${info.incoming} on other orders` : null,
+                            info?.incoming ? `${info.incoming} incoming` : null,
                             received ? `${received} received` : null,
                           ].filter(Boolean)
                           return (

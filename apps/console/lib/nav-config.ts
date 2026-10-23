@@ -1,4 +1,21 @@
-import { Briefcase, Building2, ClipboardList, FileText, LayoutDashboard, Mail, Settings, ShoppingBag, ShoppingCart, Store, Tag, Truck, Users, UsersIcon, PackagePlus } from "lucide-react"
+import {
+  ArrowLeftRight,
+  Briefcase,
+  Building2,
+  ClipboardList,
+  FileText,
+  LayoutDashboard,
+  Mail,
+  Settings,
+  ShoppingBag,
+  ShoppingCart,
+  Store,
+  Tag,
+  Truck,
+  Users,
+  UsersIcon,
+  PackagePlus,
+} from "lucide-react"
 import type { NavItem } from "@/types"
 
 /**
@@ -34,9 +51,10 @@ export const navConfig: NavItem[] = [
   { url: "/store/listings", title: "Listings", icon: Tag, group: "main", order: 3 },
   { url: "/store/product-requests", title: "Product Requests", icon: PackagePlus, group: "main", order: 4 },
   { url: "/store/purchase-orders", title: "Purchase Orders", icon: ClipboardList, group: "main", order: 5 },
-  { url: "/store/suppliers", title: "Suppliers", icon: Truck, group: "main", order: 6 },
-  { url: "/store/members", title: "Members", icon: Users, group: "main", order: 7 },
-  { url: "/store/invitations", title: "Invitations", icon: Mail, group: "main", order: 8 },
+  { url: "/store/transfers", title: "Transfers", icon: ArrowLeftRight, group: "main", order: 6 },
+  { url: "/store/suppliers", title: "Suppliers", icon: Truck, group: "main", order: 7 },
+  { url: "/store/members", title: "Members", icon: Users, group: "main", order: 8 },
+  { url: "/store/invitations", title: "Invitations", icon: Mail, group: "main", order: 9 },
   // The store's own details, with Leave and Delete: occasional, so at the bottom like the platform's Settings
   { url: "/store", title: "Store Details", icon: Store, group: "secondary", order: 1, exact: true },
   {

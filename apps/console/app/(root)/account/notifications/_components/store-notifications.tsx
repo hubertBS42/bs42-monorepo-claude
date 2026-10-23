@@ -13,7 +13,11 @@ type Preference = (typeof STORE_NOTIFICATION_PREFERENCES)[number]
 
 const SWITCHES: { key: Preference; label: string; description: string }[] = [
   { key: "notifyOrders", label: "New orders", description: "When a customer's order with the store's items is paid, or someone else creates one in the store" },
-  { key: "notifyStock", label: "Low and out of stock", description: "When a sale takes one of the store's items down to its low-stock threshold, or to 0" },
+  {
+    key: "notifyStock",
+    label: "Stock",
+    description: "When a sale takes one of the store's items down to its low-stock threshold or to 0, and when someone else sends, receives or cancels a transfer with another store",
+  },
   { key: "notifyRefunds", label: "Refunds", description: "When someone else gives money back on one of the store's own orders, on its own or with a return" },
 ]
 

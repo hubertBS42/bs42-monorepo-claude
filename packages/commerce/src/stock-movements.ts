@@ -5,7 +5,7 @@ import type { StockMovementReason } from "@workspace/db/enums"
 
 // The stock history: every change to a listing's (or variant's) stock writes a StockMovement in the same transaction,
 // so the movements always add up to the current stock. Used by every module that changes stock (sales and
-// cancellations, returns, purchase order deliveries, the listing form).
+// cancellations, returns, purchase order deliveries, stock transfers, the listing form).
 
 type Tx = Parameters<Parameters<typeof prisma.$transaction>[0]>[0]
 
@@ -23,6 +23,7 @@ export interface StockMovementSource {
   orderId?: string
   orderReturnId?: string
   purchaseOrderReceiptId?: string
+  stockTransferId?: string
 }
 
 export interface RecordedMovement {
@@ -47,6 +48,7 @@ export async function recordStockMovements(tx: Tx, movements: RecordedMovement[]
       orderId: source.orderId,
       orderReturnId: source.orderReturnId,
       purchaseOrderReceiptId: source.purchaseOrderReceiptId,
+      stockTransferId: source.stockTransferId,
       createdById: source.createdById,
     }))
   if (data.length) await tx.stockMovement.createMany({ data })

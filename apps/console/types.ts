@@ -11,6 +11,7 @@ import {
   PaymentMethod,
   PaymentStatus,
   ProductRequestStatus,
+  StockTransferStatus,
   PurchaseOrderStatus,
   ReviewStatus,
   ShippingMethod,
@@ -925,13 +926,73 @@ export interface StockMovementItem {
   reason: StockMovementReason
   note: string | null
   createdBy: string | null
-  // What caused it: the order, or the purchase order a delivery was on
+  // What caused it: the order, the purchase order a delivery was on, or the stock transfer
   source: { label: string; href: string } | null
 }
 
 export interface StockHistoryData {
   listing: { id: string; productName: string; hasVariants: boolean; variants: SelectItem[] }
   movements: PaginatedResult<StockMovementItem>
+}
+
+// ============================================
+// STOCK TRANSFERS
+// ============================================
+
+// Out: this store sent it; in: it was sent to this store
+export type TransferDirection = "out" | "in"
+
+export interface StockTransfersParams extends PaginationParams {
+  direction?: TransferDirection
+  status?: StockTransferStatus
+}
+
+export interface StockTransferListItem {
+  id: string
+  reference: string
+  direction: TransferDirection
+  // The store on the other side
+  otherStoreName: string
+  status: StockTransferStatus
+  lines: number
+  units: number
+  // Units that arrived, once received
+  unitsReceived: number | null
+  sentBy: string | null
+  createdAt: Date
+}
+
+export interface StockTransferDetails {
+  id: string
+  reference: string
+  direction: TransferDirection
+  status: StockTransferStatus
+  fromStore: { id: string; name: string }
+  toStore: { id: string; name: string }
+  notes: string | null
+  sentBy: string | null
+  createdAt: Date
+  receivedBy: string | null
+  receivedAt: Date | null
+  receiveNote: string | null
+  cancelledBy: string | null
+  cancelledAt: Date | null
+  cancelReason: string | null
+  items: { id: string; productName: string; variantDescription: string | null; sku: string | null; quantity: number; quantityReceived: number | null; fromListingId: string; toListingId: string }[]
+}
+
+// A row the sender can send from: one of its listings (or a variant on it) that tracks stock and has some
+export interface TransferableRow {
+  listingId: string
+  listingVariantId: string | null
+  productId: string
+  productName: string
+  variantDescription: string | null
+  sku: string | null
+  image: string | null
+  stock: number
+  // Whether the chosen store lists the same product (and variant); null before a store is chosen
+  listedThere: boolean | null
 }
 
 // ============================================

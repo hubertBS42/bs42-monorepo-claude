@@ -213,6 +213,9 @@ model User {
   notifications           Notification[]
   platformAlertSettings   PlatformAlertSetting[]
   productRequests         ProductRequest[]       @relation("ProductRequestRequestedBy")
+  transfersSent           StockTransfer[]        @relation("StockTransferSentBy")
+  transfersReceived       StockTransfer[]        @relation("StockTransferReceivedBy")
+  transfersCancelled      StockTransfer[]        @relation("StockTransferCancelledBy")
   productRequestsReviewed ProductRequest[]       @relation("ProductRequestReviewedBy")
 
   @@map("user")
@@ -572,6 +575,8 @@ model StoreListing {
   cartItems            CartItem[]
   storeListingVariants StoreListingVariant[]
   purchaseOrderItems   PurchaseOrderItem[]
+  transfersOut         StockTransferItem[]   @relation("StockTransferItemFrom")
+  transfersIn          StockTransferItem[]   @relation("StockTransferItemTo")
   stockMovements       StockMovement[]
 
   trackInventory    Boolean @default(true)
@@ -611,6 +616,8 @@ model StoreListingVariant {
   orderItems         OrderItem[]
   quoteItems         QuoteItem[]
   purchaseOrderItems PurchaseOrderItem[]
+  transfersOut       StockTransferItem[] @relation("StockTransferItemFrom")
+  transfersIn        StockTransferItem[] @relation("StockTransferItemTo")
   stockMovements     StockMovement[]
   status             Status              @default(DRAFT)
   createdAt          DateTime            @default(now())
@@ -1268,6 +1275,10 @@ enum StockMovementReason {
   CANCELLATION
   RETURN
   PURCHASE_RECEIVED
+  // Sent to another store, received from one, or back from a cancelled transfer
+  TRANSFER_OUT
+  TRANSFER_IN
+  TRANSFER_CANCELLED
   COUNT_CORRECTION
   DAMAGED
   LOST
@@ -1297,6 +1308,8 @@ model StockMovement {
   orderReturn            OrderReturn?          @relation(fields: [orderReturnId], references: [id], onDelete: SetNull)
   purchaseOrderReceiptId String?               @db.Uuid
   purchaseOrderReceipt   PurchaseOrderReceipt? @relation(fields: [purchaseOrderReceiptId], references: [id], onDelete: SetNull)
+  stockTransferId        String?               @db.Uuid
+  stockTransfer          StockTransfer?        @relation(fields: [stockTransferId], references: [id], onDelete: SetNull)
 
   createdById String?  @db.Uuid
   createdBy   User?    @relation(fields: [createdById], references: [id], onDelete: SetNull)
@@ -1307,6 +1320,7 @@ model StockMovement {
   @@index([orderId])
   @@index([orderReturnId])
   @@index([purchaseOrderReceiptId])
+  @@index([stockTransferId])
   @@index([createdById])
   @@map("stock_movement")
 }
@@ -1417,6 +1431,8 @@ model Organization {
   suppliers       Supplier[]
   purchaseOrders  PurchaseOrder[]
   productRequests ProductRequest[]
+  transfersOut    StockTransfer[]    @relation("StockTransferFrom")
+  transfersIn     StockTransfer[]    @relation("StockTransferTo")
 
   @@unique([slug])
   @@map("organization")
@@ -1492,6 +1508,7 @@ enum NotificationKind {
   QUOTE
   EXCHANGE_RATE
   PRODUCT_REQUEST
+  TRANSFER
 }
 
 // A console user's in-app notification (the header's bell), written with the staff emails
@@ -1521,6 +1538,82 @@ model PlatformAlertSetting {
 
   @@id([userId, alert])
   @@map("platform_alert_setting")
+}
+
+// A stock transfer between two stores: sent (the stock has left the sender), then received (what arrived is added to
+// the receiver; any shortfall was lost on the way) or cancelled by the sender before that (the stock goes back)
+enum StockTransferStatus {
+  SENT
+  RECEIVED
+  CANCELLED
+}
+
+// Stock moved from one store's listings to another's, between stores the sender manages (owner or admin in both).
+// Moves stock only: no money, no prices. References are TR-yyyyMMdd-00001 from stock_transfer_reference_seq.
+model StockTransfer {
+  id          String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  reference   String              @unique
+  // Restrict: a store with transfers is suspended, never deleted (beforeDeleteOrganization)
+  fromStoreId String              @db.Uuid
+  fromStore   Organization        @relation("StockTransferFrom", fields: [fromStoreId], references: [id], onDelete: Restrict)
+  toStoreId   String              @db.Uuid
+  toStore     Organization        @relation("StockTransferTo", fields: [toStoreId], references: [id], onDelete: Restrict)
+  status      StockTransferStatus @default(SENT)
+  notes       String?
+
+  sentById      String?   @db.Uuid
+  sentBy        User?     @relation("StockTransferSentBy", fields: [sentById], references: [id], onDelete: SetNull)
+  receivedById  String?   @db.Uuid
+  receivedBy    User?     @relation("StockTransferReceivedBy", fields: [receivedById], references: [id], onDelete: SetNull)
+  receivedAt    DateTime?
+  receiveNote   String?
+  cancelledById String?   @db.Uuid
+  cancelledBy   User?     @relation("StockTransferCancelledBy", fields: [cancelledById], references: [id], onDelete: SetNull)
+  cancelledAt   DateTime?
+  cancelReason  String?
+
+  items          StockTransferItem[]
+  stockMovements StockMovement[]
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @default(now()) @updatedAt
+
+  @@index([fromStoreId, createdAt])
+  @@index([toStoreId, createdAt])
+  @@map("stock_transfer")
+}
+
+// One row of a transfer: from the sender's listing (or variant) to the receiver's listing of the same product (or the
+// same variant). Restrict like PurchaseOrderItem: a listing that has been transferred is archived, never deleted.
+model StockTransferItem {
+  id         String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  transferId String        @db.Uuid
+  transfer   StockTransfer @relation(fields: [transferId], references: [id], onDelete: Cascade)
+
+  fromListingId        String               @db.Uuid
+  fromListing          StoreListing         @relation("StockTransferItemFrom", fields: [fromListingId], references: [id], onDelete: Restrict)
+  fromListingVariantId String?              @db.Uuid
+  fromListingVariant   StoreListingVariant? @relation("StockTransferItemFrom", fields: [fromListingVariantId], references: [id], onDelete: Restrict)
+  toListingId          String               @db.Uuid
+  toListing            StoreListing         @relation("StockTransferItemTo", fields: [toListingId], references: [id], onDelete: Restrict)
+  toListingVariantId   String?              @db.Uuid
+  toListingVariant     StoreListingVariant? @relation("StockTransferItemTo", fields: [toListingVariantId], references: [id], onDelete: Restrict)
+
+  // Snapshot
+  productName        String
+  variantDescription String?
+  sku                String?
+
+  quantity         Int
+  // Set when received: what arrived; the rest was lost on the way
+  quantityReceived Int?
+  position         Int  @default(0)
+
+  @@index([transferId])
+  @@index([fromListingId])
+  @@index([fromListingVariantId])
+  @@index([toListingId])
+  @@index([toListingVariantId])
+  @@map("stock_transfer_item")
 }
 
 // What became of a store's request for a product to be added to the catalogue

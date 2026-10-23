@@ -380,6 +380,29 @@ export const BREADCRUMB_DATA: BreadcrumbConfig[] = [
     ],
   },
   {
+    pathname: "/store/transfers",
+    segments: [
+      { text: "Dashboard", href: "/" },
+      { text: "Transfers", href: "#" },
+    ],
+  },
+  {
+    pathname: "/store/transfers/new",
+    segments: [
+      { text: "Dashboard", href: "/" },
+      { text: "Transfers", href: "/store/transfers" },
+      { text: "Send Stock", href: "#" },
+    ],
+  },
+  {
+    pathname: "/store/transfers/[id]",
+    segments: [
+      { text: "Dashboard", href: "/" },
+      { text: "Transfers", href: "/store/transfers" },
+      { text: "Transfer", href: "#" },
+    ],
+  },
+  {
     pathname: "/store/suppliers",
     segments: [
       { text: "Dashboard", href: "/" },

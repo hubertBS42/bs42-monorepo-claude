@@ -156,12 +156,14 @@ export async function deleteListingAction(input: z.input<typeof deleteListingSch
     const listing = await prisma.storeListing.findFirst({ where: { id, organizationId: storeId }, select: { id: true } })
     if (!listing) return NOT_FOUND
 
-    // Order and purchase order lines restrict the delete, so a listing that has been ordered or bought in can only be archived
-    const [ordered, purchased] = await Promise.all([
+    // Order, purchase order and transfer lines restrict the delete, so a listing that has been ordered, bought in or
+    // transferred can only be archived
+    const [ordered, purchased, transferred] = await Promise.all([
       prisma.orderItem.findFirst({ where: { storeListingId: id }, select: { id: true } }),
       prisma.purchaseOrderItem.findFirst({ where: { storeListingId: id }, select: { id: true } }),
+      prisma.stockTransferItem.findFirst({ where: { OR: [{ fromListingId: id }, { toListingId: id }] }, select: { id: true } }),
     ])
-    if (ordered || purchased) return HAS_ORDERS
+    if (ordered || purchased || transferred) return HAS_ORDERS
 
     // Its variants and cart items cascade
     await prisma.storeListing.delete({ where: { id } })

@@ -702,3 +702,89 @@ export async function notifyProductRequestDecision(requestId: string) {
     console.error(`Product request decision notification for ${requestId} failed:`, error)
   }
 }
+
+// A stock transfer between two stores, for the store on the other side, under each owner's and admin's stock switch:
+// when it's sent, the receiving store (it's on its way); when it's received, the sender (what arrived); when the
+// sender cancels it, the receiving store (it isn't coming). Whoever did it isn't told.
+export async function notifyStockTransfer(transferId: string) {
+  try {
+    const settings = await readAppSettings()
+    const transfer = await prisma.stockTransfer.findUnique({
+      where: { id: transferId },
+      select: {
+        reference: true,
+        status: true,
+        notes: true,
+        receiveNote: true,
+        cancelReason: true,
+        sentById: true,
+        receivedById: true,
+        cancelledById: true,
+        fromStoreId: true,
+        toStoreId: true,
+        fromStore: { select: { name: true } },
+        toStore: { select: { name: true } },
+        items: { orderBy: { position: "asc" }, select: { productName: true, variantDescription: true, quantity: true, quantityReceived: true } },
+      },
+    })
+    if (!transfer) return
+
+    const itemLabel = (item: { productName: string; variantDescription: string | null }) => (item.variantDescription ? `${item.productName} (${item.variantDescription})` : item.productName)
+    const units = transfer.items.reduce((sum, item) => sum + item.quantity, 0)
+    const path = `/store/transfers/${transferId}`
+
+    if (transfer.status === "SENT" || transfer.status === "CANCELLED") {
+      const sent = transfer.status === "SENT"
+      await toStoreTeam(
+        settings,
+        transfer.toStoreId,
+        "notifyStock",
+        NotificationKind.TRANSFER,
+        {
+          subject: sent ? `Stock on its way from ${transfer.fromStore.name}: ${transfer.reference}` : `Transfer cancelled: ${transfer.reference}`,
+          preview: sent ? `${units} ${units === 1 ? "item" : "items"}` : (transfer.cancelReason ?? ""),
+          heading: sent ? "Stock on its way" : "Transfer cancelled",
+          intro: sent
+            ? `${transfer.fromStore.name} sent stock to ${transfer.toStore.name}. Receive it when it arrives, entering what actually came.`
+            : `${transfer.fromStore.name} cancelled a transfer to ${transfer.toStore.name}, so it isn't coming.`,
+          details: [
+            { label: "Reference", value: transfer.reference },
+            ...transfer.items.map((item) => ({ label: itemLabel(item), value: `× ${item.quantity}` })),
+            ...(sent && transfer.notes ? [{ label: "Notes", value: transfer.notes }] : []),
+            ...(!sent && transfer.cancelReason ? [{ label: "Reason", value: transfer.cancelReason }] : []),
+          ],
+        },
+        { label: "View the transfer", path },
+        sent ? "transfer sent" : "transfer cancelled",
+        sent ? transfer.sentById : transfer.cancelledById
+      )
+      return
+    }
+
+    const short = transfer.items.filter((item) => (item.quantityReceived ?? 0) < item.quantity)
+    await toStoreTeam(
+      settings,
+      transfer.fromStoreId,
+      "notifyStock",
+      NotificationKind.TRANSFER,
+      {
+        subject: `${transfer.toStore.name} received ${transfer.reference}${short.length ? ", with items missing" : ""}`,
+        preview: short.length ? `${short.length} ${short.length === 1 ? "line" : "lines"} short` : "Everything arrived",
+        heading: "Transfer received",
+        intro: short.length
+          ? `${transfer.toStore.name} received the stock you sent, but not all of it arrived. The missing units were lost on the way.`
+          : `${transfer.toStore.name} received everything you sent.`,
+        details: [
+          { label: "Reference", value: transfer.reference },
+          ...transfer.items.map((item) => ({ label: itemLabel(item), value: `${item.quantityReceived ?? 0} of ${item.quantity}` })),
+          ...(transfer.receiveNote ? [{ label: "Note", value: transfer.receiveNote }] : []),
+        ],
+      },
+      { label: "View the transfer", path },
+      "transfer received",
+      transfer.receivedById
+    )
+  } catch (error) {
+    console.error(`Stock transfer notification for ${transferId} failed:`, error)
+  }
+}

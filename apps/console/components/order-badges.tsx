@@ -1,8 +1,9 @@
 import { Badge } from "@workspace/ui/components/badge"
-import type { InstallationStatus, OrderStatus, PaymentStatus, ProductRequestStatus, PurchaseOrderStatus, TradeAccountStatus } from "@workspace/db/enums"
+import type { InstallationStatus, OrderStatus, PaymentStatus, ProductRequestStatus, PurchaseOrderStatus, StockTransferStatus, TradeAccountStatus } from "@workspace/db/enums"
 import { TRADE_ACCOUNT_STATUS_LABELS } from "@workspace/commerce/trade-account-status"
 import { INSTALLATION_STATUS_LABELS, ORDER_STATUS_LABELS, PAYMENT_STATUS_LABELS } from "@workspace/commerce/order-status"
 import { PURCHASE_ORDER_STATUS_LABELS } from "@/lib/purchase-order-status"
+import { STOCK_TRANSFER_STATUS_LABELS } from "@/lib/stock-transfer-status"
 
 // Finished states are success, a cancellation is muted rather than red (nothing went wrong), the rest are in progress
 const ORDER_STATUS_VARIANTS: Record<OrderStatus, "outline" | "secondary" | "success"> = {
@@ -76,6 +77,16 @@ const PRODUCT_REQUEST_STATUS_VARIANTS: Record<ProductRequestStatus, "outline" | 
 
 export function ProductRequestStatusBadge({ status }: { status: ProductRequestStatus }) {
   return <Badge variant={PRODUCT_REQUEST_STATUS_VARIANTS[status]}>{PRODUCT_REQUEST_STATUS_LABELS[status]}</Badge>
+}
+
+const STOCK_TRANSFER_STATUS_VARIANTS: Record<StockTransferStatus, "outline" | "secondary" | "success"> = {
+  SENT: "outline",
+  RECEIVED: "success",
+  CANCELLED: "secondary",
+}
+
+export function StockTransferStatusBadge({ status }: { status: StockTransferStatus }) {
+  return <Badge variant={STOCK_TRANSFER_STATUS_VARIANTS[status]}>{STOCK_TRANSFER_STATUS_LABELS[status]}</Badge>
 }
 
 export function OrderStatusBadge({ status }: { status: OrderStatus }) {
