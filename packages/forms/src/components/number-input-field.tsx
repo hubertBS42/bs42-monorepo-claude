@@ -49,7 +49,8 @@ const NumberInputField = <T extends FieldValues>({
   onValueChange,
   ...inputProps
 }: NumberInputFieldProps<T>) => {
-  const inputId = id ?? String(name).replace(/[.[\]]+/g, "-")
+  const generatedId = React.useId()
+  const inputId = id ?? `${generatedId}-${String(name).replace(/[.[\]]+/g, "-")}`
 
   const roundToPrecision = React.useCallback(
     (value: number, stepValue: number) => {

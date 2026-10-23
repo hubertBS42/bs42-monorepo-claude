@@ -37,7 +37,8 @@ const TextareaField = <T extends FieldValues>({
   id,
   ...textareaProps
 }: TextareaFieldProps<T>) => {
-  const inputId = id ?? String(name).replace(/[.[\]]+/g, "-")
+  const generatedId = React.useId()
+  const inputId = id ?? `${generatedId}-${String(name).replace(/[.[\]]+/g, "-")}`
 
   return (
     <Controller

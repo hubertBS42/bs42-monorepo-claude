@@ -49,7 +49,8 @@ const SelectField = <T extends FieldValues>({
   options,
   ...triggerProps
 }: SelectFieldProps<T>) => {
-  const inputId = String(name).replace(/[.[\]]+/g, "-")
+  const generatedId = React.useId()
+  const inputId = `${generatedId}-${String(name).replace(/[.[\]]+/g, "-")}`
 
   return (
     <Controller

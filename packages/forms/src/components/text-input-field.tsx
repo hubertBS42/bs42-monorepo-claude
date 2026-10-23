@@ -37,7 +37,8 @@ const TextInputField = <T extends FieldValues>({
   id,
   ...inputProps
 }: TextInputFieldProps<T>) => {
-  const inputId = id ?? String(name).replace(/[.[\]]+/g, "-")
+  const generatedId = React.useId()
+  const inputId = id ?? `${generatedId}-${String(name).replace(/[.[\]]+/g, "-")}`
 
   return (
     <Controller

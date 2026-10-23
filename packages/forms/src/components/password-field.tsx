@@ -42,7 +42,8 @@ const PasswordField = <T extends FieldValues>({
   resetPasswordSlot,
   ...inputProps
 }: PasswordFieldProps<T>) => {
-  const inputId = id ?? String(name).replace(/[.[\]]+/g, "-")
+  const generatedId = React.useId()
+  const inputId = id ?? `${generatedId}-${String(name).replace(/[.[\]]+/g, "-")}`
   const [showPassword, setShowPassword] = React.useState(false)
 
   return (
