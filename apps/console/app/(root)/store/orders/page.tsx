@@ -10,7 +10,7 @@ import type { StoreOrdersParams } from "@/types"
 import OrdersTable from "./_components/orders-table"
 
 export const metadata: Metadata = {
-  title: "Manage Orders",
+  title: "Orders",
 }
 
 type StoreOrdersPageProps = {
@@ -41,7 +41,7 @@ export default async function StoreOrdersPage({ searchParams }: StoreOrdersPageP
     <main className="flex flex-col gap-y-6">
       <div className="flex items-end justify-between">
         <div className="grid">
-          <h1 className="text-xl font-bold md:text-2xl">Manage Orders</h1>
+          <h1 className="text-xl font-bold md:text-2xl">Orders</h1>
           <p className="text-sm text-muted-foreground">Orders with this store&apos;s items. An order with other stores&apos; items too is managed by the platform.</p>
         </div>
 

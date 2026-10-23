@@ -10,14 +10,14 @@ export const BREADCRUMB_DATA: BreadcrumbConfig[] = [
     pathname: "/stores",
     segments: [
       { text: "Dashboard", href: "/" },
-      { text: "Manage Stores", href: "#" },
+      { text: "Stores", href: "#" },
     ],
   },
   {
     pathname: "/stores/add",
     segments: [
       { text: "Dashboard", href: "/" },
-      { text: "Manage Stores", href: "/stores" },
+      { text: "Stores", href: "/stores" },
       { text: "Add Store", href: "#" },
     ],
   },
@@ -25,7 +25,7 @@ export const BREADCRUMB_DATA: BreadcrumbConfig[] = [
     pathname: "/stores/[id]/edit",
     segments: [
       { text: "Dashboard", href: "/" },
-      { text: "Manage Stores", href: "/stores" },
+      { text: "Stores", href: "/stores" },
       { text: "Edit Store", href: "#" },
     ],
   },
@@ -41,7 +41,7 @@ export const BREADCRUMB_DATA: BreadcrumbConfig[] = [
     segments: [
       { text: "Dashboard", href: "/" },
       { text: "Catalogue", href: "/catalogue" },
-      { text: "Manage Products", href: "#" },
+      { text: "Products", href: "#" },
     ],
   },
   {
@@ -49,7 +49,7 @@ export const BREADCRUMB_DATA: BreadcrumbConfig[] = [
     segments: [
       { text: "Dashboard", href: "/" },
       { text: "Catalogue", href: "/catalogue" },
-      { text: "Manage Products", href: "/catalogue/products" },
+      { text: "Products", href: "/catalogue/products" },
       { text: "Add Product", href: "#" },
     ],
   },
@@ -58,7 +58,7 @@ export const BREADCRUMB_DATA: BreadcrumbConfig[] = [
     segments: [
       { text: "Dashboard", href: "/" },
       { text: "Catalogue", href: "/catalogue" },
-      { text: "Manage Products", href: "/catalogue/products" },
+      { text: "Products", href: "/catalogue/products" },
       { text: "Edit Product", href: "#" },
     ],
   },
@@ -67,7 +67,7 @@ export const BREADCRUMB_DATA: BreadcrumbConfig[] = [
     segments: [
       { text: "Dashboard", href: "/" },
       { text: "Catalogue", href: "/catalogue" },
-      { text: "Manage Categories", href: "#" },
+      { text: "Categories", href: "#" },
     ],
   },
   {
@@ -75,7 +75,7 @@ export const BREADCRUMB_DATA: BreadcrumbConfig[] = [
     segments: [
       { text: "Dashboard", href: "/" },
       { text: "Catalogue", href: "/catalogue" },
-      { text: "Manage Categories", href: "/catalogue/categories" },
+      { text: "Categories", href: "/catalogue/categories" },
       { text: "Add Category", href: "#" },
     ],
   },
@@ -84,7 +84,7 @@ export const BREADCRUMB_DATA: BreadcrumbConfig[] = [
     segments: [
       { text: "Dashboard", href: "/" },
       { text: "Catalogue", href: "/catalogue" },
-      { text: "Manage Categories", href: "/catalogue/categories" },
+      { text: "Categories", href: "/catalogue/categories" },
       { text: "Edit Category", href: "#" },
     ],
   },
@@ -93,7 +93,7 @@ export const BREADCRUMB_DATA: BreadcrumbConfig[] = [
     segments: [
       { text: "Dashboard", href: "/" },
       { text: "Catalogue", href: "/catalogue" },
-      { text: "Manage Brands", href: "#" },
+      { text: "Brands", href: "#" },
     ],
   },
   {
@@ -101,7 +101,7 @@ export const BREADCRUMB_DATA: BreadcrumbConfig[] = [
     segments: [
       { text: "Dashboard", href: "/" },
       { text: "Catalogue", href: "/catalogue" },
-      { text: "Manage Brands", href: "/catalogue/brands" },
+      { text: "Brands", href: "/catalogue/brands" },
       { text: "Add Brand", href: "#" },
     ],
   },
@@ -110,7 +110,7 @@ export const BREADCRUMB_DATA: BreadcrumbConfig[] = [
     segments: [
       { text: "Dashboard", href: "/" },
       { text: "Catalogue", href: "/catalogue" },
-      { text: "Manage Brands", href: "/catalogue/brands" },
+      { text: "Brands", href: "/catalogue/brands" },
       { text: "Edit Brand", href: "#" },
     ],
   },
@@ -126,14 +126,14 @@ export const BREADCRUMB_DATA: BreadcrumbConfig[] = [
     pathname: "/users",
     segments: [
       { text: "Dashboard", href: "/" },
-      { text: "Manage Users", href: "#" },
+      { text: "Users", href: "#" },
     ],
   },
   {
     pathname: "/users/add",
     segments: [
       { text: "Dashboard", href: "/" },
-      { text: "Manage Users", href: "/users" },
+      { text: "Users", href: "/users" },
       { text: "Add User", href: "#" },
     ],
   },
@@ -141,7 +141,7 @@ export const BREADCRUMB_DATA: BreadcrumbConfig[] = [
     pathname: "/users/[id]/edit",
     segments: [
       { text: "Dashboard", href: "/" },
-      { text: "Manage Users", href: "/users" },
+      { text: "Users", href: "/users" },
       { text: "Edit User", href: "#" },
     ],
   },
@@ -241,14 +241,14 @@ export const BREADCRUMB_DATA: BreadcrumbConfig[] = [
     pathname: "/store/orders",
     segments: [
       { text: "Dashboard", href: "/" },
-      { text: "Manage Orders", href: "#" },
+      { text: "Orders", href: "#" },
     ],
   },
   {
     pathname: "/store/orders/create",
     segments: [
       { text: "Dashboard", href: "/" },
-      { text: "Manage Orders", href: "/store/orders" },
+      { text: "Orders", href: "/store/orders" },
       { text: "Create Order", href: "#" },
     ],
   },
@@ -256,7 +256,7 @@ export const BREADCRUMB_DATA: BreadcrumbConfig[] = [
     pathname: "/store/orders/[id]/details",
     segments: [
       { text: "Dashboard", href: "/" },
-      { text: "Manage Orders", href: "/store/orders" },
+      { text: "Orders", href: "/store/orders" },
       { text: "Order Details", href: "#" },
     ],
   },
@@ -264,14 +264,14 @@ export const BREADCRUMB_DATA: BreadcrumbConfig[] = [
     pathname: "/store/listings",
     segments: [
       { text: "Dashboard", href: "/" },
-      { text: "Manage Listings", href: "#" },
+      { text: "Listings", href: "#" },
     ],
   },
   {
     pathname: "/store/listings/add",
     segments: [
       { text: "Dashboard", href: "/" },
-      { text: "Manage Listings", href: "/store/listings" },
+      { text: "Listings", href: "/store/listings" },
       { text: "Add Listing", href: "#" },
     ],
   },
@@ -279,7 +279,7 @@ export const BREADCRUMB_DATA: BreadcrumbConfig[] = [
     pathname: "/store/listings/[id]/edit",
     segments: [
       { text: "Dashboard", href: "/" },
-      { text: "Manage Listings", href: "/store/listings" },
+      { text: "Listings", href: "/store/listings" },
       { text: "Edit Listing", href: "#" },
     ],
   },
@@ -287,7 +287,7 @@ export const BREADCRUMB_DATA: BreadcrumbConfig[] = [
     pathname: "/store/listings/[id]/stock-history",
     segments: [
       { text: "Dashboard", href: "/" },
-      { text: "Manage Listings", href: "/store/listings" },
+      { text: "Listings", href: "/store/listings" },
       { text: "Edit Listing", href: "/store/listings/[id]/edit" },
       { text: "Stock History", href: "#" },
     ],
@@ -351,14 +351,14 @@ export const BREADCRUMB_DATA: BreadcrumbConfig[] = [
     pathname: "/store/members",
     segments: [
       { text: "Dashboard", href: "/" },
-      { text: "Manage Members", href: "#" },
+      { text: "Members", href: "#" },
     ],
   },
   {
     pathname: "/store/members/[id]/details",
     segments: [
       { text: "Dashboard", href: "/" },
-      { text: "Manage Members", href: "/store/members" },
+      { text: "Members", href: "/store/members" },
       { text: "Member Details", href: "#" },
     ],
   },
@@ -366,7 +366,7 @@ export const BREADCRUMB_DATA: BreadcrumbConfig[] = [
     pathname: "/store/invitations",
     segments: [
       { text: "Dashboard", href: "/" },
-      { text: "Manage Invitations", href: "#" },
+      { text: "Invitations", href: "#" },
     ],
   },
   {
@@ -380,31 +380,31 @@ export const BREADCRUMB_DATA: BreadcrumbConfig[] = [
     pathname: "/account",
     segments: [
       { text: "Dashboard", href: "/" },
-      { text: "Account Overview", href: "#" },
+      { text: "Account", href: "#" },
     ],
   },
   {
     pathname: "/account/profile",
     segments: [
       { text: "Dashboard", href: "/" },
-      { text: "Account Overview", href: "/account" },
-      { text: "Profile Details", href: "#" },
+      { text: "Account", href: "/account" },
+      { text: "Profile", href: "#" },
     ],
   },
   {
     pathname: "/account/password",
     segments: [
       { text: "Dashboard", href: "/" },
-      { text: "Account Overview", href: "/account" },
-      { text: "Change Password", href: "#" },
+      { text: "Account", href: "/account" },
+      { text: "Password", href: "#" },
     ],
   },
   {
     pathname: "/account/sessions",
     segments: [
       { text: "Dashboard", href: "/" },
-      { text: "Account Overview", href: "/account" },
-      { text: "Manage Sessions", href: "#" },
+      { text: "Account", href: "/account" },
+      { text: "Sessions", href: "#" },
     ],
   },
 ]

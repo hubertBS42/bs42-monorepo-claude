@@ -8,7 +8,7 @@ import { getEnumParam, getOrderParam, getPositiveIntegerParam, getSortParam, get
 import { requireConsoleAdmin } from "@/lib/auth-guard"
 
 export const metadata: Metadata = {
-  title: "Manage Brands",
+  title: "Brands",
 }
 
 type BrandsPageProps = {
@@ -36,7 +36,7 @@ export default async function BrandsPage({ searchParams }: BrandsPageProps) {
     <main className="flex flex-col gap-y-6">
       <div className="flex items-end justify-between">
         <div className="grid">
-          <h1 className="text-xl font-bold md:text-2xl">Manage Brands</h1>
+          <h1 className="text-xl font-bold md:text-2xl">Brands</h1>
           <p className="text-sm text-muted-foreground">View and manage all brands.</p>
         </div>
 

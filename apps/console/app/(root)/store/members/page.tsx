@@ -8,7 +8,7 @@ import InviteMemberDialog from "../_components/invite-member-dialog"
 import MembersTable from "./_components/members-table"
 
 export const metadata: Metadata = {
-  title: "Manage Members",
+  title: "Members",
 }
 
 type StoreMembersPageProps = {
@@ -38,7 +38,7 @@ export default async function StoreMembersPage({ searchParams }: StoreMembersPag
     <main className="flex flex-col gap-y-6">
       <div className="flex items-end justify-between">
         <div className="grid">
-          <h1 className="text-xl font-bold md:text-2xl">Manage Members</h1>
+          <h1 className="text-xl font-bold md:text-2xl">Members</h1>
           {/* Otherwise a store whose only members are platform staff looks empty by mistake */}
           <p className="text-sm text-muted-foreground">View and manage this store&apos;s members. Platform staff aren&apos;t listed.</p>
         </div>

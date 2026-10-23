@@ -9,7 +9,7 @@ import StoreAddButton from "@/components/store-add-button"
 import ListingsTable from "./_components/listings-table"
 
 export const metadata: Metadata = {
-  title: "Manage Listings",
+  title: "Listings",
 }
 
 type StoreListingsPageProps = {
@@ -43,7 +43,7 @@ export default async function StoreListingsPage({ searchParams }: StoreListingsP
     <main className="flex flex-col gap-y-6">
       <div className="flex items-end justify-between">
         <div className="grid">
-          <h1 className="text-xl font-bold md:text-2xl">Manage Listings</h1>
+          <h1 className="text-xl font-bold md:text-2xl">Listings</h1>
           <p className="text-sm text-muted-foreground">The catalogue products this store sells, with its own prices and stock.</p>
         </div>
 

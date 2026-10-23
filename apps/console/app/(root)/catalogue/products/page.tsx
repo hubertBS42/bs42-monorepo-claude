@@ -14,7 +14,7 @@ const getUuidParam = (value: string | string[] | undefined) => {
   return id && z.uuid().safeParse(id).success ? id : undefined
 }
 
-export const metadata: Metadata = { title: "Manage Products" }
+export const metadata: Metadata = { title: "Products" }
 
 type ProductsPageProps = {
   searchParams: Promise<{
@@ -47,7 +47,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
     <main className="flex flex-col gap-y-6">
       <div className="flex items-end justify-between">
         <div className="grid">
-          <h1 className="text-xl font-bold md:text-2xl">Manage Products</h1>
+          <h1 className="text-xl font-bold md:text-2xl">Products</h1>
           <p className="text-sm text-muted-foreground">View and manage all products.</p>
         </div>
 

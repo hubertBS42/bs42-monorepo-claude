@@ -4,7 +4,7 @@ import Link from "next/link"
 import type { Metadata } from "next"
 import { requireConsoleAdmin } from "@/lib/auth-guard"
 
-export const metadata: Metadata = { title: "Catalogue Overview" }
+export const metadata: Metadata = { title: "Catalogue" }
 
 const catalogueLinks = [
   {

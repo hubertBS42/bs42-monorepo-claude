@@ -8,7 +8,7 @@ import InvitationsTable from "./_components/invitations-table"
 import InviteMemberDialog from "../_components/invite-member-dialog"
 
 export const metadata: Metadata = {
-  title: "Manage Invitations",
+  title: "Invitations",
 }
 
 type StoreInvitationsPageProps = {
@@ -37,7 +37,7 @@ export default async function StoreInvitationsPage({ searchParams }: StoreInvita
     <main className="flex flex-col gap-y-6">
       <div className="flex items-end justify-between">
         <div className="grid">
-          <h1 className="text-xl font-bold md:text-2xl">Manage Invitations</h1>
+          <h1 className="text-xl font-bold md:text-2xl">Invitations</h1>
           <p className="text-sm text-muted-foreground">View and manage this store&apos;s pending invitations.</p>
         </div>
 

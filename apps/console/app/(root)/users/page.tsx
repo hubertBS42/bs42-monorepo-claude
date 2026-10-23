@@ -9,7 +9,7 @@ import { hasSystemPermission, hasSystemRole, SYSTEM_ROLE_NAMES } from "@workspac
 import { USER_STATUS_FILTERS } from "@/constants"
 
 export const metadata: Metadata = {
-  title: "Manage Users",
+  title: "Users",
 }
 
 type UsersPageProps = {
@@ -39,7 +39,7 @@ export default async function UsersPage({ searchParams }: UsersPageProps) {
     <main className="flex flex-col gap-y-6">
       <div className="flex items-end justify-between">
         <div className="grid">
-          <h1 className="text-xl font-bold md:text-2xl">Manage Users</h1>
+          <h1 className="text-xl font-bold md:text-2xl">Users</h1>
           <p className="text-sm text-muted-foreground">View and manage all users.</p>
         </div>
 
