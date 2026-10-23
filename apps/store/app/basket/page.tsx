@@ -90,13 +90,16 @@ export default async function BasketPage() {
       ) : null}
 
       {!lines.length ? (
-        <div className="mt-10 flex flex-col items-start gap-4">
-          <ShoppingBasket className="size-10 text-muted-foreground/50" aria-hidden />
-          <p className="text-muted-foreground">Your basket is empty.</p>
-          <Button render={<Link href="/" />} variant="outline">
-            Continue shopping
-          </Button>
-        </div>
+        <Card className="mt-6">
+          <CardContent className="flex flex-col items-center gap-3 py-10 text-center">
+            <ShoppingBasket className="size-8 text-muted-foreground" aria-hidden />
+            <p className="font-medium">Your basket is empty</p>
+            <p className="max-w-sm text-sm text-muted-foreground">Add products to your basket to check out or get a quote.</p>
+            <Button render={<Link href="/" />} variant="outline" size="sm" className="mt-2">
+              Continue shopping
+            </Button>
+          </CardContent>
+        </Card>
       ) : (
         <div className="mt-6 grid gap-8 lg:grid-cols-[1fr_22rem] lg:items-start">
           <ul className="divide-y border-y">
