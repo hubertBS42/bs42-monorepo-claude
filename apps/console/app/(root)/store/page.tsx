@@ -10,7 +10,7 @@ import { getStoreById } from "@/lib/data/stores.data"
 import StoreActions from "./_components/store-actions"
 
 export const metadata: Metadata = {
-  title: "Store Overview",
+  title: "Store Details",
 }
 
 const storeLinks = [
@@ -44,14 +44,14 @@ const StoreOverviewPage = async () => {
   return (
     <main className="flex flex-col gap-y-6">
       <div className="grid">
-        <h1 className="text-xl font-bold md:text-2xl">Store Overview</h1>
-        <p className="text-sm text-muted-foreground">An overview of your store.</p>
+        <h1 className="text-xl font-bold md:text-2xl">Store Details</h1>
+        <p className="text-sm text-muted-foreground">This store&apos;s details, its pages, and leaving or deleting it.</p>
       </div>
 
       <div className="grid gap-4">
         <Card>
           <CardHeader>
-            <CardTitle>Store Details</CardTitle>
+            <CardTitle>{store.name}</CardTitle>
             <CardDescription>General information about this store</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4">

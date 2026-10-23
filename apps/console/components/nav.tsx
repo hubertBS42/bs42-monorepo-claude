@@ -129,7 +129,7 @@ export function Nav() {
 
   const renderNavItem = (item: NavItem) => {
     const showAsCollapsible = item.items && !item.hideItems
-    const itemIsActive = isActive(item.url) || hasActiveChild(item.items)
+    const itemIsActive = item.exact ? pathname === item.url : isActive(item.url) || hasActiveChild(item.items)
 
     return showAsCollapsible ? (
       <ActiveCollapsible key={item.title} render={<SidebarMenuItem />} active={itemIsActive}>

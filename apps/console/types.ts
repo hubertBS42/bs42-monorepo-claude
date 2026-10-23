@@ -55,6 +55,8 @@ export interface NavItem {
   icon: LucideIcon
   group: "main" | "secondary"
   order: number
+  // Active only on its own page, not on the pages under its url (the store's details at /store)
+  exact?: boolean
   hideItems?: boolean
   items?: NavSubItem[]
 }
