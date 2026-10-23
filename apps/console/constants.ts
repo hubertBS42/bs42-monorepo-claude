@@ -2,16 +2,10 @@ import { Condition, Status } from "@workspace/db/enums"
 import { BreadcrumbConfig, StoreStatus, UserStatusFilter, type ListingStockState } from "./types"
 import { capitalizeWord } from "@workspace/utils/text"
 
+// Each page's trail, matched by pathname ([id] matches one segment). An href may hold the pathname's own [id], filled
+// in from the URL. A page without an entry falls back to its sidebar section (AppHeader).
 export const BREADCRUMB_DATA: BreadcrumbConfig[] = [
-  {
-    pathname: "/",
-    segments: [
-      {
-        text: "Dashboard",
-        href: "/",
-      },
-    ],
-  },
+  { pathname: "/", segments: [{ text: "Dashboard", href: "/" }] },
   {
     pathname: "/stores",
     segments: [
@@ -60,7 +54,7 @@ export const BREADCRUMB_DATA: BreadcrumbConfig[] = [
     ],
   },
   {
-    pathname: "catalogue/products/[id]/edit",
+    pathname: "/catalogue/products/[id]/edit",
     segments: [
       { text: "Dashboard", href: "/" },
       { text: "Catalogue", href: "/catalogue" },
@@ -86,7 +80,7 @@ export const BREADCRUMB_DATA: BreadcrumbConfig[] = [
     ],
   },
   {
-    pathname: "catalogue/categories/[id]/edit",
+    pathname: "/catalogue/categories/[id]/edit",
     segments: [
       { text: "Dashboard", href: "/" },
       { text: "Catalogue", href: "/catalogue" },
@@ -112,12 +106,20 @@ export const BREADCRUMB_DATA: BreadcrumbConfig[] = [
     ],
   },
   {
-    pathname: "catalogue/brands/[id]/edit",
+    pathname: "/catalogue/brands/[id]/edit",
     segments: [
       { text: "Dashboard", href: "/" },
       { text: "Catalogue", href: "/catalogue" },
       { text: "Manage Brands", href: "/catalogue/brands" },
       { text: "Edit Brand", href: "#" },
+    ],
+  },
+  {
+    pathname: "/catalogue/reviews",
+    segments: [
+      { text: "Dashboard", href: "/" },
+      { text: "Catalogue", href: "/catalogue" },
+      { text: "Reviews", href: "#" },
     ],
   },
   {
@@ -151,58 +153,94 @@ export const BREADCRUMB_DATA: BreadcrumbConfig[] = [
     ],
   },
   {
-    pathname: "/members",
+    pathname: "/orders/[id]/details",
     segments: [
       { text: "Dashboard", href: "/" },
-      { text: "Manage Members", href: "#" },
+      { text: "Orders", href: "/orders" },
+      { text: "Order Details", href: "#" },
     ],
   },
   {
-    pathname: "/members/[id]/details",
+    pathname: "/quotes",
     segments: [
       { text: "Dashboard", href: "/" },
-      { text: "Manage Members", href: "/members" },
-      { text: "Member Details", href: "#" },
+      { text: "Quotes", href: "#" },
     ],
   },
   {
-    pathname: "/store",
+    pathname: "/quotes/create",
     segments: [
       { text: "Dashboard", href: "/" },
-      { text: "Store", href: "#" },
+      { text: "Quotes", href: "/quotes" },
+      { text: "New Quotation", href: "#" },
     ],
   },
   {
-    pathname: "/store/listings",
+    pathname: "/quotes/[id]",
     segments: [
       { text: "Dashboard", href: "/" },
-      { text: "Store", href: "/store" },
-      { text: "Manage Listings", href: "#" },
+      { text: "Quotes", href: "/quotes" },
+      { text: "Quotation", href: "#" },
     ],
   },
   {
-    pathname: "/store/listings/add",
+    pathname: "/trade-accounts",
     segments: [
       { text: "Dashboard", href: "/" },
-      { text: "Store", href: "/store" },
-      { text: "Manage Listings", href: "/store/listings" },
-      { text: "Add Listing", href: "#" },
+      { text: "Trade Accounts", href: "#" },
     ],
   },
   {
-    pathname: "/store/listings/[id]/edit",
+    pathname: "/trade-accounts/[id]",
     segments: [
       { text: "Dashboard", href: "/" },
-      { text: "Store", href: "/store" },
-      { text: "Manage Listings", href: "/store/listings" },
-      { text: "Edit Listing", href: "#" },
+      { text: "Trade Accounts", href: "/trade-accounts" },
+      { text: "Trade Account", href: "#" },
+    ],
+  },
+  {
+    pathname: "/settings",
+    segments: [
+      { text: "Dashboard", href: "/" },
+      { text: "Settings", href: "#" },
+    ],
+  },
+  {
+    pathname: "/settings/pricing",
+    segments: [
+      { text: "Dashboard", href: "/" },
+      { text: "Settings", href: "/settings" },
+      { text: "Pricing", href: "#" },
+    ],
+  },
+  {
+    pathname: "/settings/delivery",
+    segments: [
+      { text: "Dashboard", href: "/" },
+      { text: "Settings", href: "/settings" },
+      { text: "Delivery", href: "#" },
+    ],
+  },
+  {
+    pathname: "/settings/notifications",
+    segments: [
+      { text: "Dashboard", href: "/" },
+      { text: "Settings", href: "/settings" },
+      { text: "Notifications", href: "#" },
+    ],
+  },
+  {
+    pathname: "/settings/legal",
+    segments: [
+      { text: "Dashboard", href: "/" },
+      { text: "Settings", href: "/settings" },
+      { text: "Legal", href: "#" },
     ],
   },
   {
     pathname: "/store/orders",
     segments: [
       { text: "Dashboard", href: "/" },
-      { text: "Store", href: "/store" },
       { text: "Manage Orders", href: "#" },
     ],
   },
@@ -210,7 +248,6 @@ export const BREADCRUMB_DATA: BreadcrumbConfig[] = [
     pathname: "/store/orders/create",
     segments: [
       { text: "Dashboard", href: "/" },
-      { text: "Store", href: "/store" },
       { text: "Manage Orders", href: "/store/orders" },
       { text: "Create Order", href: "#" },
     ],
@@ -219,16 +256,101 @@ export const BREADCRUMB_DATA: BreadcrumbConfig[] = [
     pathname: "/store/orders/[id]/details",
     segments: [
       { text: "Dashboard", href: "/" },
-      { text: "Store", href: "/store" },
       { text: "Manage Orders", href: "/store/orders" },
       { text: "Order Details", href: "#" },
+    ],
+  },
+  {
+    pathname: "/store/listings",
+    segments: [
+      { text: "Dashboard", href: "/" },
+      { text: "Manage Listings", href: "#" },
+    ],
+  },
+  {
+    pathname: "/store/listings/add",
+    segments: [
+      { text: "Dashboard", href: "/" },
+      { text: "Manage Listings", href: "/store/listings" },
+      { text: "Add Listing", href: "#" },
+    ],
+  },
+  {
+    pathname: "/store/listings/[id]/edit",
+    segments: [
+      { text: "Dashboard", href: "/" },
+      { text: "Manage Listings", href: "/store/listings" },
+      { text: "Edit Listing", href: "#" },
+    ],
+  },
+  {
+    pathname: "/store/listings/[id]/stock-history",
+    segments: [
+      { text: "Dashboard", href: "/" },
+      { text: "Manage Listings", href: "/store/listings" },
+      { text: "Edit Listing", href: "/store/listings/[id]/edit" },
+      { text: "Stock History", href: "#" },
+    ],
+  },
+  {
+    pathname: "/store/purchase-orders",
+    segments: [
+      { text: "Dashboard", href: "/" },
+      { text: "Purchase Orders", href: "#" },
+    ],
+  },
+  {
+    pathname: "/store/purchase-orders/create",
+    segments: [
+      { text: "Dashboard", href: "/" },
+      { text: "Purchase Orders", href: "/store/purchase-orders" },
+      { text: "Create Purchase Order", href: "#" },
+    ],
+  },
+  {
+    pathname: "/store/purchase-orders/[id]/details",
+    segments: [
+      { text: "Dashboard", href: "/" },
+      { text: "Purchase Orders", href: "/store/purchase-orders" },
+      { text: "Purchase Order", href: "#" },
+    ],
+  },
+  {
+    pathname: "/store/purchase-orders/[id]/edit",
+    segments: [
+      { text: "Dashboard", href: "/" },
+      { text: "Purchase Orders", href: "/store/purchase-orders" },
+      { text: "Purchase Order", href: "/store/purchase-orders/[id]/details" },
+      { text: "Edit Purchase Order", href: "#" },
+    ],
+  },
+  {
+    pathname: "/store/suppliers",
+    segments: [
+      { text: "Dashboard", href: "/" },
+      { text: "Suppliers", href: "#" },
+    ],
+  },
+  {
+    pathname: "/store/suppliers/add",
+    segments: [
+      { text: "Dashboard", href: "/" },
+      { text: "Suppliers", href: "/store/suppliers" },
+      { text: "Add Supplier", href: "#" },
+    ],
+  },
+  {
+    pathname: "/store/suppliers/[id]/edit",
+    segments: [
+      { text: "Dashboard", href: "/" },
+      { text: "Suppliers", href: "/store/suppliers" },
+      { text: "Edit Supplier", href: "#" },
     ],
   },
   {
     pathname: "/store/members",
     segments: [
       { text: "Dashboard", href: "/" },
-      { text: "Store", href: "/store" },
       { text: "Manage Members", href: "#" },
     ],
   },
@@ -236,7 +358,6 @@ export const BREADCRUMB_DATA: BreadcrumbConfig[] = [
     pathname: "/store/members/[id]/details",
     segments: [
       { text: "Dashboard", href: "/" },
-      { text: "Store", href: "/store" },
       { text: "Manage Members", href: "/store/members" },
       { text: "Member Details", href: "#" },
     ],
@@ -245,8 +366,14 @@ export const BREADCRUMB_DATA: BreadcrumbConfig[] = [
     pathname: "/store/invitations",
     segments: [
       { text: "Dashboard", href: "/" },
-      { text: "Store", href: "/store" },
       { text: "Manage Invitations", href: "#" },
+    ],
+  },
+  {
+    pathname: "/store",
+    segments: [
+      { text: "Dashboard", href: "/" },
+      { text: "Store Details", href: "#" },
     ],
   },
   {
@@ -278,13 +405,6 @@ export const BREADCRUMB_DATA: BreadcrumbConfig[] = [
       { text: "Dashboard", href: "/" },
       { text: "Account Overview", href: "/account" },
       { text: "Manage Sessions", href: "#" },
-    ],
-  },
-  {
-    pathname: "/logs",
-    segments: [
-      { text: "Dashboard", href: "/" },
-      { text: "Activity Logs", href: "#" },
     ],
   },
 ]
