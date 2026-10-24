@@ -25,6 +25,8 @@ interface DateRangeFilterProps {
   id: string
   startKey: string
   endKey: string
+  // Shown until a range is picked; the filter's name, as the toolbar has no labels
+  placeholder?: string
   values: Record<string, string>
   setValues: (v: Record<string, string>) => void
   applyFilters: (overrides?: Record<string, string>) => void
@@ -35,6 +37,7 @@ const DateRangeFilter = ({
   id,
   startKey,
   endKey,
+  placeholder = "Pick a date range",
   values,
   setValues,
   applyFilters,
@@ -97,7 +100,7 @@ const DateRangeFilter = ({
                     format(date.from, "LLL dd, y")
                   )
                 ) : (
-                  <span>Pick a date range</span>
+                  <span>{placeholder}</span>
                 )}
               </Button>
             }

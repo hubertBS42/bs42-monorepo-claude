@@ -14,13 +14,15 @@ const DAY_FORMAT = "yyyy-MM-dd"
 interface DateFilterProps {
   id: string
   filterKey: string
+  // Shown until a day is picked; the filter's name, as the toolbar has no labels
+  placeholder?: string
   values: Record<string, string>
   setValues: (v: Record<string, string>) => void
   applyFilters: (overrides?: Record<string, string>) => void
   isPending?: boolean
 }
 
-const DateFilter = ({ id, filterKey, values, setValues, applyFilters, isPending }: DateFilterProps) => {
+const DateFilter = ({ id, filterKey, placeholder = "Pick a date", values, setValues, applyFilters, isPending }: DateFilterProps) => {
   const raw = values[filterKey]
   const parsed = raw ? parse(raw, DAY_FORMAT, new Date()) : undefined
   const date = parsed && isValid(parsed) ? parsed : undefined
@@ -44,7 +46,7 @@ const DateFilter = ({ id, filterKey, values, setValues, applyFilters, isPending 
           render={
             <Button variant="outline" disabled={isPending} className={cn("h-8 w-full justify-start text-left font-light", !date && "text-muted-foreground", date && "pe-8")}>
               <CalendarIcon className="mr-px size-4 opacity-50" />
-              {date ? format(date, "LLL dd, y") : <span>Pick a date</span>}
+              {date ? format(date, "LLL dd, y") : <span>{placeholder}</span>}
             </Button>
           }
         />
