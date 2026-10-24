@@ -12,7 +12,8 @@ import { addToBasketAction } from "@/lib/actions/cart.actions"
 import { isInStock, type PricedOffer } from "@/lib/product-cards"
 
 // Adds an offer to the basket. Only offers with stock and a price can be bought: an order reserves stock, so there are
-// no back orders. `label` names the item in the toast.
+// no back orders. `label` names the item in the toast. `iconOnly` is the product card's: the basket icon alone, with
+// its words as the label.
 export function AddToBasketButton({
   offer,
   label,
@@ -20,6 +21,7 @@ export function AddToBasketButton({
   installation = false,
   onAdded,
   size = "default",
+  iconOnly = false,
   className,
 }: {
   offer: PricedOffer
@@ -29,6 +31,7 @@ export function AddToBasketButton({
   installation?: boolean
   onAdded?: () => void
   size?: "default" | "sm" | "lg"
+  iconOnly?: boolean
   className?: string
 }) {
   const router = useRouter()
@@ -57,10 +60,18 @@ export function AddToBasketButton({
       }
     })
 
+  const words = canBuy ? "Add to basket" : offer.price ? "Out of stock" : "Not available yet"
+  if (iconOnly) {
+    return (
+      <Button type="button" size="icon" className={className} onClick={add} disabled={!canBuy || isPending} aria-label={`${words}: ${label}`} title={words}>
+        {isPending ? <Spinner /> : <ShoppingBasket aria-hidden />}
+      </Button>
+    )
+  }
   return (
     <Button type="button" size={size} className={className} onClick={add} disabled={!canBuy || isPending}>
       {isPending ? <Spinner data-icon="inline-start" /> : <ShoppingBasket data-icon="inline-start" aria-hidden />}
-      {canBuy ? "Add to basket" : offer.price ? "Out of stock" : "Not available yet"}
+      {words}
     </Button>
   )
 }

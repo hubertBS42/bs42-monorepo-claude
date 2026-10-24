@@ -9,8 +9,9 @@ import { addComparePick, compareHref, removeComparePick, restartCompare, useComp
 import { MAX_COMPARE } from "@/lib/compare"
 
 // The "Compare" checkbox on a card or the product page. A full list disables the others; a product from another
-// category offers to start a new comparison, as only one category's products share specs.
-export function CompareToggle({ pick, className }: { pick: ComparePick; className?: string }) {
+// category offers to start a new comparison, as only one category's products share specs. `onHover` (the cards') hides
+// it until the card is hovered or focused, unless it's ticked; devices without a mouse always show it.
+export function CompareToggle({ pick, onHover = false, className }: { pick: ComparePick; onHover?: boolean; className?: string }) {
   const router = useRouter()
   const picks = useComparePicks()
   const checked = picks.some((existing) => existing.id === pick.id)
@@ -39,7 +40,11 @@ export function CompareToggle({ pick, className }: { pick: ComparePick; classNam
 
   return (
     <label
-      className={cn("flex w-fit cursor-pointer items-center gap-2 text-xs text-muted-foreground has-disabled:cursor-not-allowed", className)}
+      className={cn(
+        "flex w-fit cursor-pointer items-center gap-2 text-xs text-muted-foreground has-disabled:cursor-not-allowed",
+        onHover && !checked && "transition-opacity pointer-fine:opacity-0 pointer-fine:group-focus-within:opacity-100 pointer-fine:group-hover:opacity-100",
+        className
+      )}
       title={full ? `You can compare up to ${MAX_COMPARE} products` : undefined}
     >
       <Checkbox checked={checked} onCheckedChange={change} disabled={full} />

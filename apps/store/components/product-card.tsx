@@ -84,10 +84,12 @@ export function ProductCard({ card, variantId, onWishListChange }: { card: Price
         ))}
 
         <div className="mt-auto space-y-1.5 pt-2">
-          <OfferPrice offer={offer} />
+          <div className="flex items-end justify-between gap-2">
+            <OfferPrice offer={offer} />
+            {offer.price && isInStock(offer) && <AddToBasketButton offer={offer} label={label} iconOnly className="relative z-10 shrink-0" />}
+          </div>
           <OfferStock offer={offer} />
-          <CompareToggle pick={{ id: card.id, name: card.name, slug: card.slug, image: card.image, categoryId: card.categoryId }} className="relative z-10" />
-          {offer.price && isInStock(offer) && <AddToBasketButton offer={offer} label={label} size="sm" className="relative z-10 mt-1 w-full" />}
+          <CompareToggle pick={{ id: card.id, name: card.name, slug: card.slug, image: card.image, categoryId: card.categoryId }} onHover className="relative z-10" />
         </div>
       </div>
     </article>
