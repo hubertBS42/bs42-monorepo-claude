@@ -20,7 +20,9 @@ export default async function SetupPage() {
       <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-72 bg-linear-to-b from-primary/10 to-transparent" />
 
       <div className="relative grid w-full max-w-5xl overflow-hidden rounded-2xl border bg-background shadow-xl lg:grid-cols-[0.9fr_1.1fr]">
-        <div className="hidden flex-col justify-between bg-primary p-10 text-primary-foreground lg:flex">
+        {/* Neutral rather than the brand blue: the theme's primary from before it became blue (near-black, light grey in
+            dark mode), set on the panel so the primary colours inside it follow */}
+        <div className="hidden flex-col justify-between bg-primary p-10 text-primary-foreground [--primary-foreground:oklch(0.985_0_0)] [--primary:oklch(0.205_0_0)] lg:flex dark:[--primary-foreground:oklch(0.205_0_0)] dark:[--primary:oklch(0.922_0_0)]">
           <div>
             {/* <div className="mb-10 flex items-center gap-3">
               <img src="/images/logo.png" alt="BS42.NET logo" className="h-14 w-auto max-w-25 object-contain" />
