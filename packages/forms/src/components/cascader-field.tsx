@@ -16,9 +16,10 @@ import {
   Field,
   FieldDescription,
   FieldError,
-  FieldLabel,
 } from "@workspace/ui/components/field"
 import { cn } from "@workspace/ui/lib/utils"
+
+import FieldLabelWithInfo from "./field-label-with-info"
 
 export type { CascaderOption }
 
@@ -30,6 +31,8 @@ interface CascaderFieldProps<T extends FieldValues> {
   placeholder?: string
   size?: "sm" | "default"
   description?: string
+  // More about the field, behind an ⓘ beside its label
+  info?: string
   className?: string
   disabled?: boolean
   options: CascaderOption[]
@@ -47,6 +50,7 @@ const CascaderField = <T extends FieldValues>({
   disabled = false,
   placeholder = "Select an option",
   description,
+  info,
   options,
   disabledOptions = [],
   size = "default",
@@ -79,7 +83,9 @@ const CascaderField = <T extends FieldValues>({
             data-disabled={disabled}
             data-invalid={fieldState.invalid}
           >
-            {label && <FieldLabel htmlFor={inputId}>{label}</FieldLabel>}
+            {label && (
+              <FieldLabelWithInfo htmlFor={inputId} label={label} info={info} />
+            )}
 
             <Cascader
               id={inputId}

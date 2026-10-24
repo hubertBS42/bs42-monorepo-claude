@@ -7,6 +7,7 @@ import { Search, Trash2 } from "lucide-react"
 import { NumberInputField, SwitchField } from "@workspace/forms"
 import { Button } from "@workspace/ui/components/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@workspace/ui/components/card"
+import { InfoTip } from "@workspace/ui/components/info-tip"
 import { Input } from "@workspace/ui/components/input"
 import { Spinner } from "@workspace/ui/components/spinner"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@workspace/ui/components/table"
@@ -95,7 +96,10 @@ export default function ItemsStep<T extends StaffSaleFields, O>({ kind, form: wi
     <div className="grid items-start gap-4 lg:grid-cols-2">
       <Card>
         <CardHeader>
-          <CardTitle>Products on sale</CardTitle>
+          <CardTitle className="flex items-center gap-1.5">
+            Products on sale
+            <InfoTip about="Products on sale">Each item comes from the store the storefront would sell it from: in stock first, then on order, then the cheapest.</InfoTip>
+          </CardTitle>
           <CardDescription>At the storefront&apos;s offer, before tax, at today&apos;s rate.</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4">

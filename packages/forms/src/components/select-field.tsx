@@ -12,7 +12,6 @@ import {
   Field,
   FieldDescription,
   FieldError,
-  FieldLabel,
 } from "@workspace/ui/components/field"
 import {
   Select,
@@ -21,6 +20,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@workspace/ui/components/select"
+
+import FieldLabelWithInfo from "./field-label-with-info"
 
 interface SelectOption {
   value: string
@@ -36,6 +37,8 @@ interface SelectFieldProps<T extends FieldValues> extends Omit<
   name: Path<T>
   label?: string
   description?: string
+  // More about the field, behind an ⓘ beside its label
+  info?: string
   placeholder?: string
   options: SelectOption[]
 }
@@ -45,6 +48,7 @@ const SelectField = <T extends FieldValues>({
   name,
   label,
   description,
+  info,
   placeholder = "Select an option",
   options,
   ...triggerProps
@@ -58,7 +62,9 @@ const SelectField = <T extends FieldValues>({
       control={control}
       render={({ field, fieldState }) => (
         <Field data-invalid={fieldState.invalid} className="grid gap-1">
-          {label && <FieldLabel htmlFor={inputId}>{label}</FieldLabel>}
+          {label && (
+            <FieldLabelWithInfo htmlFor={inputId} label={label} info={info} />
+          )}
 
           <Select
             items={options}

@@ -10,6 +10,7 @@ import { GEODATA } from "@workspace/contracts"
 import { ComboboxField, SwitchField } from "@workspace/forms"
 import { Button } from "@workspace/ui/components/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@workspace/ui/components/card"
+import { InfoTip } from "@workspace/ui/components/info-tip"
 import { Separator } from "@workspace/ui/components/separator"
 import { Spinner } from "@workspace/ui/components/spinner"
 import { toast } from "@workspace/ui/components/toast"
@@ -62,7 +63,10 @@ export default function InstallationCard({ settings }: { settings: InstallationA
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Installation</CardTitle>
+        <CardTitle className="flex items-center gap-1.5">
+          Installation
+          <InfoTip about="Installation">Customers can add installation to products with a fee, set on the category or the product. Checkout refuses an address outside these areas.</InfoTip>
+        </CardTitle>
         <CardDescription>Where installers work. Orders with installation must deliver here.</CardDescription>
       </CardHeader>
       <CardContent>

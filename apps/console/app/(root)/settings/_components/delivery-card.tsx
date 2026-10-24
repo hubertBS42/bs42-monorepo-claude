@@ -10,6 +10,7 @@ import { GEODATA } from "@workspace/contracts"
 import { ComboboxField, NumberInputField } from "@workspace/forms"
 import { Button } from "@workspace/ui/components/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@workspace/ui/components/card"
+import { InfoTip } from "@workspace/ui/components/info-tip"
 import { Separator } from "@workspace/ui/components/separator"
 import { Spinner } from "@workspace/ui/components/spinner"
 import { toast } from "@workspace/ui/components/toast"
@@ -66,7 +67,12 @@ export default function DeliveryCard({ settings }: { settings: DeliverySettingsV
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Delivery</CardTitle>
+        <CardTitle className="flex items-center gap-1.5">
+          Delivery
+          <InfoTip about="Delivery">
+            Leave a region empty to deliver only to its towns that have a fee. One fee per order, whatever its weight. Staff can still change the fee on orders they create.
+          </InfoTip>
+        </CardTitle>
         <CardDescription>Fees in GHS. A town&apos;s fee overrides its region&apos;s; places without a fee aren&apos;t delivered to.</CardDescription>
       </CardHeader>
       <CardContent>
@@ -86,6 +92,7 @@ export default function DeliveryCard({ settings }: { settings: DeliverySettingsV
             min={0}
             prependText="GH₵"
             description="Subtotal after discount. Leave empty to always charge."
+            info="Counts the goods after any discount, not installation or tax. Staff can also apply free delivery on orders they create."
             disabled={isPending}
           />
 

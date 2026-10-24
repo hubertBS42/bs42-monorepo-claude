@@ -8,14 +8,11 @@ import {
   type Path,
 } from "react-hook-form"
 
-import {
-  Field,
-  FieldError,
-  FieldLabel,
-} from "@workspace/ui/components/field"
+import { Field, FieldError } from "@workspace/ui/components/field"
 import { Textarea } from "@workspace/ui/components/textarea"
 
 import FieldHint from "./field-hint"
+import FieldLabelWithInfo from "./field-label-with-info"
 
 interface TextareaFieldProps<
   T extends FieldValues,
@@ -24,6 +21,8 @@ interface TextareaFieldProps<
   name: Path<T>
   label?: string
   description?: string
+  // More about the field, behind an ⓘ beside its label
+  info?: string
   // Show "12 / 100" under the field; needs maxLength
   showCount?: boolean
 }
@@ -33,6 +32,7 @@ const TextareaField = <T extends FieldValues>({
   name,
   label,
   description,
+  info,
   showCount = false,
   id,
   ...textareaProps
@@ -46,7 +46,9 @@ const TextareaField = <T extends FieldValues>({
       control={control}
       render={({ field, fieldState }) => (
         <Field data-invalid={fieldState.invalid} className="grid gap-1">
-          {label && <FieldLabel htmlFor={inputId}>{label}</FieldLabel>}
+          {label && (
+            <FieldLabelWithInfo htmlFor={inputId} label={label} info={info} />
+          )}
 
           <Textarea
             {...textareaProps}

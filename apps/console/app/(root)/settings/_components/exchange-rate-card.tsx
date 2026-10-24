@@ -9,6 +9,7 @@ import { Save } from "lucide-react"
 import { NumberInputField } from "@workspace/forms"
 import { Button } from "@workspace/ui/components/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@workspace/ui/components/card"
+import { InfoTip } from "@workspace/ui/components/info-tip"
 import { Spinner } from "@workspace/ui/components/spinner"
 import { toast } from "@workspace/ui/components/toast"
 import { formatDate } from "@workspace/utils/date"
@@ -47,7 +48,12 @@ export default function ExchangeRateCard({ latest, maxAgeDays }: { latest: Excha
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Exchange Rate</CardTitle>
+        <CardTitle className="flex items-center gap-1.5">
+          Exchange Rate
+          <InfoTip about="Exchange Rate">
+            Fetched from Open Exchange Rates after midnight, Accra time, with the markup added. A rate set here is used as typed. A day's rate can't change once an order or quotation has used it.
+          </InfoTip>
+        </CardTitle>
         <CardDescription>{`Fetched daily. Set it here to override today's. Orders need one under ${maxAgeDays} days old.`}</CardDescription>
       </CardHeader>
       <CardContent>

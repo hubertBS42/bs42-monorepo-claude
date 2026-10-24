@@ -9,6 +9,7 @@ import { Plus, Trash2 } from "lucide-react"
 import { NumberInputField, SelectField, TextareaField } from "@workspace/forms"
 import { Button } from "@workspace/ui/components/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@workspace/ui/components/card"
+import { InfoTip } from "@workspace/ui/components/info-tip"
 import { FieldError, FieldGroup } from "@workspace/ui/components/field"
 import { Input } from "@workspace/ui/components/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@workspace/ui/components/table"
@@ -106,7 +107,10 @@ export default function TransferForm({ storeId, destinations }: { storeId: strin
             <div className="grid auto-rows-max gap-y-4 lg:col-span-2">
               <Card>
                 <CardHeader>
-                  <CardTitle>Items</CardTitle>
+                  <CardTitle className="flex items-center gap-1.5">
+                    Items
+                    <InfoTip about="Items">The stock leaves this store when you send it. The other store adds what arrives when they receive it, and anything short is recorded as lost.</InfoTip>
+                  </CardTitle>
                   <CardDescription>Tracked listings in stock. The other store must list them too.</CardDescription>
                 </CardHeader>
                 <CardContent className="grid gap-4">

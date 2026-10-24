@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useRef, useState, useTransition } from "react"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@workspace/ui/components/card"
 import { FieldGroup } from "@workspace/ui/components/field"
+import { InfoTip } from "@workspace/ui/components/info-tip"
 import { CONDITION_OPTIONS, STATUS_OPTIONS } from "@/constants"
 import { addProductFormSchema } from "@/lib/schemas/product.schemas"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -616,7 +617,12 @@ const ProductForm = ({ brands, categoryOptions, disabledCategoryIds, specFields,
 
               <Card>
                 <CardHeader>
-                  <CardTitle>Installation</CardTitle>
+                  <CardTitle className="flex items-center gap-1.5">
+                    Installation
+                    <InfoTip about="Installation">
+                      Done by the platform's installers, only in the areas set in Settings → Delivery. "The category's fee" uses the nearest category up the tree that has one.
+                    </InfoTip>
+                  </CardTitle>
                   <CardDescription>What customers pay per unit for installation.</CardDescription>
                 </CardHeader>
                 <CardContent>

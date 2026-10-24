@@ -163,6 +163,7 @@ export default function RecordReturn({ storeId, orderId, refundedGhs, returnCoun
         </Button>
       }
       title="Record return"
+      info="The suggested refund is what those units cost the customer after their share of the discount, with tax. Only items that track stock can go back into it."
       description="Choose what the customer brought back."
       submitLabel="Record return"
       failureTitle="Unable to record the return"

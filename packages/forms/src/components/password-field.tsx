@@ -13,7 +13,6 @@ import {
   Field,
   FieldDescription,
   FieldError,
-  FieldLabel,
 } from "@workspace/ui/components/field"
 import {
   InputGroup,
@@ -21,6 +20,8 @@ import {
   InputGroupButton,
   InputGroupInput,
 } from "@workspace/ui/components/input-group"
+
+import FieldLabelWithInfo from "./field-label-with-info"
 
 interface PasswordFieldProps<T extends FieldValues> extends Omit<
   React.InputHTMLAttributes<HTMLInputElement>,
@@ -30,6 +31,8 @@ interface PasswordFieldProps<T extends FieldValues> extends Omit<
   name: Path<T>
   label?: string
   description?: string
+  // More about the field, behind an ⓘ beside its label
+  info?: string
   resetPasswordSlot?: React.ReactNode
 }
 
@@ -38,6 +41,7 @@ const PasswordField = <T extends FieldValues>({
   name,
   label,
   description,
+  info,
   id,
   resetPasswordSlot,
   ...inputProps
@@ -54,7 +58,9 @@ const PasswordField = <T extends FieldValues>({
         <Field data-invalid={fieldState.invalid} className="grid gap-1">
           {(label || resetPasswordSlot) && (
             <div className="flex items-center justify-between gap-2">
-              {label && <FieldLabel htmlFor={inputId}>{label}</FieldLabel>}
+              {label && (
+                <FieldLabelWithInfo htmlFor={inputId} label={label} info={info} />
+              )}
               {resetPasswordSlot}
             </div>
           )}

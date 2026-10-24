@@ -19,8 +19,9 @@ import {
   Field,
   FieldDescription,
   FieldError,
-  FieldLabel,
 } from "@workspace/ui/components/field"
+
+import FieldLabelWithInfo from "./field-label-with-info"
 
 export type TreeSelectOption = {
   label: string
@@ -43,6 +44,8 @@ interface SelectTreeFieldProps<T extends FieldValues> {
   placeholder?: string
   size?: "sm" | "default"
   description?: string
+  // More about the field, behind an ⓘ beside its label
+  info?: string
   className?: string
   disabled?: boolean
   options: TreeSelectOption[]
@@ -70,6 +73,7 @@ const SelectTreeField = <T extends FieldValues>({
   name,
   id,
   description,
+  info,
   label,
   side,
   className,
@@ -107,7 +111,9 @@ const SelectTreeField = <T extends FieldValues>({
             data-disabled={disabled}
             data-invalid={fieldState.invalid}
           >
-            {label && <FieldLabel htmlFor={inputId}>{label}</FieldLabel>}
+            {label && (
+              <FieldLabelWithInfo htmlFor={inputId} label={label} info={info} />
+            )}
 
             <Select
               items={flatOptions}

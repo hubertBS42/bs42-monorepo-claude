@@ -9,6 +9,7 @@ import type { ActionResponse } from "@workspace/contracts"
 import { Button } from "@workspace/ui/components/button"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@workspace/ui/components/dialog"
 import { FieldGroup } from "@workspace/ui/components/field"
+import { InfoTip } from "@workspace/ui/components/info-tip"
 import { Spinner } from "@workspace/ui/components/spinner"
 import { toast } from "@workspace/ui/components/toast"
 
@@ -19,6 +20,8 @@ interface FormDialogProps<In extends FieldValues, Out extends FieldValues> {
   trigger: ReactElement
   title: string
   description: string
+  // More about the action, behind an ⓘ beside the title
+  info?: string
   submitLabel: string
   // The error toast's title
   failureTitle: string
@@ -37,6 +40,7 @@ export default function FormDialog<In extends FieldValues, Out extends FieldValu
   trigger,
   title,
   description,
+  info,
   submitLabel,
   failureTitle,
   refreshOn,
@@ -82,7 +86,10 @@ export default function FormDialog<In extends FieldValues, Out extends FieldValu
       <DialogTrigger render={trigger} />
       <DialogContent className={className}>
         <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
+          <DialogTitle className="flex items-center gap-1.5">
+            {title}
+            {info && <InfoTip about={title}>{info}</InfoTip>}
+          </DialogTitle>
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
         {/* The dialog is portaled, but React events still bubble to any form it's rendered inside */}

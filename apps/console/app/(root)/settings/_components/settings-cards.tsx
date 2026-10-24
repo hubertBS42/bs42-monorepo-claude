@@ -99,7 +99,13 @@ export function BrandingCard({ settings }: CardProps) {
 
 export function TaxCard({ settings }: CardProps) {
   return (
-    <SettingsCard section="tax" settings={settings} title="Tax" description="Added at checkout. Shown prices exclude it.">
+    <SettingsCard
+      section="tax"
+      settings={settings}
+      title="Tax"
+      description="Added at checkout. Shown prices exclude it."
+      info="Charged after any discount. Each order keeps the rate it was charged, so changing it never changes past orders."
+    >
       {(form, isPending) => <TaxFields form={form} isPending={isPending} />}
     </SettingsCard>
   )
@@ -122,7 +128,18 @@ function TaxFields({ form, isPending }: { form: UseFormReturn<SectionInput<"tax"
 export function MarkupCard({ settings }: CardProps) {
   return (
     <SettingsCard section="markup" settings={settings} title="Exchange Rate Markup" description="Added to the daily fetched rate to cover the cedi weakening. Not applied to rates set by hand.">
-      {(form, isPending) => <NumberInputField control={form.control} name="exchangeRateMarkupPercent" label="Markup (%)" min={0} max={10} step={0.01} disabled={isPending} />}
+      {(form, isPending) => (
+        <NumberInputField
+          control={form.control}
+          name="exchangeRateMarkupPercent"
+          label="Markup (%)"
+          min={0}
+          max={10}
+          step={0.01}
+          disabled={isPending}
+          info="The cedi can weaken between when a customer sees a price, or gets a quotation, and when they pay. The markup covers that. 0 adds nothing."
+        />
+      )}
     </SettingsCard>
   )
 }
@@ -130,7 +147,18 @@ export function MarkupCard({ settings }: CardProps) {
 export function QuotationsCard({ settings }: CardProps) {
   return (
     <SettingsCard section="quotations" settings={settings} title="Quotations" description="How long quotation prices hold. Staff can change it per quotation.">
-      {(form, isPending) => <NumberInputField control={form.control} name="quoteValidityDays" label="Valid for (days)" min={1} max={90} step={1} disabled={isPending} />}
+      {(form, isPending) => (
+        <NumberInputField
+          control={form.control}
+          name="quoteValidityDays"
+          label="Valid for (days)"
+          min={1}
+          max={90}
+          step={1}
+          disabled={isPending}
+          info="Prices hold until the end of the last day, Accra time, whatever the exchange rate does. Stock isn't held."
+        />
+      )}
     </SettingsCard>
   )
 }
@@ -143,6 +171,7 @@ export function BankTransferCard({ settings }: CardProps) {
           control={form.control}
           name="bankTransferDetails"
           label="Bank details"
+          info="Shown as typed, with the order's reference to quote, on its confirmation email, order page and invoice until it's paid."
           placeholder={"Bank name\nAccount name\nAccount number\nBranch"}
           rows={5}
           maxLength={1000}

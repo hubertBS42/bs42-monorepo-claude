@@ -15,9 +15,10 @@ import {
   Field,
   FieldDescription,
   FieldError,
-  FieldLabel,
 } from "@workspace/ui/components/field"
 import { Input } from "@workspace/ui/components/input"
+
+import FieldLabelWithInfo from "./field-label-with-info"
 
 interface TagsFieldProps<T extends FieldValues> {
   control: Control<T>
@@ -25,6 +26,8 @@ interface TagsFieldProps<T extends FieldValues> {
   id?: string
   label?: string
   description?: string
+  // More about the field, behind an ⓘ beside its label
+  info?: string
   placeholder?: string
   disabled?: boolean
   className?: string
@@ -43,6 +46,7 @@ const TagsField = <T extends FieldValues>({
   id,
   label,
   description,
+  info,
   placeholder = "Add tag...",
   disabled = false,
   className,
@@ -149,7 +153,9 @@ const TagsField = <T extends FieldValues>({
             data-disabled={disabled}
             data-invalid={fieldState.invalid || Boolean(inputError)}
           >
-            {label && <FieldLabel htmlFor={inputId}>{label}</FieldLabel>}
+            {label && (
+              <FieldLabelWithInfo htmlFor={inputId} label={label} info={info} />
+            )}
 
             <div
               className={cn(

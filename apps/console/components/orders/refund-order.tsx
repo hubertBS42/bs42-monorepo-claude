@@ -74,6 +74,7 @@ export default function OrderRefunds({ storeId, orderId, refundedGhs, refundable
           </Button>
         }
         title="Refund"
+        info="A refund only records the money. For an online payment, give it back through Paystack's dashboard."
         description={`Up to ${ghs(refundableGhs)} left. This doesn't restock: use Record return for items brought back.`}
         submitLabel="Refund"
         failureTitle="Unable to refund"

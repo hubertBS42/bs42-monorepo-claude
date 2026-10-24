@@ -160,6 +160,7 @@ const AddCategoryForm = ({ parentOptions, disabledParentIds }: AddCategoryFormPr
                       prependText="GH₵"
                       disabled={isBusy}
                       description="Per item, for products here and below without their own. Empty uses the parent's."
+                      info="Products set to use their category's fee take the nearest category up the tree that has one. If none does, they aren't installed."
                     />
                   </FieldGroup>
                 </CardContent>

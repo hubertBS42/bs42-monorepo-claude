@@ -10,6 +10,7 @@ import type { AppSettingsData } from "@workspace/contracts"
 import { Button } from "@workspace/ui/components/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@workspace/ui/components/card"
 import { FieldGroup } from "@workspace/ui/components/field"
+import { InfoTip } from "@workspace/ui/components/info-tip"
 import { Spinner } from "@workspace/ui/components/spinner"
 import { toast } from "@workspace/ui/components/toast"
 import { saveSettingsSection } from "@/lib/actions/app-settings.actions"
@@ -21,6 +22,8 @@ interface SettingsCardProps<S extends SettingsSection> {
   settings: AppSettingsData
   title: string
   description: ReactNode
+  // More about the card, behind an ⓘ beside its title
+  info?: string
   // Run after a save, e.g. the branding card forgetting its uploads
   onSaved?: () => void
   children: (form: UseFormReturn<SectionInput<S>, unknown, SectionOutput<S>>, isPending: boolean) => ReactNode
@@ -32,7 +35,7 @@ export default function SettingsCard<S extends SettingsSection>(props: SettingsC
   return <SettingsCardForm key={JSON.stringify(sectionValues(props.settings, props.section))} {...props} />
 }
 
-function SettingsCardForm<S extends SettingsSection>({ section, settings, title, description, onSaved, children }: SettingsCardProps<S>) {
+function SettingsCardForm<S extends SettingsSection>({ section, settings, title, description, info, onSaved, children }: SettingsCardProps<S>) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const original = sectionValues(settings, section)
@@ -59,7 +62,10 @@ function SettingsCardForm<S extends SettingsSection>({ section, settings, title,
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{title}</CardTitle>
+        <CardTitle className="flex items-center gap-1.5">
+          {title}
+          {info && <InfoTip about={title}>{info}</InfoTip>}
+        </CardTitle>
         <CardDescription>{description}</CardDescription>
       </CardHeader>
       <CardContent>

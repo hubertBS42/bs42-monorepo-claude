@@ -6,14 +6,11 @@ import {
   type Path,
 } from "react-hook-form"
 
-import {
-  Field,
-  FieldError,
-  FieldLabel,
-} from "@workspace/ui/components/field"
+import { Field, FieldError } from "@workspace/ui/components/field"
 import { Input } from "@workspace/ui/components/input"
 
 import FieldHint from "./field-hint"
+import FieldLabelWithInfo from "./field-label-with-info"
 
 interface TextInputFieldProps<
   T extends FieldValues,
@@ -22,6 +19,8 @@ interface TextInputFieldProps<
   name: Path<T>
   label?: string
   description?: string
+  // More about the field, behind an ⓘ beside its label
+  info?: string
   // Show "12 / 100" under the field; needs maxLength
   showCount?: boolean
   autoComplete?: string
@@ -32,6 +31,7 @@ const TextInputField = <T extends FieldValues>({
   name,
   label,
   description,
+  info,
   autoComplete = "off",
   showCount = false,
   id,
@@ -46,7 +46,9 @@ const TextInputField = <T extends FieldValues>({
       control={control}
       render={({ field, fieldState }) => (
         <Field data-invalid={fieldState.invalid} className="grid gap-1">
-          {label && <FieldLabel htmlFor={inputId}>{label}</FieldLabel>}
+          {label && (
+            <FieldLabelWithInfo htmlFor={inputId} label={label} info={info} />
+          )}
 
           <Input
             autoComplete={autoComplete}

@@ -13,10 +13,11 @@ import {
   FieldContent,
   FieldDescription,
   FieldError,
-  FieldLabel,
 } from "@workspace/ui/components/field"
 import { Switch } from "@workspace/ui/components/switch"
 import { cn } from "@workspace/ui/lib/utils"
+
+import FieldLabelWithInfo from "./field-label-with-info"
 
 interface SwitchFieldProps<T extends FieldValues> {
   control: Control<T>
@@ -24,6 +25,8 @@ interface SwitchFieldProps<T extends FieldValues> {
   id?: string
   label?: string
   description?: string
+  // More about the field, behind an ⓘ beside its label
+  info?: string
   disabled?: boolean
   size?: "sm" | "default"
   variant?: "default" | "card"
@@ -36,6 +39,7 @@ const SwitchField = <T extends FieldValues>({
   name,
   id,
   description,
+  info,
   label,
   disabled = false,
   size,
@@ -89,7 +93,13 @@ const SwitchField = <T extends FieldValues>({
               data-invalid={fieldState.invalid}
             >
               <FieldContent className="gap-y-1">
-                {label && <FieldLabel htmlFor={inputId}>{label}</FieldLabel>}
+                {label && (
+                  <FieldLabelWithInfo
+                    htmlFor={inputId}
+                    label={label}
+                    info={info}
+                  />
+                )}
                 {description && (
                   <FieldDescription id={descriptionId}>
                     {description}
@@ -116,9 +126,12 @@ const SwitchField = <T extends FieldValues>({
               {switchControl}
 
               {label && (
-                <FieldLabel htmlFor={inputId} className="font-light">
-                  {label}
-                </FieldLabel>
+                <FieldLabelWithInfo
+                  htmlFor={inputId}
+                  label={label}
+                  info={info}
+                  className="font-light"
+                />
               )}
             </div>
             {description && (

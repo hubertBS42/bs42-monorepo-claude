@@ -16,7 +16,6 @@ import {
   Field,
   FieldDescription,
   FieldError,
-  FieldLabel,
 } from "@workspace/ui/components/field"
 import {
   Command,
@@ -35,12 +34,16 @@ import {
 } from "@workspace/ui/components/popover"
 import { cn } from "@workspace/ui/lib/utils"
 
+import FieldLabelWithInfo from "./field-label-with-info"
+
 interface PhoneFieldProps<T extends FieldValues> {
   control: Control<T>
   name: Path<T>
   id?: string
   label?: string
   description?: string
+  // More about the field, behind an ⓘ beside its label
+  info?: string
   disabled?: boolean
   placeholder?: string
   defaultCountry?: PhoneInput.Country
@@ -68,6 +71,7 @@ const PhoneField = <T extends FieldValues>({
   id,
   label,
   description,
+  info,
   disabled = false,
   placeholder = "Enter phone number",
   defaultCountry,
@@ -99,7 +103,9 @@ const PhoneField = <T extends FieldValues>({
             data-disabled={disabled}
             data-invalid={fieldState.invalid}
           >
-            {label && <FieldLabel htmlFor={inputId}>{label}</FieldLabel>}
+            {label && (
+              <FieldLabelWithInfo htmlFor={inputId} label={label} info={info} />
+            )}
 
             <PhoneInput.default
               id={inputId}

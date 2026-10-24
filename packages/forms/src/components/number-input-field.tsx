@@ -11,7 +11,6 @@ import {
   Field,
   FieldDescription,
   FieldError,
-  FieldLabel,
 } from "@workspace/ui/components/field"
 import {
   InputGroup,
@@ -21,6 +20,8 @@ import {
   InputGroupText,
 } from "@workspace/ui/components/input-group"
 
+import FieldLabelWithInfo from "./field-label-with-info"
+
 interface NumberInputFieldProps<T extends FieldValues> extends Omit<
   React.InputHTMLAttributes<HTMLInputElement>,
   "type" | "onChange"
@@ -29,6 +30,8 @@ interface NumberInputFieldProps<T extends FieldValues> extends Omit<
   name: Path<T>
   label?: string
   description?: string
+  // More about the field, behind an ⓘ beside its label
+  info?: string
   min?: number
   max?: number
   step?: number
@@ -41,6 +44,7 @@ const NumberInputField = <T extends FieldValues>({
   name,
   label,
   description,
+  info,
   id,
   min = 0,
   max,
@@ -138,7 +142,9 @@ const NumberInputField = <T extends FieldValues>({
 
         return (
           <Field data-invalid={fieldState.invalid} className="grid gap-1">
-            {label && <FieldLabel htmlFor={inputId}>{label}</FieldLabel>}
+            {label && (
+              <FieldLabelWithInfo htmlFor={inputId} label={label} info={info} />
+            )}
 
             <InputGroup className="relative overflow-hidden">
               {prependText && (
