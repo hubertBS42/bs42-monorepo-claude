@@ -51,7 +51,7 @@ From the repo root, with `packages/database/.env` pointing at production:
 ```bash
 pnpm install --frozen-lockfile
 pnpm --filter @workspace/db db:deploy   # apply every migration
-pnpm --filter @workspace/db db:seed     # starting categories and brands; skips ones that exist
+pnpm --filter @workspace/db db:seed     # the catalogue: categories, brands and the old site's products; skips ones that exist
 ```
 
 Don't run `db:seed:demo` in production: it creates a demo store.
