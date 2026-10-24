@@ -117,7 +117,7 @@ function ReturnFields({
               onValueChange={() => setAmountTyped(true)}
             />
             <FieldDescription>
-              {`These items cost the customer ${ghs(valueCents / 100)}${valueCents / 100 > refundable ? `, but only ${ghs(refundable)} is left to refund` : ""}. Shipping isn't refunded. 0 refunds nothing.`}
+              {`These items cost ${ghs(valueCents / 100)}${valueCents / 100 > refundable ? `, but only ${ghs(refundable)} is left` : ""}. Shipping isn't refunded.`}
               {amountTyped && Number(amount) !== suggested && (
                 <>
                   {" "}
@@ -163,7 +163,7 @@ export default function RecordReturn({ storeId, orderId, refundedGhs, returnCoun
         </Button>
       }
       title="Record return"
-      description="Choose what the customer brought back. The order's status stays as it is."
+      description="Choose what the customer brought back."
       submitLabel="Record return"
       failureTitle="Unable to record the return"
       refreshOn={REFUND_REFRESH_CODES}

@@ -36,7 +36,7 @@ export default async function CreateStoreOrderPage() {
             <CardTitle>{suspended ? "This store can't take orders" : "Orders can't be priced right now"}</CardTitle>
             <CardDescription>
               {suspended
-                ? "The store is suspended, so it sells nothing here or on the storefront. Ask the platform's admins."
+                ? "The store is suspended. Ask a platform admin."
                 : `Prices are converted from USD at the latest exchange rate, and ${rate ? `the latest one is more than ${EXCHANGE_RATE_MAX_AGE_DAYS} days old` : "no rate has been set"}. Ask a platform admin to set today's rate in Settings.`}
             </CardDescription>
           </CardHeader>

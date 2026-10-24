@@ -111,7 +111,7 @@ export default function SupplierForm({ storeId, supplier }: SupplierFormProps) {
                 <Card>
                   <CardHeader>
                     <CardTitle>Status</CardTitle>
-                    <CardDescription>An archived supplier stays on its purchase orders but can&apos;t be chosen for new ones.</CardDescription>
+                    <CardDescription>Archived suppliers can&apos;t be chosen for new orders.</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <SwitchField control={form.control} label="Archived" name="isArchived" disabled={isBusy} variant="card" />
@@ -121,7 +121,7 @@ export default function SupplierForm({ storeId, supplier }: SupplierFormProps) {
                 <Card>
                   <CardHeader>
                     <CardTitle>Danger Zone</CardTitle>
-                    <CardDescription>Delete this supplier. One that is on purchase orders can only be archived.</CardDescription>
+                    <CardDescription>Suppliers on purchase orders can only be archived.</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <DeleteSupplier storeId={storeId} supplier={supplier} />

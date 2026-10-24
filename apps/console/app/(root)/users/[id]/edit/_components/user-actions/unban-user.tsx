@@ -59,7 +59,7 @@ const UnbanUser = ({ user }: { user: User }) => {
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-          <AlertDialogDescription>{`You are about to unban ${user.name ?? user.email}'s account allowing them to access the application again. Do you still wish to proceed?`}</AlertDialogDescription>
+          <AlertDialogDescription>{`${user.name ?? user.email} will be able to sign in again.`}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel disabled={isPending}>Cancel</AlertDialogCancel>

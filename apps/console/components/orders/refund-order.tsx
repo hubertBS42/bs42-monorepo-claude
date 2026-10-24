@@ -74,7 +74,7 @@ export default function OrderRefunds({ storeId, orderId, refundedGhs, refundable
           </Button>
         }
         title="Refund"
-        description={`Up to ${ghs(refundableGhs)} is left to refund. The order's status stays as it is, and no stock comes back: for items brought back, use Record return.`}
+        description={`Up to ${ghs(refundableGhs)} left. This doesn't restock: use Record return for items brought back.`}
         submitLabel="Refund"
         failureTitle="Unable to refund"
         refreshOn={REFUND_REFRESH_CODES}
@@ -99,7 +99,7 @@ export default function OrderRefunds({ storeId, orderId, refundedGhs, refundable
             </Button>
           }
           title="Cancel and refund"
-          description={`The order is cancelled, its stock goes back on sale, and the ${ghs(refundableGhs)} left is refunded.`}
+          description={`Cancels the order, restocks it and refunds ${ghs(refundableGhs)}.`}
           submitLabel="Cancel and refund"
           failureTitle="Unable to refund"
           refreshOn={REFUND_REFRESH_CODES}

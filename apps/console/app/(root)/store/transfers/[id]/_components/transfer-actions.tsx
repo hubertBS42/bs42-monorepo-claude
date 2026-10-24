@@ -26,7 +26,7 @@ export default function TransferActions({ storeId, transfer }: { storeId: string
       <FormDialog
         trigger={<Button type="button">Receive</Button>}
         title={`Receive ${transfer.reference}`}
-        description="Enter how many of each arrived. They're added to this store's stock; anything missing is recorded as lost on the way. A transfer is received once."
+        description="Enter what arrived. Anything missing is recorded as lost."
         submitLabel="Receive"
         failureTitle="Unable to receive the transfer"
         refreshOn={REFRESH_ON}
@@ -71,7 +71,7 @@ export default function TransferActions({ storeId, transfer }: { storeId: string
         </Button>
       }
       title={`Cancel ${transfer.reference}`}
-      description={`The stock goes back to this store's listings, and ${transfer.toStore.name} is told it isn't coming.`}
+      description={`The stock returns here and ${transfer.toStore.name} is told.`}
       submitLabel="Cancel transfer"
       failureTitle="Unable to cancel the transfer"
       refreshOn={REFRESH_ON}

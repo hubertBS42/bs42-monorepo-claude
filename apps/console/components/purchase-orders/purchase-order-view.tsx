@@ -18,11 +18,11 @@ const dateTime = (date: Date) => formatDate(date, "MMM d, yyyy, h:mm a")
 const notGiven = <span className="text-muted-foreground">Not given</span>
 
 const STATUS_DESCRIPTIONS: Record<PurchaseOrderStatus, string> = {
-  DRAFT: "A draft: nothing shows as incoming until it's marked as ordered.",
-  ORDERED: "Ordered: its items show as incoming on the listings until they're received.",
-  PARTIALLY_RECEIVED: "Partly received: the rest shows as incoming until it arrives or the order is closed.",
+  DRAFT: "A draft, not yet ordered.",
+  ORDERED: "Ordered: items show as incoming until received.",
+  PARTIALLY_RECEIVED: "Partly received: the rest shows as incoming.",
   RECEIVED: "Everything has been received.",
-  CLOSED: "Closed before everything arrived. What came in is in stock.",
+  CLOSED: "Closed before everything arrived.",
   CANCELLED: "Cancelled before anything arrived.",
 }
 
@@ -148,7 +148,7 @@ export default function PurchaseOrderView({ order, backTo, statusContent, showSt
           <Card>
             <CardHeader>
               <CardTitle>Timeline</CardTitle>
-              <CardDescription>When it was ordered, each delivery, and how it ended, newest first.</CardDescription>
+              <CardDescription>Orders, deliveries and changes, newest first.</CardDescription>
             </CardHeader>
             <CardContent>
               <ol className="grid gap-4">

@@ -40,7 +40,7 @@ function HideReview({ review }: { review: ReviewRow }) {
         </Button>
       }
       title="Hide this review"
-      description={`It comes off ${review.product.name}'s page and out of its rating. Its author sees it as hidden, with your reason.`}
+      description={`It's removed from ${review.product.name}'s page and rating. Its author sees your reason.`}
       submitLabel="Hide review"
       failureTitle="Unable to hide the review"
       refreshOn={REFRESH_CODES}

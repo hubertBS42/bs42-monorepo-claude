@@ -63,10 +63,7 @@ export default function InstallationCard({ settings }: { settings: InstallationA
     <Card>
       <CardHeader>
         <CardTitle>Installation</CardTitle>
-        <CardDescription>
-          Where the platform&apos;s installers work: a whole region, or some of its towns. Customers can add installation to products with a fee (set on the category or the product) and check out only
-          to an address here.
-        </CardDescription>
+        <CardDescription>Where installers work. Orders with installation must deliver here.</CardDescription>
       </CardHeader>
       <CardContent>
         {/* stopPropagation keeps a submit from reaching any form around it */}

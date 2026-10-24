@@ -28,7 +28,7 @@ export default function ProductSpecs<T extends FieldValues & { specs: Record<str
     <Card>
       <CardHeader>
         <CardTitle>Specifications</CardTitle>
-        <CardDescription>Details customers can compare and filter by. They come from the product&apos;s category, and each one is optional.</CardDescription>
+        <CardDescription>Optional details customers can compare and filter by.</CardDescription>
       </CardHeader>
       <CardContent>
         {!hasCategory ? (

@@ -94,9 +94,7 @@ export default async function StoreOrderDetailsPage({ params }: OrderDetailsPage
           <Card>
             <CardHeader>
               <CardTitle>Items</CardTitle>
-              <CardDescription>
-                {order.isMultiStore ? "This store's items. The order also has items from other stores, which the platform handles." : "In GHS, at the order's exchange rate."}
-              </CardDescription>
+              <CardDescription>{order.isMultiStore ? "This store's items only. The platform manages this order." : "In GHS, at the order's exchange rate."}</CardDescription>
             </CardHeader>
             <CardContent className="grid gap-4">
               <OrderLinesTable lines={order.lines} />
@@ -163,7 +161,7 @@ export default async function StoreOrderDetailsPage({ params }: OrderDetailsPage
           <Card>
             <CardHeader>
               <CardTitle>Payment</CardTitle>
-              <CardDescription>The record of money for this order; its status above tracks fulfilment.</CardDescription>
+              <CardDescription>Payments and refunds.</CardDescription>
             </CardHeader>
             <CardContent className="grid gap-4">
               <div className="grid grid-cols-2 gap-4">

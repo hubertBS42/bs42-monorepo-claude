@@ -96,9 +96,7 @@ export default function ItemsStep<T extends StaffSaleFields, O>({ kind, form: wi
       <Card>
         <CardHeader>
           <CardTitle>Products on sale</CardTitle>
-          <CardDescription>
-            Each item comes from the store the storefront would sell it from: in stock first, then on order, then the cheapest. Prices are before tax at today&apos;s rate.
-          </CardDescription>
+          <CardDescription>At the storefront&apos;s offer, before tax, at today&apos;s rate.</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4">
           <div className="relative">

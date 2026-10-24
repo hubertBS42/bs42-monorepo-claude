@@ -97,7 +97,7 @@ const AddressCard = ({ address }: { address: Address }) => {
                 <AlertDialogHeader>
                   <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    This action cannot be undone. This will permanently delete the address &quot;{address.name}, {address.line1}, {address.town}&quot;.
+                    This will permanently delete &quot;{address.name}, {address.line1}, {address.town}&quot;.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>

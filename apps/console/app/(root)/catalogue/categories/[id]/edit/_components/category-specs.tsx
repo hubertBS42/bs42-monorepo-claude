@@ -70,7 +70,7 @@ export default function CategorySpecs({ categoryId, specs }: { categoryId: strin
     <Card>
       <CardHeader>
         <CardTitle>Specifications</CardTitle>
-        <CardDescription>What products in this category, and in the categories under it, can list, such as a camera&apos;s resolution. The storefront can filter by them.</CardDescription>
+        <CardDescription>Details products here and in subcategories can list, like a camera&apos;s resolution.</CardDescription>
       </CardHeader>
       <CardContent className="grid gap-4">
         {specs.inherited.length > 0 && (
@@ -163,11 +163,7 @@ function SpecDialog({ categoryId, spec }: { categoryId: string; spec?: CategoryS
         )
       }
       title={spec ? `Edit ${spec.name}` : "Add specification"}
-      description={
-        spec
-          ? "Renaming an option keeps it on the products that have it. Removing one removes it from them."
-          : "Products in this category and the categories under it can list it. It's optional on each product."
-      }
+      description={spec ? "Renamed options stay on products; removed ones are cleared." : "Optional for products here and in subcategories."}
       submitLabel={spec ? "Save" : "Add"}
       failureTitle={spec ? "Unable to save the specification" : "Unable to add the specification"}
       refreshOn={REFRESH_CODES}
@@ -188,17 +184,10 @@ function SpecFields({ form, isPending, isEditing }: { form: UseFormReturn<SpecFo
   return (
     <>
       <TextInputField control={form.control} label="Name" name="name" placeholder="e.g. Resolution" disabled={isPending} />
-      <SelectField
-        control={form.control}
-        label="Type"
-        name="type"
-        options={SPEC_TYPE_OPTIONS}
-        disabled={isPending || isEditing}
-        description={isEditing ? "Products' values are stored by type, so it can't change." : undefined}
-      />
+      <SelectField control={form.control} label="Type" name="type" options={SPEC_TYPE_OPTIONS} disabled={isPending || isEditing} description={isEditing ? "Can't change once created." : undefined} />
       {type === SpecType.NUMBER && <TextInputField control={form.control} label="Unit" name="unit" placeholder="e.g. m, MP, W" description="Optional. Shown after the number." disabled={isPending} />}
       {type === SpecType.SELECT && <SpecOptions form={form} disabled={isPending} />}
-      <SwitchField control={form.control} variant="card" label="Use as a filter" name="isFilterable" description="Customers can narrow the category's products by it" disabled={isPending} />
+      <SwitchField control={form.control} variant="card" label="Use as a filter" name="isFilterable" description="Customers can filter by it" disabled={isPending} />
     </>
   )
 }

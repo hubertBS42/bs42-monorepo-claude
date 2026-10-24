@@ -84,7 +84,7 @@ const UpdateProfileForm = ({ user }: UpdateProfileFormProps) => {
           <Field>
             <FieldLabel htmlFor="profile-email">Email</FieldLabel>
             <Input id="profile-email" type="email" value={user.email} disabled readOnly />
-            <FieldDescription>Your email can&apos;t be changed here. Ask an administrator if it needs updating.</FieldDescription>
+            <FieldDescription>Ask an administrator to change your email.</FieldDescription>
           </Field>
         </FieldGroup>
         <div className="flex justify-end">

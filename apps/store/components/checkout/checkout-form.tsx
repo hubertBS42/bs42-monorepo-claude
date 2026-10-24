@@ -211,7 +211,7 @@ export function CheckoutForm({
         <Card>
           <CardHeader>
             <CardTitle>Your details</CardTitle>
-            <CardDescription>We'll send your order confirmation to this email, and call this number about the delivery.</CardDescription>
+            <CardDescription>For your confirmation email and delivery calls.</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4 sm:grid-cols-2">
             <div className="sm:col-span-2">

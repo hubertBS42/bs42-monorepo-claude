@@ -94,7 +94,7 @@ export default function TransferForm({ storeId, destinations }: { storeId: strin
       <div className="grid gap-y-6">
         <SharedFormHeader
           heading="Send Stock"
-          description="Move stock from this store to another you manage. It leaves this store's listings now, and the other store adds what arrives."
+          description="Move stock to another store you manage."
           backTo={BACK_TO}
           isPending={isBusy}
           isDirty={form.formState.isDirty}
@@ -107,7 +107,7 @@ export default function TransferForm({ storeId, destinations }: { storeId: strin
               <Card>
                 <CardHeader>
                   <CardTitle>Items</CardTitle>
-                  <CardDescription>This store&apos;s listings that track stock and have some. The other store must list each product (and variant) too.</CardDescription>
+                  <CardDescription>Tracked listings in stock. The other store must list them too.</CardDescription>
                 </CardHeader>
                 <CardContent className="grid gap-4">
                   <Input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search by product name or SKU" disabled={isBusy} aria-label="Search this store's listings" />

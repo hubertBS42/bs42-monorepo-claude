@@ -67,7 +67,7 @@ export default function TradeAccountReview({ account }: TradeAccountReviewProps)
             </Button>
           }
           title="Reject the application"
-          description="The customer is emailed the reason, and can apply again with corrected details."
+          description="The customer is emailed the reason and can reapply."
           submitLabel="Reject"
           failureTitle="Unable to reject the application"
           refreshOn={REFRESH_ON}
@@ -89,7 +89,7 @@ export default function TradeAccountReview({ account }: TradeAccountReviewProps)
             </Button>
           }
           title="Suspend the account"
-          description="Their orders get no discount until it's reinstated. They aren't emailed; tell them why yourself."
+          description="No discount until reinstated. The customer isn't emailed."
           submitLabel="Suspend"
           failureTitle="Unable to suspend the account"
           refreshOn={REFRESH_ON}

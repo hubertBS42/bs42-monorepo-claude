@@ -163,7 +163,7 @@ export default async function OrderDetailsPage({ params }: OrderDetailsPageProps
           <Card>
             <CardHeader>
               <CardTitle>Payment</CardTitle>
-              <CardDescription>The record of money for this order; its status above tracks fulfilment.</CardDescription>
+              <CardDescription>Payments and refunds.</CardDescription>
             </CardHeader>
             <CardContent className="grid gap-4">
               <div className="grid grid-cols-2 gap-4">

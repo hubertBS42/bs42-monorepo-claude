@@ -32,15 +32,7 @@ export default function DeliveryStep({ form, customer, delivery, installationAre
         </CardHeader>
         <CardContent>
           <FieldGroup>
-            <NumberInputField
-              control={form.control}
-              label="Prices hold for (days)"
-              name="validityDays"
-              step={1}
-              min={1}
-              max={MAX_QUOTE_VALIDITY_DAYS}
-              description="Until the end of the day this many days from today."
-            />
+            <NumberInputField control={form.control} label="Prices hold for (days)" name="validityDays" step={1} min={1} max={MAX_QUOTE_VALIDITY_DAYS} />
             <TextareaField control={form.control} label="Note to the customer (optional)" name="notes" placeholder="Lead times, what's included, site visit…" rows={4} />
           </FieldGroup>
         </CardContent>

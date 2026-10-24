@@ -202,11 +202,11 @@ export default function PurchaseOrderForm({ storeId, suppliers, rate, order, sug
           description={
             order
               ? isDraft
-                ? "This draft can change in every way."
-                : "It has been ordered, so the supplier and currency stay as they are."
+                ? "Still a draft."
+                : "Ordered: the supplier and currency are fixed."
               : suggested.length
-                ? "Started from the listings you picked: low ones get enough to reach twice their low-stock level, counting what's already on its way. Saved as a draft until it's sent to the supplier."
-                : "Saved as a draft until it's sent to the supplier."
+                ? "Low listings get enough to reach twice their low-stock level. Saved as a draft."
+                : "Saved as a draft."
           }
           backTo={backTo}
           isPending={isBusy}
@@ -296,7 +296,7 @@ export default function PurchaseOrderForm({ storeId, suppliers, rate, order, sug
               <Card>
                 <CardHeader>
                   <CardTitle>Add items</CardTitle>
-                  <CardDescription>The store&apos;s listings that aren&apos;t archived. A new line starts at its last buy price.</CardDescription>
+                  <CardDescription>New lines start at their last buy price.</CardDescription>
                 </CardHeader>
                 <CardContent className="grid gap-4">
                   <div className="relative">

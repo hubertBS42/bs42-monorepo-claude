@@ -43,7 +43,7 @@ export default function QuoteActions({ quote }: { quote: QuoteDetails }) {
         key="place"
         label="Place order"
         title={`Place an order from ${quote.reference}`}
-        description={`For a customer paying by bank transfer: an order at the quoted prices, waiting for payment, with its stock reserved now. Record the payment on the order once the money arrives. The customer is emailed the order.`}
+        description="Creates an unpaid order at the quoted prices and reserves its stock. The customer is emailed."
         confirmLabel="Place order"
         failureTitle="Unable to place the order"
         run={() => placeOrderFromQuoteAction({ quoteId: quote.id })}
@@ -55,7 +55,7 @@ export default function QuoteActions({ quote }: { quote: QuoteDetails }) {
         key="cancel"
         label="Cancel quotation"
         title={`Cancel ${quote.reference}`}
-        description="The customer can no longer accept it. Its page stays, marked cancelled."
+        description="The customer can no longer accept it."
         confirmLabel="Cancel quotation"
         failureTitle="Unable to cancel the quotation"
         destructive

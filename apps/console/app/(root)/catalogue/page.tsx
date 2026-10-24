@@ -11,31 +11,31 @@ const catalogueLinks = [
     href: "/catalogue/products",
     icon: ShoppingBag,
     title: "Products",
-    description: "Manage the products to be listed in stores",
+    description: "Products stores can list",
   },
   {
     href: "/catalogue/categories",
     icon: Tag,
     title: "Categories",
-    description: "Manage the categories associated with your products",
+    description: "How products are grouped",
   },
   {
     href: "/catalogue/brands",
     icon: Building2,
     title: "Brands",
-    description: "Manage the brands associated with your products",
+    description: "Product brands",
   },
   {
     href: "/catalogue/reviews",
     icon: Star,
     title: "Reviews",
-    description: "Read customers' product reviews and hide those that break the rules",
+    description: "Moderate customer reviews",
   },
   {
     href: "/catalogue/product-requests",
     icon: PackagePlus,
     title: "Product Requests",
-    description: "Add the products stores ask for, or tell them why not",
+    description: "Products stores ask for",
   },
 ]
 
@@ -46,7 +46,7 @@ const CataloguePage = async () => {
     <main className="flex flex-col gap-y-6">
       <div className="grid">
         <h1 className="text-xl font-bold md:text-2xl">Catalogue</h1>
-        <p className="text-sm text-muted-foreground">Manage your products, categories and brands, their reviews, and the products stores ask for.</p>
+        <p className="text-sm text-muted-foreground">Products, categories, brands, reviews and product requests.</p>
       </div>
 
       <div className="grid gap-4 @xl/main:grid-cols-2 @5xl/main:grid-cols-4">

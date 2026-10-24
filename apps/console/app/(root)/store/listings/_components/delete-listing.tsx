@@ -71,7 +71,7 @@ export default function DeleteListing({ listing, storeId, hasOrders }: DeleteLis
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-            <AlertDialogDescription>{`This action cannot be undone. ${listing.name} will be removed from this store, with its prices and stock here. The catalogue product isn't affected.`}</AlertDialogDescription>
+            <AlertDialogDescription>{`This can't be undone. ${listing.name} and its prices and stock will be removed from this store.`}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isPending}>Cancel</AlertDialogCancel>

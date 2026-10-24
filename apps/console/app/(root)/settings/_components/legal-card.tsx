@@ -59,7 +59,7 @@ export default function LegalCard({ pages, storefrontUrl }: { pages: LegalPagesV
     <Card>
       <CardHeader>
         <CardTitle>Legal</CardTitle>
-        <CardDescription>The storefront&apos;s Terms and Privacy Policy. Sign-up and checkout tell customers that continuing means agreeing to them. Leave one empty to not show it.</CardDescription>
+        <CardDescription>Shown on the storefront. Leave one empty to hide it.</CardDescription>
       </CardHeader>
       <CardContent>
         {/* stopPropagation keeps a submit from reaching any form around it */}

@@ -26,7 +26,7 @@ export default async function NewTransferPage() {
         <Card>
           <CardHeader>
             <CardTitle>No other store to send to</CardTitle>
-            <CardDescription>Stock can only move between stores you&apos;re an owner or admin of, and this is the only one.</CardDescription>
+            <CardDescription>You need to own or admin another store to transfer stock.</CardDescription>
           </CardHeader>
           <CardContent />
         </Card>

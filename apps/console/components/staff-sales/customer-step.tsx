@@ -22,11 +22,11 @@ const lookupSchema = z.object({
 const COPY = {
   quote: {
     notFound: "No customer has that email or phone number. Fill in their details below: they can accept the quotation once they create an account with that email.",
-    details: "The quotation is emailed here. Whoever signs in with this email, once it's confirmed, can accept it.",
+    details: "The quotation is emailed here.",
   },
   order: {
     notFound: "No customer has that email or phone number. Fill in their details below.",
-    details: "Emails about the order go here. Without an email the customer gets none.",
+    details: "Order emails go here. Optional.",
   },
 }
 
@@ -100,7 +100,7 @@ export default function CustomerStep<T extends StaffSaleFields, O>({ kind, form:
       <Card>
         <CardHeader>
           <CardTitle>Find a customer</CardTitle>
-          <CardDescription>Look them up by their exact email or phone number to use their saved addresses and any trade discount.</CardDescription>
+          <CardDescription>Find them by exact email or phone to use their addresses and trade discount.</CardDescription>
         </CardHeader>
         <CardContent>
           {/* A div, not a form: it sits inside the wizard's form, and forms can't nest */}

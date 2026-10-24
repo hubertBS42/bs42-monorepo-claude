@@ -46,7 +46,7 @@ export default async function StockHistoryPage({ params, searchParams }: StockHi
       <div className="flex items-end justify-between gap-4">
         <div className="grid">
           <h1 className="text-xl font-bold md:text-2xl">Stock History</h1>
-          <p className="text-sm text-muted-foreground">{`Every change to ${listing.productName}'s stock in this store, newest first: sales, cancellations, returns, deliveries and changes made by hand.`}</p>
+          <p className="text-sm text-muted-foreground">{`Every change to ${listing.productName}'s stock here, newest first.`}</p>
         </div>
         <BackButton link={`/store/listings/${listing.id}/edit`} />
       </div>

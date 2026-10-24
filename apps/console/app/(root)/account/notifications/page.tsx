@@ -16,10 +16,7 @@ export default async function NotificationsPage() {
       <Card>
         <CardHeader>
           <CardTitle>Notifications</CardTitle>
-          <CardDescription>
-            Which of the platform&apos;s alerts reach your bell at the top of the console. Each switch saves as you flip it. The emails to Settings → Notifications&apos; addresses have their own
-            switches there.
-          </CardDescription>
+          <CardDescription>Platform alerts that reach your bell. Changes save as you go.</CardDescription>
         </CardHeader>
         <CardContent>
           <PlatformAlerts settings={settings} />
@@ -33,16 +30,10 @@ export default async function NotificationsPage() {
     <Card>
       <CardHeader>
         <CardTitle>Notifications</CardTitle>
-        <CardDescription>Emails to {user.email} and the bell at the top of the console, about your stores. Each switch saves as you flip it.</CardDescription>
+        <CardDescription>Emails to {user.email} and bell alerts about your stores. Changes save as you go.</CardDescription>
       </CardHeader>
       <CardContent>
-        {stores.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            Store notifications go to each store&apos;s owners and admins. You&apos;ll be able to choose yours here once you&apos;re an owner or admin of a store.
-          </p>
-        ) : (
-          <StoreNotifications stores={stores} />
-        )}
+        {stores.length === 0 ? <p className="text-sm text-muted-foreground">Store notifications go to each store&apos;s owners and admins.</p> : <StoreNotifications stores={stores} />}
       </CardContent>
     </Card>
   )

@@ -38,7 +38,7 @@ export default async function PlatformProductRequestsPage({ searchParams }: Prod
     <main className="flex flex-col gap-y-6">
       <div className="grid">
         <h1 className="text-xl font-bold md:text-2xl">Product Requests</h1>
-        <p className="text-sm text-muted-foreground">Products stores asked for that the catalogue doesn&apos;t have. Add each one, link it to a product that exists, or decline it.</p>
+        <p className="text-sm text-muted-foreground">Products stores have asked the catalogue to add.</p>
       </div>
       <ProductRequestsTable data={result.data} stores={stores.data} />
     </main>

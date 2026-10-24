@@ -32,14 +32,14 @@ const TotalRow = ({ label, amount, strong }: { label: string; amount: string; st
 
 const COPY = {
   quote: {
-    priced: "Sending it prices the quotation again, and its prices then hold.",
+    priced: "Prices are checked again when it's sent.",
     pricing: "Pricing the quotation…",
     unpriced: "Unable to price the quotation.",
     overStock: (stock: number) => `Only ${stock} in stock now: it must be in stock when the quotation is accepted`,
     reasonPlaceholder: "Shown on the quotation",
   },
   order: {
-    priced: "Creating it prices the order again and reserves the stock.",
+    priced: "Stock is reserved when it's created.",
     pricing: "Pricing the order…",
     unpriced: "Unable to price the order.",
     overStock: (stock: number) => `Only ${stock} in stock now: the order can't take more`,
@@ -174,7 +174,7 @@ export default function ReviewStep<T extends StaffSaleFields, O>({ kind, form: w
               </div>
               {reachesFreeDelivery && (
                 <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border p-3 text-sm">
-                  <span className="text-muted-foreground">{`The items come to ${ghs(freeDeliveryFromGhs!)} or more after any discount, so the storefront would deliver this free.`}</span>
+                  <span className="text-muted-foreground">{`Qualifies for free delivery (${ghs(freeDeliveryFromGhs!)} or more after discount).`}</span>
                   <Button type="button" variant="outline" size="sm" onClick={() => form.setValue("shippingGhs", 0, { shouldDirty: true })}>
                     Deliver free
                   </Button>

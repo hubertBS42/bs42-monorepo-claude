@@ -36,7 +36,7 @@ export default async function PlatformPurchaseOrderDetailsPage({ params }: Purch
       showStore
       statusContent={
         <div className="grid gap-3">
-          <p className="text-sm text-muted-foreground">{`${order.store.name} manages this order in its workspace: marking it as ordered, receiving deliveries, cancelling.`}</p>
+          <p className="text-sm text-muted-foreground">{`${order.store.name} manages this order in its workspace.`}</p>
           {/* A full page load: ?workspace= switches the session to the store (proxy.ts), and the sidebar follows */}
           <a href={`/store/purchase-orders/${order.id}/details?workspace=${order.store.id}`} className={buttonVariants({ variant: "outline", size: "sm" })}>
             {`Open in ${order.store.name}`}

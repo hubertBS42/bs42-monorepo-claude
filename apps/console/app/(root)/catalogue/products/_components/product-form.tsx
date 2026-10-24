@@ -442,7 +442,7 @@ const ProductForm = ({ brands, categoryOptions, disabledCategoryIds, specFields,
                       clearable
                       disabled={isBusy}
                       placeholder="Select a category"
-                      description="Products go in the most specific category, one without subcategories."
+                      description="Choose a category without subcategories."
                     />
 
                     <TagsField control={form.control} label="Tags" name="tags" placeholder="Add tag and press Enter..." disabled={isBusy} />
@@ -617,7 +617,7 @@ const ProductForm = ({ brands, categoryOptions, disabledCategoryIds, specFields,
               <Card>
                 <CardHeader>
                   <CardTitle>Installation</CardTitle>
-                  <CardDescription>What customers pay to have one installed by the platform&apos;s installers, where Settings → Delivery says they work.</CardDescription>
+                  <CardDescription>What customers pay per unit for installation.</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="grid gap-5">
@@ -682,7 +682,7 @@ const ProductForm = ({ brands, categoryOptions, disabledCategoryIds, specFields,
                 </CardContent>
               </Card>
 
-              {storefrontLink && <StorefrontLinkCard link={storefrontLink} description="As customers see it, with the best offer across the stores selling it. Saved changes show within a minute." />}
+              {storefrontLink && <StorefrontLinkCard link={storefrontLink} description="As customers see it. Changes show within a minute." />}
 
               {product && reviewStats && <ProductReviewsCard productId={product.id} stats={reviewStats} />}
 
@@ -690,7 +690,7 @@ const ProductForm = ({ brands, categoryOptions, disabledCategoryIds, specFields,
                 <Card>
                   <CardHeader>
                     <CardTitle>Danger Zone</CardTitle>
-                    <CardDescription>Delete this product. A product that has been ordered can only be archived.</CardDescription>
+                    <CardDescription>Products that have been ordered can only be archived.</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <DeleteProduct product={{ id: product.id, name: product.name }} storeCount={product.storeCount} hasOrders={product.hasOrders} />

@@ -22,9 +22,7 @@ export default async function CreateOrderPage() {
     <main className="flex flex-col gap-y-6">
       <div className="grid">
         <h1 className="text-xl font-bold md:text-2xl">Create Order</h1>
-        <p className="text-sm text-muted-foreground">
-          An order for a customer, from any store, priced as the storefront would price it, with installation where it&apos;s offered. It starts unpaid: record the payment when it arrives.
-        </p>
+        <p className="text-sm text-muted-foreground">An order for a customer, from any store. It starts unpaid.</p>
       </div>
 
       {!rate || rate.isStale ? (

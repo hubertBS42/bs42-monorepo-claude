@@ -83,7 +83,7 @@ export function EditOrderDelivery({
       storeId={storeId}
       label="Edit delivery address"
       title="Edit delivery address"
-      description="Where the order goes. The shipping fee stays as it is."
+      description="The delivery fee doesn't change."
       schema={orderDeliveryFormSchema}
       values={{
         shippingName: shipping.name ?? "",

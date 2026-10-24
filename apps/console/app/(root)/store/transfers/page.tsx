@@ -32,7 +32,7 @@ export default async function TransfersPage({ searchParams }: TransfersPageProps
       <div className="flex items-end justify-between">
         <div className="grid">
           <h1 className="text-xl font-bold md:text-2xl">Transfers</h1>
-          <p className="text-sm text-muted-foreground">Stock moved between this store and the other stores its managers run. What&apos;s on its way here shows as incoming on the listings.</p>
+          <p className="text-sm text-muted-foreground">Stock moved between this store and others.</p>
         </div>
         <SendStockButton storeId={storeId} />
       </div>

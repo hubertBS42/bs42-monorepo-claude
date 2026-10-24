@@ -11,7 +11,7 @@ export const PLATFORM_ORGANIZATION_SLUG = "global"
 // default) until they change it (PlatformAlertSetting). Payment problems have no switch: they always go out.
 export const PLATFORM_ALERTS = [
   { alert: "STOREFRONT_ORDERS", settingsKey: "notifyStorefrontOrders", default: true, label: "Storefront orders", description: "When a customer places an order on the storefront" },
-  { alert: "STAFF_ORDERS", settingsKey: "notifyStaffOrders", default: false, label: "Orders created by staff", description: "When staff create an order in a store's workspace" },
+  { alert: "STAFF_ORDERS", settingsKey: "notifyStaffOrders", default: false, label: "Orders created by staff", description: "When staff create an order" },
   { alert: "LOW_STOCK", settingsKey: "notifyLowStock", default: true, label: "Low stock", description: "When a sale takes an item down to its low-stock threshold" },
   { alert: "OUT_OF_STOCK", settingsKey: "notifyOutOfStock", default: true, label: "Out of stock", description: "When a sale takes an item's stock to 0" },
   {
@@ -19,7 +19,7 @@ export const PLATFORM_ALERTS = [
     settingsKey: "notifyStoreRefunds",
     default: true,
     label: "Refunds given by stores",
-    description: "When a store's owner or admin refunds an order, on its own or with a return",
+    description: "When a store refunds one of its orders",
   },
   { alert: "LOW_RATINGS", settingsKey: "notifyLowRatings", default: false, label: "Low ratings", description: "When a customer posts a 1 or 2 star review" },
   {
@@ -27,7 +27,7 @@ export const PLATFORM_ALERTS = [
     settingsKey: "notifyTradeApplications",
     default: true,
     label: "Trade account applications",
-    description: "When a business applies for a trade account on the storefront",
+    description: "When a business applies for a trade account",
   },
   { alert: "QUOTES", settingsKey: "notifyQuotes", default: false, label: "Quotations", description: "When a customer makes a quotation on the storefront" },
   {
@@ -35,14 +35,14 @@ export const PLATFORM_ALERTS = [
     settingsKey: "notifyProductRequests",
     default: true,
     label: "Product requests",
-    description: "When a store asks for a product the catalogue doesn't have",
+    description: "When a store asks for a new product",
   },
   {
     alert: "RATE_FETCH_FAILURE",
     settingsKey: "notifyRateFetchFailure",
     default: true,
     label: "Exchange rate fetch failed",
-    description: "When the daily rate couldn't be fetched, so today's needs setting by hand",
+    description: "When the daily rate can't be fetched",
   },
 ] as const
 

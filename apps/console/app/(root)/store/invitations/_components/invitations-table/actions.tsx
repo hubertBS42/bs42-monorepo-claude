@@ -121,7 +121,7 @@ const InvitationActions = ({ invitation, canResend, canCancel }: InvitationActio
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>Cancel this invitation?</AlertDialogTitle>
-              <AlertDialogDescription>{`${invitation.email} will no longer be able to join the store with this invitation. You can invite them again later.`}</AlertDialogDescription>
+              <AlertDialogDescription>{`${invitation.email} can no longer use this invitation.`}</AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel disabled={isCancelling}>Keep</AlertDialogCancel>

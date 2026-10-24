@@ -48,9 +48,7 @@ export default async function OrdersPage({ searchParams }: OrdersPageProps) {
       <div className="flex items-end justify-between gap-4">
         <div className="grid">
           <h1 className="text-xl font-bold md:text-2xl">Orders</h1>
-          <p className="text-sm text-muted-foreground">
-            Every order from every store, including those with more than one store&apos;s items. Refunds and returns can be given on any order here; stores handle those on their own orders.
-          </p>
+          <p className="text-sm text-muted-foreground">Orders from every store.</p>
         </div>
         {/* Every role that reaches this page can create orders (system permission order: create) */}
         <AddButton label="Create Order" url="/orders/create" />

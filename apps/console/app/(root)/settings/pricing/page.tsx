@@ -15,7 +15,7 @@ export default async function PricingSettingsPage() {
   const [settings, latestRate] = await Promise.all([readAppSettings(), getLatestExchangeRate()])
 
   return (
-    <SettingsSection title="Pricing" description="How USD prices become what customers pay in GHS: the exchange rate, tax, how long quotations hold, and where bank transfers go.">
+    <SettingsSection title="Pricing" description="Exchange rate, tax, quotations and bank transfers.">
       <ExchangeRateCard latest={latestRate} maxAgeDays={EXCHANGE_RATE_MAX_AGE_DAYS} />
       <MarkupCard settings={settings} />
       <TaxCard settings={settings} />

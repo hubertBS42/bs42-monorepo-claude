@@ -14,7 +14,7 @@ type CardProps = { settings: AppSettingsData }
 
 export function StorefrontCard({ settings }: CardProps) {
   return (
-    <SettingsCard section="storefront" settings={settings} title="Storefront" description="The name and description customers see in the store and in search results.">
+    <SettingsCard section="storefront" settings={settings} title="Storefront" description="What customers see in the store and search results.">
       {(form, isPending) => (
         <>
           <TextInputField control={form.control} name="storeName" label="Name" disabled={isPending} />
@@ -27,7 +27,7 @@ export function StorefrontCard({ settings }: CardProps) {
 
 export function ConsoleCard({ settings }: CardProps) {
   return (
-    <SettingsCard section="console" settings={settings} title="Console" description="The name staff see in the console and in invitation emails.">
+    <SettingsCard section="console" settings={settings} title="Console" description="What staff see in the console and invitations.">
       {(form, isPending) => (
         <>
           <TextInputField control={form.control} name="consoleName" label="Name" placeholder="Leave empty to use the storefront name" disabled={isPending} />
@@ -99,7 +99,7 @@ export function BrandingCard({ settings }: CardProps) {
 
 export function TaxCard({ settings }: CardProps) {
   return (
-    <SettingsCard section="tax" settings={settings} title="Tax" description="Prices are shown without tax. When tax is on, it is added at checkout and each order keeps the rate it was charged.">
+    <SettingsCard section="tax" settings={settings} title="Tax" description="Added at checkout. Shown prices exclude it.">
       {(form, isPending) => <TaxFields form={form} isPending={isPending} />}
     </SettingsCard>
   )
@@ -121,12 +121,7 @@ function TaxFields({ form, isPending }: { form: UseFormReturn<SectionInput<"tax"
 
 export function MarkupCard({ settings }: CardProps) {
   return (
-    <SettingsCard
-      section="markup"
-      settings={settings}
-      title="Exchange Rate Markup"
-      description="Added to the rate fetched each day, to cover the cedi weakening between pricing and payment (quotations hold their prices for days). A rate set by hand above is used as typed. 0 adds nothing."
-    >
+    <SettingsCard section="markup" settings={settings} title="Exchange Rate Markup" description="Added to the daily fetched rate to cover the cedi weakening. Not applied to rates set by hand.">
       {(form, isPending) => <NumberInputField control={form.control} name="exchangeRateMarkupPercent" label="Markup (%)" min={0} max={10} step={0.01} disabled={isPending} />}
     </SettingsCard>
   )
@@ -134,12 +129,7 @@ export function MarkupCard({ settings }: CardProps) {
 
 export function QuotationsCard({ settings }: CardProps) {
   return (
-    <SettingsCard
-      section="quotations"
-      settings={settings}
-      title="Quotations"
-      description="How long a quotation's prices hold, whatever the exchange rate does; its stock isn't held. Staff can choose another length on a quotation they make."
-    >
+    <SettingsCard section="quotations" settings={settings} title="Quotations" description="How long quotation prices hold. Staff can change it per quotation.">
       {(form, isPending) => <NumberInputField control={form.control} name="quoteValidityDays" label="Valid for (days)" min={1} max={90} step={1} disabled={isPending} />}
     </SettingsCard>
   )
@@ -147,12 +137,7 @@ export function QuotationsCard({ settings }: CardProps) {
 
 export function BankTransferCard({ settings }: CardProps) {
   return (
-    <SettingsCard
-      section="bankTransfer"
-      settings={settings}
-      title="Bank Transfer"
-      description="Where customers send a bank transfer for an order staff made. Shown, as typed, on its confirmation email, order page and invoice until it's paid."
-    >
+    <SettingsCard section="bankTransfer" settings={settings} title="Bank Transfer" description="Shown to customers paying a staff-made order by bank transfer.">
       {(form, isPending) => (
         <TextareaField
           control={form.control}
@@ -178,7 +163,7 @@ export function NotificationsCard({ settings }: CardProps) {
       section="notifications"
       settings={settings}
       title="Notifications"
-      description="When something needs attention: emails to these addresses, for the events switched on below. Each platform admin chooses what reaches their own bell in Account → Notifications."
+      description="Emails to these addresses for the events below. Admins set their own bell alerts in Account → Notifications."
     >
       {(form, isPending) => (
         <>

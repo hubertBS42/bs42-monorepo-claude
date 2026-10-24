@@ -11,7 +11,7 @@ export default function ProductRequestCard({ request }: { request: ProductReques
       <CardHeader>
         <CardTitle>Requested by {request.storeName}</CardTitle>
         <CardDescription>
-          Saving tells them it&apos;s been added, so they can list it.{" "}
+          Saving tells the store it&apos;s been added.{" "}
           <Link href={`/catalogue/product-requests/${request.id}`} className="underline underline-offset-4 hover:text-foreground">
             View the request
           </Link>

@@ -46,7 +46,7 @@ export default async function ReviewsPage({ searchParams }: ReviewsPageProps) {
     <main className="flex flex-col gap-y-6">
       <div className="grid">
         <h1 className="text-xl font-bold md:text-2xl">Reviews</h1>
-        <p className="text-sm text-muted-foreground">Reviews show on the storefront as soon as customers post them. Hide one that breaks the rules; its author sees why.</p>
+        <p className="text-sm text-muted-foreground">Reviews go live when posted. Hide any that break the rules.</p>
       </div>
       {product && (
         <p className="text-sm text-muted-foreground">

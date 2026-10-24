@@ -47,7 +47,7 @@ export default async function PurchaseOrdersPage({ searchParams }: PurchaseOrder
       <div className="flex items-end justify-between">
         <div className="grid">
           <h1 className="text-xl font-bold md:text-2xl">Purchase Orders</h1>
-          <p className="text-sm text-muted-foreground">Stock this store orders from its suppliers. What&apos;s still to come shows as incoming on the listings.</p>
+          <p className="text-sm text-muted-foreground">Stock ordered from suppliers.</p>
         </div>
 
         <StoreAddButton

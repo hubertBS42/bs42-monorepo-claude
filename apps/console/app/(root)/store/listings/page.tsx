@@ -44,7 +44,7 @@ export default async function StoreListingsPage({ searchParams }: StoreListingsP
       <div className="flex items-end justify-between">
         <div className="grid">
           <h1 className="text-xl font-bold md:text-2xl">Listings</h1>
-          <p className="text-sm text-muted-foreground">The catalogue products this store sells, with its own prices and stock.</p>
+          <p className="text-sm text-muted-foreground">This store&apos;s products, prices and stock.</p>
         </div>
 
         <StoreAddButton storeId={storeId} label="Add Listing" url="/store/listings/add" permission={{ listing: ["create"] }} deniedText="Your role in this store can't add listings." />

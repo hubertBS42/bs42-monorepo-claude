@@ -59,9 +59,7 @@ export default async function TransferPage({ params }: TransferPageProps) {
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle>Items</CardTitle>
-            <CardDescription>
-              {received ? "What was sent, and what arrived. Anything short was lost on the way." : "What was sent. It left the sending store's stock when it was sent."}
-            </CardDescription>
+            <CardDescription>{received ? "What was sent and what arrived." : "What was sent."}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="overflow-hidden rounded-lg border">
@@ -123,11 +121,7 @@ export default async function TransferPage({ params }: TransferPageProps) {
             <Card>
               <CardHeader>
                 <CardTitle>{out ? "On its way" : "Arriving"}</CardTitle>
-                <CardDescription>
-                  {out
-                    ? `${transfer.toStore.name} receives it when it arrives. Until then you can cancel it, which puts the stock back here.`
-                    : "It shows as incoming on this store's listings until you receive it."}
-                </CardDescription>
+                <CardDescription>{out ? `You can cancel it until ${transfer.toStore.name} receives it.` : "Shows as incoming until received."}</CardDescription>
               </CardHeader>
               <CardContent>
                 <TransferActions storeId={storeId} transfer={transfer} />

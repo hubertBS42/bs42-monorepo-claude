@@ -23,11 +23,7 @@ export default async function VerifyEmailPage({ searchParams }: { searchParams: 
       <CardHeader className="text-center">
         {verified ? <CircleCheck className="mx-auto mb-2 size-8 text-primary" aria-hidden /> : <MailX className="mx-auto mb-2 size-8 text-muted-foreground" aria-hidden />}
         <CardTitle className="text-xl">{verified ? "Your email is confirmed" : "This link has expired"}</CardTitle>
-        <CardDescription>
-          {verified
-            ? `Thanks, ${session.user.name.split(" ")[0]}. You're signed in.`
-            : "Confirmation links last a day and work once. Sign in, and we'll send you a new one if your email still needs confirming."}
-        </CardDescription>
+        <CardDescription>{verified ? `Thanks, ${session.user.name.split(" ")[0]}. You're signed in.` : "This link has expired or been used. Sign in to get a new one."}</CardDescription>
       </CardHeader>
       <CardContent>
         <Link href={verified ? redirectTo : signInHref("/sign-in", redirectTo)} className={buttonVariants({ className: "w-full" })}>

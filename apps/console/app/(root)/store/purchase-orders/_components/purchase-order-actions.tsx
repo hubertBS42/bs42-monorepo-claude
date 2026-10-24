@@ -137,14 +137,7 @@ function ReceiveFields({
         })}
       </div>
       {canSetBuyPrices && (
-        <SwitchField
-          control={form.control}
-          label="Update buy prices"
-          name="updateBuyPrices"
-          description="Set each item's buy price on its listing to this order's cost, in USD"
-          disabled={isPending}
-          variant="card"
-        />
+        <SwitchField control={form.control} label="Update buy prices" name="updateBuyPrices" description="Set listings' buy prices to this order's costs" disabled={isPending} variant="card" />
       )}
       <TextareaField control={form.control} label="Note" name="note" placeholder="Optional: a delivery note number, damaged boxes…" disabled={isPending} />
       <p className="text-sm text-muted-foreground">
@@ -161,7 +154,7 @@ function ReceiveItems({ storeId, order, canSetBuyPrices }: PurchaseOrderActionsP
     <FormDialog
       trigger={<Button type="button">Receive items</Button>}
       title="Receive items"
-      description="How many of each came in. Everything still to come is filled in; lower what's short."
+      description="Lower any that came in short."
       submitLabel="Receive"
       failureTitle="Unable to receive the items"
       refreshOn={REFRESH_CODES}
@@ -195,11 +188,7 @@ function CancelOrder({ storeId, order }: PurchaseOrderActionsProps) {
         </Button>
       }
       title={closes ? "Close purchase order" : "Cancel purchase order"}
-      description={
-        closes
-          ? "Nothing more is coming. What was received stays in stock, and the rest stops showing as incoming."
-          : "Nothing has arrived, so its items stop showing as incoming. The order is kept, cancelled."
-      }
+      description={closes ? "The rest stops showing as incoming." : "Its items stop showing as incoming."}
       submitLabel={closes ? "Close" : "Cancel order"}
       failureTitle={closes ? "Unable to close the purchase order" : "Unable to cancel the purchase order"}
       refreshOn={REFRESH_CODES}

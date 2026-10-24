@@ -54,7 +54,7 @@ export default async function ProductRequestPage({ params }: ProductRequestPageP
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle>What the store asked for</CardTitle>
-            <CardDescription>As they typed it. Check the details before adding the product.</CardDescription>
+            <CardDescription>As the store typed it.</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4 sm:grid-cols-2">
             <Detail label="Name">{request.name}</Detail>
@@ -85,7 +85,7 @@ export default async function ProductRequestPage({ params }: ProductRequestPageP
             <CardTitle>Decision</CardTitle>
             <CardDescription>
               {request.status === ProductRequestStatus.PENDING
-                ? "Add the product, or link one the catalogue already has: either way the store is told, so it can list it."
+                ? "Add the product or link an existing one. The store is told."
                 : request.status === ProductRequestStatus.CANCELLED
                   ? "The store withdrew this request."
                   : `Decided ${decided}.`}

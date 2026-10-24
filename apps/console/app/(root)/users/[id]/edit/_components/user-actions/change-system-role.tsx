@@ -25,14 +25,14 @@ const content = {
     action: promoteToSuperAdminAction,
     label: "Promote to Super Admin",
     icon: ShieldPlus,
-    description: (name: string) => `${name} will become a super admin and the owner of every store. Super admins have full control of the platform, including app settings and other super admins.`,
+    description: (name: string) => `${name} will own every store and have full control of the platform.`,
     success: "User has been promoted to super admin.",
   },
   demote: {
     action: demoteToAdminAction,
     label: "Demote to Admin",
     icon: ShieldMinus,
-    description: (name: string) => `${name} will become an admin and their role in every store will change from owner to admin.`,
+    description: (name: string) => `${name} will become an admin in every store.`,
     success: "User has been demoted to admin.",
   },
 }

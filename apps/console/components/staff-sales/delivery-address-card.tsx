@@ -76,7 +76,7 @@ export default function DeliveryAddressCard<T extends StaffSaleFields, O>({
     <Card className="lg:col-span-2">
       <CardHeader>
         <CardTitle>Delivery</CardTitle>
-        <CardDescription>{kind === "quote" ? "Where the order would go. Quotations are for delivery, to the customer." : "Where the order goes. Orders made here are delivered."}</CardDescription>
+        <CardDescription>{kind === "quote" ? "Where it would be delivered." : "Where it's delivered."}</CardDescription>
       </CardHeader>
       <CardContent>
         <FieldGroup>
@@ -112,8 +112,8 @@ export default function DeliveryAddressCard<T extends StaffSaleFields, O>({
           </div>
           {region && (
             <p className="text-sm text-muted-foreground">
-              {rate ? `The delivery fee for ${rate.town ?? region} is GH₵${rate.feeGhs}.` : `There's no delivery fee set for ${town || region}, so set what delivering there costs.`}
-              {delivery.freeDeliveryFromGhs !== null && ` Orders of GH₵${delivery.freeDeliveryFromGhs} or more after any discount deliver free: the review step offers it when this one does.`}
+              {rate ? `The delivery fee for ${rate.town ?? region} is GH₵${rate.feeGhs}.` : `No fee is set for ${town || region}.`}
+              {delivery.freeDeliveryFromGhs !== null && ` Free from GH₵${delivery.freeDeliveryFromGhs} after discount.`}
             </p>
           )}
           {noInstallation && <p className="text-sm text-destructive">{`We don't install in ${town}. Take installation off the items, or choose another address.`}</p>}

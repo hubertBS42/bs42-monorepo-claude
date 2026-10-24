@@ -26,7 +26,7 @@ export default function TopSellers({ sellers, period, description }: { sellers: 
     <Card>
       <CardHeader>
         <CardTitle>Best sellers</CardTitle>
-        <CardDescription>{`${description}, on orders paid in the ${PERIOD_LABELS[period].toLowerCase()}, less returns. Revenue is before tax and delivery.`}</CardDescription>
+        <CardDescription>{`${description}, ${PERIOD_LABELS[period].toLowerCase()}, less returns. Revenue excludes tax and delivery.`}</CardDescription>
         <CardAction>
           <ToggleGroup
             multiple={false}

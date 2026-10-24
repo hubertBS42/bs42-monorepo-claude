@@ -71,7 +71,7 @@ export default function CustomerStep({ storeId, form, customer, onCustomerChange
       <Card>
         <CardHeader>
           <CardTitle>Find a customer</CardTitle>
-          <CardDescription>Look them up by their exact email or phone number to link the order to their account and use their saved addresses.</CardDescription>
+          <CardDescription>Find them by exact email or phone to use their account and addresses.</CardDescription>
         </CardHeader>
         <CardContent>
           {/* A div, not a form: it sits inside the order's form, and forms can't nest */}

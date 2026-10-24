@@ -50,7 +50,7 @@ export default async function TradeAccountPage({ params }: TradeAccountPageProps
           <Card>
             <CardHeader>
               <CardTitle>Company</CardTitle>
-              <CardDescription>As the customer gave it. Check the registration number and TIN with the Registrar and the GRA before approving.</CardDescription>
+              <CardDescription>Verify the registration number and TIN before approving.</CardDescription>
             </CardHeader>
             <CardContent className="grid gap-4 sm:grid-cols-2">
               <Detail label="Company name">{account.companyName}</Detail>
@@ -70,7 +70,7 @@ export default async function TradeAccountPage({ params }: TradeAccountPageProps
               <CardDescription>
                 {account.orderCount === 0
                   ? "No orders yet."
-                  : `${account.orderCount} ${account.orderCount === 1 ? "order" : "orders"}: ${ghs(account.ordersTotalGhs)} in all, with ${ghs(account.discountGivenGhs)} of trade discount (cancelled orders left out). The latest:`}
+                  : `${account.orderCount} ${account.orderCount === 1 ? "order" : "orders"}: ${ghs(account.ordersTotalGhs)}, ${ghs(account.discountGivenGhs)} discounted. The latest:`}
               </CardDescription>
             </CardHeader>
             {account.recentOrders.length > 0 && (

@@ -8,7 +8,7 @@ export default function SettingsLayout({ children }: { children: ReactNode }) {
     <main className="flex flex-col gap-y-6">
       <div className="grid">
         <h1 className="text-xl font-bold md:text-2xl">Platform Settings</h1>
-        <p className="text-sm text-muted-foreground">The storefront and the console: names and branding, prices, delivery, notifications and legal pages. Each card saves on its own.</p>
+        <p className="text-sm text-muted-foreground">Storefront and console settings. Each card saves on its own.</p>
       </div>
       <Separator />
       <div className="flex flex-col gap-6 lg:flex-row lg:gap-10">

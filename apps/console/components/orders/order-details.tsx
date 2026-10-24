@@ -103,7 +103,7 @@ export function OrderPaymentAttemptsCard({ attempts }: { attempts: OrderPaymentA
     <Card>
       <CardHeader>
         <CardTitle>Online payments</CardTitle>
-        <CardDescription>Each time the customer started paying on Paystack, newest first. Search Paystack&apos;s dashboard by reference.</CardDescription>
+        <CardDescription>Paystack checkouts, newest first.</CardDescription>
       </CardHeader>
       <CardContent>
         <Table>

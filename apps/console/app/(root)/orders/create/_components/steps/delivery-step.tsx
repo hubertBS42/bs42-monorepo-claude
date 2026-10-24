@@ -47,7 +47,7 @@ export default function DeliveryStep({ form, customer, delivery, installationAre
       <Card>
         <CardHeader>
           <CardTitle>Payment and notes</CardTitle>
-          <CardDescription>The order starts unpaid. Record the payment on its page when it arrives.</CardDescription>
+          <CardDescription>Record the payment on the order once it arrives.</CardDescription>
         </CardHeader>
         <CardContent>
           <FieldGroup>

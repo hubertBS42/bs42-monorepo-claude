@@ -139,11 +139,7 @@ export default async function QuotePage({ params }: QuotePageProps) {
           <Card>
             <CardHeader>
               <CardTitle>Customer</CardTitle>
-              <CardDescription>
-                {quote.customer.hasAccount
-                  ? "Has an account with this email, so they can accept it on the storefront."
-                  : "No confirmed account has this email yet: they create one to accept it online."}
-              </CardDescription>
+              <CardDescription>{quote.customer.hasAccount ? "Has an account, so they can accept it online." : "No account yet: they need one to accept online."}</CardDescription>
             </CardHeader>
             <CardContent className="grid gap-4">
               <Detail label="Name">{quote.customer.name}</Detail>

@@ -76,7 +76,7 @@ const AcceptInvitationUI = ({ invitation }: { invitation: InvitationDetails }) =
       <div className="grid w-full max-w-md gap-6 p-6 text-center">
         <div className="grid gap-2">
           <h1 className="text-2xl font-bold">You have been invited</h1>
-          <p className="text-sm text-muted-foreground">{`You have been invited by ${invitation.inviter.name ?? invitation.inviter.email} to join ${invitation.organization.name} as ${invitation.role}. Would you like to accept?`}</p>
+          <p className="text-sm text-muted-foreground">{`${invitation.inviter.name ?? invitation.inviter.email} invited you to join ${invitation.organization.name} as ${invitation.role}.`}</p>
         </div>
         <div className="flex gap-3">
           <Button variant="outline" className="flex-1" onClick={handleReject} disabled={isPending}>

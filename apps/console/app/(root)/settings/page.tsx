@@ -13,7 +13,7 @@ export default async function GeneralSettingsPage() {
   const settings = await readAppSettings()
 
   return (
-    <SettingsSection title="General" description="What the storefront and the console are called, and how they look.">
+    <SettingsSection title="General" description="Names and branding.">
       <StorefrontCard settings={settings} />
       <ConsoleCard settings={settings} />
       <BrandingCard settings={settings} />

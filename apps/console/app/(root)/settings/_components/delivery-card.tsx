@@ -67,10 +67,7 @@ export default function DeliveryCard({ settings }: { settings: DeliverySettingsV
     <Card>
       <CardHeader>
         <CardTitle>Delivery</CardTitle>
-        <CardDescription>
-          What delivery costs, in GHS. A town&apos;s fee overrides its region&apos;s. Leave a region empty to not deliver there, except to towns given a fee. Staff can still change the fee on an order
-          they create.
-        </CardDescription>
+        <CardDescription>Fees in GHS. A town&apos;s fee overrides its region&apos;s; places without a fee aren&apos;t delivered to.</CardDescription>
       </CardHeader>
       <CardContent>
         {/* stopPropagation keeps a submit from reaching any form around it */}
@@ -88,7 +85,7 @@ export default function DeliveryCard({ settings }: { settings: DeliverySettingsV
             step={0.01}
             min={0}
             prependText="GH₵"
-            description="For orders whose subtotal, after any discount, reaches this. Leave empty to always charge."
+            description="Subtotal after discount. Leave empty to always charge."
             disabled={isPending}
           />
 

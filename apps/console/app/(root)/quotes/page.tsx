@@ -40,9 +40,7 @@ export default async function QuotesPage({ searchParams }: QuotesPageProps) {
       <div className="flex items-end justify-between gap-4">
         <div className="grid">
           <h1 className="text-xl font-bold md:text-2xl">Quotes</h1>
-          <p className="text-sm text-muted-foreground">
-            Quotations customers made from their basket, and those made for them here. Prices hold until each one lapses; stock isn&apos;t held. Accepting one places an order.
-          </p>
+          <p className="text-sm text-muted-foreground">Quotations from customers and staff. Prices hold until they expire; stock isn&apos;t held.</p>
         </div>
         {/* Every role that reaches this page can make quotations (system permission order: create) */}
         <AddButton label="New Quotation" url="/quotes/create" />

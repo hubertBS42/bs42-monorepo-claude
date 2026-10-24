@@ -48,7 +48,7 @@ export default function ExchangeRateCard({ latest, maxAgeDays }: { latest: Excha
     <Card>
       <CardHeader>
         <CardTitle>Exchange Rate</CardTitle>
-        <CardDescription>{`Customers pay in GHS at this rate, fetched daily. Set it here to override today's. Orders refuse one over ${maxAgeDays} days old.`}</CardDescription>
+        <CardDescription>{`Fetched daily. Set it here to override today's. Orders need one under ${maxAgeDays} days old.`}</CardDescription>
       </CardHeader>
       <CardContent>
         {/* stopPropagation keeps a submit from reaching any form around it */}

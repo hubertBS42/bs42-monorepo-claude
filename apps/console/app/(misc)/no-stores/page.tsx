@@ -23,9 +23,7 @@ const NoStoresPage = async () => {
         </div>
         <div className="grid gap-2">
           <h1 className="text-2xl font-bold">No Stores Found</h1>
-          <p className="text-sm text-muted-foreground">
-            You are not a member of any store on {appName}. Ask a store administrator to invite you, then open the invitation link sent to {session.user.email}.
-          </p>
+          <p className="text-sm text-muted-foreground">You aren&apos;t a member of any store on {appName}. Ask a store admin to invite you.</p>
         </div>
         <SignOutButton />
       </div>

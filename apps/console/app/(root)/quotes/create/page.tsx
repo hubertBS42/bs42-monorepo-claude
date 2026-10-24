@@ -40,8 +40,8 @@ export default async function CreateQuotePage({ searchParams }: CreateQuotePageP
         <h1 className="text-xl font-bold md:text-2xl">New Quotation</h1>
         <p className="text-sm text-muted-foreground">
           {copy
-            ? `A copy of ${copy.reference}, priced again at today's prices.${copy.left ? ` ${copy.left === 1 ? "One line was" : `${copy.left} lines were`} left out: no longer on sale.` : ""}`
-            : "Priced as the storefront would price it, emailed to the customer, who accepts and pays online or by bank transfer through you."}
+            ? `A copy of ${copy.reference} at today's prices.${copy.left ? ` ${copy.left === 1 ? "One line was" : `${copy.left} lines were`} left out: no longer on sale.` : ""}`
+            : "Emailed to the customer to accept."}
         </p>
       </div>
 

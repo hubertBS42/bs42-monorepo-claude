@@ -136,7 +136,7 @@ export default function EditCategoryForm({ category, parentOptions, disabledPare
                       onRemove={handleRemoveImage}
                       clearErrors={form.clearErrors}
                       label="Image"
-                      description="Wide, about 1600 × 600: behind the category's slide on the homepage when it's featured."
+                      description="About 1600 × 600, for the homepage carousel."
                       disabled={isBusy}
                       className="max-w-35"
                       defaultValues={category.image}
@@ -158,7 +158,7 @@ export default function EditCategoryForm({ category, parentOptions, disabledPare
                 </CardHeader>
                 <CardContent>
                   <FieldGroup>
-                    <SwitchField control={form.control} label="Featured" name="isFeatured" disabled={isBusy} description="Show it as a slide in the homepage's carousel (up to 6)" variant="card" />
+                    <SwitchField control={form.control} label="Featured" name="isFeatured" disabled={isBusy} description="Show in the homepage carousel (up to 6)" variant="card" />
                     <NumberInputField
                       control={form.control}
                       label="Installation fee"
@@ -167,7 +167,7 @@ export default function EditCategoryForm({ category, parentOptions, disabledPare
                       min={0}
                       prependText="GH₵"
                       disabled={isBusy}
-                      description="Per item, for products here and in the categories under it that don't set their own. Empty: the parent category's fee applies, or none."
+                      description="Per item, for products here and below without their own. Empty uses the parent's."
                     />
                   </FieldGroup>
                 </CardContent>

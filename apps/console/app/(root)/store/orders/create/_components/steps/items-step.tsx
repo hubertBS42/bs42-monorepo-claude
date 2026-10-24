@@ -80,7 +80,7 @@ export default function ItemsStep({ storeId, form, chosen, onChosenChange }: Ite
       <Card>
         <CardHeader>
           <CardTitle>The store&apos;s listings</CardTitle>
-          <CardDescription>Published listings and variants on sale. Prices are in GHS at today&apos;s rate; the order is priced when it&apos;s created.</CardDescription>
+          <CardDescription>Listings on sale, in GHS at today&apos;s rate.</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4">
           <div className="relative">

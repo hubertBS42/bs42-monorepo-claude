@@ -41,7 +41,7 @@ export default async function AddListingPage({ searchParams }: AddListingPagePro
         <div className="grid">
           <h1 className="text-xl font-bold md:text-2xl">Add Listing</h1>
           <p className="text-sm text-muted-foreground">
-            Choose a published catalogue product this store doesn&apos;t list yet. Can&apos;t find it?{" "}
+            Choose a product to list. Can&apos;t find it?{" "}
             <Link href="/store/product-requests/new" className="font-medium text-foreground underline-offset-4 hover:underline">
               Request it
             </Link>

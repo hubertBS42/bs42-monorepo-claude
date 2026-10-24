@@ -15,7 +15,7 @@ export default async function DeliverySettingsPage() {
   const [delivery, installation] = await Promise.all([getDeliverySettings(), getInstallationAreas()])
 
   return (
-    <SettingsSection title="Delivery" description="What delivery costs, and where the platform's installers work.">
+    <SettingsSection title="Delivery" description="Delivery fees and installation areas.">
       <DeliveryCard settings={delivery} />
       <InstallationCard settings={installation} />
     </SettingsSection>

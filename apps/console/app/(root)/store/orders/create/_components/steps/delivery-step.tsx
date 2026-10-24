@@ -111,8 +111,8 @@ export default function DeliveryStep({ form, customer, delivery }: DeliveryStepP
                 </div>
                 {region && (
                   <p className="text-sm text-muted-foreground">
-                    {rate ? `The delivery fee for ${rate.town ?? region} is GH₵${rate.feeGhs}.` : `There's no delivery fee set for ${town || region}, so the storefront doesn't deliver there.`}
-                    {delivery.freeDeliveryFromGhs !== null && ` Orders of GH₵${delivery.freeDeliveryFromGhs} or more after any discount deliver free, so set 0 if this one does.`}
+                    {rate ? `The delivery fee for ${rate.town ?? region} is GH₵${rate.feeGhs}.` : `No fee is set for ${town || region}.`}
+                    {delivery.freeDeliveryFromGhs !== null && ` Free from GH₵${delivery.freeDeliveryFromGhs} after discount.`}
                   </p>
                 )}
               </>

@@ -42,7 +42,7 @@ export default async function StoreOrdersPage({ searchParams }: StoreOrdersPageP
       <div className="flex items-end justify-between">
         <div className="grid">
           <h1 className="text-xl font-bold md:text-2xl">Orders</h1>
-          <p className="text-sm text-muted-foreground">Orders with this store&apos;s items. An order with other stores&apos; items too is managed by the platform.</p>
+          <p className="text-sm text-muted-foreground">Orders with this store&apos;s items. Mixed-store orders are managed by the platform.</p>
         </div>
 
         {/* Every store role can create orders */}

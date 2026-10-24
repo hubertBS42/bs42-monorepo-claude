@@ -35,7 +35,7 @@ export default async function TradeAccountsPage({ searchParams }: TradeAccountsP
     <main className="flex flex-col gap-y-6">
       <div className="grid">
         <h1 className="text-xl font-bold md:text-2xl">Trade Accounts</h1>
-        <p className="text-sm text-muted-foreground">Businesses apply on the storefront. An approved account gets its discount on every order, before tax.</p>
+        <p className="text-sm text-muted-foreground">Approved businesses get their discount on every order.</p>
       </div>
       <TradeAccountsTable data={result.data} />
     </main>

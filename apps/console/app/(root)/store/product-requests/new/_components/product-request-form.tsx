@@ -88,7 +88,7 @@ export default function ProductRequestForm({ storeId, brands, categories }: Prod
       <div className="grid gap-y-6">
         <SharedFormHeader
           heading="Request a Product"
-          description="Ask for a product the catalogue doesn't have. The platform's team adds it, and you can then list it."
+          description="Ask the platform to add a product to the catalogue."
           backTo={BACK_TO}
           isPending={isBusy}
           isDirty={form.formState.isDirty}
@@ -101,7 +101,7 @@ export default function ProductRequestForm({ storeId, brands, categories }: Prod
               <Card>
                 <CardHeader>
                   <CardTitle>Product</CardTitle>
-                  <CardDescription>Enough for the team to find it. Only the name is needed.</CardDescription>
+                  <CardDescription>Only the name is required.</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <FieldGroup>
@@ -150,9 +150,7 @@ export default function ProductRequestForm({ storeId, brands, categories }: Prod
               <Card>
                 <CardHeader>
                   <CardTitle>Already in the catalogue?</CardTitle>
-                  <CardDescription>
-                    {matches.length ? "These match what you've typed. If it's one of them, list it instead of asking." : "Products matching the name or barcode you type show here."}
-                  </CardDescription>
+                  <CardDescription>{matches.length ? "If it's one of these, list it instead." : "Matching products show here."}</CardDescription>
                 </CardHeader>
                 {matches.length > 0 && (
                   <CardContent>

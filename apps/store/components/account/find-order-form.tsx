@@ -41,8 +41,7 @@ export function FindOrderForm() {
           <MailCheck className="mx-auto mb-2 size-8 text-muted-foreground" aria-hidden />
           <CardTitle className="text-xl">Check your email</CardTitle>
           <CardDescription>
-            If we have an order with that reference for <span className="font-medium text-foreground">{sentTo}</span>, we&apos;ve sent a link to it there. It can take a minute or two, and we send one
-            every 10 minutes at most, so look for an earlier email too.
+            If we have an order with that reference for <span className="font-medium text-foreground">{sentTo}</span>, we&apos;ve sent its link there. It can take a few minutes.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -58,7 +57,7 @@ export function FindOrderForm() {
     <Card>
       <CardHeader className="text-center">
         <CardTitle className="text-xl">Find your order</CardTitle>
-        <CardDescription>Enter the reference from your order confirmation and the email you ordered with. We&apos;ll email you a link to it.</CardDescription>
+        <CardDescription>Enter your order reference and email, and we&apos;ll send you a link.</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={form.handleSubmit(onSubmit)} noValidate>

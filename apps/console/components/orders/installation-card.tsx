@@ -126,7 +126,7 @@ function InstallationControls({ orderId, installation, order, refundedGhs, refun
                 </Button>
               }
               title="Mark the installation as done"
-              description="Once it's done, returned items no longer suggest refunding their installation."
+              description="Returns won't suggest refunding installation after this."
               submitLabel="Mark as done"
               failureTitle="Unable to update the installation"
               refreshOn={REFRESH_ON}

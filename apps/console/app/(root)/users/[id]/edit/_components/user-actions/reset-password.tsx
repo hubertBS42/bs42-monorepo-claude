@@ -57,7 +57,7 @@ const ResetPassword = ({ user }: { user: User }) => {
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-          <AlertDialogDescription>{`An email with a password reset link is about to be sent to ${user.name ?? user.email}, do you wish to continue?`}</AlertDialogDescription>
+          <AlertDialogDescription>{`${user.name ?? user.email} will be emailed a password reset link.`}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel disabled={isPending}>Cancel</AlertDialogCancel>

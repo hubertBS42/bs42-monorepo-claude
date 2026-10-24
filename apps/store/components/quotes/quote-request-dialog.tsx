@@ -60,9 +60,7 @@ export function QuoteRequestDialog({ signedIn, initial, areas, validityDays }: {
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Get a quotation</DialogTitle>
-          <DialogDescription>
-            We&apos;ll price your basket with delivery to this address and hold the prices for {validityDays} days. Items aren&apos;t reserved until you accept and pay.
-          </DialogDescription>
+          <DialogDescription>Prices hold for {validityDays} days. Items aren&apos;t reserved until you pay.</DialogDescription>
         </DialogHeader>
         {/* The dialog is portaled, but React events still bubble to any form it's rendered inside */}
         <form

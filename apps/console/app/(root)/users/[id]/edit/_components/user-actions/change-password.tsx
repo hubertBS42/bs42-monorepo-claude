@@ -75,7 +75,7 @@ const ChangePassword = () => {
       <DialogContent className="sm:max-w-106.25">
         <DialogHeader>
           <DialogTitle>Change Password</DialogTitle>
-          <DialogDescription>Enter your current password and choose a new one to update your password.</DialogDescription>
+          <DialogDescription>Enter your current and new password.</DialogDescription>
         </DialogHeader>
         {/* The dialog is portaled, but React events still bubble to any form it's rendered inside */}
         <form

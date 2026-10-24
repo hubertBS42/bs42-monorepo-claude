@@ -99,7 +99,7 @@ export default function DeleteStore({ store }: { store: Store }) {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-            <AlertDialogDescription>{`This action cannot be undone. ${store.name}, its members and its listings will be permanently deleted. A store that has orders can't be deleted; suspend it instead.`}</AlertDialogDescription>
+            <AlertDialogDescription>{`This can't be undone. ${store.name}, its members and listings will be permanently deleted. Stores with orders can only be suspended.`}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isPending}>Cancel</AlertDialogCancel>

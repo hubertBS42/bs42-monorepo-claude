@@ -165,7 +165,7 @@ const ListingForm = ({ storeId, data, storefrontLink }: ListingFormProps) => {
               <Card>
                 <CardHeader>
                   <CardTitle>Pricing</CardTitle>
-                  <CardDescription>In USD, like the catalogue. Customers pay in GHS at the day&apos;s exchange rate.</CardDescription>
+                  <CardDescription>In USD. Customers pay in GHS at the day&apos;s rate.</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="grid gap-5 sm:grid-cols-3">
@@ -209,7 +209,7 @@ const ListingForm = ({ storeId, data, storefrontLink }: ListingFormProps) => {
                 <Card>
                   <CardHeader>
                     <CardTitle>Variants</CardTitle>
-                    <CardDescription>Leave a variant&apos;s price empty to sell it at the listing&apos;s sell price.</CardDescription>
+                    <CardDescription>An empty price uses the listing&apos;s.</CardDescription>
                   </CardHeader>
                   <CardContent>
                     {variantRows.length === 0 ? (
@@ -273,7 +273,7 @@ const ListingForm = ({ storeId, data, storefrontLink }: ListingFormProps) => {
                 <Card>
                   <CardHeader>
                     <CardTitle>Stock change</CardTitle>
-                    <CardDescription>Why the stock was changed by hand. It goes into the stock history.</CardDescription>
+                    <CardDescription>Recorded in the stock history.</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <FieldGroup>
@@ -298,18 +298,13 @@ const ListingForm = ({ storeId, data, storefrontLink }: ListingFormProps) => {
                 </CardContent>
               </Card>
 
-              {storefrontLink && (
-                <StorefrontLinkCard
-                  link={storefrontLink}
-                  description="The product's page, with the best offer across every store selling it, which may not be this listing. Saved changes show within a minute."
-                />
-              )}
+              {storefrontLink && <StorefrontLinkCard link={storefrontLink} description="Shows the best offer across stores, which may not be this one." />}
 
               {id && (
                 <Card>
                   <CardHeader>
                     <CardTitle>Stock history</CardTitle>
-                    <CardDescription>Every change to this listing&apos;s stock: sales, returns, deliveries and changes made here.</CardDescription>
+                    <CardDescription>Every change to this listing&apos;s stock.</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <Link href={`/store/listings/${id}/stock-history`} className={buttonVariants({ variant: "outline", className: "w-full" })}>
@@ -323,7 +318,7 @@ const ListingForm = ({ storeId, data, storefrontLink }: ListingFormProps) => {
                 <Card>
                   <CardHeader>
                     <CardTitle>Danger Zone</CardTitle>
-                    <CardDescription>Remove this product from the store. A listing that has been ordered can only be archived.</CardDescription>
+                    <CardDescription>Listings that have been ordered can only be archived.</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <DeleteListing listing={{ id, name: product.name }} storeId={storeId} hasOrders={data.hasOrders} />

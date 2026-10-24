@@ -16,15 +16,7 @@ import { Button } from "@workspace/ui/components/button"
 import { useState, useTransition } from "react"
 import { Spinner } from "@workspace/ui/components/spinner"
 
-const DiscardChangesButton = ({
-  isLoading,
-  isDisabled,
-  handleDiscard,
-}: {
-  isLoading?: boolean
-  isDisabled?: boolean
-  handleDiscard: () => Promise<void> | void
-}) => {
+const DiscardChangesButton = ({ isLoading, isDisabled, handleDiscard }: { isLoading?: boolean; isDisabled?: boolean; handleDiscard: () => Promise<void> | void }) => {
   const [isOpen, setIsOpen] = useState(false)
   // Discarding can remove uploads before it leaves, and router.push in a transition stays pending until the next page
   // has rendered, so the spinner shows for all of it, not only while the form is saving
@@ -34,12 +26,7 @@ const DiscardChangesButton = ({
     <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
       <AlertDialogTrigger
         render={
-          <Button
-            variant={"destructive"}
-            size={"sm"}
-            disabled={isLoading || isDisabled}
-            type="button"
-          >
+          <Button variant={"destructive"} size={"sm"} disabled={isLoading || isDisabled} type="button">
             <Trash /> Discard Changes
           </Button>
         }
@@ -47,10 +34,7 @@ const DiscardChangesButton = ({
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-          <AlertDialogDescription>
-            You have unsaved changes. Are you sure you want to leave this page?
-            Any unsaved data will be lost.
-          </AlertDialogDescription>
+          <AlertDialogDescription>Your unsaved changes will be lost.</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel disabled={isBusy}>Cancel</AlertDialogCancel>

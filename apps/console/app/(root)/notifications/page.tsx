@@ -28,7 +28,7 @@ export default async function NotificationsPage({ searchParams }: NotificationsP
     <main className="flex flex-col gap-y-6">
       <div className="grid">
         <h1 className="text-xl font-bold md:text-2xl">Notifications</h1>
-        <p className="text-sm text-muted-foreground">{`Everything from the last ${NOTIFICATION_LIFETIME_DAYS} days. Choose which you get in Account → Notifications.`}</p>
+        <p className="text-sm text-muted-foreground">{`From the last ${NOTIFICATION_LIFETIME_DAYS} days.`}</p>
       </div>
       <NotificationList data={data} filters={filters} />
     </main>

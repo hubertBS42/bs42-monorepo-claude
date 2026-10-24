@@ -122,7 +122,7 @@ export default function BulkProductActions({ products, categories, clear }: { pr
           </Button>
         }
         title={`Move ${count}`}
-        description="Values for specifications the new category doesn't have are cleared, as when a product's category is changed on its page."
+        description="Specifications the new category doesn't have are cleared."
         submitLabel="Move"
         failureTitle="Couldn't move them"
         refreshOn={[]}
@@ -145,7 +145,7 @@ export default function BulkProductActions({ products, categories, clear }: { pr
             leafOnly
             disabled={saving}
             placeholder="Select a category"
-            description="Products go in the most specific category, one without subcategories."
+            description="Choose a category without subcategories."
           />
         )}
       </FormDialog>

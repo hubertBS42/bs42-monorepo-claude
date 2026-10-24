@@ -60,7 +60,7 @@ const DeleteUser = ({ user }: { user: User }) => {
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-          <AlertDialogDescription>{`This action cannot be undone. ${user.name ?? user.email}'s account and all associated resources will be permanently deleted from the system.`}</AlertDialogDescription>
+          <AlertDialogDescription>{`This can't be undone. ${user.name ?? user.email}'s account will be permanently deleted.`}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel disabled={isPending}>Cancel</AlertDialogCancel>

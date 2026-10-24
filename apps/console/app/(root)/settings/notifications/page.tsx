@@ -13,7 +13,7 @@ export default async function NotificationSettingsPage() {
   const settings = await readAppSettings()
 
   return (
-    <SettingsSection title="Notifications" description="Which events email the platform's staff, and who receives them.">
+    <SettingsSection title="Notifications" description="Staff email alerts and who receives them.">
       <NotificationsCard settings={settings} />
     </SettingsSection>
   )

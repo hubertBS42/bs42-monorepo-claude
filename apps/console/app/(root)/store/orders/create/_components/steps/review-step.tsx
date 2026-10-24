@@ -84,7 +84,7 @@ export default function ReviewStep({ storeId, form }: { storeId: string; form: U
       <Card className="lg:col-span-2">
         <CardHeader>
           <CardTitle>Summary</CardTitle>
-          <CardDescription>{preview ? `In GHS at GH₵${Number(preview.exchangeRate)} per $1. The order is priced again when it's created.` : "Pricing the order…"}</CardDescription>
+          <CardDescription>{preview ? `In GHS at GH₵${Number(preview.exchangeRate)} per $1.` : "Pricing the order…"}</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4">
           {previewError ? (

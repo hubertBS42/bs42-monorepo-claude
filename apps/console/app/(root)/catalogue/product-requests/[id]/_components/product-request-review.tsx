@@ -101,7 +101,7 @@ export default function ProductRequestReview({ request }: { request: { id: strin
           </Button>
         }
         title="Link a product that exists"
-        description="The store is told which product it is, so it can list it."
+        description="The store is told which product."
         submitLabel="Link it"
         failureTitle="Unable to link the product"
         refreshOn={[...REFRESH_ON, "PRODUCT_NOT_FOUND"]}
