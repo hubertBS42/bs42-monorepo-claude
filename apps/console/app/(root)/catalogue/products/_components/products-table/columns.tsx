@@ -30,6 +30,8 @@ const emptyCell = (label: string) => (
 
 export const getProductHref = (product: ProductListItem) => `/catalogue/products/${product.id}/edit`
 
+// Table cells don't wrap, so the name, category path and missing-details note wrap at a minimum width instead: their
+// longest values would otherwise push the table wider than a laptop screen
 export const columns: ColumnDef<ProductListItem, unknown>[] = [
   {
     id: "select",
@@ -55,7 +57,7 @@ export const columns: ColumnDef<ProductListItem, unknown>[] = [
       return (
         <div className="flex items-center gap-x-3">
           <div className="relative size-10 shrink-0 overflow-hidden rounded bg-muted">{image && <img alt="" src={image} loading="lazy" className="size-full object-cover" />}</div>
-          <div className="grid gap-y-0.5">
+          <div className="grid min-w-48 gap-y-0.5 whitespace-normal">
             {/* w-fit: a grid stretches links to its width, and clicks beside the text should open the row, not either link */}
             <RowLink href={getProductHref(product)} className="w-fit">
               {product.name}
@@ -82,7 +84,11 @@ export const columns: ColumnDef<ProductListItem, unknown>[] = [
   {
     accessorKey: "categoryPath",
     header: () => <ColumnHeader title="Category" />,
-    cell: ({ row }) => <CategoryPath path={row.original.categoryPath} />,
+    cell: ({ row }) => (
+      <div className="min-w-40 whitespace-normal">
+        <CategoryPath path={row.original.categoryPath} />
+      </div>
+    ),
   },
   {
     accessorKey: "variantCount",
@@ -104,7 +110,7 @@ export const columns: ColumnDef<ProductListItem, unknown>[] = [
     cell: ({ row }) => (
       <div className="grid justify-items-start gap-y-0.5">
         {genStatusBadge(row.original.status)}
-        {row.original.missing.length > 0 && <span className="text-[11px] text-muted-foreground">{`Missing ${row.original.missing.join(", ")}`}</span>}
+        {row.original.missing.length > 0 && <span className="min-w-28 text-[11px] whitespace-normal text-muted-foreground">{`Missing ${row.original.missing.join(", ")}`}</span>}
       </div>
     ),
   },
