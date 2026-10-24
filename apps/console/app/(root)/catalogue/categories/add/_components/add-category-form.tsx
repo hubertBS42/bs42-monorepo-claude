@@ -129,7 +129,7 @@ const AddCategoryForm = ({ parentOptions, disabledParentIds }: AddCategoryFormPr
                       onRemove={handleRemoveImage}
                       clearErrors={form.clearErrors}
                       label="Image"
-                      description="About 1600 × 600, for the homepage carousel."
+                      description="About 1600 × 600, for the homepage; keep the subject right of centre."
                       disabled={isBusy}
                       className="max-w-35"
                     />
