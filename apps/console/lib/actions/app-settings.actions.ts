@@ -29,8 +29,8 @@ function toData(section: SettingsSection, values: SectionOutput<SettingsSection>
       return { consoleName: consoleName || null, consoleDescription: consoleDescription || null }
     }
     case "branding": {
-      const { logoUrl, faviconUrl } = values as SectionOutput<"branding">
-      return { logoUrl: logoUrl || null, faviconUrl: faviconUrl || null }
+      const { logoUrl, logoDarkUrl, faviconUrl } = values as SectionOutput<"branding">
+      return { logoUrl: logoUrl || null, logoDarkUrl: logoDarkUrl || null, faviconUrl: faviconUrl || null }
     }
     case "tax": {
       const { taxEnabled, taxRatePercent, taxShipping } = values as SectionOutput<"tax">
@@ -64,7 +64,7 @@ export async function saveSettingsSection<S extends SettingsSection>(section: S,
 
   try {
     // Images are uploaded by the browser beforehand, so these are the final URLs; only blobs in our own container
-    if (section === "branding" && [data.logoUrl, data.faviconUrl].some((url) => typeof url === "string" && !isManagedFileUrl(url))) {
+    if (section === "branding" && [data.logoUrl, data.logoDarkUrl, data.faviconUrl].some((url) => typeof url === "string" && !isManagedFileUrl(url))) {
       return { success: false, error: "Invalid file URL", code: "INVALID_FILE" }
     }
 
@@ -84,7 +84,8 @@ export async function saveSettingsSection<S extends SettingsSection>(section: S,
 
     // Only the server knows the previous values, so it removes the replaced files once the save has committed
     if (section === "branding") {
-      await removeFiles([previous.logoUrl !== data.logoUrl ? previous.logoUrl : null, previous.faviconUrl !== data.faviconUrl ? previous.faviconUrl : null])
+      const replaced = (key: "logoUrl" | "logoDarkUrl" | "faviconUrl") => (previous[key] !== data[key] ? previous[key] : null)
+      await removeFiles([replaced("logoUrl"), replaced("logoDarkUrl"), replaced("faviconUrl")])
     }
 
     // Next 16: updateTag("app-settings") for read-your-writes

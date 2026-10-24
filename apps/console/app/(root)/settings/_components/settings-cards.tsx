@@ -41,7 +41,7 @@ export function ConsoleCard({ settings }: CardProps) {
 export function BrandingCard({ settings }: CardProps) {
   // Files the live site uses right now. They're never deleted from the browser: the server removes them after a save
   // that replaces them. Uploads that are never saved are left to the orphaned-file sweep.
-  const saved = [settings.logoUrl, settings.faviconUrl]
+  const saved = [settings.logoUrl, settings.logoDarkUrl, settings.faviconUrl]
   // Uploaded during this visit and not saved yet, so removing one in the form deletes it
   const unsaved = useRef<string[]>([])
 
@@ -72,6 +72,19 @@ export function BrandingCard({ settings }: CardProps) {
             onRemove={handleRemove}
             clearErrors={form.clearErrors}
             label="Logo"
+            disabled={isPending}
+            orientation="horizontal"
+          />
+          <ImageField
+            control={form.control}
+            name="logoDarkUrl"
+            sizeLimit={100}
+            maxImages={1}
+            onAdd={handleAdd}
+            onRemove={handleRemove}
+            clearErrors={form.clearErrors}
+            label="Logo on dark backgrounds"
+            description="Shown in dark mode and emails; empty uses the logo."
             disabled={isPending}
             orientation="horizontal"
           />

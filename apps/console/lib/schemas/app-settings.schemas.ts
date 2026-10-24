@@ -33,6 +33,7 @@ export const settingsSectionSchemas = {
   }),
   branding: z.object({
     logoUrl: z.httpUrl().or(z.literal("")),
+    logoDarkUrl: z.httpUrl().or(z.literal("")),
     faviconUrl: z.httpUrl().or(z.literal("")),
   }),
   tax: taxSchema,

@@ -1,6 +1,6 @@
 import "server-only"
 
-import { prisma, readAppSettings, resolveStoreName } from "@workspace/db"
+import { prisma, readAppSettings, resolveDarkLogoUrl, resolveStoreName } from "@workspace/db"
 import { QuoteEmail, sendEmail } from "@workspace/email"
 import { formatCurrency } from "@workspace/utils/currency"
 import { formatDate } from "@workspace/utils/date"
@@ -34,7 +34,7 @@ export async function sendQuoteEmail(quoteId: string) {
         validUntil: formatDate(new Date(quote.validUntil.getTime() - 1), "EEEE d MMMM"),
         url: quoteUrl(quote.reference, quoteId),
         appName,
-        logoUrl: settings.logoUrl,
+        logoUrl: resolveDarkLogoUrl(settings),
         // A staff member's first name, for a quote made in the console
         preparedBy: quote.createdBy ? firstName(quote.createdBy.name) : null,
       }),

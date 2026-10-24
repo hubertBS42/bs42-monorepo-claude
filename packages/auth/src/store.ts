@@ -5,7 +5,7 @@ import { APIError } from "better-auth/api"
 import { nextCookies } from "better-auth/next-js"
 import { EMAIL_VERIFICATION_TOKEN_EXPIRATION_SECONDS, RESET_PASSWORD_TOKEN_EXPIRATION_SECONDS } from "@workspace/contracts"
 import { ExistingAccountEmail, PasswordUpdatedEmail, ResetPasswordEmail, sendEmail, VerifyEmailEmail } from "@workspace/email"
-import { prisma, readAppSettings, resolveStoreName } from "@workspace/db"
+import { prisma, readAppSettings, resolveDarkLogoUrl, resolveStoreName } from "@workspace/db"
 import { authURLs, sharedAuthOptions } from "./shared"
 
 const googleClientId = process.env.GOOGLE_CLIENT_ID
@@ -22,7 +22,7 @@ export const isGoogleSignInEnabled = Boolean(googleClientId && googleClientSecre
 // has an account (which sends nothing), so waiting on the mailer would tell the two apart.
 function sendCustomerEmail(build: (appName: string, logoUrl: string | null) => Parameters<typeof sendEmail>[0]) {
   void readAppSettings()
-    .then((settings) => sendEmail(build(resolveStoreName(settings), settings.logoUrl)))
+    .then((settings) => sendEmail(build(resolveStoreName(settings), resolveDarkLogoUrl(settings))))
     .catch((error) => console.error("Could not send a storefront account email:", error))
 }
 

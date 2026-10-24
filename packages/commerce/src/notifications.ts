@@ -3,7 +3,7 @@ import "server-only"
 import { authURLs } from "@workspace/auth/constants"
 import { consoleAdminRoles, hasSystemRole } from "@workspace/auth/system-permissions"
 import { PLATFORM_ALERTS, PLATFORM_ORGANIZATION_SLUG, type AppSettingsData, type PlatformAlertKey } from "@workspace/contracts"
-import { prisma, readAppSettings, resolveConsoleName } from "@workspace/db"
+import { prisma, readAppSettings, resolveDarkLogoUrl, resolveConsoleName } from "@workspace/db"
 import { Prisma } from "@workspace/db/client"
 import { NotificationKind } from "@workspace/db/enums"
 import { sendEmail, StaffAlertEmail } from "@workspace/email"
@@ -33,7 +33,7 @@ async function sendEmails(settings: AppSettingsData, alert: Alert, context: stri
         to,
         fromName: appName,
         subject: alert.subject,
-        reactTemplate: StaffAlertEmail({ ...alert, action, appName, logoUrl: settings.logoUrl }),
+        reactTemplate: StaffAlertEmail({ ...alert, action, appName, logoUrl: resolveDarkLogoUrl(settings) }),
       })
     )
   )

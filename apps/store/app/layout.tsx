@@ -45,9 +45,9 @@ export default async function RootLayout({
     <html lang="en-GH" suppressHydrationWarning className={cn("antialiased", fontMono.variable, "font-sans", geist.variable)}>
       <body className="flex min-h-svh flex-col">
         <ThemeProvider>
-          <SiteHeader storeName={storeName} logoUrl={settings.logoUrl} menu={menu} />
+          <SiteHeader storeName={storeName} logoUrl={settings.logoUrl} logoDarkUrl={settings.logoDarkUrl} menu={menu} />
           <main className="flex-1">{children}</main>
-          <SiteFooter storeName={storeName} storeDescription={settings.storeDescription} logoUrl={settings.logoUrl} menu={menu} legal={legalLinks(legal)} />
+          <SiteFooter storeName={storeName} storeDescription={settings.storeDescription} logoUrl={settings.logoUrl} logoDarkUrl={settings.logoDarkUrl} menu={menu} legal={legalLinks(legal)} />
           <CompareBar />
           <Toaster />
         </ThemeProvider>

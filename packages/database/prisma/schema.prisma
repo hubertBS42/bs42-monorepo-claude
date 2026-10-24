@@ -103,6 +103,8 @@ model AppSettings {
   consoleName        String?
   consoleDescription String?
   logoUrl            String?
+  // The logo on dark backgrounds: the sites' dark mode and the emails' header. Null: logoUrl is used there too.
+  logoDarkUrl        String?
   faviconUrl         String?
   // The platform is the seller of record, so one tax rate applies to every order. A fraction: 0.15 is 15%.
   // Shown prices exclude tax: it's added on top at checkout (see Order.taxGhs).

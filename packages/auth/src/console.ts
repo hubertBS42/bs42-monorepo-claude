@@ -5,7 +5,7 @@ import { authURLs, sharedAuthOptions } from "./shared"
 import { consolePlugins } from "./console-plugins"
 import { RESET_PASSWORD_TOKEN_EXPIRATION_SECONDS } from "@workspace/contracts"
 import { ResetPasswordEmail, sendEmail, PasswordUpdatedEmail, SetPasswordEmail } from "@workspace/email"
-import { prisma, readAppSettings, resolveConsoleName } from "@workspace/db"
+import { prisma, readAppSettings, resolveDarkLogoUrl, resolveConsoleName } from "@workspace/db"
 import { APIError, createAuthMiddleware, getSessionFromCtx } from "better-auth/api"
 import { canManageUserWithRole } from "./system-permissions"
 
@@ -48,7 +48,7 @@ export const consoleAuth = betterAuth({
             name: user.name,
             url,
             appName,
-            logoUrl: settings.logoUrl,
+            logoUrl: resolveDarkLogoUrl(settings),
           }),
         })
       } else {
@@ -56,7 +56,7 @@ export const consoleAuth = betterAuth({
           to: user.email,
           fromName: appName,
           subject: `Reset your ${appName} password`,
-          reactTemplate: ResetPasswordEmail({ name: user.name, url, appName, logoUrl: settings.logoUrl }),
+          reactTemplate: ResetPasswordEmail({ name: user.name, url, appName, logoUrl: resolveDarkLogoUrl(settings) }),
         })
       }
     },
@@ -67,7 +67,7 @@ export const consoleAuth = betterAuth({
         to: user.email,
         fromName: appName,
         subject: "Your password has been updated!",
-        reactTemplate: PasswordUpdatedEmail({ name: user.name, appName, logoUrl: settings.logoUrl }),
+        reactTemplate: PasswordUpdatedEmail({ name: user.name, appName, logoUrl: resolveDarkLogoUrl(settings) }),
       })
     },
   },

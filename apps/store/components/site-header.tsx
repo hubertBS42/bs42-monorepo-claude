@@ -10,13 +10,13 @@ import { StoreLogo } from "@/components/store-logo"
 import { WishListButton } from "@/components/wish-list/wish-list-button"
 import type { MenuItem } from "@/lib/menu"
 
-export function SiteHeader({ storeName, logoUrl, menu }: { storeName: string; logoUrl: string | null; menu: MenuItem[] }) {
+export function SiteHeader({ storeName, logoUrl, logoDarkUrl, menu }: { storeName: string; logoUrl: string | null; logoDarkUrl: string | null; menu: MenuItem[] }) {
   return (
     <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/80 print:hidden">
       <div className="mx-auto flex h-16 max-w-7xl items-center gap-3 px-4 lg:gap-6 lg:px-6">
         <MobileMenu items={menu} storeName={storeName} />
         <Link href="/" className="shrink-0">
-          <StoreLogo storeName={storeName} logoUrl={logoUrl} />
+          <StoreLogo storeName={storeName} logoUrl={logoUrl} logoDarkUrl={logoDarkUrl} />
         </Link>
         <SearchForm className="hidden max-w-xl flex-1 md:block" />
         <div className="ml-auto flex items-center gap-1">

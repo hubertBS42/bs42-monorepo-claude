@@ -3,7 +3,7 @@ import { consoleAdminRoles, hasSystemPermission, hasSystemRole, storeRoleForSyst
 import { organizationAccessController, organizationRoles } from "./organization-permissions"
 import { InviteMemberEmail, sendEmail } from "@workspace/email"
 import { authURLs } from "./constants"
-import { prisma, readAppSettings, resolveConsoleName } from "@workspace/db"
+import { prisma, readAppSettings, resolveDarkLogoUrl, resolveConsoleName } from "@workspace/db"
 import { nextCookies } from "better-auth/next-js"
 import { APIError } from "better-auth/api"
 import { PLATFORM_ORGANIZATION_SLUG, INVITATION_EXPIRATION_SECONDS } from "@workspace/contracts"
@@ -47,7 +47,7 @@ export const consolePlugins = [
           role: data.role,
           url: inviteLink,
           appName,
-          logoUrl: settings.logoUrl,
+          logoUrl: resolveDarkLogoUrl(settings),
         }),
       })
     },

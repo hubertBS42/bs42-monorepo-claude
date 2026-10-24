@@ -11,6 +11,7 @@ export const DEFAULT_APP_SETTINGS: AppSettingsData = {
   consoleName: "BS42.NET",
   consoleDescription: null,
   logoUrl: null,
+  logoDarkUrl: null,
   faviconUrl: null,
   taxEnabled: false,
   taxRate: 0,
@@ -33,6 +34,8 @@ export const DEFAULT_APP_SETTINGS: AppSettingsData = {
 
 export const resolveConsoleName = (s: AppSettingsData) => s.consoleName ?? s.storeName
 export const resolveStoreName = (s: AppSettingsData) => s.storeName
+// The logo for a dark background, such as the emails' header
+export const resolveDarkLogoUrl = (s: AppSettingsData) => s.logoDarkUrl ?? s.logoUrl
 
 type AppSettingsRow = NonNullable<Awaited<ReturnType<typeof prisma.appSettings.findUnique>>>
 
@@ -44,6 +47,7 @@ export function toAppSettingsData(row: AppSettingsRow): AppSettingsData {
     consoleName: row.consoleName,
     consoleDescription: row.consoleDescription,
     logoUrl: row.logoUrl,
+    logoDarkUrl: row.logoDarkUrl,
     faviconUrl: row.faviconUrl,
     taxEnabled: row.taxEnabled,
     taxRate: row.taxRate.toNumber(),

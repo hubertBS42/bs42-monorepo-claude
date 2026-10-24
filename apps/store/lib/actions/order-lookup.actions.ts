@@ -2,7 +2,7 @@
 
 import { after } from "next/server"
 import type { ActionResponse } from "@workspace/contracts"
-import { prisma } from "@workspace/db"
+import { prisma, resolveDarkLogoUrl } from "@workspace/db"
 import { OrderLinkEmail, sendEmail } from "@workspace/email"
 import { orderUrl } from "@workspace/commerce/order-links"
 
@@ -47,7 +47,7 @@ export async function findOrderAction(input: FindOrderValues): Promise<ActionRes
           reference: order.reference,
           url: orderUrl(order.reference, order.id),
           appName: storeName,
-          logoUrl: settings.logoUrl,
+          logoUrl: resolveDarkLogoUrl(settings),
         }),
       })
     } catch (error) {

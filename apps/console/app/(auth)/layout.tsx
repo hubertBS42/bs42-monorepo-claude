@@ -4,6 +4,7 @@ import { hasConsoleAccess } from "@/lib/auth-guard"
 import { ReactNode } from "react"
 import { headers } from "next/headers"
 import { redirect } from "next/navigation"
+import { cn } from "@workspace/ui/lib/utils"
 import { getAppSettings } from "@/lib/app-settings"
 
 export default async function AuthLayout({
@@ -26,7 +27,8 @@ export default async function AuthLayout({
       <div className="w-full max-w-sm">
         {settings.logoUrl && (
           <div className="mb-6 flex justify-center">
-            <img src={settings.logoUrl} alt={settings.consoleName ?? ""} className="h-12 w-auto max-w-32 object-contain" />
+            <img src={settings.logoUrl} alt={settings.consoleName ?? ""} className={cn("h-12 w-auto max-w-32 object-contain", settings.logoDarkUrl && "dark:hidden")} />
+            {settings.logoDarkUrl && <img src={settings.logoDarkUrl} alt={settings.consoleName ?? ""} className="hidden h-12 w-auto max-w-32 object-contain dark:block" />}
           </div>
         )}
         {children}

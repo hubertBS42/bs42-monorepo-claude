@@ -12,7 +12,21 @@ const promises = [
   { icon: ShieldCheck, label: "Secure checkout" },
 ]
 
-export function SiteFooter({ storeName, storeDescription, logoUrl, menu, legal }: { storeName: string; storeDescription: string | null; logoUrl: string | null; menu: MenuItem[]; legal: LegalLinks }) {
+export function SiteFooter({
+  storeName,
+  storeDescription,
+  logoUrl,
+  logoDarkUrl,
+  menu,
+  legal,
+}: {
+  storeName: string
+  storeDescription: string | null
+  logoUrl: string | null
+  logoDarkUrl: string | null
+  menu: MenuItem[]
+  legal: LegalLinks
+}) {
   return (
     <footer className="mt-16 bg-muted print:hidden">
       <div className="border-b">
@@ -29,7 +43,7 @@ export function SiteFooter({ storeName, storeDescription, logoUrl, menu, legal }
       </div>
       <div className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:grid-cols-2 lg:grid-cols-[1.5fr_3fr] lg:px-6">
         <div className="space-y-3">
-          <StoreLogo storeName={storeName} logoUrl={logoUrl} />
+          <StoreLogo storeName={storeName} logoUrl={logoUrl} logoDarkUrl={logoDarkUrl} />
           {storeDescription && <p className="max-w-xs text-sm text-muted-foreground">{storeDescription}</p>}
         </div>
         <nav aria-label="Categories">

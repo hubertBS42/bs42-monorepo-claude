@@ -1,7 +1,7 @@
 import "server-only"
 
 import { authURLs } from "@workspace/auth/constants"
-import { prisma, readAppSettings, resolveStoreName } from "@workspace/db"
+import { prisma, readAppSettings, resolveDarkLogoUrl, resolveStoreName } from "@workspace/db"
 import type { Prisma } from "@workspace/db/client"
 import { TradeAccountStatus } from "@workspace/db/enums"
 import { sendEmail, TradeAccountDecisionEmail } from "@workspace/email"
@@ -64,7 +64,7 @@ export async function sendTradeDecisionEmail(accountId: string) {
         decision,
         url: new URL("/account/trade", authURLs.store).toString(),
         appName,
-        logoUrl: settings.logoUrl,
+        logoUrl: resolveDarkLogoUrl(settings),
       }),
     })
   } catch (error) {

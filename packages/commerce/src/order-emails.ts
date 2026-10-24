@@ -1,7 +1,7 @@
 import "server-only"
 
 import { authURLs } from "@workspace/auth/constants"
-import { prisma, readAppSettings, resolveStoreName } from "@workspace/db"
+import { prisma, readAppSettings, resolveDarkLogoUrl, resolveStoreName } from "@workspace/db"
 import { Prisma } from "@workspace/db/client"
 import { OrderStatus, ShippingMethod } from "@workspace/db/enums"
 import {
@@ -217,7 +217,7 @@ export async function sendOrderEmail(orderId: string, event: OrderEmailEvent, no
     if (event === "CREATED") extra = { ...extra, bankTransferDetails: settings.bankTransferDetails }
 
     // Customer emails carry the storefront's name and logo, not the console's
-    const email = buildOrderEmail(order, event, note, { appName: resolveStoreName(settings), logoUrl: settings.logoUrl }, extra)
+    const email = buildOrderEmail(order, event, note, { appName: resolveStoreName(settings), logoUrl: resolveDarkLogoUrl(settings) }, extra)
     if (email) await deliver(email)
   } catch (error) {
     console.error(`Could not send the ${event} email for order ${orderId}:`, error)
