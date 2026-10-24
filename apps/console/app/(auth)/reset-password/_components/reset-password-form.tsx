@@ -54,7 +54,7 @@ export function ResetPasswordForm() {
       <CardContent>
         {form.formState.isSubmitSuccessful ? (
           <Link href="/login" className={buttonVariants({ variant: "default" })}>
-            Back to login
+            Back to sign in
           </Link>
         ) : (
           <form onSubmit={form.handleSubmit(onSubmit)}>

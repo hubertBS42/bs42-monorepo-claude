@@ -112,13 +112,13 @@ export function LoginForm({ callbackURL, setupComplete = false }: { callbackURL:
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Login to your account</CardTitle>
-        <CardDescription>{setupComplete ? "Your administrator account is ready. Sign in to continue." : "Enter your email below to login to your account"}</CardDescription>
+        <CardTitle>Sign in to the console</CardTitle>
+        <CardDescription>{setupComplete ? "Your administrator account is ready. Sign in to continue." : "Use the email address your invitation was sent to."}</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={form.handleSubmit(onSubmit)} id="sign-in-form">
           <FieldGroup>
-            <TextInputField control={form.control} name="email" label="Email" type="email" placeholder="m@example.com" autoComplete="email" autoFocus />
+            <TextInputField control={form.control} name="email" label="Email" type="email" placeholder="you@example.com" autoComplete="email" autoFocus />
 
             <PasswordField
               control={form.control}
@@ -136,7 +136,7 @@ export function LoginForm({ callbackURL, setupComplete = false }: { callbackURL:
             {form.formState.errors.root && <FieldError errors={[form.formState.errors.root]} />}
 
             <Button type="submit" form="sign-in-form" disabled={form.formState.isSubmitting}>
-              {form.formState.isSubmitting ? "Logging in..." : "Login"}
+              {form.formState.isSubmitting ? "Signing in…" : "Sign in"}
             </Button>
           </FieldGroup>
         </form>

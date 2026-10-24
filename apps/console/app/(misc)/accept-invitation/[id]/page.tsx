@@ -37,7 +37,7 @@ const AcceptInvitationPage = async ({ params }: AcceptInvitationPageProps) => {
         title="Invitation unavailable"
         action={
           <Link href="/login" className={buttonVariants({ variant: "outline" })}>
-            Go to login
+            Go to sign in
           </Link>
         }
       >

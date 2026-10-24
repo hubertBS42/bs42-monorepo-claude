@@ -4,7 +4,7 @@ import { Metadata } from "next"
 import { redirect } from "next/navigation"
 
 export const metadata: Metadata = {
-  title: "Account Login",
+  title: "Sign in",
 }
 
 type LoginPageProps = {

@@ -65,7 +65,7 @@ export function SetPasswordForm({ token, invalidToken = false }: { token?: strin
       <CardContent>
         {isUpdated ? (
           <Link href="/login" className={buttonVariants({ variant: "default" })}>
-            Continue to login
+            Continue to sign in
           </Link>
         ) : (
           <form onSubmit={form.handleSubmit(onSubmit)}>
