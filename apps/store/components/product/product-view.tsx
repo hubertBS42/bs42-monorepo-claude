@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { FileText, Package, Truck, Wrench } from "lucide-react"
+import { Building2, FileText, MessageCircle, Package, ShieldCheck, Truck, Wrench } from "lucide-react"
 import { Badge } from "@workspace/ui/components/badge"
 import { Checkbox } from "@workspace/ui/components/checkbox"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@workspace/ui/components/tabs"
@@ -24,6 +24,9 @@ import { isInStock, type PricedCard } from "@/lib/product-cards"
 
 // The buy box lists this many specs; the Specifications tab has them all
 const KEY_SPECS = 6
+
+// Settings' phone and WhatsApp, for questions about the product; `phoneLabel` is the phone formatted for reading
+export type ProductContact = { phone: string | null; phoneLabel: string | null; whatsapp: string | null }
 
 function Gallery({ images, name }: { images: string[]; name: string }) {
   const [current, setCurrent] = useState(0)
@@ -69,6 +72,8 @@ export function ProductView({
   description,
   freeDeliveryFromGhs,
   installation,
+  summary,
+  contact,
 }: {
   card: PricedCard
   details: ProductDetails
@@ -78,6 +83,9 @@ export function ProductView({
   freeDeliveryFromGhs: string | null
   // Installing one unit (with tax when it's on) and where installers work; null when it isn't offered
   installation: { unitGhs: string; areas: string } | null
+  // The description's opening lines (summaryLines), `more` when it goes on
+  summary: { lines: string[]; more: boolean } | null
+  contact: ProductContact
 }) {
   const { offer, options } = useOfferPicker(card, initialVariantId)
   const [quantity, setQuantity] = useState(1)
@@ -207,20 +215,68 @@ export function ProductView({
             </dl>
           )}
 
-          <div className="flex gap-3 rounded-xl border p-4 text-sm">
-            <Truck className="mt-0.5 size-5 shrink-0 text-muted-foreground" aria-hidden />
-            <div>
-              <p className="font-semibold">Delivery across Ghana</p>
-              <p className="text-muted-foreground">
-                The fee depends on where you are and is added at checkout.
-                {freeDeliveryFromGhs && ` Free on orders of ${formatGhs(freeDeliveryFromGhs)} or more.`}
-              </p>
+          {/* Wide screens only: on a phone the description is just below, and there's no empty column to fill */}
+          {summary && (
+            <div className="hidden space-y-1.5 text-sm lg:block">
+              <h2 className="font-semibold">Overview</h2>
+              <ul className="space-y-0.5 leading-relaxed text-muted-foreground">
+                {summary.lines.map((line, index) => (
+                  <li key={index}>{line}</li>
+                ))}
+              </ul>
+              {summary.more && tabs[0] === "description" && (
+                <a href="#details" className="inline-block font-medium underline-offset-4 hover:underline">
+                  Read more
+                </a>
+              )}
             </div>
-          </div>
+          )}
+
+          <ul className="divide-y rounded-xl border text-sm">
+            <ServiceRow icon={Truck} title="Delivery across Ghana">
+              The fee depends on where you are and is added at checkout.
+              {freeDeliveryFromGhs && ` Free on orders of ${formatGhs(freeDeliveryFromGhs)} or more.`}
+            </ServiceRow>
+            <ServiceRow icon={ShieldCheck} title="Secure payment">
+              Mobile Money or card, through Paystack.
+            </ServiceRow>
+            {(contact.phone || contact.whatsapp) && (
+              <ServiceRow icon={MessageCircle} title="Questions about this product?">
+                {contact.phone && (
+                  <>
+                    Call{" "}
+                    <a href={`tel:${contact.phone}`} className="font-medium text-foreground underline-offset-4 hover:underline">
+                      {contact.phoneLabel}
+                    </a>
+                    {contact.whatsapp ? " or " : "."}
+                  </>
+                )}
+                {contact.whatsapp && (
+                  <a
+                    // wa.me takes the international number as digits only, and starts the chat with the product's name
+                    href={`https://wa.me/${contact.whatsapp.replace(/\D/g, "")}?text=${encodeURIComponent(`Hi, I have a question about ${label}`)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-medium text-foreground underline-offset-4 hover:underline"
+                  >
+                    {contact.phone ? "message us on WhatsApp" : "Message us on WhatsApp"}
+                  </a>
+                )}
+                {contact.whatsapp && "."}
+              </ServiceRow>
+            )}
+            <ServiceRow icon={Building2} title="Buying for a business?">
+              <Link href="/trade" className="font-medium text-foreground underline-offset-4 hover:underline">
+                Open a trade account
+              </Link>{" "}
+              for business pricing.
+            </ServiceRow>
+          </ul>
         </div>
       </div>
 
-      <Tabs defaultValue={tabs[0]} className="mt-12">
+      {/* "Read more" in the overview lands here */}
+      <Tabs id="details" defaultValue={tabs[0]} className="mt-12 scroll-mt-28">
         <TabsList variant="line" className="w-full justify-start border-b">
           {tabs.includes("description") && (
             <TabsTrigger value="description" className="flex-none px-4">
@@ -271,5 +327,18 @@ export function ProductView({
         )}
       </Tabs>
     </>
+  )
+}
+
+// A row of the buy box's help card: delivery, payment, questions, trade
+function ServiceRow({ icon: Icon, title, children }: { icon: React.ComponentType<{ className?: string }>; title: string; children: React.ReactNode }) {
+  return (
+    <li className="flex gap-3 p-4">
+      <Icon className="mt-0.5 size-5 shrink-0 text-muted-foreground" aria-hidden />
+      <div>
+        <p className="font-semibold">{title}</p>
+        <p className="text-muted-foreground">{children}</p>
+      </div>
+    </li>
   )
 }

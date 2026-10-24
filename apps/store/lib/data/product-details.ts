@@ -48,6 +48,48 @@ export const getProductDetails = unstable_cache(
 
 export type ProductDetails = Awaited<ReturnType<typeof getProductDetails>>
 
+// The description's opening lines, for the buy box's overview: each paragraph, heading or list item (and each line of
+// one broken with Shift+Enter) as a line, as many as fit `maxLength` characters, at most `maxLines`. `more` when the
+// description goes on.
+export function summaryLines(richText: string | null, maxLength = 280, maxLines = 4): { lines: string[]; more: boolean } | null {
+  if (!richText) return null
+  const lines: string[] = []
+  let current = ""
+  const endLine = () => {
+    const line = current.replace(/\s+/g, " ").trim()
+    if (line) lines.push(line)
+    current = ""
+  }
+  const walk = (node: unknown) => {
+    if (typeof node !== "object" || node === null) return
+    const { type, text, content } = node as { type?: unknown; text?: unknown; content?: unknown }
+    if (type === "hardBreak") return endLine()
+    if (typeof text === "string") current += text
+    if (Array.isArray(content)) for (const child of content) walk(child)
+    if (type === "paragraph" || type === "heading") endLine()
+  }
+  try {
+    walk(JSON.parse(richText))
+  } catch {
+    return null
+  }
+  endLine()
+  if (lines.length === 0) return null
+
+  const shown: string[] = []
+  let length = 0
+  for (const line of lines.slice(0, maxLines)) {
+    if (length + line.length > maxLength) {
+      // The first line alone is too long: cut it, rather than show nothing
+      if (shown.length === 0) shown.push(`${line.slice(0, maxLength - 1).trimEnd()}…`)
+      break
+    }
+    shown.push(line)
+    length += line.length
+  }
+  return { lines: shown, more: shown.length < lines.length || shown.at(-1)!.endsWith("…") }
+}
+
 // The description's text, for the page's meta description
 export function plainText(richText: string | null, maxLength = 160) {
   if (!richText) return null

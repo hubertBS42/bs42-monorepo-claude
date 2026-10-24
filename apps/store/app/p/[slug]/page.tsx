@@ -6,6 +6,7 @@ import { withTax } from "@workspace/commerce/pricing"
 import { Prisma } from "@workspace/db/client"
 import { RichTextContent } from "@workspace/forms/components/rich-text-content"
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@workspace/ui/components/breadcrumb"
+import { formatPhoneNumber } from "@workspace/utils/phone"
 import { getEnumParam, getPositiveIntegerParam, getStringParam } from "@workspace/utils/search-params"
 
 import { ProductView } from "@/components/product/product-view"
@@ -13,10 +14,10 @@ import { ProductReviews } from "@/components/reviews/product-reviews"
 import type { SearchParams } from "@/lib/catalogue-filters"
 import { categoryHref, categoryPath, getCategoryTree } from "@/lib/data/categories"
 import { loadProductCards } from "@/lib/data/product-cards"
-import { getProductDetails, plainText } from "@/lib/data/product-details"
+import { getProductDetails, plainText, summaryLines } from "@/lib/data/product-details"
 import { getProductReviews, getReviewSummary, REVIEW_SORTS, type ReviewSort } from "@/lib/data/reviews"
 import { priceCards } from "@/lib/pricing"
-import { getFreeDeliveryFrom, getInstallationAreas, getShelfPricing } from "@/lib/settings"
+import { getAppSettings, getFreeDeliveryFrom, getInstallationAreas, getShelfPricing } from "@/lib/settings"
 import { breadcrumbJsonLd, JsonLd, productJsonLd } from "@/lib/structured-data"
 
 interface ProductPageProps {
@@ -63,7 +64,7 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
   if (!card) notFound()
 
   const reviewSort = getEnumParam(query.reviews, REVIEW_SORTS) ?? "newest"
-  const [details, tree, pricing, freeDeliveryFrom, installationAreas, reviewSummary, reviews] = await Promise.all([
+  const [details, tree, pricing, freeDeliveryFrom, installationAreas, reviewSummary, reviews, settings] = await Promise.all([
     getProductDetails(card.id),
     getCategoryTree(),
     getShelfPricing(),
@@ -71,6 +72,7 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
     getInstallationAreas(),
     getReviewSummary(card.id),
     getProductReviews(card.id, reviewSort, getPositiveIntegerParam(query["reviews-page"], 1)),
+    getAppSettings(),
   ])
   const [priced] = priceCards([card], pricing)
   const path = categoryPath(tree, card.categoryId)
@@ -122,6 +124,8 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
         description={description}
         freeDeliveryFromGhs={freeDeliveryFrom}
         installation={installation}
+        summary={summaryLines(details.description)}
+        contact={{ phone: settings.contactPhone, phoneLabel: settings.contactPhone && formatPhoneNumber(settings.contactPhone), whatsapp: settings.contactWhatsapp }}
       />
 
       <ProductReviews
