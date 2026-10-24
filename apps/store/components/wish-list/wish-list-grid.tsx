@@ -4,6 +4,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Package, Trash2 } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
+import { cn } from "@workspace/ui/lib/utils"
 
 import { ProductCard } from "@/components/product-card"
 import { useWishListToggle } from "@/components/wish-list/wish-list-heart"
@@ -20,10 +21,10 @@ function UnavailableItem({ entry, otherOptionsOnSale, onRemoved }: { entry: Wish
 
   return (
     <article className="flex h-full flex-col gap-3 rounded-xl border bg-card p-3">
-      <div className="flex aspect-square items-center justify-center overflow-hidden rounded-lg bg-muted">
+      <div className={cn("flex aspect-square items-center justify-center overflow-hidden rounded-lg", entry.image ? "bg-white" : "bg-muted")}>
         {entry.image ? (
           // eslint-disable-next-line @next/next/no-img-element -- our own blob storage, not set up for next/image
-          <img src={entry.image} alt="" className="size-full object-contain p-4 opacity-50 grayscale" />
+          <img src={entry.image} alt="" className="size-full object-contain p-1 opacity-50 grayscale" />
         ) : (
           <Package className="size-14 text-muted-foreground/40" aria-hidden />
         )}

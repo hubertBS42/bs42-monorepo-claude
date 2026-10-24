@@ -77,12 +77,16 @@ export function WishListHeart({
     )
   }
 
+  // On a card's photo, which sits on white in both themes (product-card.tsx), so it's light in dark mode too
   return (
     <Button
       type="button"
       variant="outline"
       size="icon-sm"
-      className={cn("rounded-full bg-background/80 backdrop-blur", className)}
+      className={cn(
+        "rounded-full border-neutral-200 bg-white/80 text-neutral-900 backdrop-blur hover:bg-white hover:text-neutral-900 dark:border-neutral-200 dark:bg-white/80 dark:hover:bg-white",
+        className
+      )}
       onClick={toggle}
       disabled={isPending}
       aria-pressed={saved}

@@ -6,6 +6,7 @@ import { Package, Trash2 } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
 import { Checkbox } from "@workspace/ui/components/checkbox"
 import { toast } from "@workspace/ui/components/toast"
+import { cn } from "@workspace/ui/lib/utils"
 
 import { setBasketCount } from "@/components/basket/basket-count"
 import { QuantityStepper } from "@/components/basket/quantity-stepper"
@@ -40,10 +41,10 @@ export function BasketLine({ line, exTax = false }: { line: CartLine; exTax?: bo
 
   return (
     <li className="flex gap-4 py-5">
-      <Link href={href} className="flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-lg border bg-muted sm:size-24">
+      <Link href={href} className={cn("flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-lg border sm:size-24", line.image ? "bg-white" : "bg-muted")}>
         {line.image ? (
           // eslint-disable-next-line @next/next/no-img-element -- our own blob storage, not set up for next/image
-          <img src={line.image} alt="" className="size-full object-contain p-2" />
+          <img src={line.image} alt="" className="size-full object-contain p-1" />
         ) : (
           <Package className="size-8 text-muted-foreground/40" aria-hidden />
         )}

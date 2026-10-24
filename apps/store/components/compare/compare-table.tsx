@@ -52,10 +52,10 @@ export function CompareTable({ cards, rows }: { cards: PricedCard[]; rows: Compa
                 return (
                   <th key={card.id} scope="col" className="w-60 max-w-60 min-w-48 px-3 pb-4 text-left align-top font-normal">
                     <div className="flex h-full flex-col gap-2">
-                      <div className="relative flex aspect-square items-center justify-center overflow-hidden rounded-lg bg-muted">
+                      <div className={cn("relative flex aspect-square items-center justify-center overflow-hidden rounded-lg", card.image ? "bg-white" : "bg-muted")}>
                         {card.image ? (
                           // eslint-disable-next-line @next/next/no-img-element -- our own blob storage, not set up for next/image
-                          <img src={card.image} alt="" className="size-full object-contain p-3" />
+                          <img src={card.image} alt="" className="size-full object-contain p-1" />
                         ) : (
                           <Package className="size-12 text-muted-foreground/40" aria-hidden />
                         )}

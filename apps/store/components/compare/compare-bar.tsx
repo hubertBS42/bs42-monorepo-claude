@@ -4,6 +4,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Package, X } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
+import { cn } from "@workspace/ui/lib/utils"
 
 import { clearCompare, compareHref, removeComparePick, useComparePicks } from "@/components/compare/compare-state"
 import { MAX_COMPARE } from "@/lib/compare"
@@ -32,7 +33,7 @@ export function CompareBar() {
           <ul className="hidden min-w-0 flex-1 items-center gap-2 sm:flex">
             {picks.map((pick) => (
               <li key={pick.id} className="relative flex max-w-56 min-w-0 items-center gap-2 rounded-lg border bg-card p-1.5 pr-8">
-                <div className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-md bg-muted" title={pick.name}>
+                <div className={cn("flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-md", pick.image ? "bg-white" : "bg-muted")} title={pick.name}>
                   {pick.image ? (
                     // eslint-disable-next-line @next/next/no-img-element -- our own blob storage, not set up for next/image
                     <img src={pick.image} alt="" className="size-full object-contain p-0.5" />

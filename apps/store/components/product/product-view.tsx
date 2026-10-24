@@ -31,10 +31,11 @@ function Gallery({ images, name }: { images: string[]; name: string }) {
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex aspect-square items-center justify-center overflow-hidden rounded-xl border bg-muted">
+      {/* White behind a photo, as on the cards (product-card.tsx) */}
+      <div className={cn("flex aspect-square items-center justify-center overflow-hidden rounded-xl", image ? "bg-white" : "bg-muted")}>
         {image ? (
           // eslint-disable-next-line @next/next/no-img-element -- our own blob storage, not set up for next/image
-          <img src={image} alt={name} className="size-full object-contain p-6" />
+          <img src={image} alt={name} className="size-full object-contain" />
         ) : (
           <Package className="size-24 text-muted-foreground/40" aria-hidden />
         )}
@@ -48,7 +49,7 @@ function Gallery({ images, name }: { images: string[]; name: string }) {
                 onClick={() => setCurrent(index)}
                 aria-label={`Image ${index + 1}`}
                 aria-current={index === current || undefined}
-                className={cn("flex size-16 items-center justify-center overflow-hidden rounded-lg border bg-muted", index === current && "ring-2 ring-ring")}
+                className={cn("flex size-16 items-center justify-center overflow-hidden rounded-lg border bg-white", index === current && "ring-2 ring-ring")}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element -- our own blob storage, not set up for next/image */}
                 <img src={url} alt="" className="size-full object-contain p-1" />

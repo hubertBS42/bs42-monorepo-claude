@@ -38,10 +38,11 @@ export function ProductCard({ card, variantId, onWishListChange }: { card: Price
 
   return (
     <article className="group relative flex h-full flex-col gap-3 rounded-xl border bg-card p-3 transition-shadow hover:shadow-md">
-      <div className="relative flex aspect-square items-center justify-center overflow-hidden rounded-lg bg-muted">
+      {/* Product photos are shot on white, so a tile with one is white in both themes: grey would frame the photo */}
+      <div className={cn("relative flex aspect-square items-center justify-center overflow-hidden rounded-lg", image ? "bg-white" : "bg-muted")}>
         {image ? (
           // eslint-disable-next-line @next/next/no-img-element -- our own blob storage, not set up for next/image
-          <img src={image} alt="" className="size-full object-contain p-4 transition-transform group-hover:scale-105" />
+          <img src={image} alt="" className="size-full object-contain p-1 transition-transform group-hover:scale-105" />
         ) : (
           <Package className="size-14 text-muted-foreground/40" aria-hidden />
         )}
