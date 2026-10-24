@@ -8,8 +8,10 @@ import { NumberInputField } from "@workspace/forms"
 import { Button } from "@workspace/ui/components/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@workspace/ui/components/card"
 import { Input } from "@workspace/ui/components/input"
+import { ScrollArea } from "@workspace/ui/components/scroll-area"
 import { Spinner } from "@workspace/ui/components/spinner"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@workspace/ui/components/table"
+import { cn } from "@workspace/ui/lib/utils"
 import { formatCurrency } from "@workspace/utils/currency"
 import { searchOrderableListingsAction } from "@/lib/actions/store-order.actions"
 import type { OrderableListing } from "@/types"
@@ -107,36 +109,38 @@ export default function ItemsStep({ storeId, form, chosen, onChosenChange }: Ite
           ) : results.length === 0 ? (
             <p className="text-sm text-muted-foreground">{search ? "No listings match your search." : "This store has no listings on sale."}</p>
           ) : (
-            <ul className={isSearching ? "grid gap-3 opacity-60 transition-opacity" : "grid gap-3 transition-opacity"} aria-busy={isSearching}>
-              {results.map((listing) => (
-                <li key={listing.listingId} className="grid gap-2 rounded-lg border p-3">
-                  <div className="flex items-center gap-3">
-                    <div className="size-10 shrink-0 overflow-hidden rounded bg-muted">{listing.image && <img alt="" src={listing.image} className="size-full object-cover" />}</div>
-                    <div className="grid">
-                      <span className="font-medium">{listing.productName}</span>
-                      <span className="text-xs text-muted-foreground">{listing.brandName}</span>
-                    </div>
-                  </div>
-                  {listing.rows.map((row) => {
-                    const isAdded = added.has(itemKey(listing.listingId, row.listingVariantId))
-                    const soldOut = row.stock === 0
-                    return (
-                      <div key={row.listingVariantId ?? "listing"} className="flex items-center justify-between gap-2 text-sm">
-                        <div className="grid">
-                          {row.variantDescription && <span>{row.variantDescription}</span>}
-                          <span className="text-xs text-muted-foreground">
-                            {[row.priceGhs ? ghs(row.priceGhs) : `$${row.priceUsd}`, row.stock === null ? "Stock not tracked" : `${row.stock} in stock`, row.sku].filter(Boolean).join(" · ")}
-                          </span>
-                        </div>
-                        <Button type="button" size="sm" variant="outline" onClick={() => addRow(listing, row)} disabled={isAdded || soldOut}>
-                          {isAdded ? "Added" : soldOut ? "Sold out" : "Add"}
-                        </Button>
+            <ScrollArea className="-mr-3 flex max-h-[60vh] flex-col">
+              <ul className={cn("grid gap-3 pr-3 transition-opacity", isSearching && "opacity-60")} aria-busy={isSearching}>
+                {results.map((listing) => (
+                  <li key={listing.listingId} className="grid gap-2 rounded-lg border p-3">
+                    <div className="flex items-center gap-3">
+                      <div className="size-10 shrink-0 overflow-hidden rounded bg-muted">{listing.image && <img alt="" src={listing.image} className="size-full object-cover" />}</div>
+                      <div className="grid">
+                        <span className="font-medium">{listing.productName}</span>
+                        <span className="text-xs text-muted-foreground">{listing.brandName}</span>
                       </div>
-                    )
-                  })}
-                </li>
-              ))}
-            </ul>
+                    </div>
+                    {listing.rows.map((row) => {
+                      const isAdded = added.has(itemKey(listing.listingId, row.listingVariantId))
+                      const soldOut = row.stock === 0
+                      return (
+                        <div key={row.listingVariantId ?? "listing"} className="flex items-center justify-between gap-2 text-sm">
+                          <div className="grid">
+                            {row.variantDescription && <span>{row.variantDescription}</span>}
+                            <span className="text-xs text-muted-foreground">
+                              {[row.priceGhs ? ghs(row.priceGhs) : `$${row.priceUsd}`, row.stock === null ? "Stock not tracked" : `${row.stock} in stock`, row.sku].filter(Boolean).join(" · ")}
+                            </span>
+                          </div>
+                          <Button type="button" size="sm" variant="outline" onClick={() => addRow(listing, row)} disabled={isAdded || soldOut}>
+                            {isAdded ? "Added" : soldOut ? "Sold out" : "Add"}
+                          </Button>
+                        </div>
+                      )
+                    })}
+                  </li>
+                ))}
+              </ul>
+            </ScrollArea>
           )}
         </CardContent>
       </Card>

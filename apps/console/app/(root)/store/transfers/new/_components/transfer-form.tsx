@@ -9,9 +9,10 @@ import { Plus, Trash2 } from "lucide-react"
 import { NumberInputField, SelectField, TextareaField } from "@workspace/forms"
 import { Button } from "@workspace/ui/components/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@workspace/ui/components/card"
-import { InfoTip } from "@workspace/ui/components/info-tip"
 import { FieldError, FieldGroup } from "@workspace/ui/components/field"
+import { InfoTip } from "@workspace/ui/components/info-tip"
 import { Input } from "@workspace/ui/components/input"
+import { ScrollArea } from "@workspace/ui/components/scroll-area"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@workspace/ui/components/table"
 import { toast } from "@workspace/ui/components/toast"
 import SharedFormFooter from "@/components/shared-form-footer"
@@ -116,25 +117,27 @@ export default function TransferForm({ storeId, destinations }: { storeId: strin
                 <CardContent className="grid gap-4">
                   <Input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search by product name or SKU" disabled={isBusy} aria-label="Search this store's listings" />
                   {results.length > 0 && (
-                    <ul className="grid max-h-72 gap-1 overflow-y-auto rounded-md border p-1">
-                      {results.map((row) => {
-                        const isAdded = added.has(rowKey(row))
-                        return (
-                          <li key={rowKey(row)} className="flex items-center gap-3 rounded px-2 py-1.5 hover:bg-accent/50">
-                            <div className="grid min-w-0 flex-1">
-                              <span className="truncate text-sm">{rowLabel(row)}</span>
-                              <span className="text-xs text-muted-foreground">
-                                {[`${row.stock} in stock`, row.sku, row.listedThere === false ? "Not listed in the other store" : null].filter(Boolean).join(" · ")}
-                              </span>
-                            </div>
-                            <Button type="button" variant="outline" size="xs" disabled={isBusy || isAdded || row.listedThere === false} onClick={() => add(row)}>
-                              <Plus />
-                              {isAdded ? "Added" : "Add"}
-                            </Button>
-                          </li>
-                        )
-                      })}
-                    </ul>
+                    <ScrollArea className="flex max-h-72 flex-col rounded-md border">
+                      <ul className="grid gap-1 p-1 pr-3">
+                        {results.map((row) => {
+                          const isAdded = added.has(rowKey(row))
+                          return (
+                            <li key={rowKey(row)} className="flex items-center gap-3 rounded px-2 py-1.5 hover:bg-accent/50">
+                              <div className="grid min-w-0 flex-1">
+                                <span className="truncate text-sm">{rowLabel(row)}</span>
+                                <span className="text-xs text-muted-foreground">
+                                  {[`${row.stock} in stock`, row.sku, row.listedThere === false ? "Not listed in the other store" : null].filter(Boolean).join(" · ")}
+                                </span>
+                              </div>
+                              <Button type="button" variant="outline" size="xs" disabled={isBusy || isAdded || row.listedThere === false} onClick={() => add(row)}>
+                                <Plus />
+                                {isAdded ? "Added" : "Add"}
+                              </Button>
+                            </li>
+                          )
+                        })}
+                      </ul>
+                    </ScrollArea>
                   )}
 
                   {fields.length > 0 && (

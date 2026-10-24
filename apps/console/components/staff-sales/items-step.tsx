@@ -9,8 +9,10 @@ import { Button } from "@workspace/ui/components/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@workspace/ui/components/card"
 import { InfoTip } from "@workspace/ui/components/info-tip"
 import { Input } from "@workspace/ui/components/input"
+import { ScrollArea } from "@workspace/ui/components/scroll-area"
 import { Spinner } from "@workspace/ui/components/spinner"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@workspace/ui/components/table"
+import { cn } from "@workspace/ui/lib/utils"
 import { formatCurrency } from "@workspace/utils/currency"
 import { searchQuotableItemsAction } from "@/lib/actions/quote.actions"
 import type { QuotableProduct } from "@/lib/staff-quotes"
@@ -129,35 +131,37 @@ export default function ItemsStep<T extends StaffSaleFields, O>({ kind, form: wi
           ) : results.length === 0 ? (
             <p className="text-sm text-muted-foreground">{search ? "No products on sale match your search." : "Nothing is on sale."}</p>
           ) : (
-            <ul className={isSearching ? "grid gap-3 opacity-60 transition-opacity" : "grid gap-3 transition-opacity"} aria-busy={isSearching}>
-              {results.map((product) => (
-                <li key={product.productId} className="grid gap-2 rounded-lg border p-3">
-                  <div className="flex items-center gap-3">
-                    <div className="size-10 shrink-0 overflow-hidden rounded bg-muted">{product.image && <img alt="" src={product.image} className="size-full object-cover" />}</div>
-                    <div className="grid">
-                      <span className="font-medium">{product.productName}</span>
-                      <span className="text-xs text-muted-foreground">
-                        {[product.brandName, product.installationFeeGhs && `Installation ${ghs(product.installationFeeGhs)} each`].filter(Boolean).join(" · ")}
-                      </span>
-                    </div>
-                  </div>
-                  {product.rows.map((row) => {
-                    const isAdded = added.has(itemKey(row.listingId, row.listingVariantId))
-                    return (
-                      <div key={row.listingVariantId ?? row.listingId} className="flex items-center justify-between gap-2 text-sm">
-                        <div className="grid">
-                          {row.variantDescription && <span>{row.variantDescription}</span>}
-                          <span className="text-xs text-muted-foreground">{[ghs(row.priceGhs), stockLine(row), row.storeName, row.sku].filter(Boolean).join(" · ")}</span>
-                        </div>
-                        <Button type="button" size="sm" variant="outline" onClick={() => addRow(product, row)} disabled={isAdded}>
-                          {isAdded ? "Added" : "Add"}
-                        </Button>
+            <ScrollArea className="-mr-3 flex max-h-[60vh] flex-col">
+              <ul className={cn("grid gap-3 pr-3 transition-opacity", isSearching && "opacity-60")} aria-busy={isSearching}>
+                {results.map((product) => (
+                  <li key={product.productId} className="grid gap-2 rounded-lg border p-3">
+                    <div className="flex items-center gap-3">
+                      <div className="size-10 shrink-0 overflow-hidden rounded bg-muted">{product.image && <img alt="" src={product.image} className="size-full object-cover" />}</div>
+                      <div className="grid">
+                        <span className="font-medium">{product.productName}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {[product.brandName, product.installationFeeGhs && `Installation ${ghs(product.installationFeeGhs)} each`].filter(Boolean).join(" · ")}
+                        </span>
                       </div>
-                    )
-                  })}
-                </li>
-              ))}
-            </ul>
+                    </div>
+                    {product.rows.map((row) => {
+                      const isAdded = added.has(itemKey(row.listingId, row.listingVariantId))
+                      return (
+                        <div key={row.listingVariantId ?? row.listingId} className="flex items-center justify-between gap-2 text-sm">
+                          <div className="grid">
+                            {row.variantDescription && <span>{row.variantDescription}</span>}
+                            <span className="text-xs text-muted-foreground">{[ghs(row.priceGhs), stockLine(row), row.storeName, row.sku].filter(Boolean).join(" · ")}</span>
+                          </div>
+                          <Button type="button" size="sm" variant="outline" onClick={() => addRow(product, row)} disabled={isAdded}>
+                            {isAdded ? "Added" : "Add"}
+                          </Button>
+                        </div>
+                      )
+                    })}
+                  </li>
+                ))}
+              </ul>
+            </ScrollArea>
           )}
         </CardContent>
       </Card>

@@ -15,6 +15,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@work
 import { FieldGroup } from "@workspace/ui/components/field"
 import { Input } from "@workspace/ui/components/input"
 import { Separator } from "@workspace/ui/components/separator"
+import { ScrollArea } from "@workspace/ui/components/scroll-area"
 import { Spinner } from "@workspace/ui/components/spinner"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@workspace/ui/components/table"
 import { toast } from "@workspace/ui/components/toast"
@@ -312,41 +313,43 @@ export default function PurchaseOrderForm({ storeId, suppliers, rate, order, sug
                   ) : results.length === 0 ? (
                     <p className="text-sm text-muted-foreground">{search ? "No listings match your search." : "This store has no listings yet."}</p>
                   ) : (
-                    <ul className="grid gap-3 md:grid-cols-2">
-                      {results.map((listing) => (
-                        <li key={listing.listingId} className="grid content-start gap-2 rounded-lg border p-3">
-                          <div className="flex items-center gap-3">
-                            <div className="size-10 shrink-0 overflow-hidden rounded bg-muted">{listing.image && <img alt="" src={listing.image} className="size-full object-cover" />}</div>
-                            <div className="grid">
-                              <span className="font-medium">{listing.productName}</span>
-                              <span className="text-xs text-muted-foreground">{listing.brandName}</span>
-                            </div>
-                          </div>
-                          {listing.rows.map((row) => {
-                            const isAdded = added.has(lineKey(listing.listingId, row.listingVariantId))
-                            return (
-                              <div key={row.listingVariantId ?? "listing"} className="flex items-center justify-between gap-2 text-sm">
-                                <div className="grid">
-                                  {row.variantDescription && <span>{row.variantDescription}</span>}
-                                  <span className="text-xs text-muted-foreground">
-                                    {[
-                                      row.stock === null ? "Stock not tracked" : `${row.stock} in stock`,
-                                      row.incoming ? `${row.incoming} incoming` : null,
-                                      row.buyPriceUsd ? `last cost ${formatCurrency(row.buyPriceUsd, "USD", "en-US")}` : null,
-                                    ]
-                                      .filter(Boolean)
-                                      .join(" · ")}
-                                  </span>
-                                </div>
-                                <Button type="button" size="sm" variant="outline" onClick={() => addRow(listing, row)} disabled={isAdded || isBusy}>
-                                  {isAdded ? "Added" : "Add"}
-                                </Button>
+                    <ScrollArea className="-mr-3 flex max-h-[60vh] flex-col">
+                      <ul className="grid gap-3 pr-3 md:grid-cols-2">
+                        {results.map((listing) => (
+                          <li key={listing.listingId} className="grid content-start gap-2 rounded-lg border p-3">
+                            <div className="flex items-center gap-3">
+                              <div className="size-10 shrink-0 overflow-hidden rounded bg-muted">{listing.image && <img alt="" src={listing.image} className="size-full object-cover" />}</div>
+                              <div className="grid">
+                                <span className="font-medium">{listing.productName}</span>
+                                <span className="text-xs text-muted-foreground">{listing.brandName}</span>
                               </div>
-                            )
-                          })}
-                        </li>
-                      ))}
-                    </ul>
+                            </div>
+                            {listing.rows.map((row) => {
+                              const isAdded = added.has(lineKey(listing.listingId, row.listingVariantId))
+                              return (
+                                <div key={row.listingVariantId ?? "listing"} className="flex items-center justify-between gap-2 text-sm">
+                                  <div className="grid">
+                                    {row.variantDescription && <span>{row.variantDescription}</span>}
+                                    <span className="text-xs text-muted-foreground">
+                                      {[
+                                        row.stock === null ? "Stock not tracked" : `${row.stock} in stock`,
+                                        row.incoming ? `${row.incoming} incoming` : null,
+                                        row.buyPriceUsd ? `last cost ${formatCurrency(row.buyPriceUsd, "USD", "en-US")}` : null,
+                                      ]
+                                        .filter(Boolean)
+                                        .join(" · ")}
+                                    </span>
+                                  </div>
+                                  <Button type="button" size="sm" variant="outline" onClick={() => addRow(listing, row)} disabled={isAdded || isBusy}>
+                                    {isAdded ? "Added" : "Add"}
+                                  </Button>
+                                </div>
+                              )
+                            })}
+                          </li>
+                        ))}
+                      </ul>
+                    </ScrollArea>
                   )}
                 </CardContent>
               </Card>
