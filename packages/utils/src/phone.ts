@@ -1,6 +1,6 @@
 // Plain functions with no React, so server code (schemas used by server actions) can import them.
 // Uses the "min" metadata, the same set react-phone-number-input's input uses, so client and server agree.
-import { getCountryCallingCode, type CountryCode } from "libphonenumber-js/min"
+import { getCountryCallingCode, parsePhoneNumberFromString, type CountryCode } from "libphonenumber-js/min"
 
 export { isPossiblePhoneNumber } from "libphonenumber-js/min"
 
@@ -15,4 +15,9 @@ export function toPhoneSearch(value: string, country: CountryCode = "GH"): strin
   if (compact.startsWith("0")) return `+${callingCode}${compact.slice(1)}`
   if (compact.startsWith(callingCode)) return `+${compact}`
   return compact
+}
+
+// A stored international number for reading ("+233 24 412 3456"), or as it is when it can't be parsed
+export function formatPhoneNumber(value: string): string {
+  return parsePhoneNumberFromString(value)?.formatInternational() ?? value
 }

@@ -32,6 +32,10 @@ function toData(section: SettingsSection, values: SectionOutput<SettingsSection>
       const { logoUrl, logoDarkUrl, faviconUrl } = values as SectionOutput<"branding">
       return { logoUrl: logoUrl || null, logoDarkUrl: logoDarkUrl || null, faviconUrl: faviconUrl || null }
     }
+    case "contact": {
+      const { contactPhone, contactWhatsapp, contactEmail, contactAddress } = values as SectionOutput<"contact">
+      return { contactPhone: contactPhone || null, contactWhatsapp: contactWhatsapp || null, contactEmail: contactEmail || null, contactAddress: contactAddress || null }
+    }
     case "tax": {
       const { taxEnabled, taxRatePercent, taxShipping } = values as SectionOutput<"tax">
       // Decimal arithmetic, so 15% is stored as exactly 0.15. Turning tax off keeps the rate for next time.

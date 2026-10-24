@@ -3,7 +3,7 @@
 import { useRef } from "react"
 import { useWatch, type UseFormReturn } from "react-hook-form"
 import { PLATFORM_ALERTS, type AppSettingsData } from "@workspace/contracts"
-import { ImageField, NumberInputField, SwitchField, TagsField, TextareaField, TextInputField } from "@workspace/forms"
+import { ImageField, NumberInputField, PhoneField, SwitchField, TagsField, TextareaField, TextInputField } from "@workspace/forms"
 import type { SectionInput, SectionOutput } from "@/lib/schemas/app-settings.schemas"
 import { deleteImages, uploadImages } from "@/lib/storage"
 import SettingsCard from "./settings-card"
@@ -104,6 +104,23 @@ export function BrandingCard({ settings }: CardProps) {
             disabled={isPending}
             orientation="horizontal"
           />
+        </>
+      )}
+    </SettingsCard>
+  )
+}
+
+export function ContactCard({ settings }: CardProps) {
+  return (
+    <SettingsCard section="contact" settings={settings} title="Contact" description="How customers reach you, shown in the storefront's footer.">
+      {(form, isPending) => (
+        <>
+          <div className="grid gap-5 sm:grid-cols-2">
+            <PhoneField control={form.control} name="contactPhone" label="Phone" defaultCountry="GH" disabled={isPending} />
+            <PhoneField control={form.control} name="contactWhatsapp" label="WhatsApp" defaultCountry="GH" disabled={isPending} />
+          </div>
+          <TextInputField control={form.control} name="contactEmail" label="Email" type="email" placeholder="hello@example.com" disabled={isPending} />
+          <TextareaField control={form.control} name="contactAddress" label="Address" placeholder={"Street\nTown"} rows={3} maxLength={200} showCount disabled={isPending} />
         </>
       )}
     </SettingsCard>

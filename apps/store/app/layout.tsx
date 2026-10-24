@@ -47,7 +47,15 @@ export default async function RootLayout({
         <ThemeProvider>
           <SiteHeader storeName={storeName} logoUrl={settings.logoUrl} logoDarkUrl={settings.logoDarkUrl} menu={menu} />
           <main className="flex-1">{children}</main>
-          <SiteFooter storeName={storeName} storeDescription={settings.storeDescription} logoUrl={settings.logoUrl} logoDarkUrl={settings.logoDarkUrl} menu={menu} legal={legalLinks(legal)} />
+          <SiteFooter
+            storeName={storeName}
+            storeDescription={settings.storeDescription}
+            logoUrl={settings.logoUrl}
+            logoDarkUrl={settings.logoDarkUrl}
+            contact={settings}
+            menu={menu}
+            legal={legalLinks(legal)}
+          />
           <CompareBar />
           <Toaster />
         </ThemeProvider>

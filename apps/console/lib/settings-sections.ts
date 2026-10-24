@@ -9,6 +9,12 @@ export function sectionValues<S extends SettingsSection>(settings: AppSettingsDa
     storefront: { storeName: settings.storeName, storeDescription: settings.storeDescription ?? "" },
     console: { consoleName: settings.consoleName ?? "", consoleDescription: settings.consoleDescription ?? "" },
     branding: { logoUrl: settings.logoUrl ?? "", logoDarkUrl: settings.logoDarkUrl ?? "", faviconUrl: settings.faviconUrl ?? "" },
+    contact: {
+      contactPhone: settings.contactPhone ?? "",
+      contactWhatsapp: settings.contactWhatsapp ?? "",
+      contactEmail: settings.contactEmail ?? "",
+      contactAddress: settings.contactAddress ?? "",
+    },
     tax: {
       taxEnabled: settings.taxEnabled,
       // Rounded, because a fraction times 100 can come out as 15.000000000000002

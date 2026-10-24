@@ -1,6 +1,6 @@
 import type { Metadata } from "next"
 import { readAppSettings } from "@workspace/db"
-import { BrandingCard, ConsoleCard, StorefrontCard } from "./_components/settings-cards"
+import { BrandingCard, ConsoleCard, ContactCard, StorefrontCard } from "./_components/settings-cards"
 import SettingsSection from "./_components/settings-section"
 import { requireSystemPermission } from "@/lib/auth-guard"
 
@@ -13,10 +13,11 @@ export default async function GeneralSettingsPage() {
   const settings = await readAppSettings()
 
   return (
-    <SettingsSection title="General" description="Names and branding.">
+    <SettingsSection title="General" description="Names, branding and contact details.">
       <StorefrontCard settings={settings} />
       <ConsoleCard settings={settings} />
       <BrandingCard settings={settings} />
+      <ContactCard settings={settings} />
     </SettingsSection>
   )
 }

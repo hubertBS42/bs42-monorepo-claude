@@ -1,4 +1,5 @@
 import z from "zod"
+import { isPossiblePhoneNumber } from "@workspace/utils/phone"
 
 // Settings is split into cards across its pages (General, Pricing, Notifications, ...), and each card saves only its
 // own fields of the AppSettings row (saveSettingsSection), so one card can't undo another's save
@@ -35,6 +36,22 @@ export const settingsSectionSchemas = {
     logoUrl: z.httpUrl().or(z.literal("")),
     logoDarkUrl: z.httpUrl().or(z.literal("")),
     faviconUrl: z.httpUrl().or(z.literal("")),
+  }),
+  contact: z.object({
+    contactPhone: z
+      .string()
+      .trim()
+      .refine((value) => !value || isPossiblePhoneNumber(value), "Invalid phone number"),
+    contactWhatsapp: z
+      .string()
+      .trim()
+      .refine((value) => !value || isPossiblePhoneNumber(value), "Invalid phone number"),
+    contactEmail: z
+      .string()
+      .trim()
+      .max(254)
+      .refine((value) => !value || z.email().safeParse(value).success, "Invalid email address"),
+    contactAddress: z.string().trim().max(200),
   }),
   tax: taxSchema,
   markup: z.object({
