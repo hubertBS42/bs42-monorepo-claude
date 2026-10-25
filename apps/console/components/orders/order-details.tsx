@@ -95,7 +95,6 @@ const ATTEMPT_STATUS = {
 } as const
 const NOT_USED = { label: "Not used", variant: "secondary" } as const
 
-const NOT_USED = { label: "Not used", variant: "secondary" } as const
 // Paystack's channel names (card, mobile_money, bank_transfer), readable
 const channelLabel = (channel: string) => channel.charAt(0).toUpperCase() + channel.slice(1).replaceAll("_", " ")
 
