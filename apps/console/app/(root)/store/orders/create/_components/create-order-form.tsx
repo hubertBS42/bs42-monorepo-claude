@@ -19,6 +19,7 @@ import CustomerStep from "./steps/customer-step"
 import DeliveryStep from "./steps/delivery-step"
 import ItemsStep from "./steps/items-step"
 import ReviewStep from "./steps/review-step"
+import { useRevalidateOnChange } from "@workspace/forms/use-revalidate-on-change"
 
 export type OrderFormInput = z.input<typeof createStoreOrderFormSchema>
 export type OrderFormOutput = z.output<typeof createStoreOrderFormSchema>
@@ -77,6 +78,7 @@ export default function CreateOrderForm({ storeId, delivery }: { storeId: string
     resolver: zodResolver(createStoreOrderFormSchema),
     defaultValues: DEFAULT_VALUES,
   })
+  useRevalidateOnChange(form)
 
   const isLast = step === STEPS.length - 1
 

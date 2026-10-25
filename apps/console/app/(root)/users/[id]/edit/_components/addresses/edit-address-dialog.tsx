@@ -15,6 +15,7 @@ import ComboboxField from "@workspace/forms/components/combobox-field"
 import { Spinner } from "@workspace/ui/components/spinner"
 import { useRouter } from "next/navigation"
 import type { Address } from "@workspace/db/client"
+import { useRevalidateOnChange } from "@workspace/forms/use-revalidate-on-change"
 
 const regionOptions = GEODATA.map((data) => ({ label: data.name, value: data.name }))
 
@@ -37,6 +38,7 @@ const EditAddressDialog = ({ address, setDialogIsOpen }: { address: Address; set
       isDefault: address.isDefault,
     },
   })
+  useRevalidateOnChange(form)
 
   const onSubmit: SubmitHandler<z.infer<typeof updateAddressFormSchema>> = (values) => {
     startTransition(async () => {

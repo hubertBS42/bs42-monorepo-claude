@@ -24,6 +24,7 @@ import { listingFormSchema } from "@/lib/schemas/listing.schemas"
 import { MANUAL_STOCK_REASONS, STOCK_MOVEMENT_REASON_LABELS } from "@/lib/stock-reasons"
 import type { ListingFormData, ListingSnapshot, StockChangedResponse } from "@/types"
 import DeleteListing from "./delete-listing"
+import { useRevalidateOnChange } from "@workspace/forms/use-revalidate-on-change"
 
 type FormInput = z.input<typeof listingFormSchema>
 type FormOutput = z.output<typeof listingFormSchema>
@@ -53,6 +54,7 @@ const ListingForm = ({ storeId, data, storefrontLink }: ListingFormProps) => {
     resolver: zodResolver(listingFormSchema),
     defaultValues: { ...data.values, stockReason: null, stockNote: "" },
   })
+  useRevalidateOnChange(form)
 
   const trackInventory = useWatch({ control: form.control, name: "trackInventory" })
   const stock = useWatch({ control: form.control, name: "stock" })

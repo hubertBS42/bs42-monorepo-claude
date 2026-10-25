@@ -25,6 +25,7 @@ import type { CartLine } from "@/lib/cart"
 import type { CheckoutSummary } from "@/lib/checkout"
 import { formatGhs } from "@/lib/money"
 import { checkoutFormSchema, type CheckoutFormValues } from "@/lib/schemas/checkout.schemas"
+import { useRevalidateOnChange } from "@workspace/forms/use-revalidate-on-change"
 
 // Codes that mean the basket or its prices changed under the page: it reloads to show them
 const REFRESH_ON = ["BASKET_CHANGED", "PRICE_CHANGED"]
@@ -107,6 +108,7 @@ export function CheckoutForm({
   const startAddress = savedAddresses.find((address) => address.isDefault && address.deliverable)
   const [addressChoice, setAddressChoice] = useState(startAddress?.id ?? NEW_ADDRESS)
   const form = useForm<CheckoutFormValues>({ resolver: zodResolver(checkoutFormSchema), defaultValues: startingValues(account, savedAddresses.length, startAddress) })
+  useRevalidateOnChange(form)
 
   // Choosing a saved address fills the delivery in from it; "A new address" empties it for typing
   const chooseAddress = (choice: string) => {

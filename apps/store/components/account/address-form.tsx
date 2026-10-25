@@ -17,6 +17,7 @@ import { toast } from "@workspace/ui/components/toast"
 
 import { saveAddressAction } from "@/lib/actions/account.actions"
 import { addressSchema, type AddressValues } from "@/lib/schemas/address.schemas"
+import { useRevalidateOnChange } from "@workspace/forms/use-revalidate-on-change"
 
 const REGION_OPTIONS = GEODATA.map((region) => ({ label: region.name, value: region.name }))
 
@@ -24,6 +25,7 @@ const REGION_OPTIONS = GEODATA.map((region) => ({ label: region.name, value: reg
 export function AddressForm({ id, initial, isOnlyDefault }: { id?: string; initial: AddressValues; isOnlyDefault?: boolean }) {
   const router = useRouter()
   const form = useForm<AddressValues>({ resolver: zodResolver(addressSchema), defaultValues: initial })
+  useRevalidateOnChange(form)
   const region = useWatch({ control: form.control, name: "region" })
   const townOptions = useMemo(() => (GEODATA.find((item) => item.name === region)?.towns ?? []).map((name) => ({ label: name, value: name })), [region])
   const { isSubmitting } = form.formState

@@ -16,12 +16,14 @@ import { Spinner } from "@workspace/ui/components/spinner"
 import type { DeliveryArea } from "@/components/checkout/checkout-form"
 import { createQuoteAction } from "@/lib/actions/quote.actions"
 import { quoteRequestSchema, type QuoteRequestValues } from "@/lib/schemas/quote.schemas"
+import { useRevalidateOnChange } from "@workspace/forms/use-revalidate-on-change"
 
 // "Get a quote" under the basket's summary: who it's addressed to and where it would be delivered (the fee is part of
 // the quote), then the quote's page. A signed-out visitor is sent to sign in first, and back to the basket.
 export function QuoteRequestDialog({ signedIn, initial, areas, validityDays }: { signedIn: boolean; initial: QuoteRequestValues; areas: DeliveryArea[]; validityDays: number }) {
   const [open, setOpen] = useState(false)
   const form = useForm<QuoteRequestValues>({ resolver: zodResolver(quoteRequestSchema), defaultValues: initial })
+  useRevalidateOnChange(form)
   const region = useWatch({ control: form.control, name: "region" })
   const regionOptions = useMemo(() => areas.map((area) => ({ label: area.region, value: area.region })), [areas])
   const townOptions = useMemo(() => (areas.find((area) => area.region === region)?.towns ?? []).map((name) => ({ label: name, value: name })), [areas, region])

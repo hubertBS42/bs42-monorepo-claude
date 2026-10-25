@@ -42,6 +42,7 @@ import ProductRequestCard from "./product-request-card"
 import ProductSpecs from "./product-specs"
 import DeleteProduct from "./delete-product"
 import { deleteDocuments, deleteFiles, deleteImages, uploadDocuments, uploadImages } from "@/lib/storage"
+import { useRevalidateOnChange } from "@workspace/forms/use-revalidate-on-change"
 
 type FormInput = z.input<typeof addProductFormSchema>
 type FormOutput = z.output<typeof addProductFormSchema>
@@ -156,6 +157,7 @@ const ProductForm = ({ brands, categoryOptions, disabledCategoryIds, specFields,
     resolver: zodResolver(addProductFormSchema),
     defaultValues: product?.values ?? (request ? { ...EMPTY_PRODUCT, name: request.name, brandId: request.brandId, categoryId: request.categoryId, barcode: request.barcode ?? "" } : EMPTY_PRODUCT),
   })
+  useRevalidateOnChange(form)
 
   const { fields: optionFields, append: appendOption, remove: removeOption, replace: replaceOptions } = useFieldArray({ control: form.control, name: "variantOptions" })
   const { fields: variantFields, remove: removeVariant, replace: replaceVariants } = useFieldArray({ control: form.control, name: "variants" })

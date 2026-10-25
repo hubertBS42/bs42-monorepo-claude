@@ -16,6 +16,7 @@ import { SubmitHandler, useForm, useWatch } from "react-hook-form"
 import { toast } from "@workspace/ui/components/toast"
 import { z } from "zod"
 import PhoneField from "@workspace/forms/components/phone-field"
+import { useRevalidateOnChange } from "@workspace/forms/use-revalidate-on-change"
 
 const regionOptions = GEODATA.map((data) => ({ label: data.name, value: data.name }))
 
@@ -38,6 +39,7 @@ const AddAddressDialog = ({ userId }: { userId: string }) => {
       isDefault: false,
     },
   })
+  useRevalidateOnChange(form)
 
   const onSubmit: SubmitHandler<z.infer<typeof addAddressFormSchema>> = (values) => {
     startTransition(async () => {

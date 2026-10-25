@@ -12,6 +12,7 @@ import { FieldGroup } from "@workspace/ui/components/field"
 import { InfoTip } from "@workspace/ui/components/info-tip"
 import { Spinner } from "@workspace/ui/components/spinner"
 import { toast } from "@workspace/ui/components/toast"
+import { useRevalidateOnChange } from "@workspace/forms/use-revalidate-on-change"
 
 // A dialog with a form that saves through an action, then refreshes the page. Used by the order refund and return
 // dialogs and the purchase order ones. The form holds the schema's input (an amount field can be empty) and submits
@@ -56,6 +57,7 @@ export default function FormDialog<In extends FieldValues, Out extends FieldValu
   const [isOpen, setIsOpen] = useState(false)
   const [isPending, startTransition] = useTransition()
   const form = useForm<In, unknown, Out>({ resolver: zodResolver(schema), defaultValues: values as DefaultValues<In> })
+  useRevalidateOnChange(form)
 
   const onSubmit = (submitted: Out) => {
     startTransition(async () => {

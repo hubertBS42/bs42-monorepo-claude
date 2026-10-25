@@ -20,6 +20,7 @@ import { unlinkCustomer } from "@/components/staff-sales/form"
 import ItemsStep from "@/components/staff-sales/items-step"
 import ReviewStep from "@/components/staff-sales/review-step"
 import DeliveryStep from "./steps/delivery-step"
+import { useRevalidateOnChange } from "@workspace/forms/use-revalidate-on-change"
 
 export type QuoteFormInput = z.input<typeof createQuoteFormSchema>
 export type QuoteFormOutput = z.output<typeof createQuoteFormSchema>
@@ -71,6 +72,7 @@ export default function QuoteForm({ delivery, installationAreas, validityDays, c
           discountReason: "",
         },
   })
+  useRevalidateOnChange(form)
 
   const isLast = step === STEPS.length - 1
   const validity = useWatch({ control: form.control, name: "validityDays" })

@@ -22,6 +22,7 @@ import type { DeliverySettingsView } from "@/lib/data/delivery.data"
 import { createOrderFormSchema } from "@/lib/schemas/order.schemas"
 import type { ChosenQuoteItem, QuoteCustomer, QuotePreview } from "@/types"
 import DeliveryStep from "./steps/delivery-step"
+import { useRevalidateOnChange } from "@workspace/forms/use-revalidate-on-change"
 
 export type CreateOrderInput = z.input<typeof createOrderFormSchema>
 export type CreateOrderOutput = z.output<typeof createOrderFormSchema>
@@ -74,6 +75,7 @@ export default function CreateOrderForm({ delivery, installationAreas }: CreateO
       discountReason: "",
     },
   })
+  useRevalidateOnChange(form)
   const paymentMethod = useWatch({ control: form.control, name: "paymentMethod" })
 
   const isLast = step === STEPS.length - 1
