@@ -1,3 +1,4 @@
+import { ShoppingCart } from "lucide-react"
 import type { Metadata } from "next"
 import Link from "next/link"
 import { notFound } from "next/navigation"
@@ -12,6 +13,7 @@ import { requireSystemPermission } from "@/lib/auth-guard"
 import { getTradeAccount } from "@/lib/data/trade-accounts.data"
 import TradeAccountReview from "./_components/trade-account-review"
 import { formatPhoneNumber } from "@workspace/utils/phone"
+import { EmptyState } from "@workspace/ui/components/empty-state"
 
 export const metadata: Metadata = {
   title: "Trade Account",
@@ -70,10 +72,15 @@ export default async function TradeAccountPage({ params }: TradeAccountPageProps
               <CardTitle>Orders</CardTitle>
               <CardDescription>
                 {account.orderCount === 0
-                  ? "No orders yet."
+                  ? "Placed with this trade account."
                   : `${account.orderCount} ${account.orderCount === 1 ? "order" : "orders"}: ${ghs(account.ordersTotalGhs)}, ${ghs(account.discountGivenGhs)} discounted. The latest:`}
               </CardDescription>
             </CardHeader>
+            {account.orderCount === 0 && (
+              <CardContent>
+                <EmptyState icon={ShoppingCart} title="No orders yet" />
+              </CardContent>
+            )}
             {account.recentOrders.length > 0 && (
               <CardContent>
                 <Table>

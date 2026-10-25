@@ -4,7 +4,7 @@ import { useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import { useFieldArray, useWatch, type UseFormReturn } from "react-hook-form"
 import type { z } from "zod"
-import { ArrowDown, ArrowUp, Pencil, PlusCircle, Trash2, X } from "lucide-react"
+import { ArrowDown, ArrowUp, ListChecks, Pencil, PlusCircle, Trash2, X } from "lucide-react"
 import { consoleAuthClient } from "@workspace/auth/console-client"
 import { hasSystemPermission } from "@workspace/auth/system-permissions"
 import { SpecType } from "@workspace/db/enums"
@@ -32,6 +32,7 @@ import FormDialog from "@/components/form-dialog"
 import { createCategorySpecAction, deleteCategorySpecAction, moveCategorySpecAction, updateCategorySpecAction } from "@/lib/actions/category-spec.actions"
 import { categorySpecFormSchema } from "@/lib/schemas/category-spec.schemas"
 import type { CategorySpecRow, CategorySpecsData, SpecField } from "@/types"
+import { EmptyState } from "@workspace/ui/components/empty-state"
 
 // The category's specifications, below its form: each change saves on its own, like the exchange-rate card on Settings
 
@@ -125,7 +126,7 @@ export default function CategorySpecs({ categoryId, specs }: { categoryId: strin
             </TableBody>
           </Table>
         ) : (
-          <p className="text-sm text-muted-foreground">This category has no specifications of its own.</p>
+          <EmptyState icon={ListChecks} title="No specifications of its own" description="Add what its products can list, like a camera's resolution." />
         )}
 
         {isSessionLoading ? (

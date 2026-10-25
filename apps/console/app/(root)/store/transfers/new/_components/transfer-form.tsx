@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useFieldArray, useForm, useWatch, type SubmitHandler } from "react-hook-form"
 import type { z } from "zod"
-import { Plus, Trash2 } from "lucide-react"
+import { Package, Plus, Trash2 } from "lucide-react"
 import { NumberInputField, SelectField, TextareaField } from "@workspace/forms"
 import { Button } from "@workspace/ui/components/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@workspace/ui/components/card"
@@ -20,6 +20,7 @@ import SharedFormHeader from "@/components/shared-form-header"
 import { createStockTransferAction, searchTransferableAction } from "@/lib/actions/stock-transfer.actions"
 import { STOCK_TRANSFER_LIMITS, stockTransferFormSchema } from "@/lib/schemas/stock-transfer.schemas"
 import type { SelectItem, TransferableRow } from "@/types"
+import { EmptyState } from "@workspace/ui/components/empty-state"
 
 type FormInput = z.input<typeof stockTransferFormSchema>
 type FormOutput = z.output<typeof stockTransferFormSchema>
@@ -140,6 +141,7 @@ export default function TransferForm({ storeId, destinations }: { storeId: strin
                     </ScrollArea>
                   )}
 
+                  {fields.length === 0 && <EmptyState icon={Package} title="No items yet" description="Search for a listing above to add it." />}
                   {fields.length > 0 && (
                     <div className="overflow-hidden rounded-lg border">
                       <Table>

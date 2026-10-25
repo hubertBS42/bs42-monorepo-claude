@@ -10,6 +10,7 @@ import { RowLink } from "./row-link"
 import FiltersToolbar from "./filters-toolbar"
 import Pagination from "./pagination"
 import { useRowLink } from "./use-row-link"
+import { TableEmpty, type TableEmptyConfig } from "./table-empty"
 
 export type FilterType = "text" | "select" | "tree" | "date" | "dateRange" | "number" | "numberRange" | "boolean"
 
@@ -46,9 +47,22 @@ interface DataTableProps<TData, TValue> {
   // What can be done with the selected rows, shown in a bar above the table while any are ticked. clear() unticks
   // them, e.g. once an action has dealt with them.
   selectionActions?: (rows: TData[], clear: () => void) => ReactNode
+  // What it shows with no rows (unless filters hid them)
+  empty?: TableEmptyConfig
 }
 
-export function DataTable<TData, TValue>({ columns, data, filters = [], pagination, getRowHref, rowLinkColumnId, enablePagination = true, getRowId, selectionActions }: DataTableProps<TData, TValue>) {
+export function DataTable<TData, TValue>({
+  columns,
+  data,
+  filters = [],
+  pagination,
+  getRowHref,
+  rowLinkColumnId,
+  enablePagination = true,
+  getRowId,
+  selectionActions,
+  empty,
+}: DataTableProps<TData, TValue>) {
   const { handleRowClick, handleRowAuxClick } = useRowLink()
 
   // eslint-disable-next-line react-hooks/incompatible-library
@@ -125,11 +139,7 @@ export function DataTable<TData, TValue>({ columns, data, filters = [], paginati
                 )
               })
             ) : (
-              <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center">
-                  No Results.
-                </TableCell>
-              </TableRow>
+              <TableEmpty colSpan={columns.length} filters={filters} empty={empty} />
             )}
           </TableBody>
         </Table>

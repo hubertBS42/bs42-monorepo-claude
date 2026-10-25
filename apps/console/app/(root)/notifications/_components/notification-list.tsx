@@ -14,6 +14,7 @@ import { cn } from "@workspace/ui/lib/utils"
 import { goToNotification, NotificationItem } from "@/components/notification-item"
 import { clearReadNotificationsAction, dismissNotificationAction, markAllNotificationsReadAction, markNotificationReadAction } from "@/lib/actions/notification.actions"
 import type { BellNotification } from "@/lib/data/notifications.data"
+import { EmptyState } from "@workspace/ui/components/empty-state"
 
 const KIND_LABELS: Record<NotificationKind, string> = {
   ORDER: "Orders",
@@ -114,10 +115,11 @@ export default function NotificationList({ data, filters }: NotificationListProp
 
       <div className={cn("overflow-hidden rounded-lg border transition-opacity", isPending && "opacity-60")}>
         {data.items.length === 0 ? (
-          <div className="flex flex-col items-center gap-2 px-4 py-12 text-center">
-            <BellIcon className="size-6 text-muted-foreground" />
-            <p className="text-sm text-muted-foreground">{filtered ? "No notifications match these filters." : "No notifications yet."}</p>
-          </div>
+          <EmptyState
+            icon={BellIcon}
+            title={filtered ? "No results" : "No notifications yet"}
+            description={filtered ? "No notifications match these filters." : "Orders, stock and other alerts show here."}
+          />
         ) : (
           <ul>
             {data.items.map((notification) => (

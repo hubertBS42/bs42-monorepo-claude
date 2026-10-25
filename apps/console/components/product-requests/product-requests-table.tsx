@@ -1,5 +1,6 @@
 "use client"
 
+import { PackageSearch } from "lucide-react"
 import { useTransition } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
@@ -151,6 +152,11 @@ export default function ProductRequestsTable({ data, storeId, stores }: ProductR
 
   return (
     <DataTable
+      empty={{
+        icon: PackageSearch,
+        title: "No product requests yet",
+        description: storeId ? "Products you ask the catalogue to add show here." : "Products stores ask the catalogue to add show here.",
+      }}
       columns={columns}
       filters={filters}
       data={data.data}

@@ -1,5 +1,7 @@
+import { MapPin } from "lucide-react"
 import type { Address } from "@workspace/db/client"
 import AddressCard from "./address-card"
+import { EmptyState } from "@workspace/ui/components/empty-state"
 
 const Addresses = ({ addresses }: { addresses: Address[] }) => {
   return (
@@ -11,7 +13,7 @@ const Addresses = ({ addresses }: { addresses: Address[] }) => {
           ))}
         </div>
       ) : (
-        <span className="flex justify-center text-sm">No saved addresses</span>
+        <EmptyState icon={MapPin} title="No saved addresses" description="Addresses the customer saves, or you add, show here." />
       )}
     </div>
   )

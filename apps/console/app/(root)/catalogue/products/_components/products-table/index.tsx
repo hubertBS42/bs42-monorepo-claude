@@ -1,4 +1,5 @@
 "use client"
+import { Package } from "lucide-react"
 import { DataTable } from "@workspace/tables"
 import type { ProductsData } from "@/types"
 import { columns, getProductHref } from "./columns"
@@ -16,6 +17,7 @@ interface ProductsTableProps {
 const ProductsTable = ({ data, filterOptions, categoryChoices }: ProductsTableProps) => {
   return (
     <DataTable
+      empty={{ icon: Package, title: "No products yet", description: "Products you add to the catalogue show here." }}
       columns={columns}
       filters={getProductFilters(filterOptions)}
       data={data.data}

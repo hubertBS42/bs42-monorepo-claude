@@ -1,5 +1,6 @@
 "use client"
 
+import { TrendingUp } from "lucide-react"
 import { useState } from "react"
 import Link from "next/link"
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@workspace/ui/components/card"
@@ -8,6 +9,7 @@ import { ToggleGroup, ToggleGroupItem } from "@workspace/ui/components/toggle-gr
 import { formatCurrency } from "@workspace/utils/currency"
 import type { DashboardPeriod, DashboardTopSellers } from "@/types"
 import { PERIOD_LABELS } from "./periods"
+import { EmptyState } from "@workspace/ui/components/empty-state"
 
 type Ranking = keyof DashboardTopSellers
 
@@ -61,8 +63,8 @@ export default function TopSellers({ sellers, period, description }: { sellers: 
             <TableBody>
               {rows.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
-                    Nothing sold in this period.
+                  <TableCell colSpan={4} className="whitespace-normal">
+                    <EmptyState icon={TrendingUp} title="Nothing sold in this period" description="Products on paid orders show here." />
                   </TableCell>
                 </TableRow>
               ) : (

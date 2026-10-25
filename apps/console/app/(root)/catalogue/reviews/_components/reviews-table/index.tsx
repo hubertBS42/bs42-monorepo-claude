@@ -1,4 +1,5 @@
 "use client"
+import { Star } from "lucide-react"
 import { useMemo } from "react"
 import { consoleAuthClient } from "@workspace/auth/console-client"
 import { hasSystemPermission } from "@workspace/auth/system-permissions"
@@ -16,6 +17,7 @@ const ReviewsTable = ({ data }: { data: ReviewsData }) => {
 
   return (
     <DataTable
+      empty={{ icon: Star, title: "No reviews yet", description: "Customers' reviews of what they bought show here." }}
       columns={columns}
       filters={filters}
       data={data.data}

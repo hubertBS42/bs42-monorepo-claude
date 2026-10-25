@@ -1,4 +1,5 @@
 "use client"
+import { Truck } from "lucide-react"
 import { consoleAuthClient } from "@workspace/auth/console-client"
 import { DataTable } from "@workspace/tables"
 import { useMemberRole } from "@/hooks/use-member-role"
@@ -13,6 +14,7 @@ const SuppliersTable = ({ data, storeId }: { data: SuppliersData; storeId: strin
 
   return (
     <DataTable
+      empty={{ icon: Truck, title: "No suppliers yet", description: "Suppliers you buy stock from show here." }}
       columns={columns}
       filters={supplierFilters}
       data={data.data}

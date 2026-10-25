@@ -1,4 +1,5 @@
 "use client"
+import { ClipboardList } from "lucide-react"
 import { DataTable } from "@workspace/tables"
 import type { PurchaseOrdersData, SelectItem } from "@/types"
 import { getColumns } from "./columns"
@@ -13,6 +14,7 @@ type PurchaseOrdersTableProps = { data: PurchaseOrdersData } & ({ suppliers: Sel
 const PurchaseOrdersTable = ({ data, suppliers, stores }: PurchaseOrdersTableProps) => {
   return (
     <DataTable
+      empty={{ icon: ClipboardList, title: "No purchase orders yet", description: stores ? "Every store's orders to its suppliers show here." : "Stock you order from suppliers shows here." }}
       columns={stores ? platformColumns : storeColumns}
       filters={purchaseOrderFilters({ suppliers, stores })}
       data={data.data}

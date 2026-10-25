@@ -1,4 +1,5 @@
 "use client"
+import { Store } from "lucide-react"
 import { DataTable } from "@workspace/tables"
 import type { StoresData } from "@/types"
 import { columns } from "./columns"
@@ -11,6 +12,7 @@ interface StoresTableProps {
 const StoresTable = ({ data }: StoresTableProps) => {
   return (
     <DataTable
+      empty={{ icon: Store, title: "No stores yet", description: "Stores you add show here." }}
       columns={columns}
       filters={filters}
       data={data.data}

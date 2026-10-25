@@ -1,12 +1,13 @@
 /* eslint-disable @next/next/no-img-element -- next/image would need the storage host in images.remotePatterns */
 import Link from "next/link"
-import { Search } from "lucide-react"
+import { PackageCheck, Search, SearchX } from "lucide-react"
 import { Badge } from "@workspace/ui/components/badge"
 import { Button, buttonVariants } from "@workspace/ui/components/button"
 import { Card, CardContent } from "@workspace/ui/components/card"
 import { Input } from "@workspace/ui/components/input"
 import { formatCurrency } from "@workspace/utils/currency"
 import type { ListableProduct } from "@/types"
+import { EmptyState } from "@workspace/ui/components/empty-state"
 
 interface ProductPickerProps {
   products: ListableProduct[]
@@ -34,17 +35,20 @@ const ProductPicker = ({ products, total, search, nextLimit }: ProductPickerProp
         </Button>
       </form>
 
-      <p className="text-sm text-muted-foreground">
-        {total === 0
-          ? search
-            ? "No products match your search."
-            : "Every published product is already listed in this store."
-          : total > shown
-            ? `Showing ${shown} of ${total} products.${nextLimit ? "" : " Search to narrow them down."}`
-            : `${total} product${total === 1 ? "" : "s"}.`}
-        {total > 0 && " Products this store already lists aren't shown."}
-      </p>
+      {total > 0 && (
+        <p className="text-sm text-muted-foreground">
+          {total > shown ? `Showing ${shown} of ${total} products.${nextLimit ? "" : " Search to narrow them down."}` : `${total} product${total === 1 ? "" : "s"}.`}
+          {" Products this store already lists aren't shown."}
+        </p>
+      )}
 
+      {products.length === 0 && (
+        <EmptyState
+          icon={search ? SearchX : PackageCheck}
+          title={search ? "No matches" : "Everything is listed"}
+          description={search ? "No product you can list matches your search." : "Every published product is already listed in this store."}
+        />
+      )}
       {products.length > 0 && (
         <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
           {products.map((product) => (

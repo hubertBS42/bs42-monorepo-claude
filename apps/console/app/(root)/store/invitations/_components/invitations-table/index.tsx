@@ -1,4 +1,5 @@
 "use client"
+import { Mail } from "lucide-react"
 import { useMemo } from "react"
 import { consoleAuthClient } from "@workspace/auth/console-client"
 import { DataTable } from "@workspace/tables"
@@ -27,6 +28,7 @@ const InvitationsTable = ({ storeId, data }: InvitationsTableProps) => {
       {/* Shown as text: the row actions aren't offered at all, so say why */}
       {canResend === false && canCancel === false && <p className="text-sm text-muted-foreground">Your role in this store can&apos;t resend or cancel invitations.</p>}
       <DataTable
+        empty={{ icon: Mail, title: "No invitations yet", description: "Invitations you send to join this store show here." }}
         columns={columns}
         filters={invitationFilters}
         data={data.data}

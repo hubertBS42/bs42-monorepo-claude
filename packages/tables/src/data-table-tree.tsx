@@ -6,6 +6,7 @@ import { cn } from "@workspace/ui/lib/utils"
 import { ChevronRight } from "lucide-react"
 import { RowLink } from "./row-link"
 import { useRowLink } from "./use-row-link"
+import { TableEmpty, type TableEmptyConfig } from "./table-empty"
 
 interface DataTableTreeProps<TData extends { id: string }, TValue> {
   columns: ColumnDef<TData, TValue>[]
@@ -18,10 +19,12 @@ interface DataTableTreeProps<TData extends { id: string }, TValue> {
   // Same as DataTable: the row's tree cell becomes a link, and a click anywhere else on the row follows it too
   getRowHref?: (row: TData) => string
   defaultExpanded?: boolean
+  // What it shows with no rows
+  empty?: TableEmptyConfig
 }
 
 // Unpaginated: a page boundary would cut subtrees apart, so pass the whole tree
-export function DataTableTree<TData extends { id: string }, TValue>({ columns, data, getSubRows, treeColumnId, getRowHref, defaultExpanded = true }: DataTableTreeProps<TData, TValue>) {
+export function DataTableTree<TData extends { id: string }, TValue>({ columns, data, getSubRows, treeColumnId, getRowHref, defaultExpanded = true, empty }: DataTableTreeProps<TData, TValue>) {
   const { handleRowClick, handleRowAuxClick } = useRowLink()
 
   // eslint-disable-next-line react-hooks/incompatible-library
@@ -104,11 +107,7 @@ export function DataTableTree<TData extends { id: string }, TValue>({ columns, d
                 )
               })
             ) : (
-              <TableRow>
-                <TableCell colSpan={table.getVisibleLeafColumns().length} className="h-24 text-center">
-                  No Results.
-                </TableCell>
-              </TableRow>
+              <TableEmpty colSpan={table.getVisibleLeafColumns().length} filters={[]} empty={empty} />
             )}
           </TableBody>
         </Table>

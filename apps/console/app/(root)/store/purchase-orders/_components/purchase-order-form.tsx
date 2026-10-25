@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useFieldArray, useForm, useWatch, type SubmitHandler } from "react-hook-form"
 import type { z } from "zod"
-import { Search, Trash2 } from "lucide-react"
+import { Package, Search, SearchX, Trash2 } from "lucide-react"
 import { Currency, PurchaseOrderStatus } from "@workspace/db/enums"
 import { DateField, NumberInputField, SelectField, TextareaField } from "@workspace/forms"
 import { Button } from "@workspace/ui/components/button"
@@ -26,6 +26,7 @@ import { createPurchaseOrderAction, searchPurchasableListingsAction, updatePurch
 import { formatCost, type SuggestedLine } from "@/lib/purchase-order-status"
 import { purchaseOrderFormValuesSchema } from "@/lib/schemas/purchase-order.schemas"
 import type { PurchasableListing, PurchaseOrderDetails, SelectItem } from "@/types"
+import { EmptyState } from "@workspace/ui/components/empty-state"
 
 // One form for creating a purchase order and editing it. A draft can change in every way; once ordered, the supplier
 // and currency stay, and a line keeps at least what has come in. The action checks all of it again.
@@ -222,9 +223,10 @@ export default function PurchaseOrderForm({ storeId, suppliers, rate, order, sug
               <Card>
                 <CardHeader>
                   <CardTitle>Items</CardTitle>
-                  <CardDescription>{fields.length ? `How many of each, at the supplier's price in ${currency}.` : "Add items from the store's listings below."}</CardDescription>
+                  <CardDescription>{`How many of each, at the supplier's price in ${currency}.`}</CardDescription>
                 </CardHeader>
                 <CardContent className="grid gap-4">
+                  {fields.length === 0 && <EmptyState icon={Package} title="No items yet" description="Add items from the store's listings below." />}
                   {fields.length > 0 && (
                     <Table>
                       <TableHeader>
@@ -311,7 +313,7 @@ export default function PurchaseOrderForm({ storeId, suppliers, rate, order, sug
                       <Spinner />
                     </div>
                   ) : results.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">{search ? "No listings match your search." : "This store has no listings yet."}</p>
+                    <EmptyState icon={SearchX} title={search ? "No matches" : "No listings yet"} description={search ? "No listing matches your search." : "This store has no listings to order."} />
                   ) : (
                     <ScrollArea className="-mr-3 flex max-h-[60vh] flex-col">
                       <ul className="grid gap-3 pr-3 md:grid-cols-2">

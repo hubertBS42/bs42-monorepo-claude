@@ -1,4 +1,5 @@
 "use client"
+import { History } from "lucide-react"
 import Link from "next/link"
 import type { ColumnDef } from "@tanstack/react-table"
 import { ColumnHeader, DataTable, type FilterConfig } from "@workspace/tables"
@@ -107,6 +108,7 @@ const StockHistoryTable = ({ data, variants }: StockHistoryTableProps) => {
 
   return (
     <DataTable
+      empty={{ icon: History, title: "No stock changes yet", description: "Every change to this listing's stock shows here." }}
       // The Variant column only means something for a product with variants
       columns={variants ? columns : columns.filter((column) => !("accessorKey" in column) || column.accessorKey !== "variantDescription")}
       filters={filters}

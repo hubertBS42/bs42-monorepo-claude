@@ -1,4 +1,5 @@
 "use client"
+import { ShoppingCart } from "lucide-react"
 import { DataTable } from "@workspace/tables"
 import type { OrdersData } from "@/types"
 import { columns } from "./columns"
@@ -12,6 +13,7 @@ interface OrdersTableProps {
 const OrdersTable = ({ data, stores }: OrdersTableProps) => {
   return (
     <DataTable
+      empty={{ icon: ShoppingCart, title: "No orders yet", description: "Orders from every store show here." }}
       columns={columns}
       filters={getOrderFilters(stores)}
       data={data.data}

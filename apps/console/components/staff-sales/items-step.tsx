@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from "react"
 import { useFieldArray, useWatch } from "react-hook-form"
-import { Search, Trash2 } from "lucide-react"
+import { Package, Search, SearchX, Trash2 } from "lucide-react"
 import { NumberInputField, SwitchField } from "@workspace/forms"
 import { Button } from "@workspace/ui/components/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@workspace/ui/components/card"
@@ -18,6 +18,7 @@ import { searchQuotableItemsAction } from "@/lib/actions/quote.actions"
 import type { QuotableProduct } from "@/lib/staff-quotes"
 import type { ChosenQuoteItem } from "@/types"
 import { asStaffSaleForm, itemKey, type StaffSaleFields, type StaffSaleForm, type StaffSaleKind } from "./form"
+import { EmptyState } from "@workspace/ui/components/empty-state"
 
 interface ItemsStepProps<T extends StaffSaleFields, O> {
   kind: StaffSaleKind
@@ -129,7 +130,7 @@ export default function ItemsStep<T extends StaffSaleFields, O>({ kind, form: wi
               </div>
             )
           ) : results.length === 0 ? (
-            <p className="text-sm text-muted-foreground">{search ? "No products on sale match your search." : "Nothing is on sale."}</p>
+            <EmptyState icon={SearchX} title={search ? "No matches" : "Nothing on sale"} description={search ? "No product on sale matches your search." : undefined} />
           ) : (
             <ScrollArea className="-mr-3 flex max-h-[60vh] flex-col">
               <ul className={cn("grid gap-3 pr-3 transition-opacity", isSearching && "opacity-60")} aria-busy={isSearching}>
@@ -169,9 +170,10 @@ export default function ItemsStep<T extends StaffSaleFields, O>({ kind, form: wi
       <Card>
         <CardHeader>
           <CardTitle>{kind === "quote" ? "In this quotation" : "In this order"}</CardTitle>
-          <CardDescription>{fields.length ? "Set how many of each, and whether we install them." : "Add items from the products on sale."}</CardDescription>
+          <CardDescription>Set how many of each, and whether we install them.</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-2">
+          {fields.length === 0 && <EmptyState icon={Package} title="No items yet" description="Add items from the products on sale." />}
           {fields.length > 0 && (
             <Table>
               <TableHeader>

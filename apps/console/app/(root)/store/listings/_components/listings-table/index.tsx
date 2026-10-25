@@ -1,4 +1,5 @@
 "use client"
+import { PackageOpen } from "lucide-react"
 import { DataTable } from "@workspace/tables"
 import type { ListingsData } from "@/types"
 import type { ProductFilterOptions } from "@/lib/data/products.data"
@@ -15,6 +16,7 @@ interface ListingsTableProps {
 const ListingsTable = ({ storeId, data, filterOptions }: ListingsTableProps) => {
   return (
     <DataTable
+      empty={{ icon: PackageOpen, title: "No listings yet", description: "Products this store sells show here." }}
       columns={columns}
       filters={getListingFilters(filterOptions)}
       data={data.data}

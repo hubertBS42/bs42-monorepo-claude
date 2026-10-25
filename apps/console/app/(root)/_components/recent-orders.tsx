@@ -1,5 +1,6 @@
 "use client"
 
+import { ShoppingCart } from "lucide-react"
 import { useState } from "react"
 import Link from "next/link"
 import { buttonVariants } from "@workspace/ui/components/button"
@@ -8,6 +9,7 @@ import { formatCurrency } from "@workspace/utils/currency"
 import { OrderStatusBadge } from "@/components/order-badges"
 import type { OrderSummary } from "./order-summary"
 import OrderSummaryCard from "./order-summary-card"
+import { EmptyState } from "@workspace/ui/components/empty-state"
 
 // The latest orders in a table, with the selected one summed up in a card beside it. Clicking a row, or the card's
 // previous and next buttons, picks the order the card shows. The table only has what picking one needs; the card has
@@ -41,8 +43,8 @@ export default function RecentOrders({ orders, listHref, description }: { orders
             <TableBody>
               {orders.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
-                    No orders yet.
+                  <TableCell colSpan={4} className="whitespace-normal">
+                    <EmptyState icon={ShoppingCart} title="No orders yet" description="The latest orders show here." />
                   </TableCell>
                 </TableRow>
               ) : (

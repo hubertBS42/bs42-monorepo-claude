@@ -1,4 +1,5 @@
 "use client"
+import { Tag } from "lucide-react"
 import { DataTable } from "@workspace/tables"
 import type { BrandsData } from "@/types"
 import { columns } from "./columns"
@@ -11,6 +12,7 @@ interface BrandsTableProps {
 const BrandsTable = ({ data }: BrandsTableProps) => {
   return (
     <DataTable
+      empty={{ icon: Tag, title: "No brands yet", description: "Brands you add show here." }}
       columns={columns}
       filters={filters}
       data={data.data}

@@ -1,4 +1,5 @@
 "use client"
+import { Users } from "lucide-react"
 import { DataTable } from "@workspace/tables"
 import type { UsersData } from "@/types"
 import { columns } from "./columns"
@@ -12,6 +13,7 @@ interface UsersTableProps {
 const UsersTable = ({ data, canSeeSuperAdmins }: UsersTableProps) => {
   return (
     <DataTable
+      empty={{ icon: Users, title: "No users yet", description: "Staff and customers show here." }}
       columns={columns}
       filters={getUserFilters({ canSeeSuperAdmins })}
       data={data.data}

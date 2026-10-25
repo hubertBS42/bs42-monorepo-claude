@@ -11,6 +11,7 @@ import { toast } from "@workspace/ui/components/toast"
 import { clearReadNotificationsAction, dismissNotificationAction, markAllNotificationsReadAction, markNotificationReadAction } from "@/lib/actions/notification.actions"
 import type { BellNotification } from "@/lib/data/notifications.data"
 import { goToNotification, NotificationItem } from "./notification-item"
+import { EmptyState } from "@workspace/ui/components/empty-state"
 
 // How often the bell asks for new notifications while the tab is visible: a small query, close enough to live
 const POLL_MS = 15_000
@@ -138,10 +139,7 @@ export function NotificationBell() {
         {state === null ? (
           <p className="px-4 py-8 text-center text-sm text-muted-foreground">Loading…</p>
         ) : state.items.length === 0 ? (
-          <div className="flex flex-col items-center gap-2 px-4 py-8 text-center">
-            <BellIcon className="size-6 text-muted-foreground" />
-            <p className="text-sm text-muted-foreground">No notifications yet</p>
-          </div>
+          <EmptyState icon={BellIcon} title="No notifications yet" className="p-6" />
         ) : (
           <ul className="max-h-96 overflow-y-auto">
             {state.items.map((notification) => (

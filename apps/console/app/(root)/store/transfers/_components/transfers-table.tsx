@@ -1,5 +1,6 @@
 "use client"
 
+import { ArrowLeftRight } from "lucide-react"
 import type { ColumnDef } from "@tanstack/react-table"
 import { StockTransferStatus } from "@workspace/db/enums"
 import { ColumnHeader, DataTable, type FilterConfig } from "@workspace/tables"
@@ -90,6 +91,7 @@ const transferHref = (row: StockTransferListItem) => `/store/transfers/${row.id}
 export default function TransfersTable({ data }: { data: PaginatedResult<StockTransferListItem> }) {
   return (
     <DataTable
+      empty={{ icon: ArrowLeftRight, title: "No transfers yet", description: "Stock sent between this store and others shows here." }}
       columns={columns}
       filters={filters}
       data={data.data}

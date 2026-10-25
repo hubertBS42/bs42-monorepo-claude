@@ -1,6 +1,6 @@
 "use client"
 
-import { TrendingDown, TrendingUp } from "lucide-react"
+import { ChartLine, TrendingDown, TrendingUp } from "lucide-react"
 import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts"
 import { Badge } from "@workspace/ui/components/badge"
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@workspace/ui/components/card"
@@ -9,6 +9,7 @@ import { InfoTip } from "@workspace/ui/components/info-tip"
 import { formatDate } from "@workspace/utils/date"
 import type { DashboardExchangeRates, DashboardPeriod } from "@/types"
 import { PERIOD_LABELS } from "./periods"
+import { EmptyState } from "@workspace/ui/components/empty-state"
 
 const chartConfig = {
   rate: { label: "Rate used", color: "var(--primary)" },
@@ -54,7 +55,7 @@ export default function ExchangeRateChart({ rates, period }: { rates: DashboardE
       </CardHeader>
       <CardContent className="flex flex-1 flex-col px-2 pt-4 sm:px-6 sm:pt-6">
         {values.length < 2 ? (
-          <p className="flex min-h-[250px] flex-1 items-center justify-center text-sm text-muted-foreground">Not enough history yet.</p>
+          <EmptyState icon={ChartLine} title="Not enough history yet" description="The chart starts once there are two days of rates." className="min-h-[250px]" />
         ) : (
           <ChartContainer config={chartConfig} className="aspect-auto min-h-[250px] w-full flex-1">
             <LineChart data={data} margin={{ left: 4, right: 8 }}>

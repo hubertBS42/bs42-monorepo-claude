@@ -1,4 +1,5 @@
 /* eslint-disable @next/next/no-img-element -- next/image would need the storage host in images.remotePatterns */
+import { History, Undo2 } from "lucide-react"
 import type { ReactNode } from "react"
 import Link from "next/link"
 import { Badge } from "@workspace/ui/components/badge"
@@ -10,6 +11,7 @@ import { formatDate } from "@workspace/utils/date"
 import { formatPhoneNumber } from "@workspace/utils/phone"
 import { returnLabel } from "@workspace/commerce/order-status"
 import type { OrderLine, OrderPaymentAttempt, OrderReturnEntry, OrderTimelineEntry, OrderTotals } from "@/types"
+import { EmptyState } from "@workspace/ui/components/empty-state"
 
 // The parts of an order's details page that the store's and the platform's pages share
 
@@ -150,7 +152,7 @@ export function OrderTimelineCard({ timeline }: { timeline: OrderTimelineEntry[]
       </CardHeader>
       <CardContent>
         {timeline.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No status changes yet.</p>
+          <EmptyState icon={History} title="No status changes yet" />
         ) : (
           <ol className="grid gap-4">
             {timeline.map((entry) => (
@@ -251,7 +253,7 @@ export function OrderReturnsCard({ returns, actions }: { returns: OrderReturnEnt
       </CardHeader>
       <CardContent className="grid gap-4">
         {returns.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Nothing has been returned.</p>
+          <EmptyState icon={Undo2} title="Nothing has been returned" />
         ) : (
           <ol className="grid gap-4">
             {returns.map((entry) => (

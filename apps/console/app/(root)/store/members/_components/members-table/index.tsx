@@ -1,4 +1,5 @@
 "use client"
+import { Users } from "lucide-react"
 import { useMemo } from "react"
 import { consoleAuthClient } from "@workspace/auth/console-client"
 import { DataTable } from "@workspace/tables"
@@ -28,6 +29,7 @@ const MembersTable = ({ storeId, data }: MembersTableProps) => {
       {/* Shown as text: the role selects aren't offered at all, so say why */}
       {canUpdateRoles === false && <p className="text-sm text-muted-foreground">Your role in this store can&apos;t change members&apos; roles.</p>}
       <DataTable
+        empty={{ icon: Users, title: "No members yet", description: "People who join this store show here." }}
         columns={columns}
         filters={memberFilters}
         data={data.data}
