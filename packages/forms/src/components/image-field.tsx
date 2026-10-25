@@ -72,6 +72,10 @@ function getImageTitle(url: string, index: number): string {
   return `Image ${index + 1}`
 }
 
+// What the console's image uploads take (lib/storage-api.ts): no SVG, which can
+// carry script
+const IMAGE_TYPES = "image/jpeg,image/png,image/webp,image/gif"
+
 /** Checks a file against an HTML-style accept string (MIME types, wildcards such as image/*, and extensions). */
 function matchesAccept(file: File, accept: string): boolean {
   const rules = accept
@@ -132,7 +136,7 @@ const ImageField = <T extends FieldValues>({
   disabled = false,
   maxImages = 1,
   sizeLimit = 1000,
-  accept = "image/*",
+  accept = IMAGE_TYPES,
   square,
   minDimension,
   maxDimension,
@@ -187,7 +191,11 @@ const ImageField = <T extends FieldValues>({
             }
 
             if (selectedFiles.some((file) => !matchesAccept(file, accept))) {
-              throw new Error(accept === "image/*" ? "Choose image files only." : `Unsupported file type. Accepted: ${accept}.`)
+              throw new Error(
+                accept === IMAGE_TYPES
+                  ? "Choose JPEG, PNG, WebP or GIF images."
+                  : `Unsupported file type. Accepted: ${accept}.`
+              )
             }
 
             if (selectedFiles.some((file) => file.size > sizeLimit * 1024)) {

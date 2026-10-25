@@ -16,11 +16,12 @@ const MAX_URLS_PER_REQUEST = 100
 const MAX_URL_REQUEST_BYTES = 128 * 1024
 const MULTIPART_OVERHEAD_BYTES = 1024 * 1024
 
+// No SVG: it can carry script, and an uploaded file is served with the type it was uploaded as
 export const imageUploadPolicy: UploadPolicy = {
   maxFiles: 3,
   maxFileSizeBytes: 10 * 1024 * 1024,
   maxTotalSizeBytes: 20 * 1024 * 1024,
-  acceptedTypes: ["image/*"],
+  acceptedTypes: ["image/jpeg", "image/png", "image/webp", "image/gif"],
 }
 
 export const documentUploadPolicy: UploadPolicy = {
@@ -28,6 +29,18 @@ export const documentUploadPolicy: UploadPolicy = {
   maxFileSizeBytes: 10 * 1024 * 1024,
   maxTotalSizeBytes: 50 * 1024 * 1024,
   acceptedTypes: ["application/pdf"],
+}
+
+const ascii = (bytes: Uint8Array, start: number, end: number) => String.fromCharCode(...bytes.subarray(start, end))
+
+// How each accepted type's files begin. A file's type is the uploader's word, and the blob is served with it, so the
+// file's first bytes must agree with it.
+const FILE_SIGNATURES: Record<string, (bytes: Uint8Array) => boolean> = {
+  "image/jpeg": (bytes) => bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff,
+  "image/png": (bytes) => [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a].every((byte, index) => bytes[index] === byte),
+  "image/gif": (bytes) => ascii(bytes, 0, 4) === "GIF8",
+  "image/webp": (bytes) => ascii(bytes, 0, 4) === "RIFF" && ascii(bytes, 8, 12) === "WEBP",
+  "application/pdf": (bytes) => ascii(bytes, 0, 5) === "%PDF-",
 }
 
 function getRequestSize(request: Request): number | null {
@@ -71,6 +84,10 @@ async function readUploadFiles(request: Request, policy: UploadPolicy): Promise<
     )
     if (!accepted) {
       throw new StorageValidationError(`${file.name} is not an accepted file type.`, 415)
+    }
+    const looksLike = FILE_SIGNATURES[file.type.toLowerCase()]
+    if (looksLike && !looksLike(new Uint8Array(await file.slice(0, 12).arrayBuffer()))) {
+      throw new StorageValidationError(`${file.name} isn't the kind of file its name says.`, 415)
     }
     if (file.size > policy.maxFileSizeBytes) {
       throw new StorageValidationError("A file exceeds the per-file size limit.", 413)
