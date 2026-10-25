@@ -1,4 +1,5 @@
 import { Body, Button, Container, Head, Heading, Html, Img, Preview, Section, Tailwind, Text } from "react-email"
+import { DARK_FILL } from "./dark-fill.js"
 
 // Staff notifications (new orders, stock alerts, a failed exchange-rate fetch): a heading, a line of context, the
 // details as label and value rows, and optionally a button into the console. The console builds each kind.
@@ -23,7 +24,7 @@ export const StaffAlertEmail = ({ preview, heading, intro, details, action, appN
         <Body className="m-auto bg-[#f4f4f5] font-sans">
           <Container className="mx-auto my-10 max-w-120">
             {/* Header */}
-            <Section className="rounded-t-xl bg-[#18181b] px-10 py-8 text-center">
+            <Section className="rounded-t-xl bg-[#18181b] px-10 py-8 text-center" style={DARK_FILL}>
               {logoUrl ? <Img src={logoUrl} width="90" alt={appName} className="mx-auto" /> : <Text className="m-0 text-lg font-semibold text-white">{appName}</Text>}
             </Section>
 
