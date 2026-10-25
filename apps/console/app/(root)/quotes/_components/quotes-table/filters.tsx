@@ -36,5 +36,5 @@ export const filters: FilterConfig[] = [
       { label: "Staff", value: "staff" },
     ],
   },
-  { key: "made", label: "Made", type: "dateRange" },
+  { key: "made", label: "Made on", type: "dateRange" },
 ]
