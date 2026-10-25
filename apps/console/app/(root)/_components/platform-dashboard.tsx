@@ -4,6 +4,7 @@ import { getLatestExchangeRate } from "@workspace/commerce/exchange-rates"
 import { getRecentOrderDetails } from "@/lib/data/orders.data"
 import type { DashboardPeriod } from "@/types"
 import AttentionCard from "./attention-card"
+import ExchangeRateChart from "./exchange-rate-chart"
 import { toOrderSummary } from "./order-summary"
 import PlatformHealth from "./platform-health"
 import RecentOrders from "./recent-orders"
@@ -24,7 +25,7 @@ export default async function PlatformDashboard({ period, canOpenSettings }: { p
   const [dashboard, recent, rate, settings] = await Promise.all([getPlatformDashboard(period), getRecentOrderDetails(RECENT_ORDERS), getLatestExchangeRate(), getAppSettings()])
   if (!dashboard.success) throw new Error(dashboard.error)
   if (!recent.success) throw new Error(recent.error)
-  const { orders, stockAlerts, overduePurchaseOrders, pendingProductRequests, sales, topSellers } = dashboard.data
+  const { orders, stockAlerts, overduePurchaseOrders, pendingProductRequests, sales, topSellers, exchangeRates } = dashboard.data
 
   const shown = stockAlerts.slice(0, STOCK_STORES_SHOWN)
   const others = stockAlerts.slice(STOCK_STORES_SHOWN)
@@ -69,7 +70,10 @@ export default async function PlatformDashboard({ period, canOpenSettings }: { p
           ]}
         />
       </div>
-      <TopSellers sellers={topSellers} period={period} description="Products from every store" />
+      <div className="grid gap-4 md:gap-6 @5xl/main:grid-cols-2">
+        <TopSellers sellers={topSellers} period={period} description="Products from every store" />
+        <ExchangeRateChart rates={exchangeRates} period={period} />
+      </div>
       <PlatformHealth
         rate={rate}
         taxEnabled={settings.taxEnabled}

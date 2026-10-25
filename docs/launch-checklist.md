@@ -94,6 +94,7 @@ Signed in as the superAdmin, in Settings:
 
 - [ ] **General:** the store's and console's names, logo and favicon.
 - [ ] **Pricing:** today's exchange rate (until the first daily fetch runs), the markup if any, quotation validity, and the bank details for bank-transfer orders.
+- [ ] Optional, after setting the markup: fill in the last 90 days' exchange rates for the dashboard's chart, from a machine with the production `DATABASE_URL` and the API key: `pnpm --filter @workspace/db db:backfill-rates`. It adds only days with no rate.
 - [ ] **Pricing → Tax:** leave off until the VAT and levy rates are confirmed with an accountant or the GRA.
 - [ ] **Delivery:** delivery fees per region and town, the free-delivery threshold, and installation areas.
 - [ ] **Notifications:** the email addresses that get staff alerts.

@@ -751,6 +751,13 @@ export interface StoreDashboard {
   topSellers: DashboardTopSellers
 }
 
+// The USD→GHS rate prices used each day of the period, oldest first; a day without one has nulls
+export interface DashboardExchangeRates {
+  days: { date: string; rate: string | null; marketRate: string | null; setByHand: boolean }[]
+  // The last rate in the period against the first, as a percentage rounded to one decimal; null with fewer than two
+  change: number | null
+}
+
 export interface PlatformDashboard {
   orders: DashboardOrderCounts & {
     // Pending orders with more than one store's items, which only the platform can confirm
@@ -765,6 +772,7 @@ export interface PlatformDashboard {
   sales: DashboardSalesTrend
   // Catalogue products, across every store selling them
   topSellers: DashboardTopSellers
+  exchangeRates: DashboardExchangeRates
 }
 
 // ============================================

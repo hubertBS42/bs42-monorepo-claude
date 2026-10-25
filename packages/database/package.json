@@ -8,6 +8,7 @@
     "db:deploy": "prisma migrate deploy",
     "db:seed": "tsx --env-file=.env prisma/seed.ts",
     "db:seed:demo": "tsx --env-file=.env prisma/seed.ts --demo",
+    "db:backfill-rates": "tsx --env-file-if-exists=../../apps/console/.env --env-file=.env prisma/backfill-exchange-rates.ts",
     "typecheck": "tsc --noEmit",
     "lint": "eslint"
   },

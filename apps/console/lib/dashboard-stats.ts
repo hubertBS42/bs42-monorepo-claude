@@ -2,9 +2,20 @@ import "server-only"
 
 import type { prisma } from "@workspace/db"
 import { Prisma } from "@workspace/db/client"
-import { OrderStatus, PaymentStatus, ProductRequestStatus } from "@workspace/db/enums"
+import { ExchangeRateSource, OrderStatus, PaymentStatus, ProductRequestStatus } from "@workspace/db/enums"
 import { dayStart, formatDate } from "@workspace/utils/date"
-import type { DashboardChanges, DashboardOrderCounts, DashboardPeriod, DashboardSales, DashboardSalesTrend, DashboardTopSellers, PlatformDashboard, StoreDashboard, TopSeller } from "../types"
+import type {
+  DashboardChanges,
+  DashboardExchangeRates,
+  DashboardOrderCounts,
+  DashboardPeriod,
+  DashboardSales,
+  DashboardSalesTrend,
+  DashboardTopSellers,
+  PlatformDashboard,
+  StoreDashboard,
+  TopSeller,
+} from "../types"
 import { sumLines } from "./order-details"
 import { overduePurchaseOrderWhere } from "./purchase-order-status"
 import { countStockAlerts } from "./stock-states"
@@ -162,6 +173,20 @@ export function toSalesTrend(period: DashboardPeriod, rows: TrendRows, now = new
   return { current, changes, days: currentDays.map((date) => ({ date, netSalesGhs: (net.get(date) ?? new Prisma.Decimal(0)).toFixed(2) })) }
 }
 
+type RateRow = { date: Date; rate: Prisma.Decimal; marketRate: Prisma.Decimal | null; source: ExchangeRateSource }
+
+function toExchangeRates(period: DashboardPeriod, rows: RateRow[], now = new Date()): DashboardExchangeRates {
+  const byDay = new Map(rows.map((row) => [dayKey(row.date), row]))
+  const days = trendDays(period, now)
+    .slice(PERIOD_DAYS[period])
+    .map((date) => {
+      const row = byDay.get(date)
+      return { date, rate: row?.rate.toString() ?? null, marketRate: row?.marketRate?.toString() ?? null, setByHand: row?.source === ExchangeRateSource.MANUAL }
+    })
+  const rated = days.filter((day) => day.rate !== null)
+  return { days, change: rated.length > 1 ? change(rated.at(-1)!.rate, rated[0]!.rate) : null }
+}
+
 async function countOrders(tx: Tx, where: Prisma.OrderWhereInput): Promise<DashboardOrderCounts> {
   const [pending, confirmed, processing, unpaidDelivered] = await Promise.all([
     tx.order.count({ where: { ...where, status: OrderStatus.PENDING } }),
@@ -213,7 +238,7 @@ export async function getStoreStats(tx: Tx, storeId: string, period: DashboardPe
 export async function getPlatformStats(tx: Tx, period: DashboardPeriod, now = new Date()): Promise<PlatformDashboard> {
   const from = trendStart(period, now)
 
-  const [orders, pendingOrders, stockAlerts, overduePurchaseOrders, pendingProductRequests, paidOrders, refunds, returns, sellerLines] = await Promise.all([
+  const [orders, pendingOrders, stockAlerts, overduePurchaseOrders, pendingProductRequests, paidOrders, refunds, returns, sellerLines, rates] = await Promise.all([
     countOrders(tx, {}),
     // Prisma can't filter on how many stores an order's items come from, so the pending orders' stores are counted
     // here; there are only ever a handful
@@ -225,6 +250,10 @@ export async function getPlatformStats(tx: Tx, period: DashboardPeriod, now = ne
     tx.orderRefund.findMany({ where: { createdAt: { gte: from } }, select: { createdAt: true, amountGhs: true } }),
     tx.orderReturn.findMany({ where: { createdAt: { gte: from } }, select: { createdAt: true } }),
     topSellerLines(tx, period, now, null),
+    tx.exchangeRate.findMany({
+      where: { from: "USD", to: "GHS", date: { gte: periodStart(period, now) } },
+      select: { date: true, rate: true, marketRate: true, source: true },
+    }),
   ])
 
   const multiStorePending = pendingOrders.filter((order) => new Set(order.orderItems.map((line) => line.organizationId)).size > 1).length
@@ -250,5 +279,6 @@ export async function getPlatformStats(tx: Tx, period: DashboardPeriod, now = ne
     ),
     // A product sold by several stores counts once. Lines always have a product; productId is optional only in the schema.
     topSellers: toTopSellers(sellerLines, (line) => (line.productId ? { id: line.productId, href: `/catalogue/products/${line.productId}/edit` } : { id: line.storeListingId, href: null })),
+    exchangeRates: toExchangeRates(period, rates, now),
   }
 }
