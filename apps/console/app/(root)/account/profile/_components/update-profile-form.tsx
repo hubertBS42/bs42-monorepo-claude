@@ -3,7 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { ImageField, TextInputField } from "@workspace/forms"
 import { Button } from "@workspace/ui/components/button"
-import { Field, FieldDescription, FieldGroup, FieldLabel } from "@workspace/ui/components/field"
+import { Field, FieldGroup, FieldLabel } from "@workspace/ui/components/field"
 import { Input } from "@workspace/ui/components/input"
 import { Spinner } from "@workspace/ui/components/spinner"
 import { toast } from "@workspace/ui/components/toast"
@@ -84,7 +84,6 @@ const UpdateProfileForm = ({ user }: UpdateProfileFormProps) => {
           <Field>
             <FieldLabel htmlFor="profile-email">Email</FieldLabel>
             <Input id="profile-email" type="email" value={user.email} disabled readOnly />
-            <FieldDescription>Ask an administrator to change your email.</FieldDescription>
           </Field>
         </FieldGroup>
         <div className="flex justify-end">
