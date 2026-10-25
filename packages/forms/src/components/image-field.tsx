@@ -8,11 +8,8 @@ import {
   Attachment,
   AttachmentAction,
   AttachmentActions,
-  AttachmentContent,
-  AttachmentDescription,
   AttachmentGroup,
   AttachmentMedia,
-  AttachmentTitle,
   AttachmentTrigger,
 } from "@workspace/ui/components/attachment"
 import { Field, FieldDescription, FieldError, FieldLabel } from "@workspace/ui/components/field"
@@ -39,7 +36,6 @@ interface ImageFieldProps<T extends FieldValues> {
   /** Maximum width and height, in pixels */
   maxDimension?: number
   defaultValues?: string | string[] | null
-  orientation?: "vertical" | "horizontal"
   clearErrors?: UseFormClearErrors<T>
   onAdd: (images: FileList) => Promise<string[]>
   onRemove: (url: string) => Promise<void>
@@ -55,21 +51,6 @@ function toImageUrls(value: unknown): string[] {
 
 function getErrorMessage(error: unknown, fallback: string): string {
   return error instanceof Error && error.message ? error.message : fallback
-}
-
-function getImageTitle(url: string, index: number): string {
-  if (url.startsWith("data:")) return `Image ${index + 1}`
-
-  try {
-    const parsedUrl = new URL(url)
-    const fileName = decodeURIComponent(parsedUrl.pathname.split("/").filter(Boolean).at(-1) ?? "")
-    if (fileName) return fileName
-  } catch {
-    const fileName = url.split(/[?#]/, 1)[0]?.split("/").filter(Boolean).at(-1)
-    if (fileName) return fileName
-  }
-
-  return `Image ${index + 1}`
 }
 
 // What the console's image uploads take (lib/storage-api.ts): no SVG, which can
@@ -141,7 +122,6 @@ const ImageField = <T extends FieldValues>({
   minDimension,
   maxDimension,
   defaultValues,
-  orientation = "vertical",
   clearErrors,
   onAdd,
   onRemove,
@@ -155,7 +135,6 @@ const ImageField = <T extends FieldValues>({
   const [isUploading, setIsUploading] = React.useState(false)
   const [removingIndex, setRemovingIndex] = React.useState<number | null>(null)
   const [operationError, setOperationError] = React.useState<string | null>(null)
-  const [uploadedImageTitles, setUploadedImageTitles] = React.useState<Record<string, string>>({})
   const imageLimit = Math.max(1, Math.floor(maxImages))
   const initialUrls = toImageUrls(defaultValues)
   const initialValue = imageLimit === 1 ? (initialUrls[0] ?? "") : initialUrls
@@ -220,10 +199,6 @@ const ImageField = <T extends FieldValues>({
             }
 
             updateValue([...imageUrls, ...uploadedUrls])
-            setUploadedImageTitles((currentTitles) => ({
-              ...currentTitles,
-              ...Object.fromEntries(uploadedUrls.map((url, index) => [url, selectedFiles[index]?.name ?? getImageTitle(url, index)])),
-            }))
           } catch (error) {
             setOperationError(getErrorMessage(error, "Unable to upload the selected images."))
           } finally {
@@ -243,13 +218,6 @@ const ImageField = <T extends FieldValues>({
           try {
             await onRemove(url)
             updateValue(imageUrls.filter((_, itemIndex) => itemIndex !== index))
-            if (!imageUrls.some((image, itemIndex) => image === url && itemIndex !== index)) {
-              setUploadedImageTitles((currentTitles) => {
-                const nextTitles = { ...currentTitles }
-                delete nextTitles[url]
-                return nextTitles
-              })
-            }
           } catch (error) {
             setOperationError(getErrorMessage(error, "Unable to remove this image."))
           } finally {
@@ -284,27 +252,27 @@ const ImageField = <T extends FieldValues>({
             />
 
             <AttachmentGroup aria-labelledby={label ? labelId : undefined} aria-describedby={describedBy} className={cn("m-0 w-full p-0", className)}>
+              {/* Square tiles holding only the image: stored files have generated names, so there's no
+                  title worth showing. Screen readers get the field's label instead. */}
               {imageUrls.map((url, index) => {
-                const imageTitle = uploadedImageTitles[url] ?? getImageTitle(url, index)
+                const imageName = imageLimit === 1 ? (label ?? "Image") : `${label ?? "Image"} ${index + 1} of ${imageUrls.length}`
 
                 return (
-                  <Attachment
-                    key={`${url}-${index}`}
-                    orientation={orientation}
-                    state={removingIndex === index ? "processing" : "done"}
-                    className={cn(orientation === "horizontal" ? "w-full" : "w-32")}
-                  >
+                  <Attachment key={`${url}-${index}`} orientation="vertical" state={removingIndex === index ? "processing" : "done"} className="w-32">
                     <AttachmentMedia variant="image">
-                      <img src={url} alt={imageTitle} />
+                      {/* Whole, not cropped to the square: logos are wide */}
+                      <img src={url} alt={imageName} className="object-contain! p-1" />
                     </AttachmentMedia>
-                    <AttachmentContent>
-                      <AttachmentTitle title={imageTitle}>
-                        <span className="block max-w-[24ch] truncate">{imageTitle}</span>
-                      </AttachmentTitle>
-                      <AttachmentDescription>{removingIndex === index ? "Removing..." : "Uploaded"}</AttachmentDescription>
-                    </AttachmentContent>
                     <AttachmentActions>
-                      <AttachmentAction type="button" aria-label={`Remove ${imageTitle}`} title={`Remove ${imageTitle}`} disabled={isBusy || disabled} onClick={() => void handleRemove(index)}>
+                      <AttachmentAction
+                        type="button"
+                        aria-label={`Remove ${imageName}`}
+                        title="Remove"
+                        disabled={isBusy || disabled}
+                        onClick={() => void handleRemove(index)}
+                        // Readable over any picture
+                        className="bg-background/80 hover:bg-background"
+                      >
                         {removingIndex === index ? <Spinner /> : <X />}
                       </AttachmentAction>
                     </AttachmentActions>
@@ -313,26 +281,21 @@ const ImageField = <T extends FieldValues>({
               })}
 
               {isUploading && (
-                <Attachment orientation={orientation} state="uploading" className={cn(orientation === "horizontal" ? "w-full" : "w-32")} aria-live="polite">
+                <Attachment orientation="vertical" state="uploading" className="w-32" aria-live="polite">
                   <AttachmentMedia>
                     <Spinner />
+                    <span className="sr-only">Uploading images</span>
                   </AttachmentMedia>
-                  <AttachmentContent>
-                    <AttachmentTitle>Uploading images</AttachmentTitle>
-                    <AttachmentDescription>Please wait...</AttachmentDescription>
-                  </AttachmentContent>
                 </Attachment>
               )}
 
               {!isBusy && imageUrls.length < imageLimit && (
-                <Attachment orientation={orientation} state="idle" className={cn(orientation === "horizontal" ? "w-full" : "w-32", disabled && "opacity-50")}>
-                  <AttachmentMedia>
+                <Attachment orientation="vertical" state="idle" className={cn("w-32", disabled && "opacity-50")}>
+                  <AttachmentMedia className="flex-col gap-1 bg-transparent text-center">
                     <ImageIcon className="text-muted-foreground" />
+                    <span className="text-sm font-medium">Add image</span>
+                    <span className="text-xs text-muted-foreground">{`Up to ${sizeLimit} KB`}</span>
                   </AttachmentMedia>
-                  <AttachmentContent>
-                    <AttachmentTitle>Add image</AttachmentTitle>
-                    <AttachmentDescription>{`Up to ${sizeLimit} KB`}</AttachmentDescription>
-                  </AttachmentContent>
                   <AttachmentTrigger aria-label={`Add ${label ?? "image"}`} aria-describedby={describedBy} disabled={disabled || isBusy} onClick={() => inputRef.current?.click()} />
                 </Attachment>
               )}

@@ -63,18 +63,7 @@ export function BrandingCard({ settings }: CardProps) {
     <SettingsCard section="branding" settings={settings} title="Branding" description="Shared by the storefront, the console and emails." onSaved={() => (unsaved.current = [])}>
       {(form, isPending) => (
         <>
-          <ImageField
-            control={form.control}
-            name="logoUrl"
-            sizeLimit={100}
-            maxImages={1}
-            onAdd={handleAdd}
-            onRemove={handleRemove}
-            clearErrors={form.clearErrors}
-            label="Logo"
-            disabled={isPending}
-            orientation="horizontal"
-          />
+          <ImageField control={form.control} name="logoUrl" sizeLimit={100} maxImages={1} onAdd={handleAdd} onRemove={handleRemove} clearErrors={form.clearErrors} label="Logo" disabled={isPending} />
           <ImageField
             control={form.control}
             name="logoDarkUrl"
@@ -86,7 +75,6 @@ export function BrandingCard({ settings }: CardProps) {
             label="Logo on dark backgrounds"
             description="Shown in dark mode and emails; empty uses the logo."
             disabled={isPending}
-            orientation="horizontal"
           />
           <ImageField
             control={form.control}
@@ -102,7 +90,6 @@ export function BrandingCard({ settings }: CardProps) {
             onRemove={handleRemove}
             clearErrors={form.clearErrors}
             disabled={isPending}
-            orientation="horizontal"
           />
         </>
       )}
