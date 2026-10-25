@@ -1,13 +1,12 @@
 "use client"
 
 import { useState } from "react"
-import { Check, CirclePlus } from "lucide-react"
+import { CirclePlus } from "lucide-react"
 import { Badge } from "@workspace/ui/components/badge"
 import { Button } from "@workspace/ui/components/button"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from "@workspace/ui/components/command"
 import { Popover, PopoverContent, PopoverTrigger } from "@workspace/ui/components/popover"
 import { Separator } from "@workspace/ui/components/separator"
-import { cn } from "@workspace/ui/lib/utils"
 
 // A choice in the list. `depth` indents a tree's levels, and `keywords` is what a search matches (a category's whole
 // path, so typing its parent finds it too).
@@ -68,9 +67,19 @@ const FacetedFilter = ({ id, title, options, value, onChange, disabled }: Facete
             <CommandEmpty>No results.</CommandEmpty>
             <CommandGroup>
               {options.map((option) => (
-                <CommandItem key={option.value} value={option.value} keywords={option.keywords ?? [option.label]} onSelect={() => choose(option.value === value ? "" : option.value)}>
-                  <Check className={cn("size-4", option.value === value ? "opacity-100" : "opacity-0")} />
-                  <span style={option.depth ? { paddingInlineStart: `${option.depth * 0.75}rem` } : undefined}>{option.label}</span>
+                // CommandItem draws the check on the right from data-checked, as in a combobox: one choice, not a checklist.
+                // A tree's levels indent the whole row, so the top level lines up with the search box.
+                <CommandItem
+                  key={option.value}
+                  value={option.value}
+                  keywords={option.keywords ?? [option.label]}
+                  onSelect={() => choose(option.value === value ? "" : option.value)}
+                  data-checked={option.value === value}
+                  style={option.depth ? { paddingInlineStart: `calc(0.5rem + ${option.depth}rem)` } : undefined}
+                >
+                  <span className="min-w-0 flex-1 truncate" title={option.label}>
+                    {option.label}
+                  </span>
                 </CommandItem>
               ))}
             </CommandGroup>
