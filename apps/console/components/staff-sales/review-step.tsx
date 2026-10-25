@@ -14,6 +14,7 @@ import { formatCurrency } from "@workspace/utils/currency"
 import { previewQuoteAction } from "@/lib/actions/quote.actions"
 import type { QuoteCustomer, QuotePreview } from "@/types"
 import { asStaffSaleForm, type StaffSaleFields, type StaffSaleForm, type StaffSaleKind } from "./form"
+import { formatPhoneNumber } from "@workspace/utils/phone"
 
 const discountOptions = [
   { label: "No discount", value: "NONE" },
@@ -188,7 +189,7 @@ export default function ReviewStep<T extends StaffSaleFields, O>({ kind, form: w
             <div className="grid gap-1">
               <p className="text-xs text-muted-foreground">For</p>
               <p className="font-medium">{customer?.trade ? `${values.customerName}, ${customer.trade.companyName}` : values.customerName}</p>
-              <p className="text-muted-foreground">{[values.customerEmail, values.customerPhone].filter(Boolean).join(" · ")}</p>
+              <p className="text-muted-foreground">{[values.customerEmail, values.customerPhone && formatPhoneNumber(values.customerPhone)].filter(Boolean).join(" · ")}</p>
             </div>
             <div className="grid gap-1">
               <p className="text-xs text-muted-foreground">Delivery</p>

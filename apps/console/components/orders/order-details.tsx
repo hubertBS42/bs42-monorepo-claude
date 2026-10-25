@@ -7,6 +7,7 @@ import { Separator } from "@workspace/ui/components/separator"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@workspace/ui/components/table"
 import { formatCurrency } from "@workspace/utils/currency"
 import { formatDate } from "@workspace/utils/date"
+import { formatPhoneNumber } from "@workspace/utils/phone"
 import { returnLabel } from "@workspace/commerce/order-status"
 import type { OrderLine, OrderPaymentAttempt, OrderReturnEntry, OrderTimelineEntry, OrderTotals } from "@/types"
 
@@ -92,6 +93,7 @@ const ATTEMPT_STATUS = {
   FAILED: { label: "Failed", variant: "destructive" },
   ABANDONED: { label: "Abandoned", variant: "secondary" },
 } as const
+const NOT_USED = { label: "Not used", variant: "secondary" } as const
 
 const NOT_USED = { label: "Not used", variant: "secondary" } as const
 // Paystack's channel names (card, mobile_money, bank_transfer), readable
@@ -188,7 +190,7 @@ export function OrderCustomerCard({ customer, shipping, actions, trade, tradeHre
       <CardContent className="grid gap-4">
         <Detail label="Name">{customer.name}</Detail>
         <Detail label="Email">{customer.email ?? <span className="text-muted-foreground">Not given</span>}</Detail>
-        <Detail label="Phone">{customer.phone ?? <span className="text-muted-foreground">Not given</span>}</Detail>
+        <Detail label="Phone">{customer.phone ? formatPhoneNumber(customer.phone) : <span className="text-muted-foreground">Not given</span>}</Detail>
         {trade && (
           <Detail label="Trade account">
             {tradeHref ? (
@@ -204,7 +206,7 @@ export function OrderCustomerCard({ customer, shipping, actions, trade, tradeHre
         <Separator />
         {shipping ? (
           <>
-            <Detail label="Deliver to">{[shipping.name, shipping.phone].filter(Boolean).join(" · ") || "—"}</Detail>
+            <Detail label="Deliver to">{[shipping.name, shipping.phone && formatPhoneNumber(shipping.phone)].filter(Boolean).join(" · ") || "—"}</Detail>
             <Detail label="Address">{[shipping.line1, shipping.line2, shipping.town, shipping.region].filter(Boolean).join(", ") || "—"}</Detail>
           </>
         ) : (

@@ -15,6 +15,7 @@ import { Detail, ghs, TotalRow } from "@/components/orders/order-details"
 import { QUOTE_STATUS } from "@/components/quote-status"
 import { requireSystemPermission } from "@/lib/auth-guard"
 import { getQuoteDetails } from "@/lib/data/quotes.data"
+import { formatPhoneNumber } from "@workspace/utils/phone"
 
 export const metadata: Metadata = {
   title: "Quotation",
@@ -145,7 +146,7 @@ export default async function QuotePage({ params }: QuotePageProps) {
               <Detail label="Name">{quote.customer.name}</Detail>
               {quote.trade && <Detail label="Company">{quote.trade.tin ? `${quote.trade.companyName} (TIN ${quote.trade.tin})` : quote.trade.companyName}</Detail>}
               <Detail label="Email">{quote.customer.email}</Detail>
-              <Detail label="Phone">{quote.customer.phone}</Detail>
+              <Detail label="Phone">{formatPhoneNumber(quote.customer.phone)}</Detail>
               <Detail label="Deliver to">{quote.address}</Detail>
             </CardContent>
           </Card>

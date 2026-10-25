@@ -11,6 +11,7 @@ import { Detail, ghs } from "@/components/orders/order-details"
 import { requireSystemPermission } from "@/lib/auth-guard"
 import { getTradeAccount } from "@/lib/data/trade-accounts.data"
 import TradeAccountReview from "./_components/trade-account-review"
+import { formatPhoneNumber } from "@workspace/utils/phone"
 
 export const metadata: Metadata = {
   title: "Trade Account",
@@ -57,7 +58,7 @@ export default async function TradeAccountPage({ params }: TradeAccountPageProps
               <Detail label="Business">{BUSINESS_TYPE_LABELS[account.businessType]}</Detail>
               <Detail label="Registration number">{account.registrationNumber}</Detail>
               <Detail label="TIN">{account.tin}</Detail>
-              <Detail label="Business phone">{account.phone}</Detail>
+              <Detail label="Business phone">{formatPhoneNumber(account.phone)}</Detail>
               <div className="sm:col-span-2">
                 <Detail label="About the business">{account.details ?? <span className="text-muted-foreground">Not given</span>}</Detail>
               </div>

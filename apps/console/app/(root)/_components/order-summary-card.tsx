@@ -12,6 +12,7 @@ import { formatDate } from "@workspace/utils/date"
 import { OrderStatusBadge, PaymentStatusBadge } from "@/components/order-badges"
 import { PAYMENT_METHOD_LABELS, PAYMENT_STATUS_LABELS } from "@workspace/commerce/order-status"
 import type { OrderSummary } from "./order-summary"
+import { formatPhoneNumber } from "@workspace/utils/phone"
 
 const ghs = (amount: string) => formatCurrency(amount, "GHS", "en-GH")
 
@@ -132,7 +133,7 @@ export default function OrderSummaryCard({ order, position, count, onPrevious, o
             <AccordionContent>
               {shipping ? (
                 <address className="grid gap-0.5 text-muted-foreground not-italic">
-                  {[shipping.name, shipping.phone, shipping.line1, shipping.line2, shipping.town, shipping.region].filter(Boolean).map((part, index) => (
+                  {[shipping.name, shipping.phone && formatPhoneNumber(shipping.phone), shipping.line1, shipping.line2, shipping.town, shipping.region].filter(Boolean).map((part, index) => (
                     <span key={index}>{part}</span>
                   ))}
                 </address>
@@ -156,7 +157,7 @@ export default function OrderSummaryCard({ order, position, count, onPrevious, o
                 </div>
                 <div className="flex items-center justify-between gap-4">
                   <dt className="text-muted-foreground">Phone</dt>
-                  <dd>{order.customer.phone ? <a href={`tel:${order.customer.phone}`}>{order.customer.phone}</a> : <span className="text-muted-foreground">Not given</span>}</dd>
+                  <dd>{order.customer.phone ? <a href={`tel:${order.customer.phone}`}>{formatPhoneNumber(order.customer.phone)}</a> : <span className="text-muted-foreground">Not given</span>}</dd>
                 </div>
               </dl>
             </AccordionContent>

@@ -23,6 +23,7 @@ import { useRouter } from "next/navigation"
 import type { Address } from "@workspace/db/client"
 import { Spinner } from "@workspace/ui/components/spinner"
 import { Item, ItemContent, ItemDescription, ItemTitle } from "@workspace/ui/components/item"
+import { formatPhoneNumber } from "@workspace/utils/phone"
 
 const AddressCard = ({ address }: { address: Address }) => {
   const [dialogIsOpen, setDialogIsOpen] = useState(false)
@@ -111,7 +112,7 @@ const AddressCard = ({ address }: { address: Address }) => {
           </div>
         </ItemTitle>
         <ItemDescription className="grid gap-0.5">
-          <span className="text-xs text-muted-foreground">{address.phone}</span>
+          <span className="text-xs text-muted-foreground">{formatPhoneNumber(address.phone)}</span>
           <span className="text-xs text-muted-foreground">{address.line1}</span>
           {address.line2 && <span className="text-xs text-muted-foreground">{address.line2}</span>}
           <span className="text-xs text-muted-foreground">
