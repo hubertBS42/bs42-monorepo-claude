@@ -45,7 +45,7 @@ export default async function CheckoutPage() {
   }
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 lg:px-6">
+    <div className="mx-auto max-w-7xl px-4 pt-8 pb-16 lg:px-6">
       <SyncBasketCount count={checkout.basket.count} />
       <div className="mb-6 flex flex-wrap items-baseline justify-between gap-2">
         <h1 className="text-2xl font-bold tracking-tight md:text-3xl">Checkout</h1>

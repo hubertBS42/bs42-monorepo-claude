@@ -149,7 +149,7 @@ export default async function OrderPage({ params, searchParams }: OrderPageProps
   )
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-8 lg:px-6">
+    <div className="mx-auto max-w-4xl px-4 pt-8 pb-16 lg:px-6">
       <div className="mb-8 flex flex-col gap-4">
         {inMyOrders && (
           <Link href="/account/orders" className="flex w-fit items-center gap-1 text-sm text-muted-foreground hover:text-foreground">

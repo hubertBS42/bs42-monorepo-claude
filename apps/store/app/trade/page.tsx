@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 // What a trade account is, for anyone; applying is on the account's own page (Account → Trade account), through sign-in
 export default function TradePage() {
   return (
-    <div className="mx-auto max-w-3xl px-4 py-12 lg:px-6">
+    <div className="mx-auto max-w-3xl px-4 pt-12 pb-16 lg:px-6">
       <Briefcase className="size-10 text-muted-foreground" aria-hidden />
       <h1 className="mt-4 text-2xl font-bold tracking-tight md:text-3xl">Trade accounts</h1>
       <p className="mt-3 text-muted-foreground">

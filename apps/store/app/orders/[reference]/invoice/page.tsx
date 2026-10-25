@@ -82,7 +82,7 @@ export default async function InvoicePage({ params, searchParams }: InvoicePageP
   const paid = hasBeenPaid(order.paymentStatus)
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-8 lg:px-6 print:max-w-none print:p-0">
+    <div className="mx-auto max-w-3xl px-4 pt-8 pb-16 lg:px-6 print:max-w-none print:p-0">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3 print:hidden">
         <Link href={orderHref(order.reference, order.id)} className="text-sm text-muted-foreground hover:text-foreground">
           Back to the order

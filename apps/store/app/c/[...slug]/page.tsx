@@ -44,7 +44,7 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
   const [cards, specs, pricing] = await Promise.all([loadProductCards({ categoryIds: subtreeIds(node) }), getFilterSpecs(path.map((category) => category.id)), getShelfPricing()])
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-6 lg:px-6">
+    <div className="mx-auto max-w-7xl px-4 pt-6 pb-16 lg:px-6">
       <JsonLd data={breadcrumbJsonLd([{ name: "Home", path: "/" }, ...path.map((category) => ({ name: category.name, path: categoryHref(tree, category.id) }))])} />
       <Breadcrumb>
         <BreadcrumbList>

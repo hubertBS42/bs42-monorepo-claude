@@ -74,7 +74,7 @@ export default async function BasketPage() {
   )
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 lg:px-6">
+    <div className="mx-auto max-w-7xl px-4 pt-8 pb-16 lg:px-6">
       <SyncBasketCount count={basket?.count ?? 0} />
       <h1 className="text-2xl font-bold tracking-tight md:text-3xl">Your basket</h1>
 

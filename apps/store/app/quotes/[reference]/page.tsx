@@ -64,7 +64,7 @@ export default async function QuotePage({ params, searchParams }: QuotePageProps
   const status = quote.status === QuoteStatus.ACCEPTED ? "Accepted" : quote.status === QuoteStatus.CANCELLED ? "Cancelled" : expired ? "Expired" : `Valid until ${lastDay}`
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-8 lg:px-6 print:max-w-none print:p-0">
+    <div className="mx-auto max-w-3xl px-4 pt-8 pb-16 lg:px-6 print:max-w-none print:p-0">
       <div className="mb-6 space-y-4 print:hidden">
         {isOwner && (
           <Link href="/account/quotes" className="flex w-fit items-center gap-1 text-sm text-muted-foreground hover:text-foreground">

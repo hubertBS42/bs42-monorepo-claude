@@ -37,7 +37,7 @@ export function SiteFooter({
   const hasContact = Object.values(contact).some(Boolean)
 
   return (
-    <footer className="mt-16 bg-muted print:hidden">
+    <footer className="border-t bg-muted print:hidden">
       <div className="border-b">
         <ul className="mx-auto grid max-w-7xl grid-cols-2 gap-3 px-4 py-6 lg:grid-cols-4 lg:px-6">
           {promises.map(({ icon: Icon, label }) => (

@@ -25,7 +25,7 @@ export default async function HomePage() {
   const cards = priceCards([...featured].sort((a, b) => Number(isInStock(b.offers[0]!)) - Number(isInStock(a.offers[0]!)) || a.name.localeCompare(b.name)).slice(0, FEATURED_COUNT), pricing)
 
   return (
-    <>
+    <div className="pb-16">
       {/* Featured categories when there are any, else the store's name and description */}
       {slides.length > 0 ? (
         <section>
@@ -59,6 +59,6 @@ export default async function HomePage() {
           </ul>
         </section>
       )}
-    </>
+    </div>
   )
 }

@@ -46,7 +46,9 @@ export default async function RootLayout({
       <body className="flex min-h-svh flex-col">
         <ThemeProvider>
           <SiteHeader storeName={storeName} logoUrl={settings.logoUrl} logoDarkUrl={settings.logoDarkUrl} menu={menu} />
-          <main className="flex-1">{children}</main>
+          {/* A column, so a page's root can grow to fill it (the sign-in pages' band); full width, or a root centred with
+              mx-auto would shrink to its content. Each page's root ends with its own space above the footer (pb-16). */}
+          <main className="flex flex-1 flex-col *:w-full">{children}</main>
           <SiteFooter
             storeName={storeName}
             storeDescription={settings.storeDescription}

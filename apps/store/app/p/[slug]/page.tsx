@@ -98,7 +98,7 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
   ]
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-6 lg:px-6">
+    <div className="mx-auto max-w-7xl px-4 pt-6 pb-16 lg:px-6">
       <JsonLd data={jsonLd} />
       <Breadcrumb className="mb-6">
         <BreadcrumbList>

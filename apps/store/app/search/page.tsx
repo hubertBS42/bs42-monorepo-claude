@@ -30,7 +30,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   const [cards, pricing] = searching ? await Promise.all([loadProductCards({ search: q }), getShelfPricing()]) : [[], null]
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-6 lg:px-6">
+    <div className="mx-auto max-w-7xl px-4 pt-6 pb-16 lg:px-6">
       <header className="mb-6">
         <h1 className="text-3xl font-bold tracking-tight">{searching ? <>Results for “{q}”</> : "Search"}</h1>
         {!searching && <p className="mt-2 text-muted-foreground">Search by product name, SKU or barcode.</p>}

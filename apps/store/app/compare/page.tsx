@@ -38,7 +38,7 @@ export default async function ComparePage({ searchParams }: { searchParams: Prom
   const category = path.at(-1)
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-6 lg:px-6">
+    <div className="mx-auto max-w-7xl px-4 pt-6 pb-16 lg:px-6">
       <header className="mb-6 flex flex-col gap-2">
         {category && categoryId && (
           <Link href={categoryHref(tree, categoryId)} className="flex w-fit items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
