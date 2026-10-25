@@ -33,7 +33,7 @@ export default async function BrandsPage({ searchParams }: BrandsPageProps) {
   const result = await getBrands(brandsParams)
   if (!result.success) throw new Error(result.error)
   return (
-    <main className="flex flex-col gap-y-6">
+    <div className="flex flex-col gap-y-6">
       <div className="flex items-end justify-between">
         <div className="grid">
           <h1 className="text-xl font-bold md:text-2xl">Brands</h1>
@@ -43,6 +43,6 @@ export default async function BrandsPage({ searchParams }: BrandsPageProps) {
         <AddButton label="Add Brand" url="/catalogue/brands/add" />
       </div>
       <BrandsTable data={result.data} />
-    </main>
+    </div>
   )
 }

@@ -35,7 +35,7 @@ export default async function CreateQuotePage({ searchParams }: CreateQuotePageP
   ])
 
   return (
-    <main className="flex flex-col gap-y-6">
+    <div className="flex flex-col gap-y-6">
       <div className="grid">
         <h1 className="text-xl font-bold md:text-2xl">New Quotation</h1>
         <p className="text-sm text-muted-foreground">
@@ -62,6 +62,6 @@ export default async function CreateQuotePage({ searchParams }: CreateQuotePageP
       ) : (
         <QuoteForm delivery={delivery} installationAreas={installation.areas} validityDays={settings.quoteValidityDays} copy={copy} />
       )}
-    </main>
+    </div>
   )
 }

@@ -43,7 +43,7 @@ export default async function PurchaseOrdersPage({ searchParams }: PurchaseOrder
   if (!suppliers.success) throw new Error(suppliers.error)
 
   return (
-    <main className="flex flex-col gap-y-6">
+    <div className="flex flex-col gap-y-6">
       <div className="flex items-end justify-between">
         <div className="grid">
           <h1 className="text-xl font-bold md:text-2xl">Purchase Orders</h1>
@@ -59,6 +59,6 @@ export default async function PurchaseOrdersPage({ searchParams }: PurchaseOrder
         />
       </div>
       <PurchaseOrdersTable data={result.data} suppliers={suppliers.data} />
-    </main>
+    </div>
   )
 }

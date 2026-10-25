@@ -36,7 +36,7 @@ export default async function QuotesPage({ searchParams }: QuotesPageProps) {
   if (!result.success) throw new Error(result.error)
 
   return (
-    <main className="flex flex-col gap-y-6">
+    <div className="flex flex-col gap-y-6">
       <div className="flex items-end justify-between gap-4">
         <div className="grid">
           <h1 className="text-xl font-bold md:text-2xl">Quotes</h1>
@@ -46,6 +46,6 @@ export default async function QuotesPage({ searchParams }: QuotesPageProps) {
         <AddButton label="New Quotation" url="/quotes/create" />
       </div>
       <QuotesTable data={result.data} />
-    </main>
+    </div>
   )
 }

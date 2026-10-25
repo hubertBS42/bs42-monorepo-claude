@@ -14,7 +14,7 @@ export default async function CategoriesPage() {
   const result = await getCategoryTree()
   if (!result.success) throw new Error(result.error)
   return (
-    <main className="flex flex-col gap-y-6">
+    <div className="flex flex-col gap-y-6">
       <div className="flex items-end justify-between">
         <div className="grid">
           <h1 className="text-xl font-bold md:text-2xl">Categories</h1>
@@ -24,6 +24,6 @@ export default async function CategoriesPage() {
         <AddButton label="Add Category" url="/catalogue/categories/add" />
       </div>
       <CategoriesTable data={result.data} />
-    </main>
+    </div>
   )
 }

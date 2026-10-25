@@ -37,7 +37,7 @@ export default async function SuppliersPage({ searchParams }: SuppliersPageProps
   if (!result.success) throw new Error(result.error)
 
   return (
-    <main className="flex flex-col gap-y-6">
+    <div className="flex flex-col gap-y-6">
       <div className="flex items-end justify-between">
         <div className="grid">
           <h1 className="text-xl font-bold md:text-2xl">Suppliers</h1>
@@ -47,6 +47,6 @@ export default async function SuppliersPage({ searchParams }: SuppliersPageProps
         <StoreAddButton storeId={storeId} label="Add Supplier" url="/store/suppliers/add" permission={{ supplier: ["create"] }} deniedText="Your role in this store can't add suppliers." />
       </div>
       <SuppliersTable data={result.data} storeId={storeId} />
-    </main>
+    </div>
   )
 }

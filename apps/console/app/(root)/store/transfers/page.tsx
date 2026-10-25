@@ -28,7 +28,7 @@ export default async function TransfersPage({ searchParams }: TransfersPageProps
   if (!result.success) throw new Error(result.error)
 
   return (
-    <main className="flex flex-col gap-y-6">
+    <div className="flex flex-col gap-y-6">
       <div className="flex items-end justify-between">
         <div className="grid">
           <h1 className="text-xl font-bold md:text-2xl">Transfers</h1>
@@ -37,6 +37,6 @@ export default async function TransfersPage({ searchParams }: TransfersPageProps
         <SendStockButton storeId={storeId} />
       </div>
       <TransfersTable data={result.data} />
-    </main>
+    </div>
   )
 }

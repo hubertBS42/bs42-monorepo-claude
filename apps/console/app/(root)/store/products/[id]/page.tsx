@@ -47,7 +47,7 @@ export default async function StoreProductPage({ params }: StoreProductPageProps
   const weight = (value: string | null) => orDash(value && `${value} kg`)
 
   return (
-    <main className="flex flex-col gap-y-6">
+    <div className="flex flex-col gap-y-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="grid gap-1">
           <h1 className="text-xl font-bold md:text-2xl">{product.name}</h1>
@@ -232,6 +232,6 @@ export default async function StoreProductPage({ params }: StoreProductPageProps
           </Card>
         </div>
       </div>
-    </main>
+    </div>
   )
 }

@@ -41,12 +41,12 @@ export default async function PlatformPurchaseOrdersPage({ searchParams }: Purch
   if (!stores.success) throw new Error(stores.error)
 
   return (
-    <main className="flex flex-col gap-y-6">
+    <div className="flex flex-col gap-y-6">
       <div className="grid">
         <h1 className="text-xl font-bold md:text-2xl">Purchase Orders</h1>
         <p className="text-sm text-muted-foreground">Every store&apos;s purchase orders, read-only.</p>
       </div>
       <PurchaseOrdersTable data={result.data} stores={stores.data} />
-    </main>
+    </div>
   )
 }

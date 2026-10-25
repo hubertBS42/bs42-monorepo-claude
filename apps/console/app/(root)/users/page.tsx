@@ -36,7 +36,7 @@ export default async function UsersPage({ searchParams }: UsersPageProps) {
   const result = await getUsers(usersParams)
   if (!result.success) throw new Error(result.error)
   return (
-    <main className="flex flex-col gap-y-6">
+    <div className="flex flex-col gap-y-6">
       <div className="flex items-end justify-between">
         <div className="grid">
           <h1 className="text-xl font-bold md:text-2xl">Users</h1>
@@ -47,6 +47,6 @@ export default async function UsersPage({ searchParams }: UsersPageProps) {
         {hasSystemPermission(session.user.role, { user: ["create"] }) && <AddButton label="Add User" url="/users/add" />}
       </div>
       <UsersTable data={result.data} canSeeSuperAdmins={hasSystemRole(session.user.role, ["superAdmin"])} />
-    </main>
+    </div>
   )
 }

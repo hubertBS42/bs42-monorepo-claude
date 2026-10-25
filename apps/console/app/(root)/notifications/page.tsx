@@ -25,12 +25,12 @@ export default async function NotificationsPage({ searchParams }: NotificationsP
   const data = await getNotificationsPage(user.id, session.activeOrganizationId, filters)
 
   return (
-    <main className="flex flex-col gap-y-6">
+    <div className="flex flex-col gap-y-6">
       <div className="grid">
         <h1 className="text-xl font-bold md:text-2xl">Notifications</h1>
         <p className="text-sm text-muted-foreground">{`From the last ${NOTIFICATION_LIFETIME_DAYS} days.`}</p>
       </div>
       <NotificationList data={data} filters={filters} />
-    </main>
+    </div>
   )
 }

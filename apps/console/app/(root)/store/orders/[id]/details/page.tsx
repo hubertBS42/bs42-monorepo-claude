@@ -64,7 +64,7 @@ export default async function StoreOrderDetailsPage({ params }: OrderDetailsPage
   const returnBlocked = afterSale && returnBlockedReason(order, afterSale.returnableLines.length)
 
   return (
-    <main className="flex flex-col gap-y-6">
+    <div className="flex flex-col gap-y-6">
       <div className="flex items-end justify-between gap-4">
         <div className="grid gap-1">
           <h1 className="font-mono text-xl font-bold md:text-2xl">{order.reference}</h1>
@@ -217,6 +217,6 @@ export default async function StoreOrderDetailsPage({ params }: OrderDetailsPage
           <OrderNotesCard notes={order.notes} actions={isEditable && <EditOrderNotes storeId={storeId} orderId={order.id} notes={order.notes} />} />
         </div>
       </div>
-    </main>
+    </div>
   )
 }

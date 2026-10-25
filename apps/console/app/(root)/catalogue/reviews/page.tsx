@@ -43,7 +43,7 @@ export default async function ReviewsPage({ searchParams }: ReviewsPageProps) {
   if (!result.success) throw new Error(result.error)
 
   return (
-    <main className="flex flex-col gap-y-6">
+    <div className="flex flex-col gap-y-6">
       <div className="grid">
         <h1 className="text-xl font-bold md:text-2xl">Reviews</h1>
         <p className="text-sm text-muted-foreground">Reviews go live when posted. Hide any that break the rules.</p>
@@ -57,6 +57,6 @@ export default async function ReviewsPage({ searchParams }: ReviewsPageProps) {
         </p>
       )}
       <ReviewsTable data={result.data} />
-    </main>
+    </div>
   )
 }

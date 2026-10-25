@@ -42,7 +42,7 @@ const StoreOverviewPage = async () => {
   const store = response.data
 
   return (
-    <main className="flex flex-col gap-y-6">
+    <div className="flex flex-col gap-y-6">
       <div className="grid">
         <h1 className="text-xl font-bold md:text-2xl">Store Details</h1>
         <p className="text-sm text-muted-foreground">This store&apos;s details, its pages, and leaving or deleting it.</p>
@@ -102,7 +102,7 @@ const StoreOverviewPage = async () => {
 
         <StoreActions store={store} />
       </div>
-    </main>
+    </div>
   )
 }
 

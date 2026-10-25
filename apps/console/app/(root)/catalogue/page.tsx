@@ -43,7 +43,7 @@ const CataloguePage = async () => {
   await requireConsoleAdmin()
 
   return (
-    <main className="flex flex-col gap-y-6">
+    <div className="flex flex-col gap-y-6">
       <div className="grid">
         <h1 className="text-xl font-bold md:text-2xl">Catalogue</h1>
         <p className="text-sm text-muted-foreground">Products, categories, brands, reviews and product requests.</p>
@@ -73,7 +73,7 @@ const CataloguePage = async () => {
           )
         })}
       </div>
-    </main>
+    </div>
   )
 }
 

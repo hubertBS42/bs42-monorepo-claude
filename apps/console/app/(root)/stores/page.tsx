@@ -32,7 +32,7 @@ export default async function StoresPage({ searchParams }: StoresPageProps) {
   const result = await getStores(storesParams)
   if (!result.success) throw new Error(result.error)
   return (
-    <main className="flex flex-col gap-y-6">
+    <div className="flex flex-col gap-y-6">
       <div className="flex items-end justify-between">
         <div className="grid">
           <h1 className="text-xl font-bold md:text-2xl">Stores</h1>
@@ -42,6 +42,6 @@ export default async function StoresPage({ searchParams }: StoresPageProps) {
         <AddButton label="Add Store" url="/stores/add" />
       </div>
       <StoresTable data={result.data} />
-    </main>
+    </div>
   )
 }

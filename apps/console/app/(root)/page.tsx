@@ -27,7 +27,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   const workspace = activeId && storeRole ? "store" : activeId && hasSystemPermission(session.user.role, { order: ["read"] }) ? "platform" : null
 
   return (
-    <main className="flex flex-col gap-y-6">
+    <div className="flex flex-col gap-y-6">
       <div className="grid">
         <h1 className="text-xl font-bold md:text-2xl">Dashboard</h1>
         <p className="text-sm text-muted-foreground">
@@ -41,6 +41,6 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
 
       {workspace === "store" && <StoreDashboard storeId={activeId!} period={period} />}
       {workspace === "platform" && <PlatformDashboard period={period} canOpenSettings={hasSystemRole(session.user.role, ["superAdmin"])} />}
-    </main>
+    </div>
   )
 }

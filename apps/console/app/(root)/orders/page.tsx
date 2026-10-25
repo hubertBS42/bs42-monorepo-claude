@@ -44,7 +44,7 @@ export default async function OrdersPage({ searchParams }: OrdersPageProps) {
   if (!stores.success) throw new Error(stores.error)
 
   return (
-    <main className="flex flex-col gap-y-6">
+    <div className="flex flex-col gap-y-6">
       <div className="flex items-end justify-between gap-4">
         <div className="grid">
           <h1 className="text-xl font-bold md:text-2xl">Orders</h1>
@@ -54,6 +54,6 @@ export default async function OrdersPage({ searchParams }: OrdersPageProps) {
         <AddButton label="Create Order" url="/orders/create" />
       </div>
       <OrdersTable data={result.data} stores={stores.data.map((store) => ({ label: store.name, value: store.id }))} />
-    </main>
+    </div>
   )
 }

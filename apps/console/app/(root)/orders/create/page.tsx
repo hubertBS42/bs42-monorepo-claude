@@ -19,7 +19,7 @@ export default async function CreateOrderPage() {
   const [rate, delivery, installation] = await Promise.all([getLatestExchangeRate(), getDeliverySettings(), getInstallationAreas()])
 
   return (
-    <main className="flex flex-col gap-y-6">
+    <div className="flex flex-col gap-y-6">
       <div className="grid">
         <h1 className="text-xl font-bold md:text-2xl">Create Order</h1>
         <p className="text-sm text-muted-foreground">An order for a customer, from any store. It starts unpaid.</p>
@@ -42,6 +42,6 @@ export default async function CreateOrderPage() {
       ) : (
         <CreateOrderForm delivery={delivery} installationAreas={installation.areas} />
       )}
-    </main>
+    </div>
   )
 }

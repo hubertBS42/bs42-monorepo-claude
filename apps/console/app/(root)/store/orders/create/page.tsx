@@ -24,7 +24,7 @@ export default async function CreateStoreOrderPage() {
   const suspended = store?.status !== OrganizationStatus.ACTIVE
 
   return (
-    <main className="flex flex-col gap-y-6">
+    <div className="flex flex-col gap-y-6">
       <div className="grid">
         <h1 className="text-xl font-bold md:text-2xl">Create Order</h1>
         <p className="text-sm text-muted-foreground">An order taken in the store: at the counter, by phone or by message.</p>
@@ -49,6 +49,6 @@ export default async function CreateStoreOrderPage() {
       ) : (
         <CreateOrderForm storeId={storeId} delivery={delivery} />
       )}
-    </main>
+    </div>
   )
 }

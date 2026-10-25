@@ -43,7 +43,7 @@ export default async function QuotePage({ params }: QuotePageProps) {
   const { totals } = quote
 
   return (
-    <main className="flex flex-col gap-y-6">
+    <div className="flex flex-col gap-y-6">
       <div className="flex items-end justify-between gap-4">
         <div className="grid gap-1">
           <h1 className="font-mono text-xl font-bold md:text-2xl">{quote.reference}</h1>
@@ -162,6 +162,6 @@ export default async function QuotePage({ params }: QuotePageProps) {
           )}
         </div>
       </div>
-    </main>
+    </div>
   )
 }

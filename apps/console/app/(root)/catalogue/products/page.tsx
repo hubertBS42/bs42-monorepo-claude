@@ -47,7 +47,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
   if (!categories.success) throw new Error(categories.error)
 
   return (
-    <main className="flex flex-col gap-y-6">
+    <div className="flex flex-col gap-y-6">
       <div className="flex items-end justify-between">
         <div className="grid">
           <h1 className="text-xl font-bold md:text-2xl">Products</h1>
@@ -57,6 +57,6 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
         <AddButton label="Add Product" url="/catalogue/products/add" />
       </div>
       <ProductsTable data={result.data} filterOptions={filterOptions.data} categoryChoices={{ options: categories.data.options, disabledIds: categories.data.disabledIds }} />
-    </main>
+    </div>
   )
 }

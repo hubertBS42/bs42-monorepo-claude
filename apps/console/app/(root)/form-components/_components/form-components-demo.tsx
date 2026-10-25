@@ -172,7 +172,7 @@ export function FormComponentsDemo() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-5xl space-y-8">
+    <div className="mx-auto w-full max-w-5xl space-y-8">
       <header className="space-y-2">
         <p className="text-sm font-medium text-muted-foreground">Shared forms package</p>
         <h1 className="text-3xl font-semibold tracking-tight">Form components</h1>
@@ -462,6 +462,6 @@ export function FormComponentsDemo() {
           </div>
         </FieldGroup>
       </form>
-    </main>
+    </div>
   )
 }

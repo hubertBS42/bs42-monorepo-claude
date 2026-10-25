@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 
 const AccountLayout = ({ children }: { children: ReactNode }) => {
   return (
-    <main className="flex flex-col gap-y-6">
+    <div className="flex flex-col gap-y-6">
       <div className="grid">
         <h1 className="text-xl font-bold md:text-2xl">Account</h1>
         <p className="text-sm text-muted-foreground">
@@ -17,7 +17,7 @@ const AccountLayout = ({ children }: { children: ReactNode }) => {
       </div>
       <AccountNav />
       {children}
-    </main>
+    </div>
   )
 }
 

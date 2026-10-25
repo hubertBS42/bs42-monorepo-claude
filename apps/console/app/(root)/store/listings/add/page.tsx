@@ -37,7 +37,7 @@ export default async function AddListingPage({ searchParams }: AddListingPagePro
     const nextLimit = total > products.length && limit < MAX_LISTABLE_PRODUCTS ? Math.min(limit + LISTABLE_PRODUCTS_STEP, MAX_LISTABLE_PRODUCTS) : null
 
     return (
-      <main className="flex flex-col gap-y-6">
+      <div className="flex flex-col gap-y-6">
         <div className="grid">
           <h1 className="text-xl font-bold md:text-2xl">Add Listing</h1>
           <p className="text-sm text-muted-foreground">
@@ -48,7 +48,7 @@ export default async function AddListingPage({ searchParams }: AddListingPagePro
           </p>
         </div>
         <ProductPicker products={products} total={total} search={search} nextLimit={nextLimit} />
-      </main>
+      </div>
     )
   }
 

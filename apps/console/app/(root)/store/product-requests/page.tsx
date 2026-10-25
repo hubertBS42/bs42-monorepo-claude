@@ -27,7 +27,7 @@ export default async function ProductRequestsPage({ searchParams }: ProductReque
   if (!result.success) throw new Error(result.error)
 
   return (
-    <main className="flex flex-col gap-y-6">
+    <div className="flex flex-col gap-y-6">
       <div className="flex items-end justify-between">
         <div className="grid">
           <h1 className="text-xl font-bold md:text-2xl">Product Requests</h1>
@@ -43,6 +43,6 @@ export default async function ProductRequestsPage({ searchParams }: ProductReque
         />
       </div>
       <ProductRequestsTable data={result.data} storeId={storeId} />
-    </main>
+    </div>
   )
 }

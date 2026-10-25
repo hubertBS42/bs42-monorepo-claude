@@ -40,7 +40,7 @@ export default async function StoreListingsPage({ searchParams }: StoreListingsP
   if (!filterOptions.success) throw new Error(filterOptions.error)
 
   return (
-    <main className="flex flex-col gap-y-6">
+    <div className="flex flex-col gap-y-6">
       <div className="flex items-end justify-between">
         <div className="grid">
           <h1 className="text-xl font-bold md:text-2xl">Listings</h1>
@@ -50,6 +50,6 @@ export default async function StoreListingsPage({ searchParams }: StoreListingsP
         <StoreAddButton storeId={storeId} label="Add Listing" url="/store/listings/add" permission={{ listing: ["create"] }} deniedText="Your role in this store can't add listings." />
       </div>
       <ListingsTable storeId={storeId} data={result.data} filterOptions={filterOptions.data} />
-    </main>
+    </div>
   )
 }

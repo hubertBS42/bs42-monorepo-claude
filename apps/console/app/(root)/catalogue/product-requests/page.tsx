@@ -35,12 +35,12 @@ export default async function PlatformProductRequestsPage({ searchParams }: Prod
   if (!stores.success) throw new Error(stores.error)
 
   return (
-    <main className="flex flex-col gap-y-6">
+    <div className="flex flex-col gap-y-6">
       <div className="grid">
         <h1 className="text-xl font-bold md:text-2xl">Product Requests</h1>
         <p className="text-sm text-muted-foreground">Products stores have asked the catalogue to add.</p>
       </div>
       <ProductRequestsTable data={result.data} stores={stores.data} />
-    </main>
+    </div>
   )
 }

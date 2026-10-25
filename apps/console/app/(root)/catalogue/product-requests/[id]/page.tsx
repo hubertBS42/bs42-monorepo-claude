@@ -38,7 +38,7 @@ export default async function ProductRequestPage({ params }: ProductRequestPageP
   const decided = request.reviewedAt && `${formatDate(request.reviewedAt, "MMM d, yyyy")}${request.reviewedBy ? ` by ${request.reviewedBy}` : ""}`
 
   return (
-    <main className="flex flex-col gap-y-6">
+    <div className="flex flex-col gap-y-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="grid gap-1">
           <h1 className="text-xl font-bold md:text-2xl">{request.name}</h1>
@@ -104,6 +104,6 @@ export default async function ProductRequestPage({ params }: ProductRequestPageP
           </CardContent>
         </Card>
       </div>
-    </main>
+    </div>
   )
 }

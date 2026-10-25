@@ -43,7 +43,7 @@ export default async function TransferPage({ params }: TransferPageProps) {
   const listingHref = (item: (typeof transfer.items)[number]) => `/store/listings/${out ? item.fromListingId : item.toListingId}/stock-history`
 
   return (
-    <main className="flex flex-col gap-y-6">
+    <div className="flex flex-col gap-y-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="grid gap-1">
           <h1 className="font-mono text-xl font-bold md:text-2xl">{transfer.reference}</h1>
@@ -130,6 +130,6 @@ export default async function TransferPage({ params }: TransferPageProps) {
           )}
         </div>
       </div>
-    </main>
+    </div>
   )
 }

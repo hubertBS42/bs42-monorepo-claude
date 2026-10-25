@@ -38,7 +38,7 @@ export default async function MemberDetailsPage({ params }: MemberDetailsPagePro
   const displayName = user.name ?? user.email
 
   return (
-    <main className="flex flex-col gap-y-6">
+    <div className="flex flex-col gap-y-6">
       <div className="flex items-end justify-between">
         <div className="flex items-center gap-4">
           <Avatar className="size-16">
@@ -98,6 +98,6 @@ export default async function MemberDetailsPage({ params }: MemberDetailsPagePro
 
         <MemberActions storeId={storeId} member={{ id: member.id, organizationId: member.organizationId, name: displayName, userId: member.userId, role: member.role }} />
       </div>
-    </main>
+    </div>
   )
 }

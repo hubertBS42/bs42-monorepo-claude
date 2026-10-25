@@ -18,7 +18,7 @@ export default async function NewTransferPage() {
   const destinations = await getTransferDestinations(session.user.id, storeId)
   if (destinations.length === 0) {
     return (
-      <main className="flex flex-col gap-y-6">
+      <div className="flex flex-col gap-y-6">
         <div className="flex items-end justify-between gap-4">
           <h1 className="text-xl font-bold md:text-2xl">Send Stock</h1>
           <BackButton link="/store/transfers" />
@@ -30,7 +30,7 @@ export default async function NewTransferPage() {
           </CardHeader>
           <CardContent />
         </Card>
-      </main>
+      </div>
     )
   }
 

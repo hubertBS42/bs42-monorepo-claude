@@ -32,7 +32,7 @@ export default async function TradeAccountPage({ params }: TradeAccountPageProps
   const account = response.data
 
   return (
-    <main className="flex flex-col gap-y-6">
+    <div className="flex flex-col gap-y-6">
       <div className="flex items-end justify-between gap-4">
         <div className="grid gap-1">
           <h1 className="text-xl font-bold md:text-2xl">{account.companyName}</h1>
@@ -144,6 +144,6 @@ export default async function TradeAccountPage({ params }: TradeAccountPageProps
           </Card>
         </div>
       </div>
-    </main>
+    </div>
   )
 }

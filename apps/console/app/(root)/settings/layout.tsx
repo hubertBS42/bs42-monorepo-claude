@@ -5,7 +5,7 @@ import SettingsNav from "./_components/settings-nav"
 // The settings sections' shared frame. Each page guards itself (layouts aren't re-run on client navigation).
 export default function SettingsLayout({ children }: { children: ReactNode }) {
   return (
-    <main className="flex flex-col gap-y-6">
+    <div className="flex flex-col gap-y-6">
       <div className="grid">
         <h1 className="text-xl font-bold md:text-2xl">Platform Settings</h1>
         <p className="text-sm text-muted-foreground">Storefront and console settings. Each card saves on its own.</p>
@@ -17,6 +17,6 @@ export default function SettingsLayout({ children }: { children: ReactNode }) {
         </aside>
         <div className="min-w-0 flex-1 lg:max-w-3xl">{children}</div>
       </div>
-    </main>
+    </div>
   )
 }

@@ -42,7 +42,7 @@ export default async function StockHistoryPage({ params, searchParams }: StockHi
   const { listing, movements } = response.data
 
   return (
-    <main className="flex flex-col gap-y-6">
+    <div className="flex flex-col gap-y-6">
       <div className="flex items-end justify-between gap-4">
         <div className="grid">
           <h1 className="text-xl font-bold md:text-2xl">Stock History</h1>
@@ -51,6 +51,6 @@ export default async function StockHistoryPage({ params, searchParams }: StockHi
         <BackButton link={`/store/listings/${listing.id}/edit`} />
       </div>
       <StockHistoryTable data={movements} variants={listing.hasVariants ? listing.variants : null} />
-    </main>
+    </div>
   )
 }
