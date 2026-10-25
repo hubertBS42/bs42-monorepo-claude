@@ -49,6 +49,6 @@ export const columns: ColumnDef<CategoryNode, unknown>[] = [
   {
     accessorKey: "createdAt",
     header: () => <ColumnHeader title="Created On" />,
-    cell: ({ row }) => <span>{formatDate(row.original.createdAt, "MMM d, yyyy, h:mm a")}</span>,
+    cell: ({ row }) => <span>{formatDate(row.original.createdAt, "MMM d, yyyy")}</span>,
   },
 ]

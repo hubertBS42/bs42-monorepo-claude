@@ -22,6 +22,8 @@ const statusBadgeVariants: Record<Status, "outline" | "success" | "secondary"> =
 
 export const getListingHref = (listing: ListingListItem) => `/store/listings/${listing.id}/edit`
 
+// Table cells don't wrap, so the name, category path and not-on-sale reason wrap at a minimum width instead, as on the
+// products table: their longest values would otherwise push the table wider than a laptop screen
 export const columns: ColumnDef<ListingListItem, unknown>[] = [
   {
     id: "select",
@@ -46,7 +48,7 @@ export const columns: ColumnDef<ListingListItem, unknown>[] = [
       return (
         <div className="flex items-center gap-x-3">
           <div className="relative size-10 shrink-0 overflow-hidden rounded bg-muted">{product.image && <img alt="" src={product.image} loading="lazy" className="size-full object-cover" />}</div>
-          <div className="grid gap-y-0.5">
+          <div className="grid min-w-48 gap-y-0.5 whitespace-normal">
             {/* w-fit: a grid stretches links to its width, and clicks beside the text should open the row */}
             <RowLink href={getListingHref(row.original)} className="w-fit">
               {product.name}
@@ -112,7 +114,11 @@ export const columns: ColumnDef<ListingListItem, unknown>[] = [
   {
     id: "category",
     header: () => <ColumnHeader title="Category" />,
-    cell: ({ row }) => <CategoryPath path={row.original.product.categoryPath} />,
+    cell: ({ row }) => (
+      <div className="min-w-40 whitespace-normal">
+        <CategoryPath path={row.original.product.categoryPath} />
+      </div>
+    ),
   },
   {
     accessorKey: "status",
@@ -132,7 +138,7 @@ export const columns: ColumnDef<ListingListItem, unknown>[] = [
               </Badge>
             )}
           </div>
-          {notOnSaleReason && <span className="text-[11px] text-muted-foreground">{notOnSaleReason}</span>}
+          {notOnSaleReason && <span className="min-w-40 text-[11px] whitespace-normal text-muted-foreground">{notOnSaleReason}</span>}
         </div>
       )
     },
@@ -140,6 +146,6 @@ export const columns: ColumnDef<ListingListItem, unknown>[] = [
   {
     accessorKey: "updatedAt",
     header: () => <ColumnHeader title="Updated" sortKey="updatedAt" />,
-    cell: ({ row }) => <span>{formatDate(row.original.updatedAt, "MMM d, yyyy, h:mm a")}</span>,
+    cell: ({ row }) => <span>{formatDate(row.original.updatedAt, "MMM d, yyyy")}</span>,
   },
 ]

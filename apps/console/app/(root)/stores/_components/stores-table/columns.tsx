@@ -44,6 +44,6 @@ export const columns: ColumnDef<Store, unknown>[] = [
   {
     accessorKey: "createdAt",
     header: () => <ColumnHeader title="Created On" sortKey="createdAt" />,
-    cell: ({ row }) => <span>{formatDate(row.original.createdAt, "MMM d, yyyy, h:mm a")}</span>,
+    cell: ({ row }) => <span>{formatDate(row.original.createdAt, "MMM d, yyyy")}</span>,
   },
 ]
