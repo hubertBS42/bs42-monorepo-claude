@@ -6,6 +6,7 @@ import { cn } from "@workspace/ui/lib/utils"
 
 import { Stars } from "@/components/reviews/stars"
 import { REVIEW_SORT_LABELS, REVIEW_SORTS, type ProductReview, type ReviewSort, type ReviewSummary } from "@/lib/data/reviews"
+import { EmptyState } from "@workspace/ui/components/empty-state"
 
 interface ProductReviewsProps {
   productSlug: string
@@ -29,15 +30,12 @@ export function ProductReviews({ productSlug, summary, reviews, sort, page, page
       </h2>
 
       {summary.count === 0 ? (
-        <div className="flex flex-col items-start gap-3 rounded-xl border p-6">
-          <MessageSquareText className="size-6 text-muted-foreground" aria-hidden />
-          <p className="font-medium">No reviews yet</p>
-          <p className="text-sm text-muted-foreground">Bought this? Tell other customers what you think.</p>
+        <EmptyState icon={MessageSquareText} title="No reviews yet" description="Bought this? Tell other customers what you think." className="rounded-xl border border-solid">
           <Button render={<Link href={writeHref} />} variant="outline" size="sm">
             <PenLine data-icon="inline-start" aria-hidden />
             Write a review
           </Button>
-        </div>
+        </EmptyState>
       ) : (
         <div className="grid gap-8 lg:grid-cols-[18rem_1fr] lg:gap-12">
           <div className="flex flex-col gap-4">

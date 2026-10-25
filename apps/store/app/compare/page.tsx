@@ -13,6 +13,7 @@ import { getProductDetails } from "@/lib/data/product-details"
 import { queryProductCards } from "@/lib/data/product-cards"
 import { priceCards } from "@/lib/pricing"
 import { getShelfPricing } from "@/lib/settings"
+import { EmptyState } from "@workspace/ui/components/empty-state"
 
 export const metadata: Metadata = { title: "Compare products", robots: { index: false } }
 
@@ -58,13 +59,16 @@ export default async function ComparePage({ searchParams }: { searchParams: Prom
         <CompareTable cards={shown} rows={rows} />
       ) : (
         <Card className="max-w-xl">
-          <CardContent className="flex flex-col items-center gap-3 py-10 text-center">
-            <Scale className="size-8 text-muted-foreground" aria-hidden />
-            <p className="font-medium">{shown.length ? "Pick another product to compare" : "Nothing to compare yet"}</p>
-            <p className="max-w-sm text-sm text-muted-foreground">Tick “Compare” on up to 4 products from the same category, then compare them here.</p>
-            <Button render={<Link href={categoryId ? categoryHref(tree, categoryId) : "/"} />} variant="outline" size="sm" className="mt-2">
-              {category ? `Back to ${category.name}` : "Start shopping"}
-            </Button>
+          <CardContent>
+            <EmptyState
+              icon={Scale}
+              title={shown.length ? "Pick another product to compare" : "Nothing to compare yet"}
+              description="Tick “Compare” on up to 4 products from the same category, then compare them here."
+            >
+              <Button render={<Link href={categoryId ? categoryHref(tree, categoryId) : "/"} />} variant="outline" size="sm">
+                {category ? `Back to ${category.name}` : "Start shopping"}
+              </Button>
+            </EmptyState>
           </CardContent>
         </Card>
       )}

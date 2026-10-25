@@ -13,6 +13,7 @@ import type { SearchParams } from "@/lib/catalogue-filters"
 import { getAccountOrders } from "@/lib/data/account-orders"
 import { formatGhs } from "@/lib/money"
 import { requireCustomer } from "@/lib/session"
+import { EmptyState } from "@workspace/ui/components/empty-state"
 
 export const metadata: Metadata = { title: "My orders", robots: { index: false } }
 
@@ -32,16 +33,19 @@ export default async function AccountOrdersPage({ searchParams }: { searchParams
   if (total === 0) {
     return (
       <Card>
-        <CardContent className="flex flex-col items-center gap-3 py-10 text-center">
-          <Package className="size-8 text-muted-foreground" aria-hidden />
-          <p className="font-medium">No orders yet</p>
-          <p className="max-w-sm text-sm text-muted-foreground">
-            Orders you place signed in, or as a guest with {session.user.email}, show here.
-            {!session.user.emailVerified && " Guest orders show once your email is confirmed."}
-          </p>
-          <Button render={<Link href="/" />} className="mt-2">
-            Start shopping
-          </Button>
+        <CardContent>
+          <EmptyState
+            icon={Package}
+            title="No orders yet"
+            description={
+              <>
+                Orders you place signed in, or as a guest with {session.user.email}, show here.
+                {!session.user.emailVerified && " Guest orders show once your email is confirmed."}
+              </>
+            }
+          >
+            <Button render={<Link href="/" />}>Start shopping</Button>
+          </EmptyState>
         </CardContent>
       </Card>
     )

@@ -19,6 +19,7 @@ import { getSavedAddresses } from "@/lib/addresses"
 import { getDeliveryAreas } from "@/lib/delivery-areas"
 import { getStoreSession, getTradeTerms } from "@/lib/session"
 import { getAppSettings, getFreeDeliveryFrom, getInstallationAreas } from "@/lib/settings"
+import { EmptyState } from "@workspace/ui/components/empty-state"
 
 export const metadata: Metadata = { title: "Basket", robots: { index: false } }
 
@@ -91,13 +92,12 @@ export default async function BasketPage() {
 
       {!lines.length ? (
         <Card className="mt-6">
-          <CardContent className="flex flex-col items-center gap-3 py-10 text-center">
-            <ShoppingBasket className="size-8 text-muted-foreground" aria-hidden />
-            <p className="font-medium">Your basket is empty</p>
-            <p className="max-w-sm text-sm text-muted-foreground">Add products to your basket to check out or get a quote.</p>
-            <Button render={<Link href="/" />} variant="outline" size="sm" className="mt-2">
-              Continue shopping
-            </Button>
+          <CardContent>
+            <EmptyState icon={ShoppingBasket} title="Your basket is empty" description="Add products to your basket to check out or get a quote.">
+              <Button render={<Link href="/" />} variant="outline" size="sm">
+                Continue shopping
+              </Button>
+            </EmptyState>
           </CardContent>
         </Card>
       ) : (

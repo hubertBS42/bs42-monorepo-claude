@@ -8,6 +8,7 @@ import { Card, CardContent } from "@workspace/ui/components/card"
 import { AddressActions } from "@/components/account/address-actions"
 import { getSavedAddresses, MAX_SAVED_ADDRESSES } from "@/lib/addresses"
 import { requireCustomer } from "@/lib/session"
+import { EmptyState } from "@workspace/ui/components/empty-state"
 
 export const metadata: Metadata = { title: "Addresses", robots: { index: false } }
 
@@ -19,14 +20,13 @@ export default async function AddressesPage() {
   if (addresses.length === 0) {
     return (
       <Card>
-        <CardContent className="flex flex-col items-center gap-3 py-10 text-center">
-          <MapPin className="size-8 text-muted-foreground" aria-hidden />
-          <p className="font-medium">No saved addresses</p>
-          <p className="max-w-sm text-sm text-muted-foreground">Save an address and checkout fills it in for you. You can also save one when you place an order.</p>
-          <Button render={<Link href="/account/addresses/new" />} className="mt-2">
-            <Plus data-icon="inline-start" aria-hidden />
-            Add an address
-          </Button>
+        <CardContent>
+          <EmptyState icon={MapPin} title="No saved addresses" description="Save an address and checkout fills it in for you. You can also save one when you place an order.">
+            <Button render={<Link href="/account/addresses/new" />}>
+              <Plus data-icon="inline-start" aria-hidden />
+              Add an address
+            </Button>
+          </EmptyState>
         </CardContent>
       </Card>
     )

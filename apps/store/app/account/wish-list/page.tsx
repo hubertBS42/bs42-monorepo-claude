@@ -11,6 +11,7 @@ import { priceCards } from "@/lib/pricing"
 import { requireCustomer } from "@/lib/session"
 import { getShelfPricing } from "@/lib/settings"
 import { getWishList } from "@/lib/wish-list"
+import { EmptyState } from "@workspace/ui/components/empty-state"
 
 export const metadata: Metadata = { title: "Wish list", robots: { index: false } }
 
@@ -22,13 +23,12 @@ export default async function WishListPage() {
   if (entries.length === 0) {
     return (
       <Card>
-        <CardContent className="flex flex-col items-center gap-3 py-10 text-center">
-          <Heart className="size-8 text-muted-foreground" aria-hidden />
-          <p className="font-medium">Your wish list is empty</p>
-          <p className="max-w-sm text-sm text-muted-foreground">Tap the heart on a product to save it here for later.</p>
-          <Button render={<Link href="/" />} variant="outline" size="sm" className="mt-2">
-            Start shopping
-          </Button>
+        <CardContent>
+          <EmptyState icon={Heart} title="Your wish list is empty" description="Tap the heart on a product to save it here for later.">
+            <Button render={<Link href="/" />} variant="outline" size="sm">
+              Start shopping
+            </Button>
+          </EmptyState>
         </CardContent>
       </Card>
     )

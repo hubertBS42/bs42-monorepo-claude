@@ -1,7 +1,8 @@
 import type { Metadata } from "next"
 import Link from "next/link"
+import { Button } from "@workspace/ui/components/button"
 import { notFound } from "next/navigation"
-import { ExternalLink } from "lucide-react"
+import { ExternalLink, PackageX } from "lucide-react"
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@workspace/ui/components/breadcrumb"
 
 import { ProductListing } from "@/components/catalogue/product-listing"
@@ -10,6 +11,7 @@ import { getBrand } from "@/lib/data/brands"
 import { loadProductCards } from "@/lib/data/product-cards"
 import { priceCards } from "@/lib/pricing"
 import { getShelfPricing } from "@/lib/settings"
+import { EmptyState } from "@workspace/ui/components/empty-state"
 
 interface BrandPageProps {
   params: Promise<{ slug: string }>
@@ -62,7 +64,11 @@ export default async function BrandPage({ params, searchParams }: BrandPageProps
       {cards.length ? (
         <ProductListing pathname={`/b/${brand.slug}`} params={query} cards={priceCards(cards, pricing)} />
       ) : (
-        <p className="text-muted-foreground">Nothing from {brand.name} is on sale at the moment.</p>
+        <EmptyState icon={PackageX} title="Nothing on sale" description={`Nothing from ${brand.name} is on sale at the moment.`} className="rounded-xl border">
+          <Button render={<Link href="/" />} variant="outline" size="sm">
+            Continue shopping
+          </Button>
+        </EmptyState>
       )}
     </div>
   )

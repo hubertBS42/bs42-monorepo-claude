@@ -1,3 +1,4 @@
+import { SearchX } from "lucide-react"
 import type { Metadata } from "next"
 import { getStringParam } from "@workspace/utils/search-params"
 
@@ -7,6 +8,7 @@ import type { SearchParams } from "@/lib/catalogue-filters"
 import { loadProductCards } from "@/lib/data/product-cards"
 import { priceCards } from "@/lib/pricing"
 import { getShelfPricing } from "@/lib/settings"
+import { EmptyState } from "@workspace/ui/components/empty-state"
 
 interface SearchPageProps {
   searchParams: Promise<SearchParams>
@@ -39,10 +41,9 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
         cards.length ? (
           <ProductListing pathname="/search" params={params} cards={priceCards(cards, pricing)} />
         ) : (
-          <div className="max-w-xl space-y-4">
-            <p className="text-muted-foreground">Nothing matches “{q}”. Try another word, or check the spelling.</p>
+          <EmptyState icon={SearchX} title="No results" description={<>Nothing matches “{q}”. Try another word, or check the spelling.</>} className="rounded-xl border">
             <SearchForm defaultValue={q} />
-          </div>
+          </EmptyState>
         )
       ) : (
         <SearchForm defaultValue={q} className="max-w-xl" />

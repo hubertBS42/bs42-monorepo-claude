@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { ChevronLeft, ChevronRight, X } from "lucide-react"
+import { ChevronLeft, ChevronRight, SearchX, X } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
 
 import { FilterPanel } from "@/components/catalogue/filter-panel"
@@ -9,6 +9,7 @@ import { ProductCard } from "@/components/product-card"
 import { applyQuery, getFacets, hrefWith, pageHref, parseQuery, SORT_LABELS, SORTS, type SearchParams, type SpecFilter } from "@/lib/catalogue-filters"
 import { formatGhs } from "@/lib/money"
 import type { PricedCard } from "@/lib/product-cards"
+import { EmptyState } from "@workspace/ui/components/empty-state"
 
 // A page of products with filters, sorting and paging, all in the URL: a category's, a brand's or a search's
 export function ProductListing({ pathname, params, cards, filters = [] }: { pathname: string; params: SearchParams; cards: PricedCard[]; filters?: SpecFilter[] }) {
@@ -85,14 +86,13 @@ export function ProductListing({ pathname, params, cards, filters = [] }: { path
             ))}
           </ul>
         ) : (
-          <div className="rounded-xl border border-dashed p-10 text-center">
-            <p className="font-semibold">No products match these filters</p>
+          <EmptyState icon={SearchX} title="No products match these filters" className="rounded-xl border">
             {active.length > 0 && (
-              <Button render={<Link href={clearAll} />} variant="outline" className="mt-4">
+              <Button render={<Link href={clearAll} />} variant="outline">
                 Clear filters
               </Button>
             )}
-          </div>
+          </EmptyState>
         )}
 
         {pageCount > 1 && (

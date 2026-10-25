@@ -13,6 +13,7 @@ import { formatGhs } from "@/lib/money"
 import { isExpired, quoteOwnerWhere } from "@workspace/commerce/quotes"
 import { MAX_OPEN_QUOTES } from "@/lib/quotes"
 import { requireCustomer } from "@/lib/session"
+import { EmptyState } from "@workspace/ui/components/empty-state"
 
 export const metadata: Metadata = { title: "Quotations", robots: { index: false } }
 
@@ -40,13 +41,10 @@ export default async function AccountQuotesPage() {
   if (quotes.length === 0) {
     return (
       <Card>
-        <CardContent className="flex flex-col items-center gap-3 py-10 text-center">
-          <FileText className="size-8 text-muted-foreground" aria-hidden />
-          <p className="font-medium">No quotations yet</p>
-          <p className="max-w-sm text-sm text-muted-foreground">Fill your basket and choose &ldquo;Get a quote&rdquo; for a quotation to print or forward for approval.</p>
-          <Button render={<Link href="/basket" />} className="mt-2">
-            Go to your basket
-          </Button>
+        <CardContent>
+          <EmptyState icon={FileText} title="No quotations yet" description={<>Fill your basket and choose &ldquo;Get a quote&rdquo; for a quotation to print or forward for approval.</>}>
+            <Button render={<Link href="/basket" />}>Go to your basket</Button>
+          </EmptyState>
         </CardContent>
       </Card>
     )

@@ -12,6 +12,7 @@ import { formatDate } from "@workspace/utils/date"
 import { Stars } from "@/components/reviews/stars"
 import { getAccountReviews } from "@/lib/data/reviews"
 import { requireCustomer } from "@/lib/session"
+import { EmptyState } from "@workspace/ui/components/empty-state"
 
 export const metadata: Metadata = { title: "Reviews", robots: { index: false } }
 
@@ -36,13 +37,17 @@ export default async function AccountReviewsPage() {
   if (toReview.length === 0 && reviews.length === 0) {
     return (
       <Card>
-        <CardContent className="flex flex-col items-center gap-3 py-10 text-center">
-          <MessageSquareText className="size-8 text-muted-foreground" aria-hidden />
-          <p className="font-medium">Nothing to review yet</p>
-          <p className="max-w-sm text-sm text-muted-foreground">
-            Once an order reaches you, its products show here for you to review.
-            {!session.user.emailVerified && " Orders placed as a guest count once your email is confirmed."}
-          </p>
+        <CardContent>
+          <EmptyState
+            icon={MessageSquareText}
+            title="Nothing to review yet"
+            description={
+              <>
+                Once an order reaches you, its products show here for you to review.
+                {!session.user.emailVerified && " Orders placed as a guest count once your email is confirmed."}
+              </>
+            }
+          />
         </CardContent>
       </Card>
     )
