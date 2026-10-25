@@ -93,12 +93,14 @@ const ATTEMPT_STATUS = {
   ABANDONED: { label: "Abandoned", variant: "secondary" },
 } as const
 
+const NOT_USED = { label: "Not used", variant: "secondary" } as const
 // Paystack's channel names (card, mobile_money, bank_transfer), readable
 const channelLabel = (channel: string) => channel.charAt(0).toUpperCase() + channel.slice(1).replaceAll("_", " ")
 
 // Each time the customer pressed "Pay" on the storefront, with what Paystack said. Its reference is the one to search
 // for in Paystack's dashboard, where refunds are given.
-export function OrderPaymentAttemptsCard({ attempts }: { attempts: OrderPaymentAttempt[] }) {
+// `orderPaid`: once the order has been paid, a checkout still open was left behind and won't be used (nothing closes it)
+export function OrderPaymentAttemptsCard({ attempts, orderPaid }: { attempts: OrderPaymentAttempt[]; orderPaid: boolean }) {
   return (
     <Card>
       <CardHeader>
@@ -117,17 +119,20 @@ export function OrderPaymentAttemptsCard({ attempts }: { attempts: OrderPaymentA
             </TableRow>
           </TableHeader>
           <TableBody>
-            {attempts.map((attempt) => (
-              <TableRow key={attempt.id}>
-                <TableCell className="font-mono text-xs">{attempt.reference}</TableCell>
-                <TableCell>
-                  <Badge variant={ATTEMPT_STATUS[attempt.status].variant}>{ATTEMPT_STATUS[attempt.status].label}</Badge>
-                </TableCell>
-                <TableCell className="text-muted-foreground">{[attempt.channel && channelLabel(attempt.channel), attempt.gatewayResponse].filter(Boolean).join(" · ") || "—"}</TableCell>
-                <TableCell className="text-muted-foreground">{formatDate(attempt.createdAt, "MMM d, h:mm a")}</TableCell>
-                <TableCell className="text-right">{attempt.amountGhs ? ghs(attempt.amountGhs) : "—"}</TableCell>
-              </TableRow>
-            ))}
+            {attempts.map((attempt) => {
+              const status = orderPaid && attempt.status === "PENDING" ? NOT_USED : ATTEMPT_STATUS[attempt.status]
+              return (
+                <TableRow key={attempt.id}>
+                  <TableCell className="font-mono text-xs">{attempt.reference}</TableCell>
+                  <TableCell>
+                    <Badge variant={status.variant}>{status.label}</Badge>
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">{[attempt.channel && channelLabel(attempt.channel), attempt.gatewayResponse].filter(Boolean).join(" · ") || "—"}</TableCell>
+                  <TableCell className="text-muted-foreground">{formatDate(attempt.createdAt, "MMM d, h:mm a")}</TableCell>
+                  <TableCell className="text-right">{attempt.amountGhs ? ghs(attempt.amountGhs) : "—"}</TableCell>
+                </TableRow>
+              )
+            })}
           </TableBody>
         </Table>
       </CardContent>

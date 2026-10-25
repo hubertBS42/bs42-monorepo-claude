@@ -31,7 +31,7 @@ import RecordReturn from "@/components/orders/return-order"
 import UpdateOrderStatus from "@/components/orders/update-order-status"
 import { requireSystemPermission } from "@/lib/auth-guard"
 import { getOrderDetails } from "@/lib/data/orders.data"
-import { canBeReturned, isPaid, nextOrderStatuses, ORDER_STATUS_LABELS, PAYMENT_METHOD_LABELS, returnBlockedReason } from "@workspace/commerce/order-status"
+import { canBeReturned, hasBeenPaid, isPaid, nextOrderStatuses, ORDER_STATUS_LABELS, PAYMENT_METHOD_LABELS, returnBlockedReason } from "@workspace/commerce/order-status"
 
 export const metadata: Metadata = {
   title: "Order Details",
@@ -137,7 +137,7 @@ export default async function OrderDetailsPage({ params }: OrderDetailsPageProps
             />
           )}
 
-          {order.paymentAttempts.length > 0 && <OrderPaymentAttemptsCard attempts={order.paymentAttempts} />}
+          {order.paymentAttempts.length > 0 && <OrderPaymentAttemptsCard attempts={order.paymentAttempts} orderPaid={hasBeenPaid(order.paymentStatus)} />}
 
           <OrderTimelineCard timeline={order.timeline} />
         </div>
