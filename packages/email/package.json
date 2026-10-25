@@ -15,7 +15,7 @@
   "dependencies": {
     "react": "19.3.0",
     "react-email": "6.0.5",
-    "nodemailer": "8.0.7",
+    "nodemailer": "10.2.1",
     "@workspace/utils": "workspace:*",
     "@workspace/contracts": "workspace:*",
     "server-only": "^0.0.1"
@@ -24,7 +24,6 @@
     "@types/react": "19.3.0",
     "@workspace/typescript-config": "workspace:*",
     "@types/node": "^20",
-    "@types/nodemailer": "8.0.0",
     "@workspace/eslint-config": "workspace:*",
     "eslint": "^10"
   }
