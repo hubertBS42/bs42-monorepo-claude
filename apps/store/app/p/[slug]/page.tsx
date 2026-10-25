@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { notFound } from "next/navigation"
+import { Fragment } from "react"
 import { describeInstallationAreas } from "@workspace/commerce/installation-areas"
 import { withTax } from "@workspace/commerce/pricing"
 import { Prisma } from "@workspace/db/client"
@@ -105,13 +106,15 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
             <BreadcrumbLink render={<Link href="/" />}>Home</BreadcrumbLink>
           </BreadcrumbItem>
           {path.map((category) => (
-            <BreadcrumbItem key={category.id}>
+            <Fragment key={category.id}>
               <BreadcrumbSeparator />
-              <BreadcrumbLink render={<Link href={categoryHref(tree, category.id)} />}>{category.name}</BreadcrumbLink>
-            </BreadcrumbItem>
+              <BreadcrumbItem>
+                <BreadcrumbLink render={<Link href={categoryHref(tree, category.id)} />}>{category.name}</BreadcrumbLink>
+              </BreadcrumbItem>
+            </Fragment>
           ))}
+          <BreadcrumbSeparator />
           <BreadcrumbItem>
-            <BreadcrumbSeparator />
             <BreadcrumbPage className="line-clamp-1">{card.name}</BreadcrumbPage>
           </BreadcrumbItem>
         </BreadcrumbList>

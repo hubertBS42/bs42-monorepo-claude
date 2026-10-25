@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { notFound, permanentRedirect } from "next/navigation"
+import { Fragment } from "react"
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@workspace/ui/components/breadcrumb"
 
 import { ProductListing } from "@/components/catalogue/product-listing"
@@ -51,10 +52,12 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
             <BreadcrumbLink render={<Link href="/" />}>Home</BreadcrumbLink>
           </BreadcrumbItem>
           {path.map((category) => (
-            <BreadcrumbItem key={category.id}>
+            <Fragment key={category.id}>
               <BreadcrumbSeparator />
-              {category.id === node.id ? <BreadcrumbPage>{category.name}</BreadcrumbPage> : <BreadcrumbLink render={<Link href={categoryHref(tree, category.id)} />}>{category.name}</BreadcrumbLink>}
-            </BreadcrumbItem>
+              <BreadcrumbItem>
+                {category.id === node.id ? <BreadcrumbPage>{category.name}</BreadcrumbPage> : <BreadcrumbLink render={<Link href={categoryHref(tree, category.id)} />}>{category.name}</BreadcrumbLink>}
+              </BreadcrumbItem>
+            </Fragment>
           ))}
         </BreadcrumbList>
       </Breadcrumb>
