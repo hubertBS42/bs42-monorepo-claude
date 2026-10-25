@@ -15,7 +15,6 @@
     "@workspace/db": "workspace:*",
     "@workspace/email": "workspace:*",
     "@workspace/storage": "workspace:*",
-    "@workspace/utils": "workspace:*",
     "better-auth": "^1.7.6",
     "server-only": "^0.0.1",
     "zod": "^4.6.7"

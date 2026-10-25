@@ -12,7 +12,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@work
 import { FieldGroup } from "@workspace/ui/components/field"
 import { ImageField, SelectField, TextInputField } from "@workspace/forms"
 import ResourceFormFooter from "@/components/shared-form-footer"
-import RichTextField from "@workspace/forms/components/rich-text-editor/rich-text-field"
 import { STORE_STATUS_OPTIONS } from "@/constants"
 import { addStoreFormSchema } from "@/lib/schemas/store.schemas"
 import { consoleAuthClient } from "@workspace/auth/console-client"
@@ -29,8 +28,6 @@ export default function AddStoreForm() {
     defaultValues: {
       name: "",
       logo: "",
-      returnsPolicy: null,
-      shippingPolicy: null,
       status: StoreStatus.ACTIVE,
     },
   })
@@ -41,8 +38,6 @@ export default function AddStoreForm() {
       name: data.name,
       slug: crypto.randomUUID(),
       logo: !data.logo ? undefined : data.logo,
-      returnsPolicy: data.returnsPolicy ?? undefined,
-      shippingPolicy: data.shippingPolicy ?? undefined,
       status: data.status,
       keepCurrentActiveOrganization: true,
     })
@@ -125,9 +120,6 @@ export default function AddStoreForm() {
                     />
 
                     <TextInputField control={form.control} label="Name" name="name" disabled={isBusy} autoFocus />
-
-                    <RichTextField control={form.control} name="shippingPolicy" label="Shipping Policy" placeholder="Describe your shipping policy..." disabled={isBusy} />
-                    <RichTextField control={form.control} name="returnsPolicy" label="Returns Policy" disabled={isBusy} placeholder="Describe your returns policy..." />
                   </FieldGroup>
                 </CardContent>
               </Card>

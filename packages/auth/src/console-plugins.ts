@@ -142,16 +142,6 @@ export const consolePlugins = [
     schema: {
       organization: {
         additionalFields: {
-          shippingPolicy: {
-            type: "string",
-            input: true,
-            required: false,
-          },
-          returnsPolicy: {
-            type: "string",
-            input: true,
-            required: false,
-          },
           status: {
             type: "string",
             input: true,

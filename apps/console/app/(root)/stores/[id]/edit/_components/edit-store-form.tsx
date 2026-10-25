@@ -16,7 +16,6 @@ import z from "zod"
 import { STORE_STATUS_OPTIONS } from "@/constants"
 import ResourceFormFooter from "@/components/shared-form-footer"
 import DeleteStore from "@/components/delete-store"
-import RichTextField from "@workspace/forms/components/rich-text-editor/rich-text-field"
 
 export default function EditStoreForm({ store }: { store: Store }) {
   const router = useRouter()
@@ -31,8 +30,6 @@ export default function EditStoreForm({ store }: { store: Store }) {
       id: store.id,
       name: store.name,
       logo: store.logo ?? "",
-      returnsPolicy: store.returnsPolicy,
-      shippingPolicy: store.shippingPolicy,
       status: store.status,
     },
   })
@@ -43,10 +40,6 @@ export default function EditStoreForm({ store }: { store: Store }) {
       data: {
         name: data.name,
         logo: data.logo?.trim() ? data.logo : null,
-        // "" rather than undefined, which would leave the policy unchanged. The organization hook sanitises the HTML
-        // and stores an empty policy as null.
-        returnsPolicy: data.returnsPolicy ?? "",
-        shippingPolicy: data.shippingPolicy ?? "",
         status: data.status,
       },
       organizationId: store.id,
@@ -138,10 +131,6 @@ export default function EditStoreForm({ store }: { store: Store }) {
                       defaultValues={store.logo}
                     />
                     <TextInputField control={form.control} label="Name" name="name" disabled={isBusy} autoFocus />
-
-                    <RichTextField control={form.control} label="Shipping Policy" name="shippingPolicy" placeholder="Write something..." disabled={isBusy} />
-
-                    <RichTextField control={form.control} label="Returns Policy" name="returnsPolicy" placeholder="Write something..." disabled={isBusy} />
                   </FieldGroup>
                 </CardContent>
               </Card>
