@@ -362,12 +362,14 @@ export async function sendPasswordResetEmailAction(userId: string, kind: "set" |
   }
 }
 
-// Users can manage their own addresses. Managing anyone else's needs the user:update system permission.
+// Users can manage their own addresses. Managing anyone else's needs the user:update system permission, and a
+// superAdmin's only another superAdmin can manage, as with the other user actions.
 async function getAddressAccessError(userId: string): Promise<string | null> {
   const session = await consoleAuth.api.getSession({ headers: await headers() })
   if (!session) return "Unauthorized"
-  if (session.user.id !== userId && !hasSystemPermission(session.user.role, { user: ["update"] })) return "Forbidden"
-  return null
+  if (session.user.id === userId) return null
+  if (!hasSystemPermission(session.user.role, { user: ["update"] })) return "Forbidden"
+  return getTargetUserError(session, userId)
 }
 
 export async function addAddressAction(input: z.input<typeof addAddressActionSchema>): Promise<ActionResponse> {

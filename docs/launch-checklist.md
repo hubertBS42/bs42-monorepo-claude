@@ -65,7 +65,7 @@ pnpm start    # console on port 3000, store on 3001 (or start each on its own, s
 
 - [ ] Point `console.bs42.net` at port 3000 and `bs42.net` at port 3001, over HTTPS.
 - [ ] Have the proxy set `X-Forwarded-For` to the visitor's address. Checkout limits unpaid orders per address with it, so without it every customer shares one limit.
-- [ ] Open `https://console.bs42.net/setup` and create the first superAdmin. The page only works while the database has no users.
+- [ ] Open `https://console.bs42.net/setup` and create the first superAdmin, **before the storefront is public**. The page only works while the database has no users at all, so one customer signing up first locks it for good (fixing that means editing the database).
 
 ## 6. Paystack
 
