@@ -12,9 +12,16 @@ import { prisma } from "@workspace/db"
 
 const TRANSACTION_OPTIONS = { maxWait: 10_000, timeout: 30_000 }
 
-// The first address in X-Forwarded-For is the visitor's, as the host's proxy adds it
+// The first address in X-Forwarded-For is the visitor's, as the host's proxy adds it. Azure App Service adds the port
+// too ("1.2.3.4:51234", "[2001:db8::1]:51234"), which changes per connection, so it's dropped: the unpaid-order limit
+// counts orders per address.
 export async function visitorIp() {
-  return (await headers()).get("x-forwarded-for")?.split(",")[0]?.trim() || null
+  const first = (await headers()).get("x-forwarded-for")?.split(",")[0]?.trim()
+  if (!first) return null
+  const bracketed = first.match(/^\[([^\]]+)\](?::\d+)?$/)
+  if (bracketed) return bracketed[1]!
+  // One colon is IPv4 with a port; a bare IPv6 address has several
+  return first.split(":").length === 2 ? first.split(":")[0]! : first
 }
 
 // Starts paying for an order on Paystack: a new attempt, and the page on Paystack to send the customer to
