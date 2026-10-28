@@ -47,12 +47,16 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - app: console
-            webapp: ${{ vars.CONSOLE_WEBAPP_NAME }}
-          - app: store
-            webapp: ${{ vars.STORE_WEBAPP_NAME }}
+        app: [console, store]
     steps:
+      # The web app's name, from the production environment's variables. Not in the matrix: GitHub works the matrix
+      # out before it loads the environment, so its variables would be empty there.
+      - name: Pick the web app
+        run: |
+          if [ -z "$WEBAPP" ]; then echo "::error::Set ${{ matrix.app == 'console' && 'CONSOLE_WEBAPP_NAME' || 'STORE_WEBAPP_NAME' }} in the production environment's variables"; exit 1; fi
+          echo "WEBAPP=$WEBAPP" >> "$GITHUB_ENV"
+        env:
+          WEBAPP: ${{ matrix.app == 'console' && vars.CONSOLE_WEBAPP_NAME || vars.STORE_WEBAPP_NAME }}
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
@@ -100,14 +104,14 @@ jobs:
       # answers, so visitors never see it starting; without one, it replaces production directly
       - uses: azure/webapps-deploy@v3
         with:
-          app-name: ${{ matrix.webapp }}
+          app-name: ${{ env.WEBAPP }}
           slot-name: ${{ vars.DEPLOY_SLOT || 'production' }}
           package: ${{ matrix.app }}.zip
 
       - name: Swap into production
         if: vars.DEPLOY_SLOT != ''
         run: |
-          host=$(az webapp show --name "${{ matrix.webapp }}" --resource-group "${{ vars.AZURE_RESOURCE_GROUP }}" --slot "${{ vars.DEPLOY_SLOT }}" --query defaultHostName --output tsv)
+          host=$(az webapp show --name "$WEBAPP" --resource-group "${{ vars.AZURE_RESOURCE_GROUP }}" --slot "${{ vars.DEPLOY_SLOT }}" --query defaultHostName --output tsv)
           # Wait for the new version to answer before swapping (any answer: a redirect to sign in counts)
           curl --silent --output /dev/null --retry 30 --retry-all-errors --retry-delay 10 --max-time 30 "https://$host/"
-          az webapp deployment slot swap --name "${{ matrix.webapp }}" --resource-group "${{ vars.AZURE_RESOURCE_GROUP }}" --slot "${{ vars.DEPLOY_SLOT }}" --target-slot production
+          az webapp deployment slot swap --name "$WEBAPP" --resource-group "${{ vars.AZURE_RESOURCE_GROUP }}" --slot "${{ vars.DEPLOY_SLOT }}" --target-slot production
