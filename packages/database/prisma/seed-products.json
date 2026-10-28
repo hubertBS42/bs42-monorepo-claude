@@ -1,6 +1,26 @@
 [
   {
     "from": [
+      "mifare-1k-13-56mhz-blank-pvc-card"
+    ],
+    "name": "Mifare 1k 13.56MHZ Blank PVC card",
+    "brand": "BS42.Net",
+    "category": "Accessories",
+    "condition": "NEW",
+    "sell": "2.00",
+    "buy": "1.00",
+    "status": "PUBLISHED",
+    "description": null,
+    "tags": [
+      "mifare card"
+    ],
+    "images": [
+      "https://bs42shopstorage.blob.core.windows.net/bs42/6d1b1f40-0244-431d-9c87-a32caf706c9f"
+    ],
+    "documents": []
+  },
+  {
+    "from": [
       "rfid-tags-with-key-chain"
     ],
     "name": "RFID Tags with Key Chain",
@@ -45,6 +65,30 @@
   },
   {
     "from": [
+      "2-port-hdmi-utp-extender-transmitter"
+    ],
+    "name": "2 Port HDMI UTP Extender - Transmitter",
+    "brand": "BS42.Net",
+    "category": "Audio & Video Cables",
+    "condition": "NEW",
+    "sell": "74.00",
+    "buy": "37.00",
+    "status": "PUBLISHED",
+    "description": null,
+    "tags": [
+      "HDMI Transmitter"
+    ],
+    "images": [
+      "https://bs42shopstorage.blob.core.windows.net/bs42/6d05b86f-89c8-45a8-b006-681836820614",
+      "https://bs42shopstorage.blob.core.windows.net/bs42/ccd69037-42b2-43d0-8c20-83f06af6761d",
+      "https://bs42shopstorage.blob.core.windows.net/bs42/01bffab8-c92e-448e-9d7a-122e075a5b73",
+      "https://bs42shopstorage.blob.core.windows.net/bs42/52f92de3-52cc-401e-a780-739151ad3b68",
+      "https://bs42shopstorage.blob.core.windows.net/bs42/f1c3775b-4599-4cc0-9792-cd0b634dd53a"
+    ],
+    "documents": []
+  },
+  {
+    "from": [
       "2-5meter-hdmi-to-mini-c-type-hdmi"
     ],
     "name": "2.5 Meter HDMI to Mini C Type HDMI",
@@ -64,6 +108,128 @@
       "https://bs42shopstorage.blob.core.windows.net/bs42/9f95ad96-856a-4bcf-800c-5a2b0819aaf5"
     ],
     "documents": []
+  },
+  {
+    "from": [
+      "4-port-hdmi-utp-extender-transmitter"
+    ],
+    "name": "4 Port HDMI UTP Extender (Transmitter)",
+    "brand": "BS42.Net",
+    "category": "Audio & Video Cables",
+    "condition": "NEW",
+    "sell": "110.00",
+    "buy": "55.00",
+    "status": "PUBLISHED",
+    "description": "{\"type\":\"doc\",\"content\":[{\"type\":\"heading\",\"attrs\":{\"textAlign\":null,\"level\":3},\"content\":[{\"type\":\"text\",\"text\":\"VIDEO\",\"marks\":[{\"type\":\"underline\"}]}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Standard: HDMI 1.4,HDCP 1.2\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Maximum Pixel Clock: 165MHz\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Max Data Rate: 6.75Gbps\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Resolution: Max: 1920x1080@60Hz (Backward-compatible)\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Connector: HDMI-A\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Impedance : 100\"},{\"type\":\"text\",\"text\":\"Ω\",\"marks\":[{\"type\":\"bold\"}]}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null}},{\"type\":\"heading\",\"attrs\":{\"textAlign\":null,\"level\":3},\"content\":[{\"type\":\"text\",\"text\":\"USB\",\"marks\":[{\"type\":\"bold\"},{\"type\":\"underline\"}]}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Interface: PC: Standard USB / K/M: Standard USB\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"USB Signal: HID Signal\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null}},{\"type\":\"heading\",\"attrs\":{\"textAlign\":null,\"level\":3},\"content\":[{\"type\":\"text\",\"text\":\"UTP\",\"marks\":[{\"type\":\"underline\"}]}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Interface: RJ45\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Transmission Distance: CAT6 Max: 60m\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null}},{\"type\":\"heading\",\"attrs\":{\"textAlign\":null,\"level\":3},\"content\":[{\"type\":\"text\",\"text\":\"OTHER\",\"marks\":[{\"type\":\"bold\"},{\"type\":\"underline\"}]}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Power Supply: DC 5V\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Power Dissipation: Max: 4W\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Temperature: Operating: -5°C - +70°C\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Humidity: Operating: 5% - 90%\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Dimension: 65*45*23mm\"}]}]}",
+    "tags": [
+      "HDMI Transmitter"
+    ],
+    "images": [
+      "https://bs42shopstorage.blob.core.windows.net/bs42/aa17f4c7-bc09-43f0-a733-bf04f391007f",
+      "https://bs42shopstorage.blob.core.windows.net/bs42/b1a37eb4-cd48-4f45-8be5-4ca2d531aef2",
+      "https://bs42shopstorage.blob.core.windows.net/bs42/558d2825-4651-43ab-a82d-0d2d2d065843",
+      "https://bs42shopstorage.blob.core.windows.net/bs42/01ac7b44-45a9-462f-8fd4-aba8550873f5"
+    ],
+    "documents": []
+  },
+  {
+    "from": [
+      "dvi-male-24-5-to-vga-male-gold-plate-cable"
+    ],
+    "name": "DVI Male (24+5) to VGA Male Gold Plated Cable",
+    "brand": "BS42.Net",
+    "category": "Audio & Video Cables",
+    "condition": "NEW",
+    "sell": "0.00",
+    "buy": "0.00",
+    "status": "DRAFT",
+    "description": "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"DVI Male(24+5) to VGA male Gold Plate Cable\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Color: Black\"}]}]}",
+    "tags": [
+      "DVI to VGA Cable",
+      "DVI to VGA Display Cable"
+    ],
+    "images": [
+      "https://bs42shopstorage.blob.core.windows.net/bs42/c28f3bf4-0a13-4c70-968d-fb64c220c15a",
+      "https://bs42shopstorage.blob.core.windows.net/bs42/b22112a3-4800-489e-b692-6826ad788a0e"
+    ],
+    "documents": []
+  },
+  {
+    "from": [
+      "hdmi-extender-60m-transmitter-and-receiver"
+    ],
+    "name": "HDMI Extender 60M(Transmitter & Receiver)",
+    "brand": "BS42.Net",
+    "category": "Audio & Video Cables",
+    "condition": "NEW",
+    "sell": "24.00",
+    "buy": "12.00",
+    "status": "PUBLISHED",
+    "description": "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"The HDMI to RJ45 Extender use single CAT5e or CAT6(recommended) cables up to 60 meters instead of HDMI cable to transmit high definition signal, for cutting down cost. Long distance transmission of high definition is very difficult because HDMI cable is very expensive and infrequent. The Extender is designed to supply for long distance transmission of high definition signal.\"}]}]}",
+    "tags": [
+      "HDMI Extender"
+    ],
+    "images": [
+      "https://bs42shopstorage.blob.core.windows.net/bs42/d1309dab-1caf-44cb-96d7-748655ab4e70"
+    ],
+    "documents": []
+  },
+  {
+    "from": [
+      "svga-vga-male-to-male-cable-yyeWKROy3",
+      "svga-vga-male-to-male-cable"
+    ],
+    "name": "SVGA VGA Male to Male Cable",
+    "brand": "BS42.Net",
+    "category": "Audio & Video Cables",
+    "condition": "NEW",
+    "sell": "0.00",
+    "buy": "0.00",
+    "status": "DRAFT",
+    "description": "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"SVGA VGA Male to Male Cable\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"7 Mtr Cable\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Color: White\"}]}]}",
+    "tags": [
+      "SVGA VGA cable",
+      "VGA Cable",
+      "Display Cable"
+    ],
+    "images": [
+      "https://bs42shopstorage.blob.core.windows.net/bs42/215737b4-b027-44f1-9919-76cf779c7887",
+      "https://bs42shopstorage.blob.core.windows.net/bs42/40f1186b-d4b8-468c-bef3-207730ef460b"
+    ],
+    "documents": [],
+    "options": [
+      {
+        "name": "Length",
+        "values": [
+          "2.5m",
+          "7m"
+        ]
+      }
+    ],
+    "variants": [
+      {
+        "values": {
+          "Length": "2.5m"
+        },
+        "sell": "0.00",
+        "buy": "0.00",
+        "images": [
+          "https://bs42shopstorage.blob.core.windows.net/bs42/215737b4-b027-44f1-9919-76cf779c7887",
+          "https://bs42shopstorage.blob.core.windows.net/bs42/40f1186b-d4b8-468c-bef3-207730ef460b"
+        ]
+      },
+      {
+        "values": {
+          "Length": "7m"
+        },
+        "sell": "0.00",
+        "buy": "0.00",
+        "images": [
+          "https://bs42shopstorage.blob.core.windows.net/bs42/b06b6360-7fb5-4fb6-a87b-6dfe6e51c274",
+          "https://bs42shopstorage.blob.core.windows.net/bs42/9b73f720-4b86-4c27-b8d2-e1faf15a1bd0"
+        ]
+      }
+    ]
   },
   {
     "from": [
@@ -1193,26 +1359,6 @@
   },
   {
     "from": [
-      "mifare-1k-13-56mhz-blank-pvc-card"
-    ],
-    "name": "Mifare 1k 13.56MHZ Blank PVC card",
-    "brand": "BS42.Net",
-    "category": "Control Panels",
-    "condition": "NEW",
-    "sell": "2.00",
-    "buy": "1.00",
-    "status": "PUBLISHED",
-    "description": null,
-    "tags": [
-      "mifare card"
-    ],
-    "images": [
-      "https://bs42shopstorage.blob.core.windows.net/bs42/6d1b1f40-0244-431d-9c87-a32caf706c9f"
-    ],
-    "documents": []
-  },
-  {
-    "from": [
       "rf-remote-control"
     ],
     "name": "RF Remote Control",
@@ -1325,6 +1471,96 @@
   },
   {
     "from": [
+      "cjx2-ac-contactor"
+    ],
+    "name": "CJX2 AC Contactor",
+    "brand": "BS42.Net",
+    "category": "Electrical Components",
+    "condition": "NEW",
+    "sell": "16.50",
+    "buy": "8.25",
+    "status": "PUBLISHED",
+    "description": null,
+    "tags": [
+      "AC Contactor"
+    ],
+    "images": [
+      "https://bs42shopstorage.blob.core.windows.net/bs42/78e96bee-a54d-4e4a-9ee0-015b4e9bb936",
+      "https://bs42shopstorage.blob.core.windows.net/bs42/ba9d679e-5175-4705-a71c-e8c9c8560ee2"
+    ],
+    "documents": []
+  },
+  {
+    "from": [
+      "digital-timer-switch"
+    ],
+    "name": "Digital Timer Switch",
+    "brand": "BS42.Net",
+    "category": "Electrical Components",
+    "condition": "NEW",
+    "sell": "9.00",
+    "buy": "4.50",
+    "status": "PUBLISHED",
+    "description": "{\"type\":\"doc\",\"content\":[{\"type\":\"orderedList\",\"attrs\":{\"start\":1,\"type\":null},\"content\":[{\"type\":\"listItem\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"DIN Rail Installation\"}]}]},{\"type\":\"listItem\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Advanced pre-setting one week before.\"}]}]},{\"type\":\"listItem\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Digital electronics general purpose time switch with daily and weekly program.\"}]}]},{\"type\":\"listItem\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Repeat programs with 20 ON/OFF setting.\"}]}]},{\"type\":\"listItem\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"To-the-minute setting accuracy.\"}]}]},{\"type\":\"listItem\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"LCD display real time to Hour/Minute and ON/AUTO/OFF.\"}]}]}]}]}",
+    "tags": [
+      "Electronic Timer",
+      "Weekly Timer Switch"
+    ],
+    "images": [
+      "https://bs42shopstorage.blob.core.windows.net/bs42/34f14bca-3b68-4a40-9cfd-4078c272ec04",
+      "https://bs42shopstorage.blob.core.windows.net/bs42/31bd89c4-a21d-4697-9baf-59aa5e51bb49",
+      "https://bs42shopstorage.blob.core.windows.net/bs42/31ff9bff-2265-4420-a446-8d51913f461d"
+    ],
+    "documents": []
+  },
+  {
+    "from": [
+      "mechanical-time-switch"
+    ],
+    "name": "Mechanical Time Switch",
+    "brand": "BS42.Net",
+    "category": "Electrical Components",
+    "condition": "NEW",
+    "sell": "16.00",
+    "buy": "8.00",
+    "status": "PUBLISHED",
+    "description": "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Operation Power Voltage - 100-240V AC\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Allowable Operating Voltage - 85-264V AC\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Power Source Frequency - 50Hz/60Hz common use\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Driving Method - Quarts Motor\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Power Failure Compensation - 100 hours\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Time Precision - Within +15seconds per month(at temperature 25°C)\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Program Cycle - 24hours\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Consumption Power - 110V AC 1W*220V AC 2W\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Circuit Quantity - 1 circuit\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Circuit Configuration - Same Circuit (Voltage-applied contact output)\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Contact Configuration - Single Pole. Single-through\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Manual on/off - With ON/AUTO/OFF Switch\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null}},{\"type\":\"heading\",\"attrs\":{\"textAlign\":null,\"level\":3},\"content\":[{\"type\":\"text\",\"text\":\"Output Contact Capacity\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Resistance - 15A\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Incandescent Lamp - 10A\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Induction(cos =0.7) - 12A\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Motor (cos=0.7) - 110V AC 750W * 220V AC 1500W\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null}}]}",
+    "tags": [
+      "Time Switch"
+    ],
+    "images": [
+      "https://bs42shopstorage.blob.core.windows.net/bs42/03ece667-0f32-473f-b901-1ed6be996faa",
+      "https://bs42shopstorage.blob.core.windows.net/bs42/d10bb607-0c1d-417e-aabd-3af40a4025ea",
+      "https://bs42shopstorage.blob.core.windows.net/bs42/786ab94b-6c51-403b-8b14-33cb3f27cbde",
+      "https://bs42shopstorage.blob.core.windows.net/bs42/22d70cf8-08e5-4109-aaf5-095602337b4e"
+    ],
+    "documents": []
+  },
+  {
+    "from": [
+      "weatherproof-outdoor"
+    ],
+    "name": "Weatherproof Outdoor",
+    "brand": "BS42.Net",
+    "category": "Electrical Components",
+    "condition": "NEW",
+    "sell": "24.00",
+    "buy": "12.00",
+    "status": "PUBLISHED",
+    "description": "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"ERGONOMIC FRONT COVER/LID\",\"marks\":[{\"type\":\"bold\"},{\"type\":\"underline\"}]}]},{\"type\":\"orderedList\",\"attrs\":{\"start\":1,\"type\":null},\"content\":[{\"type\":\"listItem\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Bright LED power indicator visible through see-through cover\"}]}]},{\"type\":\"listItem\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Hinged cover has simple press to open or press to close operation\"}]}]},{\"type\":\"listItem\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Neck feature accommodates most plugs with bulky moulded strain relief\"}]}]},{\"type\":\"listItem\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Lockable cover\"}]}]}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"hardBreak\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"SWITCHED SOCKETS:\",\"marks\":[{\"type\":\"bold\"},{\"type\":\"underline\"}]}]},{\"type\":\"bulletList\",\"content\":[{\"type\":\"listItem\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Provides extra control when needed with on/off control and power indicator\"}]}]}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"hardBreak\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"WEATHER & DUST OROTECTION - IP RATED (IP66):\",\"marks\":[{\"type\":\"bold\"},{\"type\":\"underline\"}]}]},{\"type\":\"bulletList\",\"content\":[{\"type\":\"listItem\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"High level of protection against ingress from wayer jet & dust, the durable seals will maintain integrity over the product's life\"}]}]}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"hardBreak\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"MULTIPLE GLAND ENTRY POSITIONS:\",\"marks\":[{\"type\":\"bold\"},{\"type\":\"underline\"}]}]},{\"type\":\"bulletList\",\"content\":[{\"type\":\"listItem\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"8 versatile entry options with M25 capability with an easy push out blank plug design\"}]}]},{\"type\":\"listItem\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"One cut out entry option on rear\"}]}]}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"hardBreak\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"ROBUST CONSTRUCTION:\",\"marks\":[{\"type\":\"bold\"},{\"type\":\"underline\"}]}]},{\"type\":\"bulletList\",\"content\":[{\"type\":\"listItem\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Polycarbonate housing - High impact resistance\"}]}]},{\"type\":\"listItem\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Long Lasting, will not crack or fade\"}]}]}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"hardBreak\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"SAFETY WARNING:\",\"marks\":[{\"type\":\"bold\"},{\"type\":\"underline\"}]}]},{\"type\":\"bulletList\",\"content\":[{\"type\":\"listItem\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Before use, please read carefully and use in accordance with our user safety instructions & wiring diagram enclosed.\"}]}]}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"hardBreak\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"IF IN DOUBT CONSULT QUALIFIED ELECTRICIAN TECHNICAL SPECIFICATION\",\"marks\":[{\"type\":\"bold\"},{\"type\":\"underline\"}]}]},{\"type\":\"bulletList\",\"content\":[{\"type\":\"listItem\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"3.120 watts Max, 13A 240V\"}]}]},{\"type\":\"listItem\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Imaged plug, fixings, wall plugs, and sealant not included.\"}]}]}]}]}",
+    "tags": [
+      "Double Switched Out Door Socket",
+      "waterproof socket"
+    ],
+    "images": [
+      "https://bs42shopstorage.blob.core.windows.net/bs42/222fe258-3b05-4a67-be43-0befbc2472c8",
+      "https://bs42shopstorage.blob.core.windows.net/bs42/706258d3-6f62-412d-ad83-0e0b3cd88d68",
+      "https://bs42shopstorage.blob.core.windows.net/bs42/3b8e06ff-97f0-4a56-ada6-9698d51e7cce"
+    ],
+    "documents": []
+  },
+  {
+    "from": [
       "electromagnetic-lock"
     ],
     "name": "Electromagnetic Lock",
@@ -1404,34 +1640,11 @@
   },
   {
     "from": [
-      "4x4-pergola-leg-bracket"
-    ],
-    "name": "4x4 Pergola Leg Bracket",
-    "brand": "BS42.Net",
-    "category": "Floor & Wall",
-    "condition": "NEW",
-    "sell": "14.00",
-    "buy": "7.00",
-    "status": "PUBLISHED",
-    "description": null,
-    "tags": [
-      "Pergola brackets"
-    ],
-    "images": [
-      "https://bs42shopstorage.blob.core.windows.net/bs42/c695ad68-dcc9-45b8-a683-e7fae24e45a3",
-      "https://bs42shopstorage.blob.core.windows.net/bs42/a71f967a-5ae2-4d32-9c8d-bad39789b524",
-      "https://bs42shopstorage.blob.core.windows.net/bs42/2230cb77-476e-4f4e-8c55-f8a4e025be46",
-      "https://bs42shopstorage.blob.core.windows.net/bs42/b6194107-fcf0-4fd9-a240-06d75d659e5a"
-    ],
-    "documents": []
-  },
-  {
-    "from": [
       "automatic-gate-opener"
     ],
     "name": "Automatic Gate Opener",
     "brand": "BS42.Net",
-    "category": "Floor & Wall",
+    "category": "Gate Automation",
     "condition": "NEW",
     "sell": "240.00",
     "buy": "120.00",
@@ -1454,7 +1667,7 @@
     ],
     "name": "Automatic Sliding Gate Motor Steel Gear Rack 10mm",
     "brand": "BS42.Net",
-    "category": "Floor & Wall",
+    "category": "Gate Automation",
     "condition": "NEW",
     "sell": "10.00",
     "buy": "5.00",
@@ -1473,131 +1686,44 @@
   },
   {
     "from": [
-      "laser-mount-holder"
+      "gate-opener-system-wi-fi-receiver-controller"
     ],
-    "name": "Laser Mount Holder",
+    "name": "Gate Opener System Wi-Fi Receiver Controller",
     "brand": "BS42.Net",
-    "category": "Floor & Wall",
+    "category": "Gate Automation",
     "condition": "NEW",
-    "sell": "26.00",
-    "buy": "13.00",
+    "sell": "32.00",
+    "buy": "16.00",
     "status": "PUBLISHED",
-    "description": null,
+    "description": "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Gate Opener System Wi-Fi Receiver Controller by Wi-Fi for Garage Door.\"}]}]}",
     "tags": [
-      "Laser Mount Holder"
+      "Gate Opener System"
     ],
     "images": [
-      "https://bs42shopstorage.blob.core.windows.net/bs42/1d57451c-d7e0-4fea-bd30-4c26a8062feb",
-      "https://bs42shopstorage.blob.core.windows.net/bs42/8146f8ed-03ac-476a-8bd4-7ee43d8921e3",
-      "https://bs42shopstorage.blob.core.windows.net/bs42/4b5774d2-c201-474b-8219-15267d0baa4a",
-      "https://bs42shopstorage.blob.core.windows.net/bs42/d928908d-f0e4-4b62-b132-6a94d7862ece"
+      "https://bs42shopstorage.blob.core.windows.net/bs42/36418543-efbe-43d5-8528-d8ceb04859a7",
+      "https://bs42shopstorage.blob.core.windows.net/bs42/dff6b486-4600-4c94-b08a-9050bd05c58b"
     ],
     "documents": []
   },
   {
     "from": [
-      "round-socket-punch"
+      "swing-gate-opener"
     ],
-    "name": "Round Socket Punch",
+    "name": "Swing Gate Opener",
     "brand": "BS42.Net",
-    "category": "Floor & Wall",
+    "category": "Gate Automation",
     "condition": "NEW",
-    "sell": "6.00",
-    "buy": "3.00",
+    "sell": "376.00",
+    "buy": "188.00",
     "status": "PUBLISHED",
-    "description": "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Size: 18.5cmx8.5cmx4.5cm\"}]}]}",
-    "tags": [],
-    "images": [
-      "https://bs42shopstorage.blob.core.windows.net/bs42/aa3c12eb-7a13-4b97-a53e-4273fa24aac0",
-      "https://bs42shopstorage.blob.core.windows.net/bs42/f16bdf88-a497-457f-a2c8-5193b6a4d375"
-    ],
-    "documents": []
-  },
-  {
-    "from": [
-      "s2000-louver-pergola"
-    ],
-    "name": "S2000 Louver Pergola",
-    "brand": "BS42.Net",
-    "category": "Floor & Wall",
-    "condition": "NEW",
-    "sell": "0.00",
-    "buy": "0.00",
-    "status": "DRAFT",
-    "description": "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Coming Soon!!!\"}]}]}",
+    "description": "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Input Power: AC 110V/220V+10%\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Motor Voltage: 24V DC\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Power: 60W\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Actuator Speed: 2.4cm/s\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Max. Actuator Travel: 600mm\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Max. Single-Leaf weight: 350kgs\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Max. Single-Leaf Length: 4.5meters\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Ambient Temperature: -22°C - +55°C\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Protection Class: IP55\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Max Gate Opening Angel: 110°\"}]}]}",
     "tags": [
-      "Pergola"
+      "Swing Gate Opener"
     ],
     "images": [
-      "https://bs42shopstorage.blob.core.windows.net/bs42/e70b80e9-9575-440a-93a7-394749b82d6f",
-      "https://bs42shopstorage.blob.core.windows.net/bs42/b1c27a7c-2dfb-4052-8aba-18d8a50d555f",
-      "https://bs42shopstorage.blob.core.windows.net/bs42/9e135cfb-859c-43fe-824f-901280f5bcdf",
-      "https://bs42shopstorage.blob.core.windows.net/bs42/0dbca0d1-dd09-4389-91c1-07b42baa2104"
-    ],
-    "documents": []
-  },
-  {
-    "from": [
-      "shower-faucet-combo"
-    ],
-    "name": "Shower Faucet Combo",
-    "brand": "BS42.Net",
-    "category": "Floor & Wall",
-    "condition": "NEW",
-    "sell": "192.00",
-    "buy": "96.00",
-    "status": "PUBLISHED",
-    "description": "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Concealed shower set \"}]}]}",
-    "tags": [
-      "Shower Faucet Combo"
-    ],
-    "images": [
-      "https://bs42shopstorage.blob.core.windows.net/bs42/cbfd6030-edb3-47f8-a5c6-444317839952",
-      "https://bs42shopstorage.blob.core.windows.net/bs42/d58eb539-a37a-42dd-a649-0f2dc8d7f048",
-      "https://bs42shopstorage.blob.core.windows.net/bs42/184a72b3-32ba-4458-b0c4-876a4b9dee42"
-    ],
-    "documents": []
-  },
-  {
-    "from": [
-      "wall-chaser-machine"
-    ],
-    "name": "Wall Chaser Machine",
-    "brand": "BS42.Net",
-    "category": "Floor & Wall",
-    "condition": "NEW",
-    "sell": "134.00",
-    "buy": "84.00",
-    "status": "PUBLISHED",
-    "description": "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Voltage: 220V\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Rate Frequency: 50/60Hz\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Power: 4800W\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"No-Load Speed: 6500r/min\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Cutting Disc: 125x20\"}]}]}",
-    "tags": [
-      "Slotting Machine"
-    ],
-    "images": [
-      "https://bs42shopstorage.blob.core.windows.net/bs42/5ed44e97-9a99-4de9-aec0-bad2345725d1",
-      "https://bs42shopstorage.blob.core.windows.net/bs42/171e1c94-6759-4e0b-b404-bf5daee0c20d"
-    ],
-    "documents": []
-  },
-  {
-    "from": [
-      "wall-grooving-maching"
-    ],
-    "name": "Wall Grooving Machine",
-    "brand": "BS42.Net",
-    "category": "Floor & Wall",
-    "condition": "NEW",
-    "sell": "156.00",
-    "buy": "106.00",
-    "status": "PUBLISHED",
-    "description": null,
-    "tags": [
-      "Wall Grooving Machine"
-    ],
-    "images": [
-      "https://bs42shopstorage.blob.core.windows.net/bs42/96079c6f-b2f9-459b-b212-4bca08ccef2b",
-      "https://bs42shopstorage.blob.core.windows.net/bs42/51ba96a6-9762-40da-b092-fd8878af50a9",
-      "https://bs42shopstorage.blob.core.windows.net/bs42/0052e9d7-7467-451b-81dc-d3ea342aa3ce"
+      "https://bs42shopstorage.blob.core.windows.net/bs42/6b56c76a-6bcf-4a56-a896-08196a701aae",
+      "https://bs42shopstorage.blob.core.windows.net/bs42/faafd96e-dfbb-4a96-a70d-7a30c79f9e10",
+      "https://bs42shopstorage.blob.core.windows.net/bs42/b170737f-a816-469a-b78a-ebc89a82a842"
     ],
     "documents": []
   },
@@ -1620,27 +1746,6 @@
       "https://bs42shopstorage.blob.core.windows.net/bs42/15e5eb3d-79ed-4316-baab-4b4de33a22cd",
       "https://bs42shopstorage.blob.core.windows.net/bs42/200f8123-84de-4f2c-9dc0-fa36073fcca5",
       "https://bs42shopstorage.blob.core.windows.net/bs42/7428a9b4-2631-4f1f-92b4-eeb225ae5e33"
-    ],
-    "documents": []
-  },
-  {
-    "from": [
-      "gate-opener-system-wi-fi-receiver-controller"
-    ],
-    "name": "Gate Opener System Wi-Fi Receiver Controller",
-    "brand": "BS42.Net",
-    "category": "Gateways & Hubs",
-    "condition": "NEW",
-    "sell": "32.00",
-    "buy": "16.00",
-    "status": "PUBLISHED",
-    "description": "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Gate Opener System Wi-Fi Receiver Controller by Wi-Fi for Garage Door.\"}]}]}",
-    "tags": [
-      "Gate Opener System"
-    ],
-    "images": [
-      "https://bs42shopstorage.blob.core.windows.net/bs42/36418543-efbe-43d5-8528-d8ceb04859a7",
-      "https://bs42shopstorage.blob.core.windows.net/bs42/dff6b486-4600-4c94-b08a-9050bd05c58b"
     ],
     "documents": []
   },
@@ -1693,26 +1798,6 @@
   },
   {
     "from": [
-      "11l-chafing-dish"
-    ],
-    "name": "11L Chafing Dish",
-    "brand": "BS42.Net",
-    "category": "Home Accessories",
-    "condition": "NEW",
-    "sell": "26.70",
-    "buy": "21.00",
-    "status": "PUBLISHED",
-    "description": "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"This stainless steel chafing dish is ideal for catering your next special event. Supplied with a steam pan, water pan lid and two fuel holders.\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null}}]}",
-    "tags": [
-      "Chafing Dish"
-    ],
-    "images": [
-      "https://bs42shopstorage.blob.core.windows.net/bs42/c49b5a56-b699-4b8c-838d-12aa34340f94"
-    ],
-    "documents": []
-  },
-  {
-    "from": [
       "360-rotating-shoe-rack"
     ],
     "name": "360 Rotating Shoe Rack",
@@ -1728,88 +1813,6 @@
     ],
     "images": [
       "https://bs42shopstorage.blob.core.windows.net/bs42/75984414-61c5-49bf-9e8c-bf15725725e5"
-    ],
-    "documents": []
-  },
-  {
-    "from": [
-      "4-ss-tube-burners"
-    ],
-    "name": "4 SS Tube Burners",
-    "brand": "BS42.Net",
-    "category": "Home Accessories",
-    "condition": "NEW",
-    "sell": "656.00",
-    "buy": "354.00",
-    "status": "PUBLISHED",
-    "description": "{\"type\":\"doc\",\"content\":[{\"type\":\"orderedList\",\"attrs\":{\"start\":1,\"type\":null},\"content\":[{\"type\":\"listItem\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Grill Type: Built in bbq gas grill with infrared back burner\"}]}]},{\"type\":\"listItem\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Burner: 4 SS tube burners\"}]}]},{\"type\":\"listItem\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Main material: SUS304\"}]}]},{\"type\":\"listItem\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Certification: CE, LFGB\"}]}]},{\"type\":\"listItem\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Power:4*3.55KW, 48400BTU\"}]}]},{\"type\":\"listItem\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Gas type: LPG/NG\"}]}]},{\"type\":\"listItem\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Cooking Area:640*420mm\"}]}]},{\"type\":\"listItem\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"With SS cooking grill and SS warning rack\"}]}]},{\"type\":\"listItem\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Feature: Easily Assembled, Easily Cleaned\"}]}]},{\"type\":\"listItem\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Application: Garden/Party/Outdoor\"}]}]},{\"type\":\"listItem\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Laser knob with light, beads, and switch\"}]}]},{\"type\":\"listItem\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Cast iron baking net*2\"}]}]}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"SS304 warning rack*1\"}]}]}",
-    "tags": [
-      "Tube Burner"
-    ],
-    "images": [
-      "https://bs42shopstorage.blob.core.windows.net/bs42/8845aa1f-e08e-4e36-9c6b-b53e9bb813b1"
-    ],
-    "documents": []
-  },
-  {
-    "from": [
-      "4x4-corner-pergola-brackets"
-    ],
-    "name": "4x4 Corner Pergola Brackets",
-    "brand": "BS42.Net",
-    "category": "Home Accessories",
-    "condition": "NEW",
-    "sell": "26.00",
-    "buy": "13.00",
-    "status": "PUBLISHED",
-    "description": "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"4x4 Wood Bracket for Pergola\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Color: Black.\"}]}]}",
-    "tags": [
-      "Pergola brackets"
-    ],
-    "images": [
-      "https://bs42shopstorage.blob.core.windows.net/bs42/c4e506a7-d21d-4903-aa4b-7c97d8f927a6",
-      "https://bs42shopstorage.blob.core.windows.net/bs42/1c4a618e-13a6-4c1b-b78d-e160f34653c0",
-      "https://bs42shopstorage.blob.core.windows.net/bs42/90ff950f-6716-417c-93ce-4867d1703e19",
-      "https://bs42shopstorage.blob.core.windows.net/bs42/8b483ce8-c779-4dfd-8bd6-d7a2de53bcf1"
-    ],
-    "documents": []
-  },
-  {
-    "from": [
-      "4x4-pergola-3-sided-bracket"
-    ],
-    "name": "4x4 Pergola 3 sided Bracket",
-    "brand": "BS42.Net",
-    "category": "Home Accessories",
-    "condition": "NEW",
-    "sell": "42.00",
-    "buy": "21.00",
-    "status": "PUBLISHED",
-    "description": "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"4x4 Wood Bracket for Pergola\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Color: Black.\"}]}]}",
-    "tags": [
-      "Pergola Brackets"
-    ],
-    "images": [
-      "https://bs42shopstorage.blob.core.windows.net/bs42/4890c5c2-398e-4f75-ac4d-a7850fb7bd5c",
-      "https://bs42shopstorage.blob.core.windows.net/bs42/dcf9533f-54c1-40ea-96ef-2d0064b60139"
-    ],
-    "documents": []
-  },
-  {
-    "from": [
-      "8-in-1-bardefu-multi-purpose-juicer"
-    ],
-    "name": "8 in 1 Bardefu Multi-Purpose Juicer",
-    "brand": "BS42.Net",
-    "category": "Home Accessories",
-    "condition": "NEW",
-    "sell": "37.00",
-    "buy": "34.00",
-    "status": "PUBLISHED",
-    "description": "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"6 in 1 8 in 1 SILVER CREST BARDEFU Blender 3L 4L 9500WHeavy Duty Mixeur Blender Food Processor Blender Machine I juicer Machine\"}]}]}",
-    "tags": [],
-    "images": [
-      "https://bs42shopstorage.blob.core.windows.net/bs42/1f143391-d2ff-4131-9ee1-543fc5c24a49"
     ],
     "documents": []
   },
@@ -1883,29 +1886,21 @@
   },
   {
     "from": [
-      "heavy-duty-commercial-blender"
+      "fridge-guard"
     ],
-    "name": "Heavy Duty Commercial Blender",
+    "name": "Fridge Guard",
     "brand": "BS42.Net",
     "category": "Home Accessories",
     "condition": "NEW",
-    "sell": "130.00",
-    "buy": "65.00",
+    "sell": "8.00",
+    "buy": "4.00",
     "status": "PUBLISHED",
-    "description": "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Export Heavy Duty Commercial Blender Household Food Machine Wall Ice Breaker\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Smoothie Fruit juicer Blender With Enclosures\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null}}]}",
+    "description": null,
     "tags": [
-      "Heavy Duty Commercial Blender"
+      "Fridge Guard"
     ],
     "images": [
-      "https://bs42shopstorage.blob.core.windows.net/bs42/1dfbaa0c-b6c6-4e5d-ac5f-e20730025299",
-      "https://bs42shopstorage.blob.core.windows.net/bs42/b8d17c56-9a51-4b4f-a083-81dfc7d8dfe6",
-      "https://bs42shopstorage.blob.core.windows.net/bs42/d6c2cef2-3f51-4d03-ae25-22d7a6e3dd8b",
-      "https://bs42shopstorage.blob.core.windows.net/bs42/f305e5cd-4cd6-43f0-9091-8cf5abe2740b",
-      "https://bs42shopstorage.blob.core.windows.net/bs42/a3985c3e-f6ae-4ec6-a32f-3ebb22c9bc20",
-      "https://bs42shopstorage.blob.core.windows.net/bs42/66aeb89e-12f1-4321-8689-b58fc541a7ae",
-      "https://bs42shopstorage.blob.core.windows.net/bs42/03e7fb17-56c3-4e67-a333-269575af0f14",
-      "https://bs42shopstorage.blob.core.windows.net/bs42/98460009-c905-4c20-9b73-5d40996e23d9",
-      "https://bs42shopstorage.blob.core.windows.net/bs42/fbb60c44-7fcc-4e0d-95ef-37f68d396c85"
+      "https://bs42shopstorage.blob.core.windows.net/bs42/16334f77-e25f-45a4-8399-97666e746d9a"
     ],
     "documents": []
   },
@@ -1926,129 +1921,6 @@
     ],
     "images": [
       "https://bs42shopstorage.blob.core.windows.net/bs42/fd5022bc-5448-4b51-bb50-345624157036"
-    ],
-    "documents": []
-  },
-  {
-    "from": [
-      "outdoor-kitchen-cabinet-door"
-    ],
-    "name": "Outdoor Kitchen Cabinet Door",
-    "brand": "BS42.Net",
-    "category": "Home Accessories",
-    "condition": "NEW",
-    "sell": "212.00",
-    "buy": "106.00",
-    "status": "PUBLISHED",
-    "description": "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Item Nr. DY-DW02\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Metal Type: Stainless Steel 304 S/S\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Product Size: 800*538*75mm\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Carton Size: 88*10*60cm\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Gross Weight: 8.8KG\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null}}]}",
-    "tags": [
-      "Outdoor Kitchen Cabinet Door"
-    ],
-    "images": [
-      "https://bs42shopstorage.blob.core.windows.net/bs42/0afe838e-5c6a-4f4a-9378-d7649c182047",
-      "https://bs42shopstorage.blob.core.windows.net/bs42/0006fcac-8ede-4753-9e49-0ba62d7a9905"
-    ],
-    "documents": []
-  },
-  {
-    "from": [
-      "outdoor-kitchen-cabinet-drawer"
-    ],
-    "name": "Outdoor Kitchen Cabinet Drawer",
-    "brand": "BS42.Net",
-    "category": "Home Accessories",
-    "condition": "NEW",
-    "sell": "212.00",
-    "buy": "106.00",
-    "status": "PUBLISHED",
-    "description": "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Item Nr. DY-DW03\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Metal Type: Stainless Steel 304 S/S\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Product Size: 438*538*428mm\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Carton Size: 50*61.5*50cm\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Gross Weight: 21KG\"}]}]}",
-    "tags": [
-      "Outdoor Kitchen Carbinet Drawer"
-    ],
-    "images": [
-      "https://bs42shopstorage.blob.core.windows.net/bs42/228cff47-9699-41e8-a383-080c54c2d19d",
-      "https://bs42shopstorage.blob.core.windows.net/bs42/65b1f463-cfa6-4029-988c-e20dccbd570c"
-    ],
-    "documents": []
-  },
-  {
-    "from": [
-      "single-conventional-round-gas-burner-built-in-outdoor-kitchen"
-    ],
-    "name": "Single conventional round gas burner - Built-in - Outdoor kitchen",
-    "brand": "BS42.Net",
-    "category": "Home Accessories",
-    "condition": "NEW",
-    "sell": "204.00",
-    "buy": "102.00",
-    "status": "PUBLISHED",
-    "description": "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Main Material: Stainless Steel 304\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Power: 3.4KW, 11600TU\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Gas Type: LPG/NG\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Product Size: 25*50*21.5\"}]}]}",
-    "tags": [
-      "Gas burner"
-    ],
-    "images": [
-      "https://bs42shopstorage.blob.core.windows.net/bs42/3d1c5dd1-9a8b-4dee-b1b0-d6d6ff916db0",
-      "https://bs42shopstorage.blob.core.windows.net/bs42/ce008fe2-9617-431c-8602-dae4240a1411"
-    ],
-    "documents": []
-  },
-  {
-    "from": [
-      "stainless-steel-single-bowl-kitchen-sink"
-    ],
-    "name": "Stainless Steel Single Bowl Kitchen Sink",
-    "brand": "BS42.Net",
-    "category": "Home Accessories",
-    "condition": "NEW",
-    "sell": "152.00",
-    "buy": "76.00",
-    "status": "PUBLISHED",
-    "description": "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Size: 75*46*22cm\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Color: Black\"}]}]}",
-    "tags": [
-      "Stainless Steel Single Bowl Kitchen Sink"
-    ],
-    "images": [
-      "https://bs42shopstorage.blob.core.windows.net/bs42/0b7daeb3-ebea-4d59-8136-3f0b400801e4"
-    ],
-    "documents": []
-  },
-  {
-    "from": [
-      "top-cooktop-4-burner-gas-stove"
-    ],
-    "name": "Top Cooktop 4 Burner Gas Stove",
-    "brand": "BS42.Net",
-    "category": "Home Accessories",
-    "condition": "NEW",
-    "sell": "125.00",
-    "buy": "70.00",
-    "status": "PUBLISHED",
-    "description": "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"2025 Top Cooktop 4 Burner Gas Stove Built in Tempered Glass Black Surface 4 Burner Cooker Gas Stove.\"}]}]}",
-    "tags": [
-      "4 Burner Gas Stove"
-    ],
-    "images": [
-      "https://bs42shopstorage.blob.core.windows.net/bs42/bf98a328-9753-42ef-bb95-e04ecaf68fc2"
-    ],
-    "documents": []
-  },
-  {
-    "from": [
-      "fridge-guard"
-    ],
-    "name": "Fridge Guard",
-    "brand": "BS42.Net",
-    "category": "Indoor Stations",
-    "condition": "NEW",
-    "sell": "8.00",
-    "buy": "4.00",
-    "status": "PUBLISHED",
-    "description": null,
-    "tags": [
-      "Fridge Guard"
-    ],
-    "images": [
-      "https://bs42shopstorage.blob.core.windows.net/bs42/16334f77-e25f-45a4-8399-97666e746d9a"
     ],
     "documents": []
   },
@@ -2080,66 +1952,21 @@
   },
   {
     "from": [
-      "projector-ultra-hd"
+      "hd-smart-video-doorbell"
     ],
-    "name": "Projector Ultra HD",
+    "name": "HD Smart Video Doorbell",
     "brand": "BS42.Net",
-    "category": "Indoor Stations",
+    "category": "Intercoms",
     "condition": "NEW",
-    "sell": "66.00",
-    "buy": "33.00",
+    "sell": "74.00",
+    "buy": "37.00",
     "status": "PUBLISHED",
-    "description": "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Model: HY300pro\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null}},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"This smart projector features a 180 ° rotatable design, allowing you to point the 180 ° tilted projector in various directions, including the ceiling. You can point the projector at your bedroom ceiling and lie in bed watching the movie. And it can deliver a clear picture on screens from 40 to 200''. It can produce a really big image in your living room, family room, and other areas of your house.\"}]}]}",
+    "description": "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Easy Home Security solution for everyone.\"}]}]}",
     "tags": [
-      "HD Projector"
+      "Smart Video Doorbell"
     ],
     "images": [
-      "https://bs42shopstorage.blob.core.windows.net/bs42/2b546053-094a-41f1-8cb6-c9abd39c4e9c",
-      "https://bs42shopstorage.blob.core.windows.net/bs42/bf8b04c9-d5ab-4812-a4ff-f29c2287590d",
-      "https://bs42shopstorage.blob.core.windows.net/bs42/69d90c04-63a5-4171-8178-1cd1237d259a"
-    ],
-    "documents": []
-  },
-  {
-    "from": [
-      "single-column-electric-tv-lift"
-    ],
-    "name": "Single Column Electric TV Lift",
-    "brand": "BS42.Net",
-    "category": "Indoor Stations",
-    "condition": "NEW",
-    "sell": "250.00",
-    "buy": "125.00",
-    "status": "PUBLISHED",
-    "description": "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Type: CTD-03-24-900/710-B-AR\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Max Load: 800 N\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Power: DC 24V\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null}}]}",
-    "tags": [
-      "Electric TV Lift"
-    ],
-    "images": [
-      "https://bs42shopstorage.blob.core.windows.net/bs42/9451f600-5c4b-47bd-afd3-c8e7e3f34e55",
-      "https://bs42shopstorage.blob.core.windows.net/bs42/6762ef9b-8e39-4e02-b7e7-35cb2068c339",
-      "https://bs42shopstorage.blob.core.windows.net/bs42/d9f2bd62-b756-4d63-8247-d7dec5339d5b",
-      "https://bs42shopstorage.blob.core.windows.net/bs42/68dacbe0-1db2-4922-adf6-23162dab7d47"
-    ],
-    "documents": []
-  },
-  {
-    "from": [
-      "smart-home-music-control-host"
-    ],
-    "name": "Smart Home Music Control Host",
-    "brand": "BS42.Net",
-    "category": "Indoor Stations",
-    "condition": "NEW",
-    "sell": "142.00",
-    "buy": "71.00",
-    "status": "PUBLISHED",
-    "description": "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Input Power: AC 110V-250V\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Output Power: 4*(10-25W)/4-8\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"THD: 0.03%(1W.1KHz)\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Frequency Response: 20Hz - 20Khz\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null}},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Function Introduction\"}]},{\"type\":\"orderedList\",\"attrs\":{\"start\":1,\"type\":null},\"content\":[{\"type\":\"listItem\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"This host supports tuya app scan code binding(Please connect to the network first).\"}]}]},{\"type\":\"listItem\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Cortex 1.5G quad-core CPU, 4 inch multi-touch capacitive screen, 480*480IPS HD resolution display.\"}]}]},{\"type\":\"listItem\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Host System is Android 11.\"}]}]},{\"type\":\"listItem\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Support external bluetooth devices such as mobile phone to achieve audio playback, two ways control of playing external bluetooth device music, you can set bluetooth to turn on or off.\"}]}]},{\"type\":\"listItem\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Support Audio input function.\"}]}]},{\"type\":\"listItem\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Support Audio output function.\"}]}]},{\"type\":\"listItem\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Support TF card and 2.0USB interface, usb can be connected to the hard disk\"}]}]},{\"type\":\"listItem\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Support TF card firmware;\"}]}]}]}]}",
-    "tags": [
-      "Smart Home Systems Blu-ray Player Set"
-    ],
-    "images": [
-      "https://bs42shopstorage.blob.core.windows.net/bs42/7e1cdf5a-a1c0-413b-922e-873e734725ed"
+      "https://bs42shopstorage.blob.core.windows.net/bs42/8f36a981-d624-42b9-a783-8f9aef7aeab1"
     ],
     "documents": []
   },
@@ -2492,6 +2319,195 @@
   },
   {
     "from": [
+      "11l-chafing-dish"
+    ],
+    "name": "11L Chafing Dish",
+    "brand": "BS42.Net",
+    "category": "Kitchen",
+    "condition": "NEW",
+    "sell": "26.70",
+    "buy": "21.00",
+    "status": "PUBLISHED",
+    "description": "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"This stainless steel chafing dish is ideal for catering your next special event. Supplied with a steam pan, water pan lid and two fuel holders.\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null}}]}",
+    "tags": [
+      "Chafing Dish"
+    ],
+    "images": [
+      "https://bs42shopstorage.blob.core.windows.net/bs42/c49b5a56-b699-4b8c-838d-12aa34340f94"
+    ],
+    "documents": []
+  },
+  {
+    "from": [
+      "4-ss-tube-burners"
+    ],
+    "name": "4 SS Tube Burners",
+    "brand": "BS42.Net",
+    "category": "Kitchen",
+    "condition": "NEW",
+    "sell": "656.00",
+    "buy": "354.00",
+    "status": "PUBLISHED",
+    "description": "{\"type\":\"doc\",\"content\":[{\"type\":\"orderedList\",\"attrs\":{\"start\":1,\"type\":null},\"content\":[{\"type\":\"listItem\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Grill Type: Built in bbq gas grill with infrared back burner\"}]}]},{\"type\":\"listItem\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Burner: 4 SS tube burners\"}]}]},{\"type\":\"listItem\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Main material: SUS304\"}]}]},{\"type\":\"listItem\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Certification: CE, LFGB\"}]}]},{\"type\":\"listItem\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Power:4*3.55KW, 48400BTU\"}]}]},{\"type\":\"listItem\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Gas type: LPG/NG\"}]}]},{\"type\":\"listItem\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Cooking Area:640*420mm\"}]}]},{\"type\":\"listItem\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"With SS cooking grill and SS warning rack\"}]}]},{\"type\":\"listItem\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Feature: Easily Assembled, Easily Cleaned\"}]}]},{\"type\":\"listItem\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Application: Garden/Party/Outdoor\"}]}]},{\"type\":\"listItem\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Laser knob with light, beads, and switch\"}]}]},{\"type\":\"listItem\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Cast iron baking net*2\"}]}]}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"SS304 warning rack*1\"}]}]}",
+    "tags": [
+      "Tube Burner"
+    ],
+    "images": [
+      "https://bs42shopstorage.blob.core.windows.net/bs42/8845aa1f-e08e-4e36-9c6b-b53e9bb813b1"
+    ],
+    "documents": []
+  },
+  {
+    "from": [
+      "8-in-1-bardefu-multi-purpose-juicer"
+    ],
+    "name": "8 in 1 Bardefu Multi-Purpose Juicer",
+    "brand": "BS42.Net",
+    "category": "Kitchen",
+    "condition": "NEW",
+    "sell": "37.00",
+    "buy": "34.00",
+    "status": "PUBLISHED",
+    "description": "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"6 in 1 8 in 1 SILVER CREST BARDEFU Blender 3L 4L 9500WHeavy Duty Mixeur Blender Food Processor Blender Machine I juicer Machine\"}]}]}",
+    "tags": [],
+    "images": [
+      "https://bs42shopstorage.blob.core.windows.net/bs42/1f143391-d2ff-4131-9ee1-543fc5c24a49"
+    ],
+    "documents": []
+  },
+  {
+    "from": [
+      "heavy-duty-commercial-blender"
+    ],
+    "name": "Heavy Duty Commercial Blender",
+    "brand": "BS42.Net",
+    "category": "Kitchen",
+    "condition": "NEW",
+    "sell": "130.00",
+    "buy": "65.00",
+    "status": "PUBLISHED",
+    "description": "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Export Heavy Duty Commercial Blender Household Food Machine Wall Ice Breaker\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Smoothie Fruit juicer Blender With Enclosures\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null}}]}",
+    "tags": [
+      "Heavy Duty Commercial Blender"
+    ],
+    "images": [
+      "https://bs42shopstorage.blob.core.windows.net/bs42/1dfbaa0c-b6c6-4e5d-ac5f-e20730025299",
+      "https://bs42shopstorage.blob.core.windows.net/bs42/b8d17c56-9a51-4b4f-a083-81dfc7d8dfe6",
+      "https://bs42shopstorage.blob.core.windows.net/bs42/d6c2cef2-3f51-4d03-ae25-22d7a6e3dd8b",
+      "https://bs42shopstorage.blob.core.windows.net/bs42/f305e5cd-4cd6-43f0-9091-8cf5abe2740b",
+      "https://bs42shopstorage.blob.core.windows.net/bs42/a3985c3e-f6ae-4ec6-a32f-3ebb22c9bc20",
+      "https://bs42shopstorage.blob.core.windows.net/bs42/66aeb89e-12f1-4321-8689-b58fc541a7ae",
+      "https://bs42shopstorage.blob.core.windows.net/bs42/03e7fb17-56c3-4e67-a333-269575af0f14",
+      "https://bs42shopstorage.blob.core.windows.net/bs42/98460009-c905-4c20-9b73-5d40996e23d9",
+      "https://bs42shopstorage.blob.core.windows.net/bs42/fbb60c44-7fcc-4e0d-95ef-37f68d396c85"
+    ],
+    "documents": []
+  },
+  {
+    "from": [
+      "outdoor-kitchen-cabinet-door"
+    ],
+    "name": "Outdoor Kitchen Cabinet Door",
+    "brand": "BS42.Net",
+    "category": "Kitchen",
+    "condition": "NEW",
+    "sell": "212.00",
+    "buy": "106.00",
+    "status": "PUBLISHED",
+    "description": "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Item Nr. DY-DW02\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Metal Type: Stainless Steel 304 S/S\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Product Size: 800*538*75mm\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Carton Size: 88*10*60cm\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Gross Weight: 8.8KG\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null}}]}",
+    "tags": [
+      "Outdoor Kitchen Cabinet Door"
+    ],
+    "images": [
+      "https://bs42shopstorage.blob.core.windows.net/bs42/0afe838e-5c6a-4f4a-9378-d7649c182047",
+      "https://bs42shopstorage.blob.core.windows.net/bs42/0006fcac-8ede-4753-9e49-0ba62d7a9905"
+    ],
+    "documents": []
+  },
+  {
+    "from": [
+      "outdoor-kitchen-cabinet-drawer"
+    ],
+    "name": "Outdoor Kitchen Cabinet Drawer",
+    "brand": "BS42.Net",
+    "category": "Kitchen",
+    "condition": "NEW",
+    "sell": "212.00",
+    "buy": "106.00",
+    "status": "PUBLISHED",
+    "description": "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Item Nr. DY-DW03\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Metal Type: Stainless Steel 304 S/S\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Product Size: 438*538*428mm\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Carton Size: 50*61.5*50cm\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Gross Weight: 21KG\"}]}]}",
+    "tags": [
+      "Outdoor Kitchen Carbinet Drawer"
+    ],
+    "images": [
+      "https://bs42shopstorage.blob.core.windows.net/bs42/228cff47-9699-41e8-a383-080c54c2d19d",
+      "https://bs42shopstorage.blob.core.windows.net/bs42/65b1f463-cfa6-4029-988c-e20dccbd570c"
+    ],
+    "documents": []
+  },
+  {
+    "from": [
+      "single-conventional-round-gas-burner-built-in-outdoor-kitchen"
+    ],
+    "name": "Single conventional round gas burner - Built-in - Outdoor kitchen",
+    "brand": "BS42.Net",
+    "category": "Kitchen",
+    "condition": "NEW",
+    "sell": "204.00",
+    "buy": "102.00",
+    "status": "PUBLISHED",
+    "description": "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Main Material: Stainless Steel 304\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Power: 3.4KW, 11600TU\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Gas Type: LPG/NG\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Product Size: 25*50*21.5\"}]}]}",
+    "tags": [
+      "Gas burner"
+    ],
+    "images": [
+      "https://bs42shopstorage.blob.core.windows.net/bs42/3d1c5dd1-9a8b-4dee-b1b0-d6d6ff916db0",
+      "https://bs42shopstorage.blob.core.windows.net/bs42/ce008fe2-9617-431c-8602-dae4240a1411"
+    ],
+    "documents": []
+  },
+  {
+    "from": [
+      "stainless-steel-single-bowl-kitchen-sink"
+    ],
+    "name": "Stainless Steel Single Bowl Kitchen Sink",
+    "brand": "BS42.Net",
+    "category": "Kitchen",
+    "condition": "NEW",
+    "sell": "152.00",
+    "buy": "76.00",
+    "status": "PUBLISHED",
+    "description": "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Size: 75*46*22cm\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Color: Black\"}]}]}",
+    "tags": [
+      "Stainless Steel Single Bowl Kitchen Sink"
+    ],
+    "images": [
+      "https://bs42shopstorage.blob.core.windows.net/bs42/0b7daeb3-ebea-4d59-8136-3f0b400801e4"
+    ],
+    "documents": []
+  },
+  {
+    "from": [
+      "top-cooktop-4-burner-gas-stove"
+    ],
+    "name": "Top Cooktop 4 Burner Gas Stove",
+    "brand": "BS42.Net",
+    "category": "Kitchen",
+    "condition": "NEW",
+    "sell": "125.00",
+    "buy": "70.00",
+    "status": "PUBLISHED",
+    "description": "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"2025 Top Cooktop 4 Burner Gas Stove Built in Tempered Glass Black Surface 4 Burner Cooker Gas Stove.\"}]}]}",
+    "tags": [
+      "4 Burner Gas Stove"
+    ],
+    "images": [
+      "https://bs42shopstorage.blob.core.windows.net/bs42/bf98a328-9753-42ef-bb95-e04ecaf68fc2"
+    ],
+    "documents": []
+  },
+  {
+    "from": [
       "2-4g-wi-fi-rgbw-controller"
     ],
     "name": "2.4G Wi-Fi RGBW Controller",
@@ -2508,6 +2524,28 @@
     "images": [
       "https://bs42shopstorage.blob.core.windows.net/bs42/d689ca5c-2b39-4816-8f8a-e33282d3a2d3",
       "https://bs42shopstorage.blob.core.windows.net/bs42/0422a703-4120-4d9b-9d63-8a63632da80c"
+    ],
+    "documents": []
+  },
+  {
+    "from": [
+      "2m-electric-wire-cable-18awg-24awg-2p-3p-4p-rgb-rgbw-flat-wires"
+    ],
+    "name": "2M Electric Wire Cable 18AWG 24AWG 2P 3P 4P RGB RGBW Flat Wires",
+    "brand": "BS42.Net",
+    "category": "LED Accessories",
+    "condition": "NEW",
+    "sell": "6.00",
+    "buy": "3.00",
+    "status": "PUBLISHED",
+    "description": "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Application: LED Strip Light, LED Lighting\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Conductor type: Solid\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Color: Red Green Blue White Yellow\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Temperature range: -10℃ to +80℃\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Voltage: 300V\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Material: PVC+COPPER\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null}}]}",
+    "tags": [
+      "RGB RGBW Flat Wires"
+    ],
+    "images": [
+      "https://bs42shopstorage.blob.core.windows.net/bs42/4da0d499-a95e-46ea-9f96-de77d2078077",
+      "https://bs42shopstorage.blob.core.windows.net/bs42/83abe88d-8eb3-4389-8754-fd036661aeb3",
+      "https://bs42shopstorage.blob.core.windows.net/bs42/54ad8cfb-f813-4357-b940-cd4e6795f01b"
     ],
     "documents": []
   },
@@ -2586,48 +2624,6 @@
     "images": [
       "https://bs42shopstorage.blob.core.windows.net/bs42/b03927a5-6d40-4ed9-86ce-1728933cb9c1",
       "https://bs42shopstorage.blob.core.windows.net/bs42/caf65c0b-78a3-452a-bdcc-954433aa9e4d"
-    ],
-    "documents": []
-  },
-  {
-    "from": [
-      "led-floor-lamp-bluetooth-app"
-    ],
-    "name": "LED Floor Lamp (Bluetooth App)",
-    "brand": "BS42.Net",
-    "category": "LED Accessories",
-    "condition": "NEW",
-    "sell": "38.00",
-    "buy": "19.00",
-    "status": "PUBLISHED",
-    "description": null,
-    "tags": [
-      "LED Lamp"
-    ],
-    "images": [
-      "https://bs42shopstorage.blob.core.windows.net/bs42/b5043cda-d9f5-439c-afb5-b341db696b8d",
-      "https://bs42shopstorage.blob.core.windows.net/bs42/9c38f9c3-759e-4f39-963f-c66d00e3342f"
-    ],
-    "documents": []
-  },
-  {
-    "from": [
-      "led-floor-lamp-tuya-app"
-    ],
-    "name": "LED Floor Lamp (Tuya App)",
-    "brand": "BS42.Net",
-    "category": "LED Accessories",
-    "condition": "NEW",
-    "sell": "44.00",
-    "buy": "42.00",
-    "status": "PUBLISHED",
-    "description": "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Three stage assembly\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Metal base, 126cm high\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Mobile phone Bluetooth, remote control board control, remote sensing distance up to 15m\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Built-in 120 rich effects, can meet a variety of scenarios\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":\"center\"},\"content\":[{\"type\":\"hardBreak\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Basic Parameters\",\"marks\":[{\"type\":\"bold\"}]}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Product Name：Corner Floor Lamp\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Product Model：LC-KIT8812BRGB72/110E1\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Control Way：Bluetooth APP\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Product Size：152*38*2.5cm\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Working Voltage：DC5V\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Product Power：10W\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Working Environment：-20℃-+45℃\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"IP Rating：IP20\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Color Box Size：L450xW155xH62mm\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Packing Size：L455xW620xH435mm（16 Sets/Carton）\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Color Box Weight：1.1KG/Set\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Accessories：72Leds/M Full Color Light Strip/110E Controller(Built IN)/DC5V-2A Constant voltage power supply\"}]}]}",
-    "tags": [
-      "Floor Lamp"
-    ],
-    "images": [
-      "https://bs42shopstorage.blob.core.windows.net/bs42/f04395b8-d31d-41c8-a459-0b8f4c647558",
-      "https://bs42shopstorage.blob.core.windows.net/bs42/d2348548-2f08-4f23-8dab-c120971a096a"
     ],
     "documents": []
   },
@@ -2836,27 +2832,6 @@
   },
   {
     "from": [
-      "cjx2-ac-contactor"
-    ],
-    "name": "CJX2 AC Contactor",
-    "brand": "BS42.Net",
-    "category": "Modules & Faceplates",
-    "condition": "NEW",
-    "sell": "16.50",
-    "buy": "8.25",
-    "status": "PUBLISHED",
-    "description": null,
-    "tags": [
-      "AC Contactor"
-    ],
-    "images": [
-      "https://bs42shopstorage.blob.core.windows.net/bs42/78e96bee-a54d-4e4a-9ee0-015b4e9bb936",
-      "https://bs42shopstorage.blob.core.windows.net/bs42/ba9d679e-5175-4705-a71c-e8c9c8560ee2"
-    ],
-    "documents": []
-  },
-  {
-    "from": [
       "double-gang-bevelled-faceplate"
     ],
     "name": "Double Gang Bevelled Faceplate",
@@ -2874,69 +2849,6 @@
     "images": [
       "https://bs42shopstorage.blob.core.windows.net/bs42/c6fc4ecf-bdb7-4134-b8d6-2ff387e9c986",
       "https://bs42shopstorage.blob.core.windows.net/bs42/2b5861f0-3a37-42e7-a3f4-be3386c16f74"
-    ],
-    "documents": []
-  },
-  {
-    "from": [
-      "poe-access-point-ap"
-    ],
-    "name": "POE Access Point AP",
-    "brand": "BS42.Net",
-    "category": "Modules & Faceplates",
-    "condition": "NEW",
-    "sell": "36.00",
-    "buy": "18.00",
-    "status": "PUBLISHED",
-    "description": "{\"type\":\"doc\",\"content\":[{\"type\":\"heading\",\"attrs\":{\"textAlign\":null,\"level\":3},\"content\":[{\"type\":\"text\",\"text\":\"Hardware Specifications\",\"marks\":[{\"type\":\"underline\"}]}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Chipset - MT7628DAN+MT7613BEN\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Application - Hotel, Shopping mall, office, Hospital, library.\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Model - GZ-FAP670\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Chipset - MT7628DAN+MT7613BEN\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"DDR - 64M DDR\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Flash - 8M Flash\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Interface - 1 * 10/100Mbps RJ45 WAN Port, 1 * 10/100Mbps RJ45 LAN Port, 1*WiFi Switch On/Off button, 1*Reset button\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Power Supply - 48V PoE, IEEE 802.3af standard\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Maxi power consumption - < 6W\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Antenna Type - On board WiFi antenna\"},{\"type\":\"hardBreak\"},{\"type\":\"text\",\"text\":\"2.4G: 3dBi omni antenna\"},{\"type\":\"hardBreak\"},{\"type\":\"text\",\"text\":\"5.8G: 5dBi omni antenna\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Data Rate - 1200Mbps\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Wireless Standards - IEEE 802.11ac/n/a 5GHz; IEEE 802.11n/g/b 2.4GHz\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Dimensions (W X D X H) - 87*86*35.8mm\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Frequency - 5GHz : 5.150GHz～5.850GHz\"},{\"type\":\"hardBreak\"},{\"type\":\"text\",\"text\":\"2.4GHz: 2.4GHz – 2.484GHz\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Signal Rate - 5GHz: Up to 900Mbps;\"},{\"type\":\"hardBreak\"},{\"type\":\"text\",\"text\":\"2.4GHz: Up to 300Mbps\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"PPM - ±20ppm\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Operation Mode - Wireless AP, Gateway, Wi-Fi Repeater\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null}},{\"type\":\"heading\",\"attrs\":{\"textAlign\":null,\"level\":3},\"content\":[{\"type\":\"text\",\"text\":\"Physical Property\",\"marks\":[{\"type\":\"bold\"},{\"type\":\"underline\"}]}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Temperature - Operating Temperature: -20~55 ℃\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Extreme Temperature: -40~70 ℃\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Storage: -40~70 ºC\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Humidity - 5%~95% non-condensing\"}]}]}",
-    "tags": [],
-    "images": [
-      "https://bs42shopstorage.blob.core.windows.net/bs42/90d67c72-1712-4ae6-8003-f9824c8bd182",
-      "https://bs42shopstorage.blob.core.windows.net/bs42/521e3536-2aef-4a63-ac3c-21aad974256e",
-      "https://bs42shopstorage.blob.core.windows.net/bs42/4b7b845e-a687-4319-8ae3-353e1b39baf3"
-    ],
-    "documents": []
-  },
-  {
-    "from": [
-      "weatherproof-outdoor"
-    ],
-    "name": "Weatherproof Outdoor",
-    "brand": "BS42.Net",
-    "category": "Modules & Faceplates",
-    "condition": "NEW",
-    "sell": "24.00",
-    "buy": "12.00",
-    "status": "PUBLISHED",
-    "description": "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"ERGONOMIC FRONT COVER/LID\",\"marks\":[{\"type\":\"bold\"},{\"type\":\"underline\"}]}]},{\"type\":\"orderedList\",\"attrs\":{\"start\":1,\"type\":null},\"content\":[{\"type\":\"listItem\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Bright LED power indicator visible through see-through cover\"}]}]},{\"type\":\"listItem\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Hinged cover has simple press to open or press to close operation\"}]}]},{\"type\":\"listItem\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Neck feature accommodates most plugs with bulky moulded strain relief\"}]}]},{\"type\":\"listItem\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Lockable cover\"}]}]}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"hardBreak\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"SWITCHED SOCKETS:\",\"marks\":[{\"type\":\"bold\"},{\"type\":\"underline\"}]}]},{\"type\":\"bulletList\",\"content\":[{\"type\":\"listItem\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Provides extra control when needed with on/off control and power indicator\"}]}]}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"hardBreak\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"WEATHER & DUST OROTECTION - IP RATED (IP66):\",\"marks\":[{\"type\":\"bold\"},{\"type\":\"underline\"}]}]},{\"type\":\"bulletList\",\"content\":[{\"type\":\"listItem\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"High level of protection against ingress from wayer jet & dust, the durable seals will maintain integrity over the product's life\"}]}]}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"hardBreak\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"MULTIPLE GLAND ENTRY POSITIONS:\",\"marks\":[{\"type\":\"bold\"},{\"type\":\"underline\"}]}]},{\"type\":\"bulletList\",\"content\":[{\"type\":\"listItem\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"8 versatile entry options with M25 capability with an easy push out blank plug design\"}]}]},{\"type\":\"listItem\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"One cut out entry option on rear\"}]}]}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"hardBreak\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"ROBUST CONSTRUCTION:\",\"marks\":[{\"type\":\"bold\"},{\"type\":\"underline\"}]}]},{\"type\":\"bulletList\",\"content\":[{\"type\":\"listItem\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Polycarbonate housing - High impact resistance\"}]}]},{\"type\":\"listItem\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Long Lasting, will not crack or fade\"}]}]}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"hardBreak\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"SAFETY WARNING:\",\"marks\":[{\"type\":\"bold\"},{\"type\":\"underline\"}]}]},{\"type\":\"bulletList\",\"content\":[{\"type\":\"listItem\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Before use, please read carefully and use in accordance with our user safety instructions & wiring diagram enclosed.\"}]}]}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"hardBreak\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"IF IN DOUBT CONSULT QUALIFIED ELECTRICIAN TECHNICAL SPECIFICATION\",\"marks\":[{\"type\":\"bold\"},{\"type\":\"underline\"}]}]},{\"type\":\"bulletList\",\"content\":[{\"type\":\"listItem\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"3.120 watts Max, 13A 240V\"}]}]},{\"type\":\"listItem\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Imaged plug, fixings, wall plugs, and sealant not included.\"}]}]}]}]}",
-    "tags": [
-      "Double Switched Out Door Socket",
-      "waterproof socket"
-    ],
-    "images": [
-      "https://bs42shopstorage.blob.core.windows.net/bs42/222fe258-3b05-4a67-be43-0befbc2472c8",
-      "https://bs42shopstorage.blob.core.windows.net/bs42/706258d3-6f62-412d-ad83-0e0b3cd88d68",
-      "https://bs42shopstorage.blob.core.windows.net/bs42/3b8e06ff-97f0-4a56-ada6-9698d51e7cce"
-    ],
-    "documents": []
-  },
-  {
-    "from": [
-      "hd-smart-video-doorbell"
-    ],
-    "name": "HD Smart Video Doorbell",
-    "brand": "BS42.Net",
-    "category": "Motion Sensors",
-    "condition": "NEW",
-    "sell": "74.00",
-    "buy": "37.00",
-    "status": "PUBLISHED",
-    "description": "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Easy Home Security solution for everyone.\"}]}]}",
-    "tags": [
-      "Smart Video Doorbell"
-    ],
-    "images": [
-      "https://bs42shopstorage.blob.core.windows.net/bs42/8f36a981-d624-42b9-a783-8f9aef7aeab1"
     ],
     "documents": []
   },
@@ -2995,28 +2907,6 @@
   },
   {
     "from": [
-      "2m-electric-wire-cable-18awg-24awg-2p-3p-4p-rgb-rgbw-flat-wires"
-    ],
-    "name": "2M Electric Wire Cable 18AWG 24AWG 2P 3P 4P RGB RGBW Flat Wires",
-    "brand": "BS42.Net",
-    "category": "Network Cables",
-    "condition": "NEW",
-    "sell": "6.00",
-    "buy": "3.00",
-    "status": "PUBLISHED",
-    "description": "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Application: LED Strip Light, LED Lighting\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Conductor type: Solid\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Color: Red Green Blue White Yellow\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Temperature range: -10℃ to +80℃\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Voltage: 300V\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Material: PVC+COPPER\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null}}]}",
-    "tags": [
-      "RGB RGBW Flat Wires"
-    ],
-    "images": [
-      "https://bs42shopstorage.blob.core.windows.net/bs42/4da0d499-a95e-46ea-9f96-de77d2078077",
-      "https://bs42shopstorage.blob.core.windows.net/bs42/83abe88d-8eb3-4389-8754-fd036661aeb3",
-      "https://bs42shopstorage.blob.core.windows.net/bs42/54ad8cfb-f813-4357-b940-cd4e6795f01b"
-    ],
-    "documents": []
-  },
-  {
-    "from": [
       "cat5e-utp-high-speed-network-cable"
     ],
     "name": "CAT5e UTP High Speed Network Cable",
@@ -3058,6 +2948,77 @@
       "https://bs42shopstorage.blob.core.windows.net/bs42/39fdcabf-9cf2-45bf-b134-f50bd37b5047",
       "https://bs42shopstorage.blob.core.windows.net/bs42/fb78b27c-68de-4acd-8bb8-8efa78fe4a37",
       "https://bs42shopstorage.blob.core.windows.net/bs42/0f6eb2d6-dc08-4d1a-ae93-fc91a6060675"
+    ],
+    "documents": []
+  },
+  {
+    "from": [
+      "unbooted-cat5e-utp-patch"
+    ],
+    "name": "Unbooted Cat5e UTP Patch",
+    "brand": "BS42.Net",
+    "category": "Network Cables",
+    "condition": "NEW",
+    "sell": "0.00",
+    "buy": "0.00",
+    "status": "DRAFT",
+    "description": "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Unbooted Cat5e UTP Patch\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Black Cable 1 Mtr\"}]}]}",
+    "tags": [
+      "Cat5 Cable",
+      "Network Cable"
+    ],
+    "images": [
+      "https://bs42shopstorage.blob.core.windows.net/bs42/1d49a3ca-c4eb-4158-b99f-03d08329d67a",
+      "https://bs42shopstorage.blob.core.windows.net/bs42/b5d9c556-57c4-4e3e-8857-ff808fad8985"
+    ],
+    "documents": []
+  },
+  {
+    "from": [
+      "high-quality-19-inches-utp-cat5e-24-port-panel"
+    ],
+    "name": "High Quality 19 Inches UTP Cat5e 24 Port Panel",
+    "brand": "BS42.Net",
+    "category": "Network Infrastructure",
+    "condition": "NEW",
+    "sell": "15.20",
+    "buy": "7.60",
+    "status": "PUBLISHED",
+    "description": null,
+    "tags": [
+      "24 Port Patch Panel",
+      "Patch Panel"
+    ],
+    "images": [
+      "https://bs42shopstorage.blob.core.windows.net/bs42/4936b7ab-549c-4b8f-a1b8-655ceac3729e",
+      "https://bs42shopstorage.blob.core.windows.net/bs42/855f23fb-613b-40ac-b836-0c2253a33649",
+      "https://bs42shopstorage.blob.core.windows.net/bs42/792b5be2-1473-40ea-9a18-63b48289063a",
+      "https://bs42shopstorage.blob.core.windows.net/bs42/4c44f54c-9b37-49a4-a192-866c3e10d58c"
+    ],
+    "documents": []
+  },
+  {
+    "from": [
+      "high-quality-19-inches-utp-cat6-24-port-patch-panel"
+    ],
+    "name": "High Quality 19 Inches UTP Cat6 24 Port Patch Panel",
+    "brand": "BS42.Net",
+    "category": "Network Infrastructure",
+    "condition": "NEW",
+    "sell": "17.20",
+    "buy": "8.60",
+    "status": "PUBLISHED",
+    "description": "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Patch Panel is a piece of hardware with multiple ports that helps organize a group of cables. Each of these ports contains a wire that goes to a different location. Patch panels can be quite small, with just a few ports, or very large, with many hundreds of ports.\"}]}]}",
+    "tags": [
+      "Patch Panel",
+      "Cat6 24 Port Patch Panel"
+    ],
+    "images": [
+      "https://bs42shopstorage.blob.core.windows.net/bs42/68b809a9-66f4-4e51-ba07-b63eee3bfc26",
+      "https://bs42shopstorage.blob.core.windows.net/bs42/9da4fcaf-4b9c-48bd-9ea6-28a8415c66d1",
+      "https://bs42shopstorage.blob.core.windows.net/bs42/d2b2c5e8-fbb2-4ca4-bbb5-f4cf5c18c3cf",
+      "https://bs42shopstorage.blob.core.windows.net/bs42/d0fb0ea9-b1e7-4fb5-bddd-d1ca03e8f93c",
+      "https://bs42shopstorage.blob.core.windows.net/bs42/2176bf84-aa4a-4494-98ac-3dd4e15b2a6d"
     ],
     "documents": []
   },
@@ -3203,62 +3164,6 @@
   },
   {
     "from": [
-      "avaya-ip-office-500-v2"
-    ],
-    "name": "Avaya IP Office 500 V2",
-    "brand": "BS42.Net",
-    "category": "Network Switches",
-    "condition": "USED_GOOD",
-    "sell": "25.00",
-    "buy": "25.00",
-    "status": "PUBLISHED",
-    "description": null,
-    "tags": [],
-    "images": [
-      "https://bs42shopstorage.blob.core.windows.net/bs42/32ddafb2-b319-42e4-aa9c-0dadb2393b4f"
-    ],
-    "documents": []
-  },
-  {
-    "from": [
-      "avaya-ip406-and-ip400-office"
-    ],
-    "name": "Avaya IP406 & IP400 Office",
-    "brand": "BS42.Net",
-    "category": "Network Switches",
-    "condition": "USED_GOOD",
-    "sell": "22.00",
-    "buy": "22.00",
-    "status": "PUBLISHED",
-    "description": null,
-    "tags": [],
-    "images": [
-      "https://bs42shopstorage.blob.core.windows.net/bs42/52eac4fc-c1b0-4e9f-a3bb-d1f371a1e443"
-    ],
-    "documents": []
-  },
-  {
-    "from": [
-      "avaya-telephone-system-set"
-    ],
-    "name": "Avaya Telephone System Set",
-    "brand": "BS42.Net",
-    "category": "Network Switches",
-    "condition": "USED_GOOD",
-    "sell": "40.00",
-    "buy": "40.00",
-    "status": "PUBLISHED",
-    "description": null,
-    "tags": [],
-    "images": [
-      "https://bs42shopstorage.blob.core.windows.net/bs42/f1b6ea36-95f6-46fa-bf50-0eb213a46ad5",
-      "https://bs42shopstorage.blob.core.windows.net/bs42/f6edbd24-433b-4f96-9d9f-b716b1bbe235",
-      "https://bs42shopstorage.blob.core.windows.net/bs42/baa55b04-0bc0-41a7-a1d1-f20f66d79ba8"
-    ],
-    "documents": []
-  },
-  {
-    "from": [
       "cisco-catalyst-2970-series-ws-c2970g-24ts-e-24-port-gigabit-switch"
     ],
     "name": "Cisco Catalyst 2970 Series WS-C2970G-24TS-E 24-Port Gigabit Switch",
@@ -3326,29 +3231,6 @@
   },
   {
     "from": [
-      "digital-timer-switch"
-    ],
-    "name": "Digital Timer Switch",
-    "brand": "BS42.Net",
-    "category": "Network Switches",
-    "condition": "NEW",
-    "sell": "9.00",
-    "buy": "4.50",
-    "status": "PUBLISHED",
-    "description": "{\"type\":\"doc\",\"content\":[{\"type\":\"orderedList\",\"attrs\":{\"start\":1,\"type\":null},\"content\":[{\"type\":\"listItem\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"DIN Rail Installation\"}]}]},{\"type\":\"listItem\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Advanced pre-setting one week before.\"}]}]},{\"type\":\"listItem\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Digital electronics general purpose time switch with daily and weekly program.\"}]}]},{\"type\":\"listItem\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Repeat programs with 20 ON/OFF setting.\"}]}]},{\"type\":\"listItem\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"To-the-minute setting accuracy.\"}]}]},{\"type\":\"listItem\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"LCD display real time to Hour/Minute and ON/AUTO/OFF.\"}]}]}]}]}",
-    "tags": [
-      "Electronic Timer",
-      "Weekly Timer Switch"
-    ],
-    "images": [
-      "https://bs42shopstorage.blob.core.windows.net/bs42/34f14bca-3b68-4a40-9cfd-4078c272ec04",
-      "https://bs42shopstorage.blob.core.windows.net/bs42/31bd89c4-a21d-4697-9baf-59aa5e51bb49",
-      "https://bs42shopstorage.blob.core.windows.net/bs42/31ff9bff-2265-4420-a446-8d51913f461d"
-    ],
-    "documents": []
-  },
-  {
-    "from": [
       "hp-1810-48g-switch-j9660a"
     ],
     "name": "HP 1810-48G Switch J9660A",
@@ -3362,29 +3244,6 @@
     "tags": [],
     "images": [
       "https://bs42shopstorage.blob.core.windows.net/bs42/90758563-8a58-48b6-b9b5-80e7b3f410f4"
-    ],
-    "documents": []
-  },
-  {
-    "from": [
-      "mechanical-time-switch"
-    ],
-    "name": "Mechanical Time Switch",
-    "brand": "BS42.Net",
-    "category": "Network Switches",
-    "condition": "NEW",
-    "sell": "16.00",
-    "buy": "8.00",
-    "status": "PUBLISHED",
-    "description": "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Operation Power Voltage - 100-240V AC\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Allowable Operating Voltage - 85-264V AC\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Power Source Frequency - 50Hz/60Hz common use\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Driving Method - Quarts Motor\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Power Failure Compensation - 100 hours\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Time Precision - Within +15seconds per month(at temperature 25°C)\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Program Cycle - 24hours\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Consumption Power - 110V AC 1W*220V AC 2W\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Circuit Quantity - 1 circuit\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Circuit Configuration - Same Circuit (Voltage-applied contact output)\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Contact Configuration - Single Pole. Single-through\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Manual on/off - With ON/AUTO/OFF Switch\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null}},{\"type\":\"heading\",\"attrs\":{\"textAlign\":null,\"level\":3},\"content\":[{\"type\":\"text\",\"text\":\"Output Contact Capacity\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Resistance - 15A\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Incandescent Lamp - 10A\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Induction(cos =0.7) - 12A\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Motor (cos=0.7) - 110V AC 750W * 220V AC 1500W\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null}}]}",
-    "tags": [
-      "Time Switch"
-    ],
-    "images": [
-      "https://bs42shopstorage.blob.core.windows.net/bs42/03ece667-0f32-473f-b901-1ed6be996faa",
-      "https://bs42shopstorage.blob.core.windows.net/bs42/d10bb607-0c1d-417e-aabd-3af40a4025ea",
-      "https://bs42shopstorage.blob.core.windows.net/bs42/786ab94b-6c51-403b-8b14-33cb3f27cbde",
-      "https://bs42shopstorage.blob.core.windows.net/bs42/22d70cf8-08e5-4109-aaf5-095602337b4e"
     ],
     "documents": []
   },
@@ -3435,78 +3294,6 @@
   },
   {
     "from": [
-      "panasonic-advanced-hybrid-system-kx-ta624"
-    ],
-    "name": "Panasonic Advanced Hybrid system KX-TA624",
-    "brand": "Panasonic",
-    "category": "Network Switches",
-    "condition": "USED_GOOD",
-    "sell": "70.00",
-    "buy": "70.00",
-    "status": "PUBLISHED",
-    "description": null,
-    "tags": [],
-    "images": [
-      "https://bs42shopstorage.blob.core.windows.net/bs42/547d5afe-b419-4ef2-b9ce-6462d99baeda"
-    ],
-    "documents": []
-  },
-  {
-    "from": [
-      "panasonic-kx-ncp500"
-    ],
-    "name": "Panasonic KX-NCP500",
-    "brand": "Panasonic",
-    "category": "Network Switches",
-    "condition": "USED_GOOD",
-    "sell": "250.00",
-    "buy": "250.00",
-    "status": "PUBLISHED",
-    "description": null,
-    "tags": [],
-    "images": [
-      "https://bs42shopstorage.blob.core.windows.net/bs42/fc95173b-e575-4a45-8fa4-497cf3c30add"
-    ],
-    "documents": []
-  },
-  {
-    "from": [
-      "panansonic-kx-ns700"
-    ],
-    "name": "Panasonic KX-NS700",
-    "brand": "Panasonic",
-    "category": "Network Switches",
-    "condition": "USED_GOOD",
-    "sell": "150.00",
-    "buy": "150.00",
-    "status": "PUBLISHED",
-    "description": "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Card Slot DLC16 EXTN1-16\"}]}]}",
-    "tags": [],
-    "images": [
-      "https://bs42shopstorage.blob.core.windows.net/bs42/5b4fb0f1-5597-4b1f-b043-a0e013dfdc6f"
-    ],
-    "documents": []
-  },
-  {
-    "from": [
-      "panasonic-kx-tda30au-hybrid-ip-pbx"
-    ],
-    "name": "Panasonic KX-TDA30AU Hybrid IP-PBX",
-    "brand": "Panasonic",
-    "category": "Network Switches",
-    "condition": "USED_GOOD",
-    "sell": "150.00",
-    "buy": "150.00",
-    "status": "PUBLISHED",
-    "description": "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"CARD SLOT INCLUDED\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"2X LCOT4 1-4 CARD\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"1 DHLC4 1-4\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"DLC8 1-8\"}]}]}",
-    "tags": [],
-    "images": [
-      "https://bs42shopstorage.blob.core.windows.net/bs42/476466df-00e1-4fd4-a007-127745ab07a2"
-    ],
-    "documents": []
-  },
-  {
-    "from": [
       "pluscom-5-port-10-100m-switch"
     ],
     "name": "Pluscom 5 Port 10/100M Switch",
@@ -3551,93 +3338,6 @@
       "https://bs42shopstorage.blob.core.windows.net/bs42/eecc2eca-1234-45c2-aa15-bdff1eb0b055",
       "https://bs42shopstorage.blob.core.windows.net/bs42/24e4efff-4306-4290-bbe5-5fec67160fe8",
       "https://bs42shopstorage.blob.core.windows.net/bs42/d7ee005d-c0e0-4365-97ef-f74053c2c5ed"
-    ],
-    "documents": []
-  },
-  {
-    "from": [
-      "siemens-bs4"
-    ],
-    "name": "SIEMENS BS4",
-    "brand": "SIEMENS",
-    "category": "Network Switches",
-    "condition": "NEW",
-    "sell": "50.00",
-    "buy": "50.00",
-    "status": "PUBLISHED",
-    "description": null,
-    "tags": [],
-    "images": [
-      "https://bs42shopstorage.blob.core.windows.net/bs42/6d204d26-6ca3-48eb-8113-5112f7ce409e"
-    ],
-    "documents": []
-  },
-  {
-    "from": [
-      "siemens-hipath-3350"
-    ],
-    "name": "SIEMENS HIPATH 3350",
-    "brand": "SIEMENS",
-    "category": "Network Switches",
-    "condition": "USED_GOOD",
-    "sell": "150.00",
-    "buy": "150.00",
-    "status": "PUBLISHED",
-    "description": null,
-    "tags": [],
-    "images": [
-      "https://bs42shopstorage.blob.core.windows.net/bs42/43ca69e2-7281-4a60-8909-42e42dbac19f"
-    ],
-    "documents": []
-  },
-  {
-    "from": [
-      "switching-gigabit-power-supply-p11e4Ek5a",
-      "switching-gigabit-power-supply-poe"
-    ],
-    "name": "Switching Gigabit Power Supply",
-    "brand": "BS42.Net",
-    "category": "Network Switches",
-    "condition": "NEW",
-    "sell": "0.00",
-    "buy": "0.00",
-    "status": "DRAFT",
-    "description": "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Model: \",\"marks\":[{\"type\":\"bold\"}]},{\"type\":\"text\",\"text\":\"GP-A240-050G\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"PN: \",\"marks\":[{\"type\":\"bold\"}]},{\"type\":\"text\",\"text\":\"POE-24-12W-G\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Input:\",\"marks\":[{\"type\":\"bold\"}]},{\"type\":\"text\",\"text\":\" 100-240V - 50/60Hz MAX 0.3A(0.3A)\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Output:\",\"marks\":[{\"type\":\"bold\"}]},{\"type\":\"text\",\"text\":\" 24V=0.5A(0.5A)\"}]}]}",
-    "tags": [
-      "POE Switch Injector",
-      "Switch",
-      "ubiquiti Switch injector",
-      "POE Switch"
-    ],
-    "images": [
-      "https://bs42shopstorage.blob.core.windows.net/bs42/35d11378-085f-43d3-80f1-de54aaf5d92e",
-      "https://bs42shopstorage.blob.core.windows.net/bs42/6be4512f-36bc-47f5-85e5-6c58bb6c96e6",
-      "https://bs42shopstorage.blob.core.windows.net/bs42/39a1116b-9116-49b3-a125-5b013a7c47f6",
-      "https://bs42shopstorage.blob.core.windows.net/bs42/869da8f9-ee2a-4bdd-a7e2-1560ebd3a848",
-      "https://bs42shopstorage.blob.core.windows.net/bs42/4e2c34da-40a6-4b18-964c-47de63d74085",
-      "https://bs42shopstorage.blob.core.windows.net/bs42/a64d4cc6-6c3a-46b1-8e23-40d8eaf9c089",
-      "https://bs42shopstorage.blob.core.windows.net/bs42/a90a6692-5dc1-4976-aa80-986a2dce5f27",
-      "https://bs42shopstorage.blob.core.windows.net/bs42/6a01f939-e819-46dc-916c-5cf952616a0b",
-      "https://bs42shopstorage.blob.core.windows.net/bs42/0c3cba12-8125-4771-87a5-cef83444a0d6",
-      "https://bs42shopstorage.blob.core.windows.net/bs42/2d4c8c1f-4b53-4c23-ba91-11220aede69e"
-    ],
-    "documents": []
-  },
-  {
-    "from": [
-      "tda100-hybrud-ip-pbx"
-    ],
-    "name": "TDA100 Hybrid IP PBX",
-    "brand": "Panasonic",
-    "category": "Network Switches",
-    "condition": "USED_GOOD",
-    "sell": "350.00",
-    "buy": "350.00",
-    "status": "PUBLISHED",
-    "description": "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Comes with DLC 16 Card Status.\"}]}]}",
-    "tags": [],
-    "images": [
-      "https://bs42shopstorage.blob.core.windows.net/bs42/98fe81b8-724b-41cd-8db0-0522fb3fc37c"
     ],
     "documents": []
   },
@@ -3830,6 +3530,29 @@
   },
   {
     "from": [
+      "laser-mount-holder"
+    ],
+    "name": "Laser Mount Holder",
+    "brand": "BS42.Net",
+    "category": "Network Tools",
+    "condition": "NEW",
+    "sell": "26.00",
+    "buy": "13.00",
+    "status": "PUBLISHED",
+    "description": null,
+    "tags": [
+      "Laser Mount Holder"
+    ],
+    "images": [
+      "https://bs42shopstorage.blob.core.windows.net/bs42/1d57451c-d7e0-4fea-bd30-4c26a8062feb",
+      "https://bs42shopstorage.blob.core.windows.net/bs42/8146f8ed-03ac-476a-8bd4-7ee43d8921e3",
+      "https://bs42shopstorage.blob.core.windows.net/bs42/4b5774d2-c201-474b-8219-15267d0baa4a",
+      "https://bs42shopstorage.blob.core.windows.net/bs42/d928908d-f0e4-4b62-b132-6a94d7862ece"
+    ],
+    "documents": []
+  },
+  {
+    "from": [
       "level-laser-pro3"
     ],
     "name": "Level Laser PRO3",
@@ -3981,48 +3704,273 @@
   },
   {
     "from": [
-      "2-port-hdmi-utp-extender-transmitter"
+      "4x4-corner-pergola-brackets"
     ],
-    "name": "2 Port HDMI UTP Extender - Transmitter",
+    "name": "4x4 Corner Pergola Brackets",
     "brand": "BS42.Net",
-    "category": "Plugs & Connectors",
+    "category": "Pergolas",
     "condition": "NEW",
-    "sell": "74.00",
-    "buy": "37.00",
+    "sell": "26.00",
+    "buy": "13.00",
     "status": "PUBLISHED",
-    "description": null,
+    "description": "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"4x4 Wood Bracket for Pergola\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Color: Black.\"}]}]}",
     "tags": [
-      "HDMI Transmitter"
+      "Pergola brackets"
     ],
     "images": [
-      "https://bs42shopstorage.blob.core.windows.net/bs42/6d05b86f-89c8-45a8-b006-681836820614",
-      "https://bs42shopstorage.blob.core.windows.net/bs42/ccd69037-42b2-43d0-8c20-83f06af6761d",
-      "https://bs42shopstorage.blob.core.windows.net/bs42/01bffab8-c92e-448e-9d7a-122e075a5b73",
-      "https://bs42shopstorage.blob.core.windows.net/bs42/52f92de3-52cc-401e-a780-739151ad3b68",
-      "https://bs42shopstorage.blob.core.windows.net/bs42/f1c3775b-4599-4cc0-9792-cd0b634dd53a"
+      "https://bs42shopstorage.blob.core.windows.net/bs42/c4e506a7-d21d-4903-aa4b-7c97d8f927a6",
+      "https://bs42shopstorage.blob.core.windows.net/bs42/1c4a618e-13a6-4c1b-b78d-e160f34653c0",
+      "https://bs42shopstorage.blob.core.windows.net/bs42/90ff950f-6716-417c-93ce-4867d1703e19",
+      "https://bs42shopstorage.blob.core.windows.net/bs42/8b483ce8-c779-4dfd-8bd6-d7a2de53bcf1"
     ],
     "documents": []
   },
   {
     "from": [
-      "4-port-hdmi-utp-extender-transmitter"
+      "4x4-pergola-3-sided-bracket"
     ],
-    "name": "4 Port HDMI UTP Extender (Transmitter)",
+    "name": "4x4 Pergola 3 sided Bracket",
     "brand": "BS42.Net",
-    "category": "Plugs & Connectors",
+    "category": "Pergolas",
     "condition": "NEW",
-    "sell": "110.00",
-    "buy": "55.00",
+    "sell": "42.00",
+    "buy": "21.00",
     "status": "PUBLISHED",
-    "description": "{\"type\":\"doc\",\"content\":[{\"type\":\"heading\",\"attrs\":{\"textAlign\":null,\"level\":3},\"content\":[{\"type\":\"text\",\"text\":\"VIDEO\",\"marks\":[{\"type\":\"underline\"}]}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Standard: HDMI 1.4,HDCP 1.2\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Maximum Pixel Clock: 165MHz\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Max Data Rate: 6.75Gbps\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Resolution: Max: 1920x1080@60Hz (Backward-compatible)\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Connector: HDMI-A\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Impedance : 100\"},{\"type\":\"text\",\"text\":\"Ω\",\"marks\":[{\"type\":\"bold\"}]}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null}},{\"type\":\"heading\",\"attrs\":{\"textAlign\":null,\"level\":3},\"content\":[{\"type\":\"text\",\"text\":\"USB\",\"marks\":[{\"type\":\"bold\"},{\"type\":\"underline\"}]}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Interface: PC: Standard USB / K/M: Standard USB\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"USB Signal: HID Signal\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null}},{\"type\":\"heading\",\"attrs\":{\"textAlign\":null,\"level\":3},\"content\":[{\"type\":\"text\",\"text\":\"UTP\",\"marks\":[{\"type\":\"underline\"}]}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Interface: RJ45\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Transmission Distance: CAT6 Max: 60m\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null}},{\"type\":\"heading\",\"attrs\":{\"textAlign\":null,\"level\":3},\"content\":[{\"type\":\"text\",\"text\":\"OTHER\",\"marks\":[{\"type\":\"bold\"},{\"type\":\"underline\"}]}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Power Supply: DC 5V\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Power Dissipation: Max: 4W\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Temperature: Operating: -5°C - +70°C\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Humidity: Operating: 5% - 90%\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Dimension: 65*45*23mm\"}]}]}",
+    "description": "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"4x4 Wood Bracket for Pergola\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Color: Black.\"}]}]}",
     "tags": [
-      "HDMI Transmitter"
+      "Pergola Brackets"
     ],
     "images": [
-      "https://bs42shopstorage.blob.core.windows.net/bs42/aa17f4c7-bc09-43f0-a733-bf04f391007f",
-      "https://bs42shopstorage.blob.core.windows.net/bs42/b1a37eb4-cd48-4f45-8be5-4ca2d531aef2",
-      "https://bs42shopstorage.blob.core.windows.net/bs42/558d2825-4651-43ab-a82d-0d2d2d065843",
-      "https://bs42shopstorage.blob.core.windows.net/bs42/01ac7b44-45a9-462f-8fd4-aba8550873f5"
+      "https://bs42shopstorage.blob.core.windows.net/bs42/4890c5c2-398e-4f75-ac4d-a7850fb7bd5c",
+      "https://bs42shopstorage.blob.core.windows.net/bs42/dcf9533f-54c1-40ea-96ef-2d0064b60139"
+    ],
+    "documents": []
+  },
+  {
+    "from": [
+      "4x4-pergola-leg-bracket"
+    ],
+    "name": "4x4 Pergola Leg Bracket",
+    "brand": "BS42.Net",
+    "category": "Pergolas",
+    "condition": "NEW",
+    "sell": "14.00",
+    "buy": "7.00",
+    "status": "PUBLISHED",
+    "description": null,
+    "tags": [
+      "Pergola brackets"
+    ],
+    "images": [
+      "https://bs42shopstorage.blob.core.windows.net/bs42/c695ad68-dcc9-45b8-a683-e7fae24e45a3",
+      "https://bs42shopstorage.blob.core.windows.net/bs42/a71f967a-5ae2-4d32-9c8d-bad39789b524",
+      "https://bs42shopstorage.blob.core.windows.net/bs42/2230cb77-476e-4f4e-8c55-f8a4e025be46",
+      "https://bs42shopstorage.blob.core.windows.net/bs42/b6194107-fcf0-4fd9-a240-06d75d659e5a"
+    ],
+    "documents": []
+  },
+  {
+    "from": [
+      "s2000-louver-pergola"
+    ],
+    "name": "S2000 Louver Pergola",
+    "brand": "BS42.Net",
+    "category": "Pergolas",
+    "condition": "NEW",
+    "sell": "0.00",
+    "buy": "0.00",
+    "status": "DRAFT",
+    "description": "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Coming Soon!!!\"}]}]}",
+    "tags": [
+      "Pergola"
+    ],
+    "images": [
+      "https://bs42shopstorage.blob.core.windows.net/bs42/e70b80e9-9575-440a-93a7-394749b82d6f",
+      "https://bs42shopstorage.blob.core.windows.net/bs42/b1c27a7c-2dfb-4052-8aba-18d8a50d555f",
+      "https://bs42shopstorage.blob.core.windows.net/bs42/9e135cfb-859c-43fe-824f-901280f5bcdf",
+      "https://bs42shopstorage.blob.core.windows.net/bs42/0dbca0d1-dd09-4389-91c1-07b42baa2104"
+    ],
+    "documents": []
+  },
+  {
+    "from": [
+      "avaya-ip-office-500-v2"
+    ],
+    "name": "Avaya IP Office 500 V2",
+    "brand": "BS42.Net",
+    "category": "Phone Systems",
+    "condition": "USED_GOOD",
+    "sell": "25.00",
+    "buy": "25.00",
+    "status": "PUBLISHED",
+    "description": null,
+    "tags": [],
+    "images": [
+      "https://bs42shopstorage.blob.core.windows.net/bs42/32ddafb2-b319-42e4-aa9c-0dadb2393b4f"
+    ],
+    "documents": []
+  },
+  {
+    "from": [
+      "avaya-ip406-and-ip400-office"
+    ],
+    "name": "Avaya IP406 & IP400 Office",
+    "brand": "BS42.Net",
+    "category": "Phone Systems",
+    "condition": "USED_GOOD",
+    "sell": "22.00",
+    "buy": "22.00",
+    "status": "PUBLISHED",
+    "description": null,
+    "tags": [],
+    "images": [
+      "https://bs42shopstorage.blob.core.windows.net/bs42/52eac4fc-c1b0-4e9f-a3bb-d1f371a1e443"
+    ],
+    "documents": []
+  },
+  {
+    "from": [
+      "avaya-telephone-system-set"
+    ],
+    "name": "Avaya Telephone System Set",
+    "brand": "BS42.Net",
+    "category": "Phone Systems",
+    "condition": "USED_GOOD",
+    "sell": "40.00",
+    "buy": "40.00",
+    "status": "PUBLISHED",
+    "description": null,
+    "tags": [],
+    "images": [
+      "https://bs42shopstorage.blob.core.windows.net/bs42/f1b6ea36-95f6-46fa-bf50-0eb213a46ad5",
+      "https://bs42shopstorage.blob.core.windows.net/bs42/f6edbd24-433b-4f96-9d9f-b716b1bbe235",
+      "https://bs42shopstorage.blob.core.windows.net/bs42/baa55b04-0bc0-41a7-a1d1-f20f66d79ba8"
+    ],
+    "documents": []
+  },
+  {
+    "from": [
+      "panasonic-advanced-hybrid-system-kx-ta624"
+    ],
+    "name": "Panasonic Advanced Hybrid system KX-TA624",
+    "brand": "Panasonic",
+    "category": "Phone Systems",
+    "condition": "USED_GOOD",
+    "sell": "70.00",
+    "buy": "70.00",
+    "status": "PUBLISHED",
+    "description": null,
+    "tags": [],
+    "images": [
+      "https://bs42shopstorage.blob.core.windows.net/bs42/547d5afe-b419-4ef2-b9ce-6462d99baeda"
+    ],
+    "documents": []
+  },
+  {
+    "from": [
+      "panasonic-kx-ncp500"
+    ],
+    "name": "Panasonic KX-NCP500",
+    "brand": "Panasonic",
+    "category": "Phone Systems",
+    "condition": "USED_GOOD",
+    "sell": "250.00",
+    "buy": "250.00",
+    "status": "PUBLISHED",
+    "description": null,
+    "tags": [],
+    "images": [
+      "https://bs42shopstorage.blob.core.windows.net/bs42/fc95173b-e575-4a45-8fa4-497cf3c30add"
+    ],
+    "documents": []
+  },
+  {
+    "from": [
+      "panansonic-kx-ns700"
+    ],
+    "name": "Panasonic KX-NS700",
+    "brand": "Panasonic",
+    "category": "Phone Systems",
+    "condition": "USED_GOOD",
+    "sell": "150.00",
+    "buy": "150.00",
+    "status": "PUBLISHED",
+    "description": "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Card Slot DLC16 EXTN1-16\"}]}]}",
+    "tags": [],
+    "images": [
+      "https://bs42shopstorage.blob.core.windows.net/bs42/5b4fb0f1-5597-4b1f-b043-a0e013dfdc6f"
+    ],
+    "documents": []
+  },
+  {
+    "from": [
+      "panasonic-kx-tda30au-hybrid-ip-pbx"
+    ],
+    "name": "Panasonic KX-TDA30AU Hybrid IP-PBX",
+    "brand": "Panasonic",
+    "category": "Phone Systems",
+    "condition": "USED_GOOD",
+    "sell": "150.00",
+    "buy": "150.00",
+    "status": "PUBLISHED",
+    "description": "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"CARD SLOT INCLUDED\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"2X LCOT4 1-4 CARD\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"1 DHLC4 1-4\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"DLC8 1-8\"}]}]}",
+    "tags": [],
+    "images": [
+      "https://bs42shopstorage.blob.core.windows.net/bs42/476466df-00e1-4fd4-a007-127745ab07a2"
+    ],
+    "documents": []
+  },
+  {
+    "from": [
+      "siemens-bs4"
+    ],
+    "name": "SIEMENS BS4",
+    "brand": "SIEMENS",
+    "category": "Phone Systems",
+    "condition": "NEW",
+    "sell": "50.00",
+    "buy": "50.00",
+    "status": "PUBLISHED",
+    "description": null,
+    "tags": [],
+    "images": [
+      "https://bs42shopstorage.blob.core.windows.net/bs42/6d204d26-6ca3-48eb-8113-5112f7ce409e"
+    ],
+    "documents": []
+  },
+  {
+    "from": [
+      "siemens-hipath-3350"
+    ],
+    "name": "SIEMENS HIPATH 3350",
+    "brand": "SIEMENS",
+    "category": "Phone Systems",
+    "condition": "USED_GOOD",
+    "sell": "150.00",
+    "buy": "150.00",
+    "status": "PUBLISHED",
+    "description": null,
+    "tags": [],
+    "images": [
+      "https://bs42shopstorage.blob.core.windows.net/bs42/43ca69e2-7281-4a60-8909-42e42dbac19f"
+    ],
+    "documents": []
+  },
+  {
+    "from": [
+      "tda100-hybrud-ip-pbx"
+    ],
+    "name": "TDA100 Hybrid IP PBX",
+    "brand": "Panasonic",
+    "category": "Phone Systems",
+    "condition": "USED_GOOD",
+    "sell": "350.00",
+    "buy": "350.00",
+    "status": "PUBLISHED",
+    "description": "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Comes with DLC 16 Card Status.\"}]}]}",
+    "tags": [],
+    "images": [
+      "https://bs42shopstorage.blob.core.windows.net/bs42/98fe81b8-724b-41cd-8db0-0522fb3fc37c"
     ],
     "documents": []
   },
@@ -4045,97 +3993,6 @@
     "images": [
       "https://bs42shopstorage.blob.core.windows.net/bs42/c47bafdb-d7bf-43ae-b8d8-619b3a698b02",
       "https://bs42shopstorage.blob.core.windows.net/bs42/68df1ab4-3fa8-4318-9c25-793887d95bf0"
-    ],
-    "documents": []
-  },
-  {
-    "from": [
-      "dvi-male-24-5-to-vga-male-gold-plate-cable"
-    ],
-    "name": "DVI Male (24+5) to VGA Male Gold Plated Cable",
-    "brand": "BS42.Net",
-    "category": "Plugs & Connectors",
-    "condition": "NEW",
-    "sell": "0.00",
-    "buy": "0.00",
-    "status": "DRAFT",
-    "description": "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"DVI Male(24+5) to VGA male Gold Plate Cable\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Color: Black\"}]}]}",
-    "tags": [
-      "DVI to VGA Cable",
-      "DVI to VGA Display Cable"
-    ],
-    "images": [
-      "https://bs42shopstorage.blob.core.windows.net/bs42/c28f3bf4-0a13-4c70-968d-fb64c220c15a",
-      "https://bs42shopstorage.blob.core.windows.net/bs42/b22112a3-4800-489e-b692-6826ad788a0e"
-    ],
-    "documents": []
-  },
-  {
-    "from": [
-      "hdmi-extender-60m-transmitter-and-receiver"
-    ],
-    "name": "HDMI Extender 60M(Transmitter & Receiver)",
-    "brand": "BS42.Net",
-    "category": "Plugs & Connectors",
-    "condition": "NEW",
-    "sell": "24.00",
-    "buy": "12.00",
-    "status": "PUBLISHED",
-    "description": "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"The HDMI to RJ45 Extender use single CAT5e or CAT6(recommended) cables up to 60 meters instead of HDMI cable to transmit high definition signal, for cutting down cost. Long distance transmission of high definition is very difficult because HDMI cable is very expensive and infrequent. The Extender is designed to supply for long distance transmission of high definition signal.\"}]}]}",
-    "tags": [
-      "HDMI Extender"
-    ],
-    "images": [
-      "https://bs42shopstorage.blob.core.windows.net/bs42/d1309dab-1caf-44cb-96d7-748655ab4e70"
-    ],
-    "documents": []
-  },
-  {
-    "from": [
-      "high-quality-19-inches-utp-cat5e-24-port-panel"
-    ],
-    "name": "High Quality 19 Inches UTP Cat5e 24 Port Panel",
-    "brand": "BS42.Net",
-    "category": "Plugs & Connectors",
-    "condition": "NEW",
-    "sell": "15.20",
-    "buy": "7.60",
-    "status": "PUBLISHED",
-    "description": null,
-    "tags": [
-      "24 Port Patch Panel",
-      "Patch Panel"
-    ],
-    "images": [
-      "https://bs42shopstorage.blob.core.windows.net/bs42/4936b7ab-549c-4b8f-a1b8-655ceac3729e",
-      "https://bs42shopstorage.blob.core.windows.net/bs42/855f23fb-613b-40ac-b836-0c2253a33649",
-      "https://bs42shopstorage.blob.core.windows.net/bs42/792b5be2-1473-40ea-9a18-63b48289063a",
-      "https://bs42shopstorage.blob.core.windows.net/bs42/4c44f54c-9b37-49a4-a192-866c3e10d58c"
-    ],
-    "documents": []
-  },
-  {
-    "from": [
-      "high-quality-19-inches-utp-cat6-24-port-patch-panel"
-    ],
-    "name": "High Quality 19 Inches UTP Cat6 24 Port Patch Panel",
-    "brand": "BS42.Net",
-    "category": "Plugs & Connectors",
-    "condition": "NEW",
-    "sell": "17.20",
-    "buy": "8.60",
-    "status": "PUBLISHED",
-    "description": "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Patch Panel is a piece of hardware with multiple ports that helps organize a group of cables. Each of these ports contains a wire that goes to a different location. Patch panels can be quite small, with just a few ports, or very large, with many hundreds of ports.\"}]}]}",
-    "tags": [
-      "Patch Panel",
-      "Cat6 24 Port Patch Panel"
-    ],
-    "images": [
-      "https://bs42shopstorage.blob.core.windows.net/bs42/68b809a9-66f4-4e51-ba07-b63eee3bfc26",
-      "https://bs42shopstorage.blob.core.windows.net/bs42/9da4fcaf-4b9c-48bd-9ea6-28a8415c66d1",
-      "https://bs42shopstorage.blob.core.windows.net/bs42/d2b2c5e8-fbb2-4ca4-bbb5-f4cf5c18c3cf",
-      "https://bs42shopstorage.blob.core.windows.net/bs42/d0fb0ea9-b1e7-4fb5-bddd-d1ca03e8f93c",
-      "https://bs42shopstorage.blob.core.windows.net/bs42/2176bf84-aa4a-4494-98ac-3dd4e15b2a6d"
     ],
     "documents": []
   },
@@ -4302,107 +4159,6 @@
   },
   {
     "from": [
-      "svga-vga-male-to-male-cable-yyeWKROy3",
-      "svga-vga-male-to-male-cable"
-    ],
-    "name": "SVGA VGA Male to Male Cable",
-    "brand": "BS42.Net",
-    "category": "Plugs & Connectors",
-    "condition": "NEW",
-    "sell": "0.00",
-    "buy": "0.00",
-    "status": "DRAFT",
-    "description": "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"SVGA VGA Male to Male Cable\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"7 Mtr Cable\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Color: White\"}]}]}",
-    "tags": [
-      "SVGA VGA cable",
-      "VGA Cable",
-      "Display Cable"
-    ],
-    "images": [
-      "https://bs42shopstorage.blob.core.windows.net/bs42/215737b4-b027-44f1-9919-76cf779c7887",
-      "https://bs42shopstorage.blob.core.windows.net/bs42/40f1186b-d4b8-468c-bef3-207730ef460b"
-    ],
-    "documents": [],
-    "options": [
-      {
-        "name": "Length",
-        "values": [
-          "2.5m",
-          "7m"
-        ]
-      }
-    ],
-    "variants": [
-      {
-        "values": {
-          "Length": "2.5m"
-        },
-        "sell": "0.00",
-        "buy": "0.00",
-        "images": [
-          "https://bs42shopstorage.blob.core.windows.net/bs42/215737b4-b027-44f1-9919-76cf779c7887",
-          "https://bs42shopstorage.blob.core.windows.net/bs42/40f1186b-d4b8-468c-bef3-207730ef460b"
-        ]
-      },
-      {
-        "values": {
-          "Length": "7m"
-        },
-        "sell": "0.00",
-        "buy": "0.00",
-        "images": [
-          "https://bs42shopstorage.blob.core.windows.net/bs42/b06b6360-7fb5-4fb6-a87b-6dfe6e51c274",
-          "https://bs42shopstorage.blob.core.windows.net/bs42/9b73f720-4b86-4c27-b8d2-e1faf15a1bd0"
-        ]
-      }
-    ]
-  },
-  {
-    "from": [
-      "unbooted-cat5e-utp-patch"
-    ],
-    "name": "Unbooted Cat5e UTP Patch",
-    "brand": "BS42.Net",
-    "category": "Plugs & Connectors",
-    "condition": "NEW",
-    "sell": "0.00",
-    "buy": "0.00",
-    "status": "DRAFT",
-    "description": "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Unbooted Cat5e UTP Patch\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Black Cable 1 Mtr\"}]}]}",
-    "tags": [
-      "Cat5 Cable",
-      "Network Cable"
-    ],
-    "images": [
-      "https://bs42shopstorage.blob.core.windows.net/bs42/1d49a3ca-c4eb-4158-b99f-03d08329d67a",
-      "https://bs42shopstorage.blob.core.windows.net/bs42/b5d9c556-57c4-4e3e-8857-ff808fad8985"
-    ],
-    "documents": []
-  },
-  {
-    "from": [
-      "usb-2-0-extended-cable"
-    ],
-    "name": "USB 2.0 Extended Cable",
-    "brand": "BS42.Net",
-    "category": "Plugs & Connectors",
-    "condition": "NEW",
-    "sell": "0.00",
-    "buy": "0.00",
-    "status": "DRAFT",
-    "description": "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"USB 2.0 AWM 2725 24AWG/1PR AND 24AWG/2C 80C 30V CSA AWM\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Color: Black\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"5 Mtr\"}]}]}",
-    "tags": [
-      "USB Cable",
-      "USB Extended Cable"
-    ],
-    "images": [
-      "https://bs42shopstorage.blob.core.windows.net/bs42/0c143374-293c-442f-b35b-ca636230d52a",
-      "https://bs42shopstorage.blob.core.windows.net/bs42/2da273c9-592b-4dfa-95bf-97a0cb73c65b"
-    ],
-    "documents": []
-  },
-  {
-    "from": [
       "plastic-pipe-welding-machine"
     ],
     "name": "Plastic Pipe Welding Machine",
@@ -4418,6 +4174,28 @@
       "https://bs42shopstorage.blob.core.windows.net/bs42/4992cf1a-fed1-4326-84b6-40a5190a769f",
       "https://bs42shopstorage.blob.core.windows.net/bs42/2712a82a-81ee-455a-b0a4-8e9084090df9",
       "https://bs42shopstorage.blob.core.windows.net/bs42/e641e905-e9b9-4dd6-8d16-be66061605b9"
+    ],
+    "documents": []
+  },
+  {
+    "from": [
+      "shower-faucet-combo"
+    ],
+    "name": "Shower Faucet Combo",
+    "brand": "BS42.Net",
+    "category": "Plumbing Supplies",
+    "condition": "NEW",
+    "sell": "192.00",
+    "buy": "96.00",
+    "status": "PUBLISHED",
+    "description": "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Concealed shower set \"}]}]}",
+    "tags": [
+      "Shower Faucet Combo"
+    ],
+    "images": [
+      "https://bs42shopstorage.blob.core.windows.net/bs42/cbfd6030-edb3-47f8-a5c6-444317839952",
+      "https://bs42shopstorage.blob.core.windows.net/bs42/d58eb539-a37a-42dd-a649-0f2dc8d7f048",
+      "https://bs42shopstorage.blob.core.windows.net/bs42/184a72b3-32ba-4458-b0c4-876a4b9dee42"
     ],
     "documents": []
   },
@@ -4529,6 +4307,39 @@
   },
   {
     "from": [
+      "switching-gigabit-power-supply-p11e4Ek5a",
+      "switching-gigabit-power-supply-poe"
+    ],
+    "name": "Switching Gigabit Power Supply",
+    "brand": "BS42.Net",
+    "category": "Power Cables",
+    "condition": "NEW",
+    "sell": "0.00",
+    "buy": "0.00",
+    "status": "DRAFT",
+    "description": "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Model: \",\"marks\":[{\"type\":\"bold\"}]},{\"type\":\"text\",\"text\":\"GP-A240-050G\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"PN: \",\"marks\":[{\"type\":\"bold\"}]},{\"type\":\"text\",\"text\":\"POE-24-12W-G\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Input:\",\"marks\":[{\"type\":\"bold\"}]},{\"type\":\"text\",\"text\":\" 100-240V - 50/60Hz MAX 0.3A(0.3A)\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Output:\",\"marks\":[{\"type\":\"bold\"}]},{\"type\":\"text\",\"text\":\" 24V=0.5A(0.5A)\"}]}]}",
+    "tags": [
+      "POE Switch Injector",
+      "Switch",
+      "ubiquiti Switch injector",
+      "POE Switch"
+    ],
+    "images": [
+      "https://bs42shopstorage.blob.core.windows.net/bs42/35d11378-085f-43d3-80f1-de54aaf5d92e",
+      "https://bs42shopstorage.blob.core.windows.net/bs42/6be4512f-36bc-47f5-85e5-6c58bb6c96e6",
+      "https://bs42shopstorage.blob.core.windows.net/bs42/39a1116b-9116-49b3-a125-5b013a7c47f6",
+      "https://bs42shopstorage.blob.core.windows.net/bs42/869da8f9-ee2a-4bdd-a7e2-1560ebd3a848",
+      "https://bs42shopstorage.blob.core.windows.net/bs42/4e2c34da-40a6-4b18-964c-47de63d74085",
+      "https://bs42shopstorage.blob.core.windows.net/bs42/a64d4cc6-6c3a-46b1-8e23-40d8eaf9c089",
+      "https://bs42shopstorage.blob.core.windows.net/bs42/a90a6692-5dc1-4976-aa80-986a2dce5f27",
+      "https://bs42shopstorage.blob.core.windows.net/bs42/6a01f939-e819-46dc-916c-5cf952616a0b",
+      "https://bs42shopstorage.blob.core.windows.net/bs42/0c3cba12-8125-4771-87a5-cef83444a0d6",
+      "https://bs42shopstorage.blob.core.windows.net/bs42/2d4c8c1f-4b53-4c23-ba91-11220aede69e"
+    ],
+    "documents": []
+  },
+  {
+    "from": [
       "zm-60w-replacement-ac-adapter"
     ],
     "name": "ZM-60W Replacement AC Adapter",
@@ -4616,30 +4427,6 @@
     "images": [
       "https://bs42shopstorage.blob.core.windows.net/bs42/72c3bd3f-6583-4439-822a-3f88a8dbdd1c",
       "https://bs42shopstorage.blob.core.windows.net/bs42/ccccec56-caf8-418b-bdba-a3e86371df1b"
-    ],
-    "documents": []
-  },
-  {
-    "from": [
-      "cap-lite-access-point"
-    ],
-    "name": "cAP Lite Access Point",
-    "brand": "BS42.Net",
-    "category": "Routers & Gateways",
-    "condition": "USED_GOOD",
-    "sell": "0.00",
-    "buy": "0.00",
-    "status": "DRAFT",
-    "description": "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Product code: RBcAPL-2nD\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Architecture: MIPSBE\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"CPU: QCA9533\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"CPU core count: 1\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"CPU Nominal Frequency: 650 MHz\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Dimensions: Wall case: 88 x 52 x 20 mm\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Ceiling case: 88 mm x 20 mm\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"RouterOS license: 4\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Operating System: RouterOS\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Size of RAM: 64 MB\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Storage size: 16 MB\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Storage type: FLASH\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"MTBF: Approximately 100'000 hours at 25C\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Tested ambient temperature: -40°C to 70°C\"}]}]}",
-    "tags": [
-      "Access Point",
-      "Extender"
-    ],
-    "images": [
-      "https://bs42shopstorage.blob.core.windows.net/bs42/daf18269-bc1b-4b9c-837c-b2f021cb6105",
-      "https://bs42shopstorage.blob.core.windows.net/bs42/bd17be17-f4ad-4247-9257-5cde662e26d2",
-      "https://bs42shopstorage.blob.core.windows.net/bs42/7ef20183-5c44-42e2-9b37-8971669ecd84",
-      "https://bs42shopstorage.blob.core.windows.net/bs42/4b8bdffd-523e-4636-93d1-f73fcb4cced2"
     ],
     "documents": []
   },
@@ -4737,25 +4524,6 @@
   },
   {
     "from": [
-      "mikrotik-rbcapg1-5acd2nd"
-    ],
-    "name": "MikroTik RBcAPG1-5acD2nD",
-    "brand": "BS42.Net",
-    "category": "Routers & Gateways",
-    "condition": "USED_GOOD",
-    "sell": "0.00",
-    "buy": "0.00",
-    "status": "DRAFT",
-    "description": null,
-    "tags": [],
-    "images": [
-      "https://bs42shopstorage.blob.core.windows.net/bs42/9fa2c77d-3970-4476-a0b2-483d6ec24918",
-      "https://bs42shopstorage.blob.core.windows.net/bs42/c540d70c-b88f-418a-ae9f-5d8151f31716"
-    ],
-    "documents": []
-  },
-  {
-    "from": [
       "tp-link-modem-router"
     ],
     "name": "TP-Link Modem Router",
@@ -4770,24 +4538,6 @@
     "images": [
       "https://bs42shopstorage.blob.core.windows.net/bs42/38298a3c-69cd-4641-8e53-84571a179575",
       "https://bs42shopstorage.blob.core.windows.net/bs42/d60f4c7f-ae39-4bc5-9a2e-b69905c48b83"
-    ],
-    "documents": []
-  },
-  {
-    "from": [
-      "unifi-ap-ac-lite"
-    ],
-    "name": "Unifi AP AC LITE",
-    "brand": "BS42.Net",
-    "category": "Routers & Gateways",
-    "condition": "USED_GOOD",
-    "sell": "0.00",
-    "buy": "0.00",
-    "status": "DRAFT",
-    "description": null,
-    "tags": [],
-    "images": [
-      "https://bs42shopstorage.blob.core.windows.net/bs42/7d42895b-af90-4a89-8520-cd4e50313e86"
     ],
     "documents": []
   },
@@ -4833,25 +4583,6 @@
       "https://bs42shopstorage.blob.core.windows.net/bs42/8db91035-add5-4318-b9c1-5b2fb925073c",
       "https://bs42shopstorage.blob.core.windows.net/bs42/0124cb16-0fc5-42c8-8355-3684818c54bf",
       "https://bs42shopstorage.blob.core.windows.net/bs42/f957abae-50c7-452c-a3b7-0040f1bd0608"
-    ],
-    "documents": []
-  },
-  {
-    "from": [
-      "zyxel-nwa1121-ni"
-    ],
-    "name": "Zyxel NWA1121-NI",
-    "brand": "BS42.Net",
-    "category": "Routers & Gateways",
-    "condition": "USED_GOOD",
-    "sell": "0.00",
-    "buy": "0.00",
-    "status": "DRAFT",
-    "description": null,
-    "tags": [],
-    "images": [
-      "https://bs42shopstorage.blob.core.windows.net/bs42/dd18b7cc-8003-4c3b-8ed0-00eee0449d2e",
-      "https://bs42shopstorage.blob.core.windows.net/bs42/4024442e-cb66-4a5c-b528-169a68651856"
     ],
     "documents": []
   },
@@ -5313,6 +5044,48 @@
   },
   {
     "from": [
+      "led-floor-lamp-bluetooth-app"
+    ],
+    "name": "LED Floor Lamp (Bluetooth App)",
+    "brand": "BS42.Net",
+    "category": "Smart Lights",
+    "condition": "NEW",
+    "sell": "38.00",
+    "buy": "19.00",
+    "status": "PUBLISHED",
+    "description": null,
+    "tags": [
+      "LED Lamp"
+    ],
+    "images": [
+      "https://bs42shopstorage.blob.core.windows.net/bs42/b5043cda-d9f5-439c-afb5-b341db696b8d",
+      "https://bs42shopstorage.blob.core.windows.net/bs42/9c38f9c3-759e-4f39-963f-c66d00e3342f"
+    ],
+    "documents": []
+  },
+  {
+    "from": [
+      "led-floor-lamp-tuya-app"
+    ],
+    "name": "LED Floor Lamp (Tuya App)",
+    "brand": "BS42.Net",
+    "category": "Smart Lights",
+    "condition": "NEW",
+    "sell": "44.00",
+    "buy": "42.00",
+    "status": "PUBLISHED",
+    "description": "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Three stage assembly\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Metal base, 126cm high\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Mobile phone Bluetooth, remote control board control, remote sensing distance up to 15m\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Built-in 120 rich effects, can meet a variety of scenarios\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":\"center\"},\"content\":[{\"type\":\"hardBreak\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Basic Parameters\",\"marks\":[{\"type\":\"bold\"}]}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Product Name：Corner Floor Lamp\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Product Model：LC-KIT8812BRGB72/110E1\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Control Way：Bluetooth APP\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Product Size：152*38*2.5cm\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Working Voltage：DC5V\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Product Power：10W\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Working Environment：-20℃-+45℃\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"IP Rating：IP20\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Color Box Size：L450xW155xH62mm\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Packing Size：L455xW620xH435mm（16 Sets/Carton）\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Color Box Weight：1.1KG/Set\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Accessories：72Leds/M Full Color Light Strip/110E Controller(Built IN)/DC5V-2A Constant voltage power supply\"}]}]}",
+    "tags": [
+      "Floor Lamp"
+    ],
+    "images": [
+      "https://bs42shopstorage.blob.core.windows.net/bs42/f04395b8-d31d-41c8-a459-0b8f4c647558",
+      "https://bs42shopstorage.blob.core.windows.net/bs42/d2348548-2f08-4f23-8dab-c120971a096a"
+    ],
+    "documents": []
+  },
+  {
+    "from": [
       "smart-led-downlight-cdSASyat0"
     ],
     "name": "Smart LED Downlight",
@@ -5704,28 +5477,6 @@
   },
   {
     "from": [
-      "swing-gate-opener"
-    ],
-    "name": "Swing Gate Opener",
-    "brand": "BS42.Net",
-    "category": "Smart Locks",
-    "condition": "NEW",
-    "sell": "376.00",
-    "buy": "188.00",
-    "status": "PUBLISHED",
-    "description": "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Input Power: AC 110V/220V+10%\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Motor Voltage: 24V DC\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Power: 60W\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Actuator Speed: 2.4cm/s\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Max. Actuator Travel: 600mm\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Max. Single-Leaf weight: 350kgs\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Max. Single-Leaf Length: 4.5meters\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Ambient Temperature: -22°C - +55°C\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Protection Class: IP55\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Max Gate Opening Angel: 110°\"}]}]}",
-    "tags": [
-      "Swing Gate Opener"
-    ],
-    "images": [
-      "https://bs42shopstorage.blob.core.windows.net/bs42/6b56c76a-6bcf-4a56-a896-08196a701aae",
-      "https://bs42shopstorage.blob.core.windows.net/bs42/faafd96e-dfbb-4a96-a70d-7a30c79f9e10",
-      "https://bs42shopstorage.blob.core.windows.net/bs42/b170737f-a816-469a-b78a-ebc89a82a842"
-    ],
-    "documents": []
-  },
-  {
-    "from": [
       "temic-t57v9-card"
     ],
     "name": "Temic T57V9 Card",
@@ -5809,26 +5560,6 @@
       "https://bs42shopstorage.blob.core.windows.net/bs42/2687cd89-5944-4b43-915b-4ad65d2c3e57",
       "https://bs42shopstorage.blob.core.windows.net/bs42/df65b37f-3afc-49d0-ae54-f25dcec8e775",
       "https://bs42shopstorage.blob.core.windows.net/bs42/a9f1c3aa-4337-4a09-ac41-dd1fcd3c7826"
-    ],
-    "documents": []
-  },
-  {
-    "from": [
-      "smart-lock-hotel-control-system"
-    ],
-    "name": "Smart Lock Hotel Control System",
-    "brand": "BS42.Net",
-    "category": "Smart Plugs",
-    "condition": "NEW",
-    "sell": "0.00",
-    "buy": "0.00",
-    "status": "DRAFT",
-    "description": "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Smart Lock Hotel Control System Supplier Hot Sale T57 M1Hote/ Inserting Card Energy Saver Switch Hotel Power Card Switch\"}]}]}",
-    "tags": [
-      "Smart Lock Hotel Control System"
-    ],
-    "images": [
-      "https://bs42shopstorage.blob.core.windows.net/bs42/e496f053-717c-4e4b-9a61-84d399ceb9c8"
     ],
     "documents": []
   },
@@ -5968,6 +5699,26 @@
     "images": [
       "https://bs42shopstorage.blob.core.windows.net/bs42/810d696b-2f25-4536-a802-0e1f544e79e4",
       "https://bs42shopstorage.blob.core.windows.net/bs42/4e8396d2-4e05-49ae-822d-cfc5bdb6e655"
+    ],
+    "documents": []
+  },
+  {
+    "from": [
+      "smart-lock-hotel-control-system"
+    ],
+    "name": "Smart Lock Hotel Control System",
+    "brand": "BS42.Net",
+    "category": "Smart Switches",
+    "condition": "NEW",
+    "sell": "0.00",
+    "buy": "0.00",
+    "status": "DRAFT",
+    "description": "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Smart Lock Hotel Control System Supplier Hot Sale T57 M1Hote/ Inserting Card Energy Saver Switch Hotel Power Card Switch\"}]}]}",
+    "tags": [
+      "Smart Lock Hotel Control System"
+    ],
+    "images": [
+      "https://bs42shopstorage.blob.core.windows.net/bs42/e496f053-717c-4e4b-9a61-84d399ceb9c8"
     ],
     "documents": []
   },
@@ -6403,6 +6154,26 @@
   },
   {
     "from": [
+      "smart-home-music-control-host"
+    ],
+    "name": "Smart Home Music Control Host",
+    "brand": "BS42.Net",
+    "category": "Speakers",
+    "condition": "NEW",
+    "sell": "142.00",
+    "buy": "71.00",
+    "status": "PUBLISHED",
+    "description": "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Input Power: AC 110V-250V\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Output Power: 4*(10-25W)/4-8\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"THD: 0.03%(1W.1KHz)\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Frequency Response: 20Hz - 20Khz\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null}},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Function Introduction\"}]},{\"type\":\"orderedList\",\"attrs\":{\"start\":1,\"type\":null},\"content\":[{\"type\":\"listItem\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"This host supports tuya app scan code binding(Please connect to the network first).\"}]}]},{\"type\":\"listItem\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Cortex 1.5G quad-core CPU, 4 inch multi-touch capacitive screen, 480*480IPS HD resolution display.\"}]}]},{\"type\":\"listItem\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Host System is Android 11.\"}]}]},{\"type\":\"listItem\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Support external bluetooth devices such as mobile phone to achieve audio playback, two ways control of playing external bluetooth device music, you can set bluetooth to turn on or off.\"}]}]},{\"type\":\"listItem\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Support Audio input function.\"}]}]},{\"type\":\"listItem\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Support Audio output function.\"}]}]},{\"type\":\"listItem\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Support TF card and 2.0USB interface, usb can be connected to the hard disk\"}]}]},{\"type\":\"listItem\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Support TF card firmware;\"}]}]}]}]}",
+    "tags": [
+      "Smart Home Systems Blu-ray Player Set"
+    ],
+    "images": [
+      "https://bs42shopstorage.blob.core.windows.net/bs42/7e1cdf5a-a1c0-413b-922e-873e734725ed"
+    ],
+    "documents": []
+  },
+  {
+    "from": [
       "xprinter-xp-58iih-mini-58mm",
       "mini-printer"
     ],
@@ -6501,6 +6272,113 @@
   },
   {
     "from": [
+      "round-socket-punch"
+    ],
+    "name": "Round Socket Punch",
+    "brand": "BS42.Net",
+    "category": "Tools",
+    "condition": "NEW",
+    "sell": "6.00",
+    "buy": "3.00",
+    "status": "PUBLISHED",
+    "description": "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Size: 18.5cmx8.5cmx4.5cm\"}]}]}",
+    "tags": [],
+    "images": [
+      "https://bs42shopstorage.blob.core.windows.net/bs42/aa3c12eb-7a13-4b97-a53e-4273fa24aac0",
+      "https://bs42shopstorage.blob.core.windows.net/bs42/f16bdf88-a497-457f-a2c8-5193b6a4d375"
+    ],
+    "documents": []
+  },
+  {
+    "from": [
+      "wall-chaser-machine"
+    ],
+    "name": "Wall Chaser Machine",
+    "brand": "BS42.Net",
+    "category": "Tools",
+    "condition": "NEW",
+    "sell": "134.00",
+    "buy": "84.00",
+    "status": "PUBLISHED",
+    "description": "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Voltage: 220V\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Rate Frequency: 50/60Hz\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Power: 4800W\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"No-Load Speed: 6500r/min\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Cutting Disc: 125x20\"}]}]}",
+    "tags": [
+      "Slotting Machine"
+    ],
+    "images": [
+      "https://bs42shopstorage.blob.core.windows.net/bs42/5ed44e97-9a99-4de9-aec0-bad2345725d1",
+      "https://bs42shopstorage.blob.core.windows.net/bs42/171e1c94-6759-4e0b-b404-bf5daee0c20d"
+    ],
+    "documents": []
+  },
+  {
+    "from": [
+      "wall-grooving-maching"
+    ],
+    "name": "Wall Grooving Machine",
+    "brand": "BS42.Net",
+    "category": "Tools",
+    "condition": "NEW",
+    "sell": "156.00",
+    "buy": "106.00",
+    "status": "PUBLISHED",
+    "description": null,
+    "tags": [
+      "Wall Grooving Machine"
+    ],
+    "images": [
+      "https://bs42shopstorage.blob.core.windows.net/bs42/96079c6f-b2f9-459b-b212-4bca08ccef2b",
+      "https://bs42shopstorage.blob.core.windows.net/bs42/51ba96a6-9762-40da-b092-fd8878af50a9",
+      "https://bs42shopstorage.blob.core.windows.net/bs42/0052e9d7-7467-451b-81dc-d3ea342aa3ce"
+    ],
+    "documents": []
+  },
+  {
+    "from": [
+      "projector-ultra-hd"
+    ],
+    "name": "Projector Ultra HD",
+    "brand": "BS42.Net",
+    "category": "TV & Projectors",
+    "condition": "NEW",
+    "sell": "66.00",
+    "buy": "33.00",
+    "status": "PUBLISHED",
+    "description": "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Model: HY300pro\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null}},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"This smart projector features a 180 ° rotatable design, allowing you to point the 180 ° tilted projector in various directions, including the ceiling. You can point the projector at your bedroom ceiling and lie in bed watching the movie. And it can deliver a clear picture on screens from 40 to 200''. It can produce a really big image in your living room, family room, and other areas of your house.\"}]}]}",
+    "tags": [
+      "HD Projector"
+    ],
+    "images": [
+      "https://bs42shopstorage.blob.core.windows.net/bs42/2b546053-094a-41f1-8cb6-c9abd39c4e9c",
+      "https://bs42shopstorage.blob.core.windows.net/bs42/bf8b04c9-d5ab-4812-a4ff-f29c2287590d",
+      "https://bs42shopstorage.blob.core.windows.net/bs42/69d90c04-63a5-4171-8178-1cd1237d259a"
+    ],
+    "documents": []
+  },
+  {
+    "from": [
+      "single-column-electric-tv-lift"
+    ],
+    "name": "Single Column Electric TV Lift",
+    "brand": "BS42.Net",
+    "category": "TV & Projectors",
+    "condition": "NEW",
+    "sell": "250.00",
+    "buy": "125.00",
+    "status": "PUBLISHED",
+    "description": "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Type: CTD-03-24-900/710-B-AR\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Max Load: 800 N\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Power: DC 24V\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null}}]}",
+    "tags": [
+      "Electric TV Lift"
+    ],
+    "images": [
+      "https://bs42shopstorage.blob.core.windows.net/bs42/9451f600-5c4b-47bd-afd3-c8e7e3f34e55",
+      "https://bs42shopstorage.blob.core.windows.net/bs42/6762ef9b-8e39-4e02-b7e7-35cb2068c339",
+      "https://bs42shopstorage.blob.core.windows.net/bs42/d9f2bd62-b756-4d63-8247-d7dec5339d5b",
+      "https://bs42shopstorage.blob.core.windows.net/bs42/68dacbe0-1db2-4922-adf6-23162dab7d47"
+    ],
+    "documents": []
+  },
+  {
+    "from": [
       "bluetooth-usb-dongle"
     ],
     "name": "Bluetooth USB Dongle",
@@ -6517,6 +6395,28 @@
     ],
     "images": [
       "https://bs42shopstorage.blob.core.windows.net/bs42/8bd29fb5-91cf-41e7-b996-f547cfabe3e9"
+    ],
+    "documents": []
+  },
+  {
+    "from": [
+      "usb-2-0-extended-cable"
+    ],
+    "name": "USB 2.0 Extended Cable",
+    "brand": "BS42.Net",
+    "category": "USB Drives",
+    "condition": "NEW",
+    "sell": "0.00",
+    "buy": "0.00",
+    "status": "DRAFT",
+    "description": "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"USB 2.0 AWM 2725 24AWG/1PR AND 24AWG/2C 80C 30V CSA AWM\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Color: Black\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"5 Mtr\"}]}]}",
+    "tags": [
+      "USB Cable",
+      "USB Extended Cable"
+    ],
+    "images": [
+      "https://bs42shopstorage.blob.core.windows.net/bs42/0c143374-293c-442f-b35b-ca636230d52a",
+      "https://bs42shopstorage.blob.core.windows.net/bs42/2da273c9-592b-4dfa-95bf-97a0cb73c65b"
     ],
     "documents": []
   },
@@ -6588,6 +6488,30 @@
   },
   {
     "from": [
+      "cap-lite-access-point"
+    ],
+    "name": "cAP Lite Access Point",
+    "brand": "BS42.Net",
+    "category": "Wireless Accessories",
+    "condition": "USED_GOOD",
+    "sell": "0.00",
+    "buy": "0.00",
+    "status": "DRAFT",
+    "description": "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Product code: RBcAPL-2nD\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Architecture: MIPSBE\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"CPU: QCA9533\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"CPU core count: 1\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"CPU Nominal Frequency: 650 MHz\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Dimensions: Wall case: 88 x 52 x 20 mm\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Ceiling case: 88 mm x 20 mm\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"RouterOS license: 4\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Operating System: RouterOS\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Size of RAM: 64 MB\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Storage size: 16 MB\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Storage type: FLASH\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"MTBF: Approximately 100'000 hours at 25C\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Tested ambient temperature: -40°C to 70°C\"}]}]}",
+    "tags": [
+      "Access Point",
+      "Extender"
+    ],
+    "images": [
+      "https://bs42shopstorage.blob.core.windows.net/bs42/daf18269-bc1b-4b9c-837c-b2f021cb6105",
+      "https://bs42shopstorage.blob.core.windows.net/bs42/bd17be17-f4ad-4247-9257-5cde662e26d2",
+      "https://bs42shopstorage.blob.core.windows.net/bs42/7ef20183-5c44-42e2-9b37-8971669ecd84",
+      "https://bs42shopstorage.blob.core.windows.net/bs42/4b8bdffd-523e-4636-93d1-f73fcb4cced2"
+    ],
+    "documents": []
+  },
+  {
+    "from": [
       "ceiling-mount-wireless-access-point-poe"
     ],
     "name": "Ceiling Mount Wireless Access Point/POE",
@@ -6606,6 +6530,25 @@
       "https://bs42shopstorage.blob.core.windows.net/bs42/a07689b0-497d-457e-a48c-da7aa6568cd0",
       "https://bs42shopstorage.blob.core.windows.net/bs42/3c3bad73-ff4e-4838-a9b0-35d5bf983a82",
       "https://bs42shopstorage.blob.core.windows.net/bs42/8777e393-352b-4e06-b637-2dd3f8c33afb"
+    ],
+    "documents": []
+  },
+  {
+    "from": [
+      "mikrotik-rbcapg1-5acd2nd"
+    ],
+    "name": "MikroTik RBcAPG1-5acD2nD",
+    "brand": "BS42.Net",
+    "category": "Wireless Accessories",
+    "condition": "USED_GOOD",
+    "sell": "0.00",
+    "buy": "0.00",
+    "status": "DRAFT",
+    "description": null,
+    "tags": [],
+    "images": [
+      "https://bs42shopstorage.blob.core.windows.net/bs42/9fa2c77d-3970-4476-a0b2-483d6ec24918",
+      "https://bs42shopstorage.blob.core.windows.net/bs42/c540d70c-b88f-418a-ae9f-5d8151f31716"
     ],
     "documents": []
   },
@@ -6670,6 +6613,63 @@
     ],
     "images": [
       "https://bs42shopstorage.blob.core.windows.net/bs42/56b08bb8-da5d-4bd3-83aa-4db2f719b8c9"
+    ],
+    "documents": []
+  },
+  {
+    "from": [
+      "poe-access-point-ap"
+    ],
+    "name": "POE Access Point AP",
+    "brand": "BS42.Net",
+    "category": "Wireless Accessories",
+    "condition": "NEW",
+    "sell": "36.00",
+    "buy": "18.00",
+    "status": "PUBLISHED",
+    "description": "{\"type\":\"doc\",\"content\":[{\"type\":\"heading\",\"attrs\":{\"textAlign\":null,\"level\":3},\"content\":[{\"type\":\"text\",\"text\":\"Hardware Specifications\",\"marks\":[{\"type\":\"underline\"}]}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Chipset - MT7628DAN+MT7613BEN\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Application - Hotel, Shopping mall, office, Hospital, library.\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Model - GZ-FAP670\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Chipset - MT7628DAN+MT7613BEN\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"DDR - 64M DDR\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Flash - 8M Flash\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Interface - 1 * 10/100Mbps RJ45 WAN Port, 1 * 10/100Mbps RJ45 LAN Port, 1*WiFi Switch On/Off button, 1*Reset button\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Power Supply - 48V PoE, IEEE 802.3af standard\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Maxi power consumption - < 6W\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Antenna Type - On board WiFi antenna\"},{\"type\":\"hardBreak\"},{\"type\":\"text\",\"text\":\"2.4G: 3dBi omni antenna\"},{\"type\":\"hardBreak\"},{\"type\":\"text\",\"text\":\"5.8G: 5dBi omni antenna\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Data Rate - 1200Mbps\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Wireless Standards - IEEE 802.11ac/n/a 5GHz; IEEE 802.11n/g/b 2.4GHz\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Dimensions (W X D X H) - 87*86*35.8mm\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Frequency - 5GHz : 5.150GHz～5.850GHz\"},{\"type\":\"hardBreak\"},{\"type\":\"text\",\"text\":\"2.4GHz: 2.4GHz – 2.484GHz\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Signal Rate - 5GHz: Up to 900Mbps;\"},{\"type\":\"hardBreak\"},{\"type\":\"text\",\"text\":\"2.4GHz: Up to 300Mbps\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"PPM - ±20ppm\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Operation Mode - Wireless AP, Gateway, Wi-Fi Repeater\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null}},{\"type\":\"heading\",\"attrs\":{\"textAlign\":null,\"level\":3},\"content\":[{\"type\":\"text\",\"text\":\"Physical Property\",\"marks\":[{\"type\":\"bold\"},{\"type\":\"underline\"}]}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Temperature - Operating Temperature: -20~55 ℃\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Extreme Temperature: -40~70 ℃\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Storage: -40~70 ºC\"}]},{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":null},\"content\":[{\"type\":\"text\",\"text\":\"Humidity - 5%~95% non-condensing\"}]}]}",
+    "tags": [],
+    "images": [
+      "https://bs42shopstorage.blob.core.windows.net/bs42/90d67c72-1712-4ae6-8003-f9824c8bd182",
+      "https://bs42shopstorage.blob.core.windows.net/bs42/521e3536-2aef-4a63-ac3c-21aad974256e",
+      "https://bs42shopstorage.blob.core.windows.net/bs42/4b7b845e-a687-4319-8ae3-353e1b39baf3"
+    ],
+    "documents": []
+  },
+  {
+    "from": [
+      "unifi-ap-ac-lite"
+    ],
+    "name": "Unifi AP AC LITE",
+    "brand": "BS42.Net",
+    "category": "Wireless Accessories",
+    "condition": "USED_GOOD",
+    "sell": "0.00",
+    "buy": "0.00",
+    "status": "DRAFT",
+    "description": null,
+    "tags": [],
+    "images": [
+      "https://bs42shopstorage.blob.core.windows.net/bs42/7d42895b-af90-4a89-8520-cd4e50313e86"
+    ],
+    "documents": []
+  },
+  {
+    "from": [
+      "zyxel-nwa1121-ni"
+    ],
+    "name": "Zyxel NWA1121-NI",
+    "brand": "BS42.Net",
+    "category": "Wireless Accessories",
+    "condition": "USED_GOOD",
+    "sell": "0.00",
+    "buy": "0.00",
+    "status": "DRAFT",
+    "description": null,
+    "tags": [],
+    "images": [
+      "https://bs42shopstorage.blob.core.windows.net/bs42/dd18b7cc-8003-4c3b-8ed0-00eee0449d2e",
+      "https://bs42shopstorage.blob.core.windows.net/bs42/4024442e-cb66-4a5c-b528-169a68651856"
     ],
     "documents": []
   }
