@@ -133,7 +133,7 @@ export function ProductView({
             <Link href={`/b/${card.brand.slug}`} className="text-sm font-medium tracking-wide text-muted-foreground uppercase hover:text-foreground">
               {card.brand.name}
             </Link>
-            <h1 className="text-2xl font-bold tracking-tight md:text-3xl">{card.name}</h1>
+            <h1 className="text-2xl font-bold tracking-tight normal-case md:text-3xl">{card.name}</h1>
             {card.numReviews > 0 && (
               <a href="#reviews" className="block w-fit rounded-sm hover:underline hover:underline-offset-4">
                 <RatingLine rating={card.rating} count={card.numReviews} />
@@ -336,7 +336,7 @@ function ServiceRow({ icon: Icon, title, children }: { icon: React.ComponentType
     <li className="flex gap-3 p-4">
       <Icon className="mt-0.5 size-5 shrink-0 text-muted-foreground" aria-hidden />
       <div>
-        <p className="font-semibold">{title}</p>
+        <p className="font-(family-name:--font-display) font-bold uppercase">{title}</p>
         <p className="text-muted-foreground">{children}</p>
       </div>
     </li>

@@ -55,7 +55,7 @@ export function ProductCard({ card, variantId, onWishListChange }: { card: Price
 
       <div className="flex flex-1 flex-col gap-1.5">
         <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">{card.brand.name}</p>
-        <h3 className="line-clamp-2 leading-snug font-semibold">
+        <h3 className="line-clamp-2 leading-snug font-semibold normal-case">
           <Link href={href} className="after:absolute after:inset-0">
             {card.name}
           </Link>

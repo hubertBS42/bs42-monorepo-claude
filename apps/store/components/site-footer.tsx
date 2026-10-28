@@ -1,19 +1,13 @@
 import Link from "next/link"
-import { Banknote, Mail, MapPin, Phone, ShieldCheck, Smartphone, Truck } from "lucide-react"
+import { Mail, MapPin, Phone } from "lucide-react"
 import type { AppSettingsData } from "@workspace/contracts"
 import { formatPhoneNumber } from "@workspace/utils/phone"
 
-import { MastercardIcon, VisaIcon, WhatsAppIcon } from "@/components/brand-icons"
+import { WhatsAppIcon } from "@/components/brand-icons"
 import type { LegalLinks } from "@/components/legal-consent"
+import { PromiseStrip } from "@/components/promise-strip"
 import { StoreLogo } from "@/components/store-logo"
 import type { MenuItem } from "@/lib/menu"
-
-const promises = [
-  { icon: Truck, label: "Delivery across Ghana" },
-  { icon: Smartphone, label: "Pay with Mobile Money or card" },
-  { icon: Banknote, label: "Prices in cedis at today's rate" },
-  { icon: ShieldCheck, label: "Secure checkout" },
-]
 
 export type FooterContact = Pick<AppSettingsData, "contactPhone" | "contactWhatsapp" | "contactEmail" | "contactAddress">
 
@@ -37,81 +31,75 @@ export function SiteFooter({
   const hasContact = Object.values(contact).some(Boolean)
 
   return (
-    <footer className="border-t bg-muted print:hidden">
-      <div className="border-b">
-        <ul className="mx-auto grid max-w-7xl grid-cols-2 gap-3 px-4 py-6 lg:grid-cols-4 lg:px-6">
-          {promises.map(({ icon: Icon, label }) => (
-            <li key={label} className="flex items-center gap-3 rounded-xl bg-background p-3 text-sm font-medium">
-              <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-accent">
-                <Icon className="size-4" />
-              </span>
-              {label}
-            </li>
-          ))}
-        </ul>
-      </div>
-      <div className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:grid-cols-2 lg:grid-cols-[1.5fr_2fr_1.5fr] lg:px-6">
-        <div className="space-y-3">
-          <StoreLogo storeName={storeName} logoUrl={logoUrl} logoDarkUrl={logoDarkUrl} />
-          {storeDescription && <p className="max-w-xs text-sm text-muted-foreground">{storeDescription}</p>}
+    // Charcoal in both themes, as on the old bs42.net: `dark` gives what's inside the dark theme's colours (and the logo for
+    // dark backgrounds), the promise strip above it keeps the brand colour
+    <footer className="print:hidden">
+      <PromiseStrip />
+      <div className="dark bg-neutral-800 text-neutral-300">
+        {contact.contactPhone && (
+          <div className="border-b border-neutral-700 px-4 py-4 text-center">
+            <p className="font-(family-name:--font-display) text-xl font-semibold text-white">
+              Need help? Call our support team on{" "}
+              <a href={`tel:${contact.contactPhone}`} className="whitespace-nowrap hover:underline">
+                {formatPhoneNumber(contact.contactPhone)}
+              </a>
+            </p>
+          </div>
+        )}
+        <div className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:grid-cols-2 lg:grid-cols-[1.5fr_2fr_1.5fr] lg:px-6">
+          <div className="space-y-3">
+            <StoreLogo storeName={storeName} logoUrl={logoUrl} logoDarkUrl={logoDarkUrl} className="text-white" />
+            {storeDescription && <p className="max-w-xs text-xs">{storeDescription}</p>}
+          </div>
+          <nav aria-label="Categories">
+            <h2 className={headingClass}>Shop</h2>
+            <ul className="grid grid-cols-2 gap-2.5 text-xs">
+              {menu.map((item) => (
+                <li key={item.href}>
+                  <Link href={item.href} className="transition-colors hover:text-white">
+                    {item.name}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
+          {hasContact && <ContactList contact={contact} />}
         </div>
-        <nav aria-label="Categories">
-          <h2 className="mb-3 text-sm font-semibold">Shop</h2>
-          <ul className="grid grid-cols-2 gap-2 text-sm text-muted-foreground">
-            {menu.map((item) => (
-              <li key={item.href}>
-                <Link href={item.href} className="hover:text-foreground hover:underline">
-                  {item.name}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </nav>
-        {hasContact && <ContactList contact={contact} />}
       </div>
-      <div className="border-t">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-x-6 gap-y-4 px-4 py-6 text-xs text-muted-foreground lg:px-6">
+      {/* Centred, as on the old bs42.net; the legal pages only once they've been written */}
+      <div className="dark bg-neutral-700 text-white">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-center gap-x-4 gap-y-1 px-4 py-3 text-center text-xs lg:px-6">
           <p>
-            © {new Date().getFullYear()} {storeName}
+            © {new Date().getFullYear()} {storeName}. All rights reserved.
           </p>
-          <PaymentMethods />
-          {/* The legal pages only once they've been written */}
-          <ul className="flex flex-wrap gap-4">
-            <li>
-              <Link href="/trade" className="hover:text-foreground hover:underline">
-                Trade accounts
-              </Link>
-            </li>
-            {legal.terms && (
-              <li>
-                <Link href="/terms" className="hover:text-foreground hover:underline">
-                  Terms
-                </Link>
-              </li>
-            )}
-            {legal.privacy && (
-              <li>
-                <Link href="/privacy" className="hover:text-foreground hover:underline">
-                  Privacy Policy
-                </Link>
-              </li>
-            )}
-          </ul>
+          {legal.terms && (
+            <Link href="/terms" className="hover:underline">
+              Terms
+            </Link>
+          )}
+          {legal.privacy && (
+            <Link href="/privacy" className="hover:underline">
+              Privacy Policy
+            </Link>
+          )}
         </div>
       </div>
     </footer>
   )
 }
 
+// The footer's column headings: white Rajdhani capitals (display-font.css sets the font and case for every heading)
+const headingClass = "mb-4 text-base font-semibold text-white"
+
 // The contact details from Settings, each only when it's set
 function ContactList({ contact }: { contact: FooterContact }) {
-  const linkClass = "flex items-start gap-2.5 hover:text-foreground hover:underline"
+  const linkClass = "flex items-start gap-2 transition-colors hover:text-white"
   const iconClass = "mt-0.5 size-4 shrink-0"
 
   return (
     <div>
-      <h2 className="mb-3 text-sm font-semibold">Contact us</h2>
-      <ul className="space-y-2.5 text-sm text-muted-foreground">
+      <h2 className={headingClass}>Contact us</h2>
+      <ul className="space-y-2.5 text-xs">
         {contact.contactPhone && (
           <li>
             <a href={`tel:${contact.contactPhone}`} className={linkClass}>
@@ -138,38 +126,11 @@ function ContactList({ contact }: { contact: FooterContact }) {
           </li>
         )}
         {contact.contactAddress && (
-          <li className="flex items-start gap-2.5">
+          <li className="flex items-start gap-2">
             <MapPin className={iconClass} aria-hidden />
             <address className="whitespace-pre-line not-italic">{contact.contactAddress}</address>
           </li>
         )}
-      </ul>
-    </div>
-  )
-}
-
-// What Paystack's checkout takes (packages/commerce/src/paystack.ts asks it for mobile money and cards). Mobile money
-// networks have no free marks, so they're named.
-const MOBILE_MONEY = ["MTN MoMo", "Telecel Cash", "AT Money"]
-
-function PaymentMethods() {
-  const chip = "flex h-7 items-center rounded-md border bg-background px-2 text-foreground/75"
-
-  return (
-    <div className="flex flex-wrap items-center gap-2">
-      <span className="mr-1">We accept</span>
-      <ul className="flex flex-wrap items-center gap-1.5">
-        <li className={chip}>
-          <VisaIcon className="h-6 w-8" />
-        </li>
-        <li className={chip}>
-          <MastercardIcon className="h-5 w-7" />
-        </li>
-        {MOBILE_MONEY.map((name) => (
-          <li key={name} className={`${chip} text-[11px] font-semibold`}>
-            {name}
-          </li>
-        ))}
       </ul>
     </div>
   )

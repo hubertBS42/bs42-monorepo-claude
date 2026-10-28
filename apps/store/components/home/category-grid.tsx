@@ -28,10 +28,13 @@ export function CategoryGrid({ tiles }: { tiles: CategoryTile[] }) {
             )}
           </div>
           <div className="flex flex-1 flex-col p-5">
-            <Link href={tile.href} className="flex items-center justify-between gap-2 font-semibold after:absolute after:inset-0">
-              <span className="text-lg">{tile.name}</span>
-              <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" aria-hidden />
-            </Link>
+            {/* A heading, so it takes the storefront's heading font (display-font.css) */}
+            <h3>
+              <Link href={tile.href} className="flex items-center justify-between gap-2 font-semibold after:absolute after:inset-0">
+                <span className="text-lg">{tile.name}</span>
+                <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" aria-hidden />
+              </Link>
+            </h3>
             <p className="text-sm text-muted-foreground">
               {tile.productCount} {tile.productCount === 1 ? "product" : "products"}
             </p>

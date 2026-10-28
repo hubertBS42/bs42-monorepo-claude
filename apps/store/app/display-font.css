@@ -1,0 +1,23 @@
+/* Every heading in Rajdhani capitals, as on the old bs42.net; the root layout loads it as --font-display. Heading tags in
+   the base layer, so a heading's own font or case utility still wins: product names and customers' review titles keep
+   the case they were typed in (normal-case), as the old site's product names did. */
+@layer base {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-display), var(--font-sans), sans-serif;
+    text-transform: uppercase;
+  }
+}
+
+/* The shadcn titles that aren't heading tags (cards, dialogs, sheets, empty states) use font-heading, which the shared
+   theme points at the body font; this file comes after it, so this wins */
+@layer utilities {
+  .font-heading {
+    font-family: var(--font-display), var(--font-sans), sans-serif;
+    text-transform: uppercase;
+  }
+}

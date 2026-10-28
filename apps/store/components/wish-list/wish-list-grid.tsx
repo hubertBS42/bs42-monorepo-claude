@@ -31,7 +31,7 @@ function UnavailableItem({ entry, otherOptionsOnSale, onRemoved }: { entry: Wish
       </div>
       <div className="flex flex-1 flex-col gap-1.5">
         <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">{entry.brandName}</p>
-        <h3 className="line-clamp-2 leading-snug font-semibold">{entry.name}</h3>
+        <h3 className="line-clamp-2 leading-snug font-semibold normal-case">{entry.name}</h3>
         {entry.variantLabel && <p className="text-xs text-muted-foreground">{entry.variantLabel}</p>}
         <p className="text-sm text-muted-foreground">{otherOptionsOnSale ? "This option isn't available right now." : "Not available right now."}</p>
         <div className="mt-auto flex flex-col gap-1.5 pt-2">

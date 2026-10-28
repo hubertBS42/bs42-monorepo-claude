@@ -86,7 +86,7 @@ export function ProductReviews({ productSlug, summary, reviews, sort, page, page
                 <li key={review.id} className="flex flex-col gap-2 py-5 first:pt-0">
                   <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                     <Stars rating={review.rating} />
-                    <h3 className="font-semibold">{review.title}</h3>
+                    <h3 className="font-semibold normal-case">{review.title}</h3>
                   </div>
                   <p className="text-xs text-muted-foreground">
                     {review.author} · {formatDate(review.createdAt, "d MMM yyyy")}

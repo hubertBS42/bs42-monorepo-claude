@@ -1,6 +1,7 @@
-import { Geist, Geist_Mono } from "next/font/google"
+import { Arimo, Geist_Mono, Rajdhani } from "next/font/google"
 
 import "@workspace/ui/globals.css"
+import "./display-font.css"
 import { authURLs } from "@workspace/auth/constants"
 import { ThemeProvider } from "@workspace/ui/components/theme-provider"
 import { Toaster } from "@workspace/ui/components/toast"
@@ -18,8 +19,11 @@ import { getAppSettings, getLegalPages, getStoreName } from "@/lib/settings"
 // expire (lib/settings.ts)
 export const revalidate = 60
 
-const geist = Geist({ subsets: ["latin"], variable: "--font-sans" })
+// Text in Arimo and headings in Rajdhani, as on the old bs42.net
+const fontSans = Arimo({ subsets: ["latin"], variable: "--font-sans" })
 const fontMono = Geist_Mono({ subsets: ["latin"], variable: "--font-mono" })
+// Headings and the category bar (display-font.css)
+const fontDisplay = Rajdhani({ subsets: ["latin"], weight: ["500", "600", "700"], variable: "--font-display" })
 
 export async function generateMetadata() {
   const [settings, storeName] = await Promise.all([getAppSettings(), getStoreName()])
@@ -42,10 +46,10 @@ export default async function RootLayout({
   const menu = getMenuItems(tree)
 
   return (
-    <html lang="en-GH" suppressHydrationWarning className={cn("antialiased", fontMono.variable, "font-sans", geist.variable)}>
+    <html lang="en-GH" suppressHydrationWarning className={cn("antialiased", fontMono.variable, fontDisplay.variable, "font-sans", fontSans.variable)}>
       <body className="flex min-h-svh flex-col">
         <ThemeProvider>
-          <SiteHeader storeName={storeName} logoUrl={settings.logoUrl} logoDarkUrl={settings.logoDarkUrl} menu={menu} />
+          <SiteHeader storeName={storeName} logoUrl={settings.logoUrl} logoDarkUrl={settings.logoDarkUrl} menu={menu} contact={settings} />
           {/* A column, so a page's root can grow to fill it (the sign-in pages' band); full width, or a root centred with
               mx-auto would shrink to its content. Each page's root ends with its own space above the footer (pb-16). */}
           <main className="flex flex-1 flex-col *:w-full">{children}</main>

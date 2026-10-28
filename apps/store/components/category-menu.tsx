@@ -15,15 +15,18 @@ import { cn } from "@workspace/ui/lib/utils"
 
 import type { MenuItem } from "@/lib/menu"
 
-// The header's mega-menu: each top category opens its subcategories and theirs
+// The top categories in Rajdhani capitals, as on the old bs42.net
+const topLevelClassName = "font-(family-name:--font-display) text-base font-semibold uppercase"
+
+// The header's mega-menu, centred as on the old bs42.net: each top category opens its subcategories and theirs
 export function CategoryMenu({ items }: { items: MenuItem[] }) {
   return (
-    <NavigationMenu className="max-w-none justify-start">
-      <NavigationMenuList className="justify-start">
+    <NavigationMenu className="max-w-none justify-center">
+      <NavigationMenuList className="justify-center">
         {items.map((item) =>
           item.children.length ? (
             <NavigationMenuItem key={item.href}>
-              <NavigationMenuTrigger className="h-11 rounded-none bg-transparent">{item.name}</NavigationMenuTrigger>
+              <NavigationMenuTrigger className={cn("h-11 rounded-none bg-transparent", topLevelClassName)}>{item.name}</NavigationMenuTrigger>
               <NavigationMenuContent className="p-0">
                 <div className="grid w-[min(48rem,calc(100vw-2rem))] grid-cols-2 gap-x-6 gap-y-4 p-5 md:grid-cols-3">
                   {item.children.map((child) => (
@@ -49,7 +52,7 @@ export function CategoryMenu({ items }: { items: MenuItem[] }) {
             </NavigationMenuItem>
           ) : (
             <NavigationMenuItem key={item.href}>
-              <NavigationMenuLink render={<Link href={item.href} />} className={cn(navigationMenuTriggerStyle(), "h-11 rounded-none bg-transparent")}>
+              <NavigationMenuLink render={<Link href={item.href} />} className={cn(navigationMenuTriggerStyle(), "h-11 rounded-none bg-transparent", topLevelClassName)}>
                 {item.name}
               </NavigationMenuLink>
             </NavigationMenuItem>

@@ -8,8 +8,10 @@ import { Button } from "@workspace/ui/components/button"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@workspace/ui/components/sheet"
 
 import type { MenuItem } from "@/lib/menu"
+import { siteLinks } from "@/lib/site-links"
 
-// The category menu on small screens: a sheet with each top category folding open
+// The category menu on small screens: a sheet with each top category folding open, then the site's own pages (the top bar
+// that has them on wider screens is hidden on phones)
 export function MobileMenu({ items, storeName }: { items: MenuItem[]; storeName: string }) {
   const [open, setOpen] = useState(false)
   const close = () => setOpen(false)
@@ -26,7 +28,7 @@ export function MobileMenu({ items, storeName }: { items: MenuItem[]; storeName:
         <Accordion className="px-4">
           {items.map((item) => (
             <AccordionItem key={item.href} value={item.href}>
-              <AccordionTrigger className="text-base">{item.name}</AccordionTrigger>
+              <AccordionTrigger className="font-(family-name:--font-display) text-base font-semibold uppercase">{item.name}</AccordionTrigger>
               <AccordionContent>
                 <ul className="flex flex-col pb-2">
                   <li>
@@ -46,6 +48,17 @@ export function MobileMenu({ items, storeName }: { items: MenuItem[]; storeName:
             </AccordionItem>
           ))}
         </Accordion>
+        <nav aria-label="Site" className="px-4 py-3">
+          <ul className="flex flex-col">
+            {siteLinks.map((link) => (
+              <li key={link.href}>
+                <Link href={link.href} onClick={close} className="block rounded-md px-2 py-2 hover:bg-accent">
+                  {link.name}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </nav>
       </SheetContent>
     </Sheet>
   )
