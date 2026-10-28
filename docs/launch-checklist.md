@@ -14,7 +14,7 @@ Everything needed to run BS42.NET in production: the console at `console.bs42.ne
 
 ## 2. Environment variables
 
-Put them in each app's `.env` (`apps/console/.env`, `apps/store/.env`), and `DATABASE_URL` also in `packages/database/.env` for migrations. Both apps must use **the same** `BETTER_AUTH_SECRET`, URLs and cookie domain: they share sign-ins, and the store signs order links with the secret.
+On Azure App Service they're each app's app settings (section 5). Elsewhere, put them in each app's `.env` (`apps/console/.env`, `apps/store/.env`), and `DATABASE_URL` also in `packages/database/.env` for migrations. Both apps must use **the same** `BETTER_AUTH_SECRET`, URLs and cookie domain: they share sign-ins, and the store signs order links with the secret.
 
 | Variable | Console | Store | Value |
 |---|:-:|:-:|---|
@@ -46,7 +46,7 @@ Azure sign-in for uploads uses `DefaultAzureCredential`: a managed identity when
 
 ## 4. Database
 
-From the repo root, with `packages/database/.env` pointing at production:
+On Azure the deploy workflow applies the migrations on every push (section 5); the seed is still run once, by hand. From the repo root, with `packages/database/.env` pointing at production:
 
 ```bash
 pnpm install --frozen-lockfile
@@ -58,6 +58,33 @@ Don't run `db:seed:demo` in production: it creates a demo store.
 
 ## 5. Build and start
 
+### On Azure App Service
+
+`.github/workflows/deploy.yml` deploys both apps on every push to `main`: it runs the migrations, builds each app with Turbo, and zip-deploys Next's standalone output to its web app (`NEXT_STANDALONE=1` turns it on in each `next.config.ts`; local builds stay as they are, for `pnpm start`).
+
+**On Azure:**
+
+- [ ] A **Linux App Service plan** on Node 24, and two web apps on it: the console and the store. A Premium v3 plan (P0v3 or up) has deployment slots, so a new version starts in a staging slot and is swapped in once it answers; on Basic, deploys replace the running app directly, with a few seconds of downtime.
+- [ ] Each app's **startup command**: `HOSTNAME=0.0.0.0 node apps/console/server.js` (console) and `HOSTNAME=0.0.0.0 node apps/store/server.js` (store). App Service sets `HOSTNAME` to the container's name, and the server would listen only there.
+- [ ] Each app's **environment variables**: section 2's table, as app settings (Key Vault references for the secrets), not `.env` files. With a staging slot, give it the same settings, and set none of them as slot settings: they swap with the code.
+- [ ] Turn on **Always On** (the scheduled jobs and the first visitor after a quiet spell need it) and **HTTPS Only**, on both apps.
+- [ ] Don't set `WEBSITE_RUN_FROM_PACKAGE`: it makes the app's folder read-only, and Next writes its cache there.
+- [ ] Keep **one instance** per app. Each instance has its own cache, and the console clears its cache only in its own instance, so scaling out would show stale settings for up to a minute.
+- [ ] The console's **system-assigned managed identity** on, with the Storage Blob Data Contributor role (section 3). No `AZURE_*` keys are needed then.
+- [ ] Custom domains: `console.bs42.net` on the console, `bs42.net` (and `www` if wanted) on the store, each with a free App Service managed certificate.
+- [ ] The database in the same region as the apps.
+
+**For the workflow:**
+
+- [ ] An Entra ID app registration with a **federated credential** for this repository's `production` environment (GitHub OpenID Connect, so no Azure password is stored), given the Website Contributor role on the resource group.
+- [ ] A GitHub environment named `production` with these **secrets**: `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`, `DATABASE_URL`, `BETTER_AUTH_SECRET`.
+- [ ] And these **variables**: `CONSOLE_WEBAPP_NAME`, `STORE_WEBAPP_NAME`, `AZURE_RESOURCE_GROUP`, `AUTH_COOKIE_DOMAIN`, `CONSOLE_AUTH_URL`, `STORE_AUTH_URL`, and `DEPLOY_SLOT` (the staging slot's name, e.g. `staging`; leave it unset without slots).
+- [ ] The database must accept connections from GitHub's runners: the workflow runs the migrations, and both apps' builds connect to it (the store's prerenders its homepage and sitemap from it). On Azure Database for PostgreSQL, that means allowing public access with SSL and a strong password (GitHub's runners have no fixed addresses), or running the workflow on a self-hosted runner inside the network.
+
+**Visitor addresses:** App Service's front end sets `X-Forwarded-For` with the visitor's address and port; the store drops the port (`visitorIp`), so checkout's per-address limit on unpaid orders works.
+
+### Elsewhere
+
 ```bash
 pnpm build    # builds the shared packages, then both apps
 pnpm start    # console on port 3000, store on 3001 (or start each on its own, see section 2)
@@ -65,6 +92,9 @@ pnpm start    # console on port 3000, store on 3001 (or start each on its own, s
 
 - [ ] Point `console.bs42.net` at port 3000 and `bs42.net` at port 3001, over HTTPS.
 - [ ] Have the proxy set `X-Forwarded-For` to the visitor's address. Checkout limits unpaid orders per address with it, so without it every customer shares one limit.
+
+### Then, either way
+
 - [ ] Open `https://console.bs42.net/setup` and create the first superAdmin, **before the storefront is public**. The page only works while the database has no users at all, so one customer signing up first locks it for good (fixing that means editing the database).
 
 ## 6. Paystack
@@ -85,6 +115,8 @@ Each is a POST to the console with the cron secret. A failure answers with an er
 ```bash
 curl -fsS -X POST -H "Authorization: Bearer $CRON_SECRET" https://console.bs42.net/api/cron/unpaid-orders
 ```
+
+On Azure, a **Logic App** (Consumption plan) does this for a few cents a month: one workflow per job, each a Recurrence trigger (time zone UTC, which is Accra's) and an HTTP action (POST, the URL, header `Authorization: Bearer <CRON_SECRET>`, with the secret from Key Vault). Its run history shows each failure; add an alert rule on failed runs to hear of them.
 
 Try `file-cleanup` once with `?dryRun=1` first: it lists what it would delete without deleting.
 

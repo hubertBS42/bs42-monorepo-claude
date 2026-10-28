@@ -1,7 +1,7 @@
 {
   "$schema": "https://v2-11-9.turborepo.dev/schema.json",
   "ui": "tui",
-  "globalEnv": ["DATABASE_URL"],
+  "globalEnv": ["DATABASE_URL", "NEXT_STANDALONE"],
   "globalPassThroughEnv": [
     "BETTER_AUTH_SECRET",
     "STORE_AUTH_URL",

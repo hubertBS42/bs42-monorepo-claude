@@ -1,0 +1,112 @@
+# Builds both apps and deploys them to Azure App Service: the console to console.bs42.net, the store to bs42.net.
+# docs/launch-checklist.md (section 5) sets up what this needs on Azure and in the repository's settings.
+#
+# Every push to main runs the database's migrations, then builds and deploys both apps. Both, always: they share the
+# workspace packages and the database, so most changes touch both, and an app left on old code would run against the
+# new schema. Each app is Next's standalone output (`NEXT_STANDALONE=1`, read by its next.config.ts), started on App
+# Service with `node apps/<app>/server.js`.
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# One deploy at a time; a newer push waits rather than cancelling one halfway through a swap
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  id-token: write # Azure sign-in with OpenID Connect, no stored password
+
+env:
+  NODE_VERSION: "24"
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile --filter @workspace/db
+      - run: pnpm --filter @workspace/db db:deploy
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+  deploy:
+    needs: migrate
+    runs-on: ubuntu-latest
+    environment: production
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - app: console
+            webapp: ${{ vars.CONSOLE_WEBAPP_NAME }}
+          - app: store
+            webapp: ${{ vars.STORE_WEBAPP_NAME }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      # Packages laid out flat, as npm does, here only: pnpm's usual layout links each package to its real folder, and
+      # a package copied out of it (zip deploy keeps no links) can't find its own dependencies. In the workspace file,
+      # not as an install option, since pnpm installs again before running a script and would undo it.
+      - run: printf '\nnodeLinker: hoisted\n' >> pnpm-workspace.yaml
+      - run: pnpm install --frozen-lockfile
+
+      # Turbo builds what the app depends on first (the Prisma client, @workspace/email and @workspace/storage). The
+      # build reads the production settings: both apps connect to the database while building (the store prerenders
+      # its homepage and sitemap from it), and refuse to build for production without the cookie domain.
+      - name: Build
+        run: pnpm exec turbo run build --filter=${{ matrix.app }}
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
+          AUTH_COOKIE_DOMAIN: ${{ vars.AUTH_COOKIE_DOMAIN }}
+          CONSOLE_AUTH_URL: ${{ vars.CONSOLE_AUTH_URL }}
+          STORE_AUTH_URL: ${{ vars.STORE_AUTH_URL }}
+          NEXT_STANDALONE: "1"
+
+      # The standalone folder holds the server and only the files it needs, but not the static assets or `public`,
+      # which go beside the app's server.js. Next copies the app's .env files into it too: none exist here, and the zip
+      # leaves them out regardless, as the settings come from App Service.
+      - name: Package
+        run: |
+          out=apps/${{ matrix.app }}/.next/standalone
+          cp -r apps/${{ matrix.app }}/.next/static "$out/apps/${{ matrix.app }}/.next/static"
+          if [ -d apps/${{ matrix.app }}/public ]; then cp -r apps/${{ matrix.app }}/public "$out/apps/${{ matrix.app }}/public"; fi
+          (cd "$out" && zip -qr "$GITHUB_WORKSPACE/${{ matrix.app }}.zip" . -x '*.env' '*.env.*')
+          ls -lh "${{ matrix.app }}.zip"
+
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      # With a staging slot (vars.DEPLOY_SLOT, Premium plans), the new version starts there and is swapped in once it
+      # answers, so visitors never see it starting; without one, it replaces production directly
+      - uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ matrix.webapp }}
+          slot-name: ${{ vars.DEPLOY_SLOT || 'production' }}
+          package: ${{ matrix.app }}.zip
+
+      - name: Swap into production
+        if: vars.DEPLOY_SLOT != ''
+        run: |
+          host=$(az webapp show --name "${{ matrix.webapp }}" --resource-group "${{ vars.AZURE_RESOURCE_GROUP }}" --slot "${{ vars.DEPLOY_SLOT }}" --query defaultHostName --output tsv)
+          # Wait for the new version to answer before swapping (any answer: a redirect to sign in counts)
+          curl --silent --output /dev/null --retry 30 --retry-all-errors --retry-delay 10 --max-time 30 "https://$host/"
+          az webapp deployment slot swap --name "${{ matrix.webapp }}" --resource-group "${{ vars.AZURE_RESOURCE_GROUP }}" --slot "${{ vars.DEPLOY_SLOT }}" --target-slot production

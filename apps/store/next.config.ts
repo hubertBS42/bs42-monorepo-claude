@@ -1,3 +1,4 @@
+import { fileURLToPath } from "node:url"
 import type { NextConfig } from "next"
 
 // Sent with every response: other sites can't show these pages in a frame (so they can't trick someone into clicking
@@ -12,6 +13,11 @@ const securityHeaders = [
 ]
 
 const nextConfig: NextConfig = {
+  // A self-contained server for App Service (.next/standalone, started with `node apps/<app>/server.js`), traced from
+  // the monorepo's root so it takes in the workspace packages. Only when the deploy workflow asks: `next start`, as
+  // used locally, doesn't run standalone builds.
+  output: process.env.NEXT_STANDALONE === "1" ? "standalone" : undefined,
+  outputFileTracingRoot: fileURLToPath(new URL("../..", import.meta.url)),
   transpilePackages: ["@workspace/ui"],
   poweredByHeader: false,
   async headers() {
