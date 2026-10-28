@@ -60,7 +60,7 @@ Don't run `db:seed:demo` in production: it creates a demo store.
 
 ### On Azure App Service
 
-`.github/workflows/deploy.yml` deploys both apps (run by hand from GitHub's Actions tab for now; see the last item below): it runs the migrations, builds each app with Turbo, and zip-deploys Next's standalone output to its web app (`NEXT_STANDALONE=1` turns it on in each `next.config.ts`; local builds stay as they are, for `pnpm start`).
+`.github/workflows/deploy.yml` deploys both apps on every push to `main` (and by hand, from GitHub's Actions tab): it runs the migrations, builds each app with Turbo, and zip-deploys Next's standalone output to its web app (`NEXT_STANDALONE=1` turns it on in each `next.config.ts`; local builds stay as they are, for `pnpm start`).
 
 **On Azure:**
 
@@ -81,7 +81,7 @@ Don't run `db:seed:demo` in production: it creates a demo store.
 - [ ] And these **variables**: `CONSOLE_WEBAPP_NAME`, `STORE_WEBAPP_NAME`, `AZURE_RESOURCE_GROUP`, `AUTH_COOKIE_DOMAIN`, `CONSOLE_AUTH_URL`, `STORE_AUTH_URL`, and `DEPLOY_SLOT` (the staging slot's name, e.g. `staging`; leave it unset without slots).
 - [ ] The database must accept connections from GitHub's runners: the workflow runs the migrations, and both apps' builds connect to it (the store's prerenders its homepage and sitemap from it). On Azure Database for PostgreSQL, that means allowing public access with SSL and a strong password (GitHub's runners have no fixed addresses), or running the workflow on a self-hosted runner inside the network.
 
-- [ ] Run the workflow by hand (**Actions → Deploy → Run workflow**) and check both apps answer on their Azure addresses before pointing the domains at them. Once it works, add `push: branches: [main]` back under `on:` in the workflow, so every push to `main` deploys.
+- [ ] Run the workflow by hand (**Actions → Deploy → Run workflow**) and check both apps answer before going live. After changing an app setting the build reads (the URLs, the cookie domain), run it again: the build bakes them in.
 
 **Visitor addresses:** App Service's front end sets `X-Forwarded-For` with the visitor's address and port; the store drops the port (`visitorIp`), so checkout's per-address limit on unpaid orders works.
 
