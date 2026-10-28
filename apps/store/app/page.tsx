@@ -43,13 +43,14 @@ export default async function HomePage() {
       )}
 
       <section className="mx-auto max-w-7xl px-4 pt-12 lg:px-6">
-        <h2 className="mb-5 text-2xl font-bold tracking-tight md:text-3xl">Shop by category</h2>
+        <SectionTitle>Shop by category</SectionTitle>
         <CategoryGrid tiles={tiles} />
       </section>
 
+      {/* The old bs42.net's gap between sections: each had 2em above and below, 3vw from sm up */}
       {cards.length > 0 && (
-        <section className="mx-auto max-w-7xl px-4 pt-12 lg:px-6">
-          <h2 className="mb-5 text-2xl font-bold tracking-tight md:text-3xl">Featured</h2>
+        <section className="mx-auto max-w-7xl px-4 pt-16 sm:pt-[6vw] lg:px-6">
+          <SectionTitle>Featured products</SectionTitle>
           <ul className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 xl:grid-cols-4">
             {cards.map((card) => (
               <li key={card.id}>
@@ -59,6 +60,17 @@ export default async function HomePage() {
           </ul>
         </section>
       )}
+    </div>
+  )
+}
+
+// A section's title centred between two rules, as the old bs42.net's homepage sections were
+function SectionTitle({ children }: { children: string }) {
+  return (
+    <div className="mb-5 flex items-center gap-2.5">
+      <span className="h-px flex-1 bg-border" aria-hidden />
+      <h2 className="text-[19px] font-bold text-foreground/80 lg:text-[22px]">{children}</h2>
+      <span className="h-px flex-1 bg-border" aria-hidden />
     </div>
   )
 }

@@ -44,7 +44,7 @@ export function CategoryCarousel({ slides }: { slides: CategorySlide[] }) {
       <CarouselContent className="ml-0">
         {slides.map((slide, index) => (
           <CarouselItem key={slide.id} className="pl-0" aria-label={`${index + 1} of ${slides.length}`}>
-            <Slide slide={slide} first={index === 0} />
+            <Slide slide={slide} first={index === 0} active={index === selected} />
           </CarouselItem>
         ))}
       </CarouselContent>
@@ -71,10 +71,14 @@ export function CategoryCarousel({ slides }: { slides: CategorySlide[] }) {
   )
 }
 
-// White text on the image, darkened on the text's side; a slide without an image is a plain muted panel
-function Slide({ slide, first }: { slide: CategorySlide; first: boolean }) {
+// White text on the image, darkened on the text's side; a slide without an image is a plain muted panel. Laid out as on
+// the old bs42.net: the text near the top, left-aligned (centred on phones), and on the shown slide the title drops in,
+// then the text slides in from the left and the button fades in. The animation restarts each time a slide is shown.
+function Slide({ slide, first, active }: { slide: CategorySlide; first: boolean; active: boolean }) {
+  // The delays set only the animation's (tw-animate's delay-* would hold the button's hover transition back too)
+  const enter = active && "motion-safe:animate-in motion-safe:fill-mode-both motion-safe:animation-duration-1000"
   return (
-    <div className={cn("relative flex h-80 items-center overflow-hidden sm:h-96 lg:h-[34rem]", slide.image ? "bg-neutral-900 text-white" : "bg-muted")}>
+    <div className={cn("relative h-[300px] overflow-hidden sm:h-[550px]", slide.image ? "bg-neutral-900 text-white" : "bg-muted")}>
       {slide.image && (
         <>
           {/* eslint-disable-next-line @next/next/no-img-element -- our own blob storage, not set up for next/image */}
@@ -82,11 +86,31 @@ function Slide({ slide, first }: { slide: CategorySlide; first: boolean }) {
           <div className="absolute inset-0 bg-linear-to-r from-black/75 via-black/45 to-black/10" aria-hidden />
         </>
       )}
-      <div className="relative mx-auto w-full max-w-7xl px-4 lg:px-6">
-        <div className="flex max-w-xl flex-col items-start gap-4 md:px-10 lg:px-0">
-          <h2 className="text-3xl font-bold tracking-tight md:text-5xl">{slide.name}</h2>
-          {slide.description && <p className={cn("line-clamp-3 text-base md:text-lg", slide.image ? "text-white/85" : "text-muted-foreground")}>{slide.description}</p>}
-          <Button render={<Link href={slide.href} />} size="lg" className="mt-2">
+      <div className="relative mx-auto w-full max-w-7xl px-4 pt-[50px] sm:pt-[100px] lg:px-6">
+        <div className="flex flex-col items-center gap-4 text-center sm:items-start sm:text-left">
+          <h2 className={cn("text-[2rem] leading-[1.3] font-bold capitalize sm:text-5xl", enter, active && "motion-safe:fade-in motion-safe:slide-in-from-top-16 sm:motion-safe:slide-in-from-top-24")}>
+            {slide.name}
+          </h2>
+          {slide.description && (
+            <p
+              className={cn(
+                "line-clamp-3 max-w-[500px] text-base leading-[1.55]",
+                slide.image ? "text-white" : "text-muted-foreground",
+                enter,
+                active && "motion-safe:[--tw-animation-delay:1s] motion-safe:fade-in motion-safe:slide-in-from-left-8"
+              )}
+            >
+              {slide.description}
+            </p>
+          )}
+          <Button
+            render={<Link href={slide.href} />}
+            className={cn(
+              "h-9 rounded-sm px-[18px] font-heading text-base font-bold transition-all duration-300 ease-in hover:bg-white hover:text-primary",
+              enter,
+              active && "motion-safe:[--tw-animation-delay:1s] motion-safe:fade-in"
+            )}
+          >
             Shop now
           </Button>
         </div>
