@@ -62,7 +62,8 @@ jobs:
       # Packages laid out flat, as npm does, here only: pnpm's usual layout links each package to its real folder, and
       # a package copied out of it (zip deploy keeps no links) can't find its own dependencies. In the workspace file,
       # not as an install option, since pnpm installs again before running a script and would undo it.
-      - run: printf '\nnodeLinker: hoisted\n' >> pnpm-workspace.yaml
+      - run: |
+          printf '\nnodeLinker: hoisted\n' >> pnpm-workspace.yaml
       - run: pnpm install --frozen-lockfile
 
       # Turbo builds what the app depends on first (the Prisma client, @workspace/email and @workspace/storage). The
