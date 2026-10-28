@@ -14,6 +14,8 @@ export interface AttentionItem {
   switchesWorkspace?: boolean
   // Shown in red while there are any, for what's holding up money or sales
   urgent?: boolean
+  // Shown in the badge instead of the count, for a row that isn't a count of things (the exchange rate's age)
+  badge?: string
 }
 
 // Only the rows with something waiting, so the card reads as a to-do list; each one's list is in the sidebar too
@@ -23,7 +25,7 @@ export default function AttentionCard({ items }: { items: AttentionItem[] }) {
     <Card>
       <CardHeader>
         <CardTitle>Needs attention</CardTitle>
-        <CardDescription>Orders, stock and deliveries waiting on someone.</CardDescription>
+        <CardDescription>What's waiting on someone right now.</CardDescription>
       </CardHeader>
       {waiting.length === 0 ? (
         <CardContent className="flex flex-1">
@@ -39,7 +41,7 @@ export default function AttentionCard({ items }: { items: AttentionItem[] }) {
                   <span className="text-xs text-muted-foreground">{item.hint}</span>
                 </div>
                 <Badge variant={item.urgent ? "destructive" : "secondary"} className="tabular-nums">
-                  {item.count}
+                  {item.badge ?? item.count}
                 </Badge>
               </>
             )

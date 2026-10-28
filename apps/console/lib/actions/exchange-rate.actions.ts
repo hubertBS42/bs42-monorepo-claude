@@ -2,12 +2,13 @@
 
 import z from "zod"
 import { formatError } from "@workspace/auth/format-error"
-import { ActionResponse } from "@workspace/contracts"
+import { ActionResponse, type DataResponse } from "@workspace/contracts"
 import { prisma } from "@workspace/db"
 import { ExchangeRateSource } from "@workspace/db/enums"
 import { requireSystemPermission } from "@/lib/auth-guard"
 import { getRateDate } from "@workspace/commerce/exchange-rates"
 import { exchangeRateFormSchema } from "@/lib/schemas/exchange-rate.schemas"
+import { fetchTodaysRate } from "@/lib/exchange-rate-fetch"
 
 // Sets today's USD→GHS rate by hand: for a day the daily fetch failed, or to override the fetched rate.
 // The fetch never overwrites a rate set here.
@@ -39,4 +40,14 @@ export async function setTodaysExchangeRateAction(input: z.input<typeof exchange
   } catch (error) {
     return { success: false, error: formatError(error) }
   }
+}
+
+// Runs the daily fetch now (what POST /api/cron/exchange-rate does), for a day the scheduled run missed. It only fills in
+// a day with no rate, and refuses the same suspicious readings; no failure email, since whoever pressed it sees why.
+export async function fetchTodaysExchangeRateAction(): Promise<DataResponse<{ status: "saved" | "exists"; date: string; rate: string }>> {
+  await requireSystemPermission({ appSettings: ["update"] })
+
+  const result = await fetchTodaysRate()
+  if (result.status === "failed") return { success: false, error: result.error, code: "FETCH_FAILED" }
+  return { success: true, data: { status: result.status, date: result.date, rate: result.rate } }
 }

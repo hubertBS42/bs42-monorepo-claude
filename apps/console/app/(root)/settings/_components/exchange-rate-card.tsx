@@ -16,11 +16,13 @@ import { formatDate } from "@workspace/utils/date"
 import { setTodaysExchangeRateAction } from "@/lib/actions/exchange-rate.actions"
 import type { ExchangeRateInfo } from "@workspace/commerce/exchange-rates"
 import { exchangeRateFormSchema } from "@/lib/schemas/exchange-rate.schemas"
+import FetchRateButton from "@/components/fetch-rate-button"
 
 type FormValues = z.infer<typeof exchangeRateFormSchema>
 
 // Its own form, saved apart from the settings row: a rate is saved per day and orders keep the one they used
-export default function ExchangeRateCard({ latest, maxAgeDays }: { latest: ExchangeRateInfo | null; maxAgeDays: number }) {
+// today is getRateDate(): while it has no rate, the card offers to fetch it now (the daily job may have missed it)
+export default function ExchangeRateCard({ latest, today, maxAgeDays }: { latest: ExchangeRateInfo | null; today: string; maxAgeDays: number }) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
 
@@ -73,7 +75,8 @@ export default function ExchangeRateCard({ latest, maxAgeDays }: { latest: Excha
           {/* The field rounds to its step when it loses focus, so the step matches the six decimals rates are stored
               (and fetched) with: a coarser one would change a fetched rate just by clicking in and out */}
           <NumberInputField control={form.control} label="Today's rate (GHS per $1)" name="rate" step={0.000001} min={0} prependText="GH₵" disabled={isPending} />
-          <div className="flex justify-end">
+          <div className="flex flex-wrap justify-end gap-2">
+            {latest?.date !== today && <FetchRateButton size="default" />}
             <Button type="submit" disabled={isPending || !form.formState.isDirty}>
               {isPending ? (
                 <Spinner />

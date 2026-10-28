@@ -1,9 +1,9 @@
 import { getAppSettings } from "@/lib/app-settings"
 import { getPlatformDashboard } from "@/lib/data/dashboard.data"
-import { getLatestExchangeRate } from "@workspace/commerce/exchange-rates"
+import { EXCHANGE_RATE_MAX_AGE_DAYS, getLatestExchangeRate, getRateDate, type ExchangeRateInfo } from "@workspace/commerce/exchange-rates"
 import { getRecentOrderDetails } from "@/lib/data/orders.data"
 import type { DashboardPeriod } from "@/types"
-import AttentionCard from "./attention-card"
+import AttentionCard, { type AttentionItem } from "./attention-card"
 import ExchangeRateChart from "./exchange-rate-chart"
 import { toOrderSummary } from "./order-summary"
 import PlatformHealth from "./platform-health"
@@ -17,6 +17,21 @@ const RECENT_ORDERS = 10
 
 // Stores listed by name under "Needs attention"; the rest are summed into one row
 const STOCK_STORES_SHOWN = 5
+
+// A row while the exchange rate needs someone: today's hasn't been fetched yet (the daily job missed it), or the latest is
+// too old to sell at, which hides every price on the storefront and stops orders. Settings has the button that fetches it.
+function exchangeRateAttention(rate: ExchangeRateInfo | null, canOpenSettings: boolean): AttentionItem[] {
+  const today = getRateDate()
+  if (rate?.date === today) return []
+  const href = canOpenSettings ? "/settings/pricing" : undefined
+  if (!rate) return [{ label: "Prices are hidden on the storefront", hint: "There's no exchange rate yet", count: 1, badge: "No rate", urgent: true, href }]
+
+  const age = Math.round((Date.parse(today) - Date.parse(rate.date)) / 86_400_000)
+  const badge = `${age} ${age === 1 ? "day" : "days"} old`
+  if (rate.isStale) return [{ label: "Prices are hidden on the storefront", hint: "The latest exchange rate is too old to sell at", count: 1, badge, urgent: true, href }]
+  const left = EXCHANGE_RATE_MAX_AGE_DAYS + 1 - age
+  return [{ label: "Today's exchange rate hasn't been fetched", hint: `Prices hide in ${left} ${left === 1 ? "day" : "days"} without a new one`, count: 1, badge, href }]
+}
 
 // The mailer reads these when it sends (packages/email/src/mailer.ts)
 const mailerConfigured = () => !!(process.env.SITE_MAILER_HOST?.trim() && process.env.SITE_MAILER_EMAIL?.trim() && process.env.SITE_MAILER_PASSWORD)
@@ -37,6 +52,7 @@ export default async function PlatformDashboard({ period, canOpenSettings }: { p
         <SalesChart days={sales.days} period={period} />
         <AttentionCard
           items={[
+            ...exchangeRateAttention(rate, canOpenSettings),
             { label: "Waiting to be confirmed", hint: "Pending orders, from every store", count: orders.pending, href: "/orders?status=PENDING" },
             {
               label: "Shared orders to confirm",
@@ -76,6 +92,7 @@ export default async function PlatformDashboard({ period, canOpenSettings }: { p
       </div>
       <PlatformHealth
         rate={rate}
+        today={getRateDate()}
         taxEnabled={settings.taxEnabled}
         mailerConfigured={mailerConfigured()}
         notificationRecipients={settings.notificationEmails.length}

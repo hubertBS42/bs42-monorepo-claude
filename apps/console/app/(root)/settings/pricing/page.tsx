@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import { EXCHANGE_RATE_MAX_AGE_DAYS, getLatestExchangeRate } from "@workspace/commerce/exchange-rates"
+import { EXCHANGE_RATE_MAX_AGE_DAYS, getLatestExchangeRate, getRateDate } from "@workspace/commerce/exchange-rates"
 import { readAppSettings } from "@workspace/db"
 import ExchangeRateCard from "../_components/exchange-rate-card"
 import { BankTransferCard, MarkupCard, QuotationsCard, TaxCard } from "../_components/settings-cards"
@@ -16,7 +16,7 @@ export default async function PricingSettingsPage() {
 
   return (
     <SettingsSection title="Pricing" description="Exchange rate, tax, quotations and bank transfers.">
-      <ExchangeRateCard latest={latestRate} maxAgeDays={EXCHANGE_RATE_MAX_AGE_DAYS} />
+      <ExchangeRateCard latest={latestRate} today={getRateDate()} maxAgeDays={EXCHANGE_RATE_MAX_AGE_DAYS} />
       <MarkupCard settings={settings} />
       <TaxCard settings={settings} />
       <QuotationsCard settings={settings} />
