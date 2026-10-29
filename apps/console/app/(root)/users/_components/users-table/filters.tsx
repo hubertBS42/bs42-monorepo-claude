@@ -7,8 +7,7 @@ export function getUserFilters({ canSeeSuperAdmins }: { canSeeSuperAdmins: boole
   const roleOptions = SYSTEM_ROLE_NAMES.filter((role) => canSeeSuperAdmins || role !== "superAdmin").map((role) => ({ label: ROLE_LABELS[role] ?? role, value: role }))
 
   return [
-    { key: "name", label: "Name", type: "text", placeholder: "Search name" },
-    { key: "email", label: "Email", type: "text", placeholder: "Search email" },
+    { key: "search", label: "Search", type: "text", placeholder: "Name, email or phone" },
     { key: "role", label: "Role", type: "select", placeholder: "All roles", options: [{ label: "All roles", value: "all" }, ...roleOptions] },
     {
       key: "status",

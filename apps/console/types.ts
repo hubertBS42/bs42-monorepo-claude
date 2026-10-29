@@ -83,8 +83,8 @@ export type UsersData = PaginatedResult<User>
 export type UserStatusFilter = "active" | "banned"
 
 export interface UsersParams extends PaginationParams {
-  name?: string
-  email?: string
+  // Matches the name, email or phone
+  search?: string
   role?: SystemRole
   status?: UserStatusFilter
 }

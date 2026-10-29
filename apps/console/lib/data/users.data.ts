@@ -9,6 +9,7 @@ import { getPaginationError } from "@workspace/utils/pagination"
 import { consoleAuth } from "@workspace/auth/console"
 import { hasSystemPermission, hasSystemRole } from "@workspace/auth/system-permissions"
 import { headers } from "next/headers"
+import { toPhoneSearch } from "@workspace/utils/phone"
 
 export const MAX_USERS_PAGE_SIZE = 100
 export const USER_SORT_FIELDS = ["name", "email", "role", "createdAt", "updatedAt"] as const
@@ -33,17 +34,19 @@ export const getUsers = async (filters: UsersParams = {}): Promise<DataResponse<
       return { success: false, error: paginationError }
     }
 
-    const { name, email, role, status, page = 1, pageSize = 10, sort, order } = filters
+    const { search, role, status, page = 1, pageSize = 10, sort, order } = filters
 
     // Only superAdmins can see superAdmins. Role strings can be comma-separated, so match the token
     // anywhere in the string (no other role name contains "superAdmin").
     const isSuperAdmin = hasSystemRole(session.user.role, ["superAdmin"])
 
     const now = new Date()
+    const contains = (value: string) => ({ contains: value, mode: "insensitive" as const })
+    // Phones are stored in international form, so a local "0244…" is searched as "+233244…" too
+    const phoneSearch = search ? toPhoneSearch(search) : null
     const conditions: Prisma.UserWhereInput[] = [
       ...(!isSuperAdmin ? [{ NOT: { role: { contains: "superAdmin" } } }] : []),
-      ...(name ? [{ name: { contains: name, mode: "insensitive" as const } }] : []),
-      ...(email ? [{ email: { contains: email, mode: "insensitive" as const } }] : []),
+      ...(search ? [{ OR: [{ name: contains(search) }, { email: contains(search) }, { phone: contains(search) }, ...(phoneSearch ? [{ phone: contains(phoneSearch) }] : [])] }] : []),
       // Match the role as a whole token in the comma-separated string, not as a substring
       ...(role ? [{ OR: [{ role }, { role: { startsWith: `${role},` } }, { role: { endsWith: `,${role}` } }, { role: { contains: `,${role},` } }] }] : []),
       // Same rule as isBanActive: a ban only counts until it expires. Active is spelled out rather than written as

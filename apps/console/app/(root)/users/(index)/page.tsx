@@ -23,8 +23,7 @@ export default async function UsersPage({ searchParams }: UsersPageProps) {
   const params = await searchParams
 
   const usersParams: UsersParams = {
-    name: getStringParam(params.name),
-    email: getStringParam(params.email),
+    search: getStringParam(params.search),
     role: getEnumParam(params.role, SYSTEM_ROLE_NAMES),
     status: getEnumParam(params.status, USER_STATUS_FILTERS),
     page: getPositiveIntegerParam(params.page, 1),
