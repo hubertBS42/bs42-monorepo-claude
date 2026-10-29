@@ -34,6 +34,8 @@ interface DateFieldProps<T extends FieldValues> {
   disabledDates?: React.ComponentProps<typeof Calendar>["disabled"]
   clearable?: boolean
   captionLayout?: React.ComponentProps<typeof Calendar>["captionLayout"]
+  startMonth?: Date
+  endMonth?: Date
 }
 
 const dateFormatter = new Intl.DateTimeFormat(undefined, {
@@ -57,6 +59,8 @@ const DateField = <T extends FieldValues>({
   disabledDates,
   clearable = true,
   captionLayout = "label",
+  startMonth,
+  endMonth,
 }: DateFieldProps<T>) => {
   const generatedId = React.useId()
   const inputId =
@@ -145,6 +149,8 @@ const DateField = <T extends FieldValues>({
                     }}
                     disabled={disabledDates}
                     captionLayout={captionLayout}
+                    startMonth={startMonth}
+                    endMonth={endMonth}
                     autoFocus
                   />
                 </PopoverContent>

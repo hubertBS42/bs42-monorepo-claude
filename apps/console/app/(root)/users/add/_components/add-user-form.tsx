@@ -182,7 +182,7 @@ export default function AddUserForm({ stores }: { stores: SelectItem[] }) {
                   <PhoneField control={form.control} label="Phone" name="phone" disabled={isPending} defaultCountry="GH" />
                 </div>
                 <div className="col-span-2 grid lg:col-span-1">
-                  <DateField control={form.control} name="dob" label="Date of birth" disabled={isPending} disabledDates={(date) => date > new Date() || date < new Date("1900-01-01")} />
+                  <DateField control={form.control} name="dob" label="Date of birth" disabled={isPending} disabledDates={(date) => date > new Date() || date < new Date("1900-01-01")} captionLayout="dropdown" startMonth={new Date(1900, 0)} endMonth={new Date()} />
                 </div>
                 <div className="col-span-2 grid lg:col-span-1">
                   <SelectField control={form.control} label="System Role" name="systemRole" options={systemRoleOptions} disabled={isPending} placeholder="Select role" />
