@@ -7,12 +7,14 @@ interface ResourceFormFooterProps {
   isPending: boolean
   isDirty: boolean
   handleDiscard: () => Promise<void> | void
+  // The id of the form Save submits, when the footer is rendered outside that form
+  form?: string
 }
-const ResourceFormFooter = ({ backTo, isPending, isDirty, handleDiscard }: ResourceFormFooterProps) => {
+const ResourceFormFooter = ({ backTo, isPending, isDirty, handleDiscard, form }: ResourceFormFooterProps) => {
   return (
     <div className="flex items-center justify-center gap-2 md:hidden">
       {isDirty ? <DiscardChangesButton isLoading={isPending} handleDiscard={handleDiscard} /> : <BackButton link={backTo} />}
-      <SaveButton isLoading={isPending} isDisabled={!isDirty} />
+      <SaveButton isLoading={isPending} isDisabled={!isDirty} form={form} />
     </div>
   )
 }

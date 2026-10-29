@@ -28,14 +28,13 @@ export default async function EditCategoryPage({ params }: Props) {
   if (!specs.success) throw new Error(specs.error)
 
   return (
-    <div className="grid gap-8">
-      <EditCategoryForm category={response.data} parentOptions={options.data.options} disabledParentIds={options.data.disabledIds} />
+    <EditCategoryForm category={response.data} parentOptions={options.data.options} disabledParentIds={options.data.disabledIds}>
       {/* Outside the form: each change saves on its own */}
       <div className="grid items-start gap-4 lg:grid-cols-3">
         <div className="lg:col-span-2">
           <CategorySpecs categoryId={response.data.id} specs={specs.data} />
         </div>
       </div>
-    </div>
+    </EditCategoryForm>
   )
 }

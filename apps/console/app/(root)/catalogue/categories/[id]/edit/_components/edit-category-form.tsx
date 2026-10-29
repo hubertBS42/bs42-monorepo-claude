@@ -1,5 +1,5 @@
 "use client"
-import { useState } from "react"
+import { useId, useState, type ReactNode } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@workspace/ui/components/card"
 import { FieldGroup } from "@workspace/ui/components/field"
 import { NO_PARENT, updateCategoryFormSchema } from "@/lib/schemas/category.schemas"
@@ -24,10 +24,13 @@ interface EditCategoryFormProps {
   parentOptions: TreeSelectOption[]
   // Archived categories, plus this category and its subcategories (picking one would make a cycle)
   disabledParentIds: string[]
+  // Cards shown after the form's, above the phone footer: outside the <form>, since they save on their own
+  children?: ReactNode
 }
 
-export default function EditCategoryForm({ category, parentOptions, disabledParentIds }: EditCategoryFormProps) {
+export default function EditCategoryForm({ category, parentOptions, disabledParentIds, children }: EditCategoryFormProps) {
   const router = useRouter()
+  const formId = useId()
 
   // isSubmitting turns false as soon as onSubmit returns, while the redirect is still loading.
   // This keeps the form locked from a successful save until the page changes.
@@ -105,8 +108,8 @@ export default function EditCategoryForm({ category, parentOptions, disabledPare
   }
 
   return (
-    <form onSubmit={form.handleSubmit(onSubmit)}>
-      <div className="grid gap-y-6">
+    <div className="grid gap-8">
+      <form id={formId} onSubmit={form.handleSubmit(onSubmit)} className="grid gap-y-6">
         <SharedFormHeader
           heading="Edit Category"
           description="Edit this product category."
@@ -116,92 +119,92 @@ export default function EditCategoryForm({ category, parentOptions, disabledPare
           handleDiscard={handleDiscard}
         />
 
-        <div className="grid gap-8">
-          <div className="grid items-start gap-4 lg:grid-cols-3">
-            {/* Left column */}
-            <div className="grid gap-4 lg:col-span-2">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Category Details</CardTitle>
-                  <CardDescription>Configure the basic information for this category.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <FieldGroup>
-                    <ImageField
-                      control={form.control}
-                      name="image"
-                      sizeLimit={500}
-                      maxImages={1}
-                      onAdd={handleAddImage}
-                      onRemove={handleRemoveImage}
-                      clearErrors={form.clearErrors}
-                      label="Image"
-                      description="About 1600 × 600, for the homepage; keep the subject right of centre."
-                      disabled={isBusy}
-                      className="max-w-35"
-                      defaultValues={category.image}
-                    />
+        <div className="grid items-start gap-4 lg:grid-cols-3">
+          {/* Left column */}
+          <div className="grid gap-4 lg:col-span-2">
+            <Card>
+              <CardHeader>
+                <CardTitle>Category Details</CardTitle>
+                <CardDescription>Configure the basic information for this category.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <FieldGroup>
+                  <ImageField
+                    control={form.control}
+                    name="image"
+                    sizeLimit={500}
+                    maxImages={1}
+                    onAdd={handleAddImage}
+                    onRemove={handleRemoveImage}
+                    clearErrors={form.clearErrors}
+                    label="Image"
+                    description="About 1600 × 600, for the homepage; keep the subject right of centre."
+                    disabled={isBusy}
+                    className="max-w-35"
+                    defaultValues={category.image}
+                  />
 
-                    <TextInputField control={form.control} label="Name" name="name" disabled={isBusy} />
+                  <TextInputField control={form.control} label="Name" name="name" disabled={isBusy} />
 
-                    <SelectTreeField control={form.control} name="parentId" label="Parent category" options={options} disabledOptions={disabledParentIds} disabled={isBusy} />
+                  <SelectTreeField control={form.control} name="parentId" label="Parent category" options={options} disabledOptions={disabledParentIds} disabled={isBusy} />
 
-                    <TextareaField control={form.control} label="Description" name="description" disabled={isBusy} />
-                  </FieldGroup>
-                </CardContent>
-              </Card>
+                  <TextareaField control={form.control} label="Description" name="description" disabled={isBusy} />
+                </FieldGroup>
+              </CardContent>
+            </Card>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle>Settings</CardTitle>
-                  <CardDescription>Settings for this category.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <FieldGroup>
-                    <SwitchField control={form.control} label="Featured" name="isFeatured" disabled={isBusy} description="Show in the homepage carousel (up to 6)" variant="card" />
-                    <NumberInputField
-                      control={form.control}
-                      label="Installation fee"
-                      name="installationFeeGhs"
-                      step={0.01}
-                      min={0}
-                      prependText="GH₵"
-                      disabled={isBusy}
-                      description="Per item, for products here and below without their own. Empty uses the parent's."
-                      info="Products set to use their category's fee take the nearest category up the tree that has one. If none does, they aren't installed."
-                    />
-                  </FieldGroup>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Right column */}
-            <div className="grid gap-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Status</CardTitle>
-                  <CardDescription>Set the status for this category.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <SelectField control={form.control} name="status" disabled={isBusy} options={STATUS_OPTIONS} aria-label="Status" />
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Danger Zone</CardTitle>
-                  <CardDescription>Permanently delete this category.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <DeleteCategory category={category} childCount={category.childCount} />
-                </CardContent>
-              </Card>
-            </div>
+            <Card>
+              <CardHeader>
+                <CardTitle>Settings</CardTitle>
+                <CardDescription>Settings for this category.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <FieldGroup>
+                  <SwitchField control={form.control} label="Featured" name="isFeatured" disabled={isBusy} description="Show in the homepage carousel (up to 6)" variant="card" />
+                  <NumberInputField
+                    control={form.control}
+                    label="Installation fee"
+                    name="installationFeeGhs"
+                    step={0.01}
+                    min={0}
+                    prependText="GH₵"
+                    disabled={isBusy}
+                    description="Per item, for products here and below without their own. Empty uses the parent's."
+                    info="Products set to use their category's fee take the nearest category up the tree that has one. If none does, they aren't installed."
+                  />
+                </FieldGroup>
+              </CardContent>
+            </Card>
           </div>
 
-          <SharedFormFooter backTo="/catalogue/categories" isPending={isBusy} isDirty={form.formState.isDirty} handleDiscard={handleDiscard} />
+          {/* Right column */}
+          <div className="grid gap-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Status</CardTitle>
+                <CardDescription>Set the status for this category.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <SelectField control={form.control} name="status" disabled={isBusy} options={STATUS_OPTIONS} aria-label="Status" />
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Danger Zone</CardTitle>
+                <CardDescription>Permanently delete this category.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <DeleteCategory category={category} childCount={category.childCount} />
+              </CardContent>
+            </Card>
+          </div>
         </div>
-      </div>
-    </form>
+      </form>
+
+      {children}
+
+      <SharedFormFooter form={formId} backTo="/catalogue/categories" isPending={isBusy} isDirty={form.formState.isDirty} handleDiscard={handleDiscard} />
+    </div>
   )
 }
