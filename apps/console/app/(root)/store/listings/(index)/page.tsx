@@ -6,7 +6,7 @@ import { getStoreListings, LISTING_SORT_FIELDS, MAX_LISTINGS_PAGE_SIZE } from "@
 import { getProductFilterOptions } from "@/lib/data/products.data"
 import { LISTING_STOCK_STATES, type ListingsParams } from "@/types"
 import StoreAddButton from "@/components/store-add-button"
-import ListingsTable from "./_components/listings-table"
+import ListingsTable from "../_components/listings-table"
 
 export const metadata: Metadata = {
   title: "Listings",

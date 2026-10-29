@@ -4,8 +4,8 @@ import { getEnumParam, getOrderParam, getPositiveIntegerParam, getSortParam, get
 import { requireActiveStoreMember } from "@/lib/auth-guard"
 import { getStoreMembers, MAX_STORE_MEMBERS_PAGE_SIZE, STORE_MEMBER_SORT_FIELDS } from "@/lib/data/members.data"
 import type { StoreMembersParams } from "@/types"
-import InviteMemberDialog from "../_components/invite-member-dialog"
-import MembersTable from "./_components/members-table"
+import InviteMemberDialog from "../../_components/invite-member-dialog"
+import MembersTable from "../_components/members-table"
 
 export const metadata: Metadata = {
   title: "Members",

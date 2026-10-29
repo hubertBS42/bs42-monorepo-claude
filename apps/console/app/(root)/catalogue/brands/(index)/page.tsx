@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import BrandsTable from "./_components/brands-table"
+import BrandsTable from "../_components/brands-table"
 import { getBrands, MAX_BRANDS_PAGE_SIZE, BRAND_SORT_FIELDS } from "@/lib/data/brands.data"
 import AddButton from "@/components/add-button"
 import { Status } from "@workspace/db/enums"

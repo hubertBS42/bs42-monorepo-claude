@@ -7,7 +7,7 @@ import { formatDate } from "@workspace/utils/date"
 import { capitalizeWord } from "@workspace/utils/text"
 import { requireActiveStoreMember } from "@/lib/auth-guard"
 import { getStoreById } from "@/lib/data/stores.data"
-import StoreActions from "./_components/store-actions"
+import StoreActions from "../_components/store-actions"
 
 export const metadata: Metadata = {
   title: "Store Details",

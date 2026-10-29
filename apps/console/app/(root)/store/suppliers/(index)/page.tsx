@@ -6,7 +6,7 @@ import StoreAddButton from "@/components/store-add-button"
 import { requireActiveStoreMember } from "@/lib/auth-guard"
 import { getSuppliers, MAX_SUPPLIERS_PAGE_SIZE, SUPPLIER_SORT_FIELDS } from "@/lib/data/suppliers.data"
 import type { SuppliersParams } from "@/types"
-import SuppliersTable from "./_components/suppliers-table"
+import SuppliersTable from "../_components/suppliers-table"
 
 export const metadata: Metadata = {
   title: "Suppliers",

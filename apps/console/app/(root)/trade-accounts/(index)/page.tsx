@@ -1,7 +1,7 @@
 import type { Metadata } from "next"
 import { BusinessType, TradeAccountStatus } from "@workspace/db/enums"
 import { getEnumParam, getOrderParam, getPositiveIntegerParam, getSortParam, getStringParam } from "@workspace/utils/search-params"
-import TradeAccountsTable from "./_components/trade-accounts-table"
+import TradeAccountsTable from "../_components/trade-accounts-table"
 import { requireSystemPermission } from "@/lib/auth-guard"
 import { getTradeAccounts, MAX_TRADE_ACCOUNTS_PAGE_SIZE, TRADE_ACCOUNT_SORT_FIELDS } from "@/lib/data/trade-accounts.data"
 

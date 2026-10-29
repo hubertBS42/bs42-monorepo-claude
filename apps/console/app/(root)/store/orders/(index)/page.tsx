@@ -7,7 +7,7 @@ import { getEnumParam, getOrderParam, getPositiveIntegerParam, getSortParam, get
 import { requireActiveStoreMember } from "@/lib/auth-guard"
 import { getStoreOrders, MAX_STORE_ORDERS_PAGE_SIZE, STORE_ORDER_SORT_FIELDS } from "@/lib/data/store-orders.data"
 import type { StoreOrdersParams } from "@/types"
-import OrdersTable from "./_components/orders-table"
+import OrdersTable from "../_components/orders-table"
 
 export const metadata: Metadata = {
   title: "Orders",

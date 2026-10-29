@@ -1,6 +1,6 @@
 import type { Metadata } from "next"
 import { getDayParam, getEnumParam, getOrderParam, getPositiveIntegerParam, getSortParam, getStringParam } from "@workspace/utils/search-params"
-import QuotesTable from "./_components/quotes-table"
+import QuotesTable from "../_components/quotes-table"
 import AddButton from "@/components/add-button"
 import { requireSystemPermission } from "@/lib/auth-guard"
 import { getQuotes, MAX_QUOTES_PAGE_SIZE, QUOTE_SORT_FIELDS } from "@/lib/data/quotes.data"

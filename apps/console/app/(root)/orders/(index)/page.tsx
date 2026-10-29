@@ -6,7 +6,7 @@ import { requireSystemPermission } from "@/lib/auth-guard"
 import { getOrders, MAX_ORDERS_PAGE_SIZE, ORDER_SORT_FIELDS } from "@/lib/data/orders.data"
 import { getStoresForSelect } from "@/lib/data/stores.data"
 import type { OrdersParams } from "@/types"
-import OrdersTable from "./_components/orders-table"
+import OrdersTable from "../_components/orders-table"
 
 export const metadata: Metadata = {
   title: "Orders",

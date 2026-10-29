@@ -3,8 +3,8 @@ import { StockTransferStatus } from "@workspace/db/enums"
 import { getEnumParam, getPositiveIntegerParam } from "@workspace/utils/search-params"
 import { requireActiveStoreMember } from "@/lib/auth-guard"
 import { getStockTransfers, MAX_STOCK_TRANSFERS_PAGE_SIZE } from "@/lib/data/stock-transfers.data"
-import SendStockButton from "./_components/send-stock-button"
-import TransfersTable from "./_components/transfers-table"
+import SendStockButton from "../_components/send-stock-button"
+import TransfersTable from "../_components/transfers-table"
 
 export const metadata: Metadata = {
   title: "Transfers",

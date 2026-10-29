@@ -5,7 +5,7 @@ import { getCategoryOptions } from "@/lib/data/categories.data"
 import { getProductFilterOptions, getProductsForTable, MAX_PRODUCTS_PAGE_SIZE, PRODUCT_SORT_FIELDS } from "@/lib/data/products.data"
 import { getEnumParam, getOrderParam, getPositiveIntegerParam, getSortParam, getStringParam } from "@workspace/utils/search-params"
 import AddButton from "@/components/add-button"
-import ProductsTable from "./_components/products-table"
+import ProductsTable from "../_components/products-table"
 import { Condition, Status } from "@workspace/db/enums"
 import { z } from "zod"
 

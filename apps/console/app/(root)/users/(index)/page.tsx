@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import UsersTable from "./_components/users-table"
+import UsersTable from "../_components/users-table"
 import { getUsers, MAX_USERS_PAGE_SIZE, USER_SORT_FIELDS } from "@/lib/data/users.data"
 import type { UsersParams } from "@/types"
 import { getEnumParam, getOrderParam, getPositiveIntegerParam, getSortParam, getStringParam } from "@workspace/utils/search-params"

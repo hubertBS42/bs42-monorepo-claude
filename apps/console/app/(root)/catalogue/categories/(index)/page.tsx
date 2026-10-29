@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import CategoriesTable from "./_components/categories-table"
+import CategoriesTable from "../_components/categories-table"
 import { getCategoryTree } from "@/lib/data/categories.data"
 import AddButton from "@/components/add-button"
 import { requireConsoleAdmin } from "@/lib/auth-guard"

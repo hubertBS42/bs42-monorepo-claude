@@ -8,7 +8,7 @@ import StoreAddButton from "@/components/store-add-button"
 import { requireActiveStoreMember } from "@/lib/auth-guard"
 import { getPurchaseOrders, getSupplierOptions, MAX_PURCHASE_ORDERS_PAGE_SIZE, PURCHASE_ORDER_SORT_FIELDS } from "@/lib/data/purchase-orders.data"
 import type { PurchaseOrdersParams } from "@/types"
-import PurchaseOrdersTable from "./_components/purchase-orders-table"
+import PurchaseOrdersTable from "../_components/purchase-orders-table"
 
 export const metadata: Metadata = {
   title: "Purchase Orders",

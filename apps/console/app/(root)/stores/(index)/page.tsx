@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import StoresTable from "./_components/stores-table"
+import StoresTable from "../_components/stores-table"
 import { getStores, MAX_STORES_PAGE_SIZE, STORE_SORT_FIELDS } from "@/lib/data/stores.data"
 import AddButton from "@/components/add-button"
 import { StoreStatus, type StoresParams } from "@/types"
