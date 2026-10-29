@@ -50,7 +50,11 @@ export default async function ReviewsPage({ searchParams }: ReviewsPageProps) {
       </div>
       {product && (
         <p className="text-sm text-muted-foreground">
-          Showing reviews of <span className="font-medium text-foreground">{product.name}</span>.{" "}
+          Showing reviews of{" "}
+          <Link href={`/catalogue/products/${productId}/edit`} className="font-medium text-foreground underline-offset-4 hover:underline">
+            {product.name}
+          </Link>
+          .{" "}
           <Link href="/catalogue/reviews" className="underline underline-offset-4 hover:text-foreground">
             Show all products
           </Link>

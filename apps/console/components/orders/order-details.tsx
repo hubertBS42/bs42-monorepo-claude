@@ -51,7 +51,9 @@ export function OrderLinesTable({ lines, showStore }: { lines: OrderLine[]; show
               <div className="flex items-center gap-3">
                 <div className="size-10 shrink-0 overflow-hidden rounded bg-muted">{line.productImage && <img alt="" src={line.productImage} className="size-full object-cover" />}</div>
                 <div className="grid gap-0.5">
-                  <span>{line.productName}</span>
+                  <Link href={line.href} className="w-fit underline-offset-4 hover:underline">
+                    {line.productName}
+                  </Link>
                   {line.variantDescription && <span className="text-xs text-muted-foreground">{line.variantDescription}</span>}
                   {line.sku && <span className="font-mono text-[11px] text-muted-foreground">{line.sku}</span>}
                   {showStore && <span className="text-[11px] text-muted-foreground">{`From ${line.storeName}`}</span>}

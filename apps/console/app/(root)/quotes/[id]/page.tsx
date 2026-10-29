@@ -85,7 +85,13 @@ export default async function QuotePage({ params }: QuotePageProps) {
                   <TableRow key={line.id}>
                     <TableCell className="whitespace-normal">
                       <div className="grid">
-                        <span>{line.label}</span>
+                        {line.href ? (
+                          <Link href={line.href} className="w-fit underline-offset-4 hover:underline">
+                            {line.label}
+                          </Link>
+                        ) : (
+                          <span>{line.label}</span>
+                        )}
                         {line.sku && <span className="font-mono text-xs text-muted-foreground">{line.sku}</span>}
                         {line.installationGhs && <span className="text-xs text-muted-foreground">{`Installation ${ghs(line.installationGhs)}`}</span>}
                       </div>

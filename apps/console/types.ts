@@ -499,6 +499,8 @@ export type OrdersData = PaginatedResult<OrderListItem>
 export interface OrderLine {
   id: string
   productName: string
+  // The store's listing on a store's page, the catalogue product on the platform's
+  href: string
   variantDescription: string | null
   sku: string | null
   productImage: string | null
@@ -844,6 +846,8 @@ export interface PurchaseOrderLine {
   listingId: string
   listingVariantId: string | null
   productName: string
+  // The store's listing in its workspace, the catalogue product on the platform's view
+  href: string
   variantDescription: string | null
   sku: string | null
   quantityOrdered: number
@@ -1164,7 +1168,8 @@ export interface QuoteDetails {
   address: string
   notes: string | null
   exchangeRate: string
-  lines: { id: string; label: string; sku: string | null; storeName: string; quantity: number; unitPriceGhs: string; totalPriceGhs: string; installationGhs: string | null }[]
+  // href: the catalogue product, null once it's been deleted
+  lines: { id: string; label: string; href: string | null; sku: string | null; storeName: string; quantity: number; unitPriceGhs: string; totalPriceGhs: string; installationGhs: string | null }[]
   totals: { subtotalGhs: string; discountAmountGhs: string | null; discountReason: string | null; installationGhs: string; shippingGhs: string; taxRate: string; taxGhs: string; totalGhs: string }
   order: { id: string; reference: string } | null
 }

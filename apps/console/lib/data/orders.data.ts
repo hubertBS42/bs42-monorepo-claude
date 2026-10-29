@@ -133,7 +133,7 @@ export const getOrders = async (filters: OrdersParams = {}): Promise<DataRespons
 
 function toOrderDetails(order: OrderWithDetails): OrderDetails {
   return {
-    ...toOrderDetailsBase(order, order.orderItems, true),
+    ...toOrderDetailsBase(order, order.orderItems, true, null),
     totals: toOrderTotals(order),
     // One per store, named as on its first line
     stores: [...new Map(order.orderItems.map((line) => [line.organizationId, line.storeName])).entries()].map(([id, name]) => ({ id, name })),

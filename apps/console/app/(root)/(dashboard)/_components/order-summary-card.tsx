@@ -96,8 +96,11 @@ export default function OrderSummaryCard({ order, position, count, onPrevious, o
                 {order.lines.map((line) => (
                   <li key={line.id} className="flex items-center justify-between gap-4">
                     <span className="text-muted-foreground">
-                      {line.productName}
-                      {line.variantDescription && ` (${line.variantDescription})`} × <span>{line.quantity}</span>
+                      <Link href={line.href} className="underline-offset-4 hover:text-foreground hover:underline">
+                        {line.productName}
+                        {line.variantDescription && ` (${line.variantDescription})`}
+                      </Link>{" "}
+                      × <span>{line.quantity}</span>
                     </span>
                     <span>{ghs(line.totalPriceGhs)}</span>
                   </li>

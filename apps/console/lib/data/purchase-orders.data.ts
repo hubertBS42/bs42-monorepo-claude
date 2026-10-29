@@ -11,6 +11,7 @@ import { getPaginationError } from "@workspace/utils/pagination"
 import { consoleAdminRoles, hasSystemRole } from "@workspace/auth/system-permissions"
 import { hasStorePermission } from "@/lib/auth-guard"
 import { getRateDate } from "@workspace/commerce/exchange-rates"
+import { catalogueProductHref, listingHref } from "@/lib/product-links"
 import { isOpenPurchaseOrder, OPEN_PURCHASE_ORDER_STATUSES, overduePurchaseOrderWhere } from "@/lib/purchase-order-status"
 import type { PurchasableListing, PurchaseOrderDetails, PurchaseOrdersData, PurchaseOrdersParams, SelectItem } from "@/types"
 
@@ -172,7 +173,7 @@ export const getPurchaseOrderDetails = async (storeId: string | null, id: string
         items: {
           orderBy: { position: "asc" },
           include: {
-            storeListing: { select: { stock: true, trackInventory: true } },
+            storeListing: { select: { stock: true, trackInventory: true, productId: true } },
             storeListingVariant: { select: { stock: true, trackInventory: true } },
           },
         },
@@ -221,6 +222,7 @@ export const getPurchaseOrderDetails = async (storeId: string | null, id: string
             listingId: item.storeListingId,
             listingVariantId: item.storeListingVariantId,
             productName: item.productName,
+            href: storeId ? listingHref(item.storeListingId) : catalogueProductHref(item.storeListing.productId),
             variantDescription: item.variantDescription,
             sku: item.sku,
             quantityOrdered: item.quantityOrdered,

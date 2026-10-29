@@ -68,7 +68,9 @@ const statusColumn = (forStore: boolean): ColumnDef<ProductRequestListItem, unkn
               {product.name}
             </Link>
           ) : (
-            <span className="text-[11px] text-muted-foreground">{product.name}</span>
+            <Link href={`/catalogue/products/${product.id}/edit`} className="text-[11px] text-muted-foreground underline-offset-4 hover:text-foreground hover:underline">
+              {product.name}
+            </Link>
           ))}
         {declineReason && <span className="max-w-64 text-[11px] text-muted-foreground">{declineReason}</span>}
       </div>

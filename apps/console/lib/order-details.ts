@@ -10,6 +10,7 @@ import { InstallationStatus } from "@workspace/db/enums"
 import { formatDate } from "@workspace/utils/date"
 import { ORDER_STATUS_LABELS, PAYMENT_METHOD_LABELS } from "@workspace/commerce/order-status"
 import { quoteUrl } from "@workspace/commerce/order-links"
+import { catalogueProductHref, listingHref } from "./product-links"
 
 // What the store's and the platform's order details loaders share: the query and turning its rows into page data
 
@@ -18,6 +19,7 @@ export const orderDetailsInclude = {
     orderBy: { id: "asc" },
     include: {
       returns: { select: { quantity: true } },
+      storeListing: { select: { productId: true } },
     },
   },
   statusHistory: { orderBy: { createdAt: "desc" }, include: { changedBy: { select: { name: true } } } },
@@ -52,10 +54,12 @@ export function sumLines(lines: Pick<LineRow, "totalPriceGhs" | "discountGhs" | 
   return lines.reduce((sum, line) => sum.plus(line.totalPriceGhs.minus(line.discountGhs).plus(line.taxGhs)), new Prisma.Decimal(0))
 }
 
-export function toOrderLine(line: LineRow): OrderLine {
+// storeId: the store whose page shows the line (its own), or null on the platform's
+export function toOrderLine(line: LineRow, storeId: string | null): OrderLine {
   return {
     id: line.id,
     productName: line.productName,
+    href: storeId ? listingHref(line.storeListingId) : catalogueProductHref(line.storeListing.productId),
     variantDescription: line.variantDescription,
     sku: line.sku,
     productImage: line.productImage,
@@ -158,8 +162,8 @@ export function toOrderTimeline(order: OrderWithDetails, showAmounts: boolean, l
   ].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
 }
 
-// The fields both pages show, given the lines the viewer may see
-export function toOrderDetailsBase(order: OrderWithDetails, lines: LineRow[], showAmounts: boolean) {
+// The fields both pages show, given the lines the viewer may see; storeId as for toOrderLine
+export function toOrderDetailsBase(order: OrderWithDetails, lines: LineRow[], showAmounts: boolean, storeId: string | null) {
   return {
     id: order.id,
     reference: order.reference,
@@ -174,7 +178,7 @@ export function toOrderDetailsBase(order: OrderWithDetails, lines: LineRow[], sh
         ? { name: order.shippingName, phone: order.shippingPhone, line1: order.shippingLine1, line2: order.shippingLine2, region: order.shippingRegion, town: order.shippingTown }
         : null,
     notes: order.notes,
-    lines: lines.map(toOrderLine),
+    lines: lines.map((line) => toOrderLine(line, storeId)),
     isMultiStore: new Set(order.orderItems.map((line) => line.organizationId)).size > 1,
     exchangeRate: order.exchangeRate.toString(),
     createdBy: staffName(order.createdBy),

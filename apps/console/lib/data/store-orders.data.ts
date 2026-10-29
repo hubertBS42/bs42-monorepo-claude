@@ -100,7 +100,7 @@ function toStoreOrderDetails(order: OrderWithDetails, storeId: string): StoreOrd
   const ownLines = order.orderItems.filter((line) => line.organizationId === storeId)
   const isMultiStore = ownLines.length < order.orderItems.length
   return {
-    ...toOrderDetailsBase(order, ownLines, !isMultiStore),
+    ...toOrderDetailsBase(order, ownLines, !isMultiStore, storeId),
     totals: isMultiStore ? null : toOrderTotals(order),
     storeTotalGhs: sumLines(ownLines).toString(),
     afterSale: isMultiStore ? null : toOrderAfterSale(order),

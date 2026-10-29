@@ -5,6 +5,7 @@ import { consoleAuth } from "@workspace/auth/console"
 import { formatError } from "@workspace/auth/format-error"
 import { hasSystemPermission } from "@workspace/auth/system-permissions"
 import { quoteUrl } from "@workspace/commerce/order-links"
+import { catalogueProductHref } from "@/lib/product-links"
 import { loadTradeTerms } from "@workspace/commerce/trade-accounts"
 import type { DataResponse } from "@workspace/contracts"
 import { prisma } from "@workspace/db"
@@ -154,6 +155,7 @@ export const getQuoteDetails = async (quoteId: string): Promise<DataResponse<Quo
         lines: quote.items.map((item) => ({
           id: item.id,
           label: item.variantDescription ? `${item.productName} (${item.variantDescription})` : item.productName,
+          href: item.productId && catalogueProductHref(item.productId),
           sku: item.sku,
           storeName: item.storeName,
           quantity: item.quantity,

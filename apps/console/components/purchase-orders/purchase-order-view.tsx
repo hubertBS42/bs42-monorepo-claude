@@ -1,4 +1,5 @@
 import type { ReactNode } from "react"
+import Link from "next/link"
 import { Currency, PurchaseOrderStatus } from "@workspace/db/enums"
 import { Badge } from "@workspace/ui/components/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@workspace/ui/components/card"
@@ -109,7 +110,9 @@ export default function PurchaseOrderView({ order, backTo, statusContent, showSt
                     <TableRow key={line.id}>
                       <TableCell className="whitespace-normal">
                         <div className="grid">
-                          <span>{line.productName}</span>
+                          <Link href={line.href} className="w-fit underline-offset-4 hover:underline">
+                            {line.productName}
+                          </Link>
                           <span className="text-xs text-muted-foreground">
                             {[line.variantDescription, line.sku, line.stock === null ? "Stock not tracked" : `${line.stock} in stock now`].filter(Boolean).join(" · ")}
                           </span>
