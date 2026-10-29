@@ -79,6 +79,7 @@ A "store" is a Better Auth organization. One special organization, slug `PLATFOR
 - **SuperAdmins**:
   - Only superAdmins can manage superAdmins: console actions check `canManageUserWithRole`, and a consoleAuth `hooks.before` blocks Better Auth's admin write endpoints.
   - User loaders in `lib/data/users.data.ts` hide superAdmins from everyone else.
+  - The users table has one search box (`search`) for the name, email or phone, like the orders table's Customer box: a local phone number is also searched in its international form (`toPhoneSearch` from `@workspace/utils/phone`).
   - The role is never set at creation. It changes only through `promoteToSuperAdminAction` / `demoteToAdminAction`, which update the role and every store membership (owner ↔ admin) in one transaction.
 
 ### Console access control
