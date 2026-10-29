@@ -14,7 +14,7 @@ import {
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from "@workspace/ui/components/sidebar"
 import { ChevronsUpDownIcon, CircleUserIcon, LogOutIcon, StoreIcon } from "lucide-react"
 import Link from "next/link"
-import { consoleAuthClient } from "@workspace/auth/console-client"
+import { useShellSession } from "@/components/shell-data"
 import { useSignOut } from "@/hooks/use-sign-out"
 import { getNameInitials } from "@workspace/utils/name"
 
@@ -59,13 +59,13 @@ function NavUserSkeleton() {
 // storefrontUrl comes from the server: STORE_AUTH_URL doesn't reach client code
 export function NavUser({ storefrontUrl }: { storefrontUrl: string }) {
   const { isMobile } = useSidebar()
-  const { data: session, isPending } = consoleAuthClient.useSession()
+  const { user, isPending } = useShellSession()
   const { signOut, isSigningOut, signOutError } = useSignOut()
 
   if (isPending) return <NavUserSkeleton />
-  if (!session) return null
+  if (!user) return null
 
-  const { name, email, image } = session.user
+  const { name, email, image } = user
 
   return (
     <SidebarMenu>

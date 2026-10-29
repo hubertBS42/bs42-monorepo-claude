@@ -1,5 +1,5 @@
 import { useMemo } from "react"
-import { consoleAuthClient } from "@workspace/auth/console-client"
+import { useShellOrganizations, useShellSession } from "@/components/shell-data"
 import { hasSystemRole } from "@workspace/auth/system-permissions"
 import { PLATFORM_ORGANIZATION_SLUG } from "@workspace/contracts"
 import { navConfig } from "@/lib/nav-config"
@@ -31,13 +31,15 @@ interface UseNavItemsReturn {
 }
 
 export const useNavItems = (): UseNavItemsReturn => {
-  const { data: session, isPending: isSessionLoading } = consoleAuthClient.useSession()
-  const { data: activeOrganization, isPending: isActiveOrganizationLoading } = consoleAuthClient.useActiveOrganization()
+  const { user, activeOrganizationId, isPending: isSessionLoading } = useShellSession()
+  const { organizations, isPending: isOrganizationsLoading } = useShellOrganizations()
+  // The active workspace from the list the switcher shows, rather than a fetch of its own: one less thing to wait for
+  const activeOrganization = organizations.find((organization) => organization.id === activeOrganizationId)
 
-  const isLoading = isSessionLoading || isActiveOrganizationLoading
-  const isReady = !isLoading && !!session && !!activeOrganization
+  const isLoading = isSessionLoading || isOrganizationsLoading
+  const isReady = !isLoading && !!user && !!activeOrganization
 
-  const role = session?.user.role
+  const role = user?.role
   const isGlobalWorkspace = isReady && activeOrganization.slug === PLATFORM_ORGANIZATION_SLUG
   const isAdmin = isReady && hasSystemRole(role, ["admin", "superAdmin"])
 

@@ -4,7 +4,7 @@ import type { LucideIcon } from "lucide-react"
 import { Building2, CirclePlusIcon, FileText, FolderTree, Package, ShoppingCart, Tags, UserRound } from "lucide-react"
 import Link from "next/link"
 import { Fragment } from "react"
-import { consoleAuthClient } from "@workspace/auth/console-client"
+import { useShellSession } from "@/components/shell-data"
 import { hasSystemPermission } from "@workspace/auth/system-permissions"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuLinkItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@workspace/ui/components/dropdown-menu"
 import { SidebarMenuButton, useSidebar } from "@workspace/ui/components/sidebar"
@@ -38,9 +38,9 @@ const quickCreateGroups: QuickCreateItem[][] = [
 
 const QuickCreateButton = () => {
   const { isMobile, setOpenMobile } = useSidebar()
-  const { data: session } = consoleAuthClient.useSession()
+  const { user } = useShellSession()
 
-  const groups = quickCreateGroups.map((items) => items.filter((item) => hasSystemPermission(session?.user.role, item.permission))).filter((items) => items.length > 0)
+  const groups = quickCreateGroups.map((items) => items.filter((item) => hasSystemPermission(user?.role, item.permission))).filter((items) => items.length > 0)
   if (groups.length === 0) return null
 
   return (

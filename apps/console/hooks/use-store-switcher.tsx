@@ -2,22 +2,26 @@ import { consoleAuthClient } from "@workspace/auth/console-client"
 import { useState } from "react"
 import { toast } from "@workspace/ui/components/toast"
 
-// to: the page to open once switched, the dashboard by default
-type SwitchByIdParams = { storeId: string; storeSlug?: never; to?: string }
-type SwitchBySlugParams = { storeSlug: string; storeId?: never; to?: string }
+// to: the page to open once switched, the dashboard by default; name: the workspace's, for the overlay while switching
+type SwitchByIdParams = { storeId: string; storeSlug?: never; to?: string; name?: string }
+type SwitchBySlugParams = { storeSlug: string; storeId?: never; to?: string; name?: string }
 type SwitchParams = SwitchByIdParams | SwitchBySlugParams
 
 interface UseStoreSwitcherReturn {
   switchStore: (params: SwitchParams) => Promise<void>
   isSwitching: boolean
+  // The workspace being switched to, while switching
+  switchingTo: string | null
 }
 
 export function useStoreSwitcher(): UseStoreSwitcherReturn {
   const [isSwitching, setIsSwitching] = useState(false)
+  const [switchingTo, setSwitchingTo] = useState<string | null>(null)
 
   const switchStore = async (params: SwitchParams) => {
     try {
       setIsSwitching(true)
+      setSwitchingTo(params.name ?? "the workspace")
       const result =
         "storeSlug" in params
           ? await consoleAuthClient.organization.setActive({
@@ -43,11 +47,13 @@ export function useStoreSwitcher(): UseStoreSwitcherReturn {
         priority: "high",
       })
       setIsSwitching(false)
+      setSwitchingTo(null)
     }
   }
 
   return {
     switchStore,
     isSwitching,
+    switchingTo,
   }
 }

@@ -16,7 +16,8 @@ import {
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from "@workspace/ui/components/sidebar"
 import { Skeleton } from "@workspace/ui/components/skeleton"
 import { useStoreSwitcher } from "@/hooks/use-store-switcher"
-import { consoleAuthClient } from "@workspace/auth/console-client"
+import { useShellOrganizations, useShellSession } from "@/components/shell-data"
+import { WorkspaceSwitchOverlay } from "@/components/workspace-switch-overlay"
 import { consoleAdminRoles, hasSystemRole } from "@workspace/auth/system-permissions"
 import { PLATFORM_ORGANIZATION_SLUG } from "@workspace/contracts"
 import { getNameInitials } from "@workspace/utils/name"
@@ -29,23 +30,23 @@ export const StoreSwitcherSkeleton = () => {
 
 export function StoreSwitcher() {
   const { isMobile } = useSidebar()
-  const { switchStore, isSwitching } = useStoreSwitcher()
-  const { data: stores, isPending: isStoresLoading, error: storesError } = consoleAuthClient.useListOrganizations()
-  const { data: session, isPending: isSessionLoading, error: sessionError } = consoleAuthClient.useSession()
+  const { switchStore, switchingTo } = useStoreSwitcher()
+  const { organizations: stores, isPending: isStoresLoading, error: storesError } = useShellOrganizations()
+  const { user, activeOrganizationId, isPending: isSessionLoading, error: sessionError } = useShellSession()
 
   const isLoading = isStoresLoading || isSessionLoading
   // A session signed in on the storefront has no workspace. The proxy picks one on the next page request, but a tab
   // already open fetches the session without one: pick the same workspace here (the login form's choice).
-  const needsWorkspace = !!session && !session.session.activeOrganizationId && !!stores?.length
+  const needsWorkspace = !!user && !activeOrganizationId && stores.length > 0
   const pickedWorkspace = React.useRef(false)
   React.useEffect(() => {
-    if (!needsWorkspace || !stores || pickedWorkspace.current) return
+    if (!needsWorkspace || pickedWorkspace.current) return
     pickedWorkspace.current = true
     const preferred = stores.find((store) => store.slug === PLATFORM_ORGANIZATION_SLUG) ?? stores[0]!
     void switchStore({ storeId: preferred.id, to: `${window.location.pathname}${window.location.search}` })
   }, [needsWorkspace, stores, switchStore])
 
-  if (isLoading || isSwitching || needsWorkspace) return <StoreSwitcherSkeleton />
+  if (isLoading || needsWorkspace) return <StoreSwitcherSkeleton />
 
   if (sessionError) {
     return (
@@ -59,7 +60,7 @@ export function StoreSwitcher() {
     )
   }
 
-  if (!session) return null
+  if (!user) return null
 
   if (storesError) {
     return (
@@ -73,13 +74,17 @@ export function StoreSwitcher() {
     )
   }
 
-  const organizations = stores ?? []
-  const isAdmin = hasSystemRole(session.user.role, consoleAdminRoles)
-  const activeStore = organizations.find((store) => store.id === session.session.activeOrganizationId)
+  const organizations = stores
+  const isAdmin = hasSystemRole(user.role, consoleAdminRoles)
+  const activeStore = organizations.find((store) => store.id === activeOrganizationId)
   const globalOrganization = organizations.find((store) => store.slug === PLATFORM_ORGANIZATION_SLUG)
   const clientStores = organizations.filter((store) => store.slug !== PLATFORM_ORGANIZATION_SLUG).sort((a, b) => a.name.localeCompare(b.name))
-  const activeStoreName = activeStore?.name ?? (session.session.activeOrganizationId ? "Workspace unavailable" : "Select a workspace")
+  const activeStoreName = activeStore?.name ?? (activeOrganizationId ? "Workspace unavailable" : "Select a workspace")
   const activeStoreType = activeStore ? (activeStore.slug === PLATFORM_ORGANIZATION_SLUG ? "Administrator" : "Store") : "No active workspace"
+  // Picking the workspace already in use only closes the menu: switching reloads the page
+  const switchTo = (storeId: string, name: string) => {
+    if (storeId !== activeStore?.id) void switchStore({ storeId, name })
+  }
 
   if (!organizations.length) {
     return (
@@ -118,15 +123,7 @@ export function StoreSwitcher() {
             </DropdownMenuGroup>
 
             {isAdmin && globalOrganization && (
-              <DropdownMenuCheckboxItem
-                className="gap-2 px-1 py-1.5 text-sm"
-                onClick={() =>
-                  void switchStore({
-                    storeSlug: PLATFORM_ORGANIZATION_SLUG,
-                  })
-                }
-                checked={activeStore?.id === globalOrganization.id}
-              >
+              <DropdownMenuCheckboxItem className="gap-2 px-1 py-1.5 text-sm" onClick={() => switchTo(globalOrganization.id, "Global")} checked={activeStore?.id === globalOrganization.id}>
                 <Avatar className="size-8 rounded-lg">
                   <AvatarImage src={globalOrganization.logo ?? ""} alt="Global" />
                   <AvatarFallback className="rounded-lg">{getNameInitials("Global")}</AvatarFallback>
@@ -139,7 +136,7 @@ export function StoreSwitcher() {
             )}
 
             {clientStores.map((store) => (
-              <DropdownMenuCheckboxItem key={store.id} className="gap-2 px-1 py-1.5 text-sm" onClick={() => void switchStore({ storeId: store.id })} checked={store.id === activeStore?.id}>
+              <DropdownMenuCheckboxItem key={store.id} className="gap-2 px-1 py-1.5 text-sm" onClick={() => switchTo(store.id, store.name)} checked={store.id === activeStore?.id}>
                 <Avatar className="h-8 w-8 rounded-lg">
                   <AvatarImage src={store.logo || ""} alt={store.name} />
                   <AvatarFallback className="rounded-lg">{getNameInitials(store.name)}</AvatarFallback>
@@ -169,6 +166,7 @@ export function StoreSwitcher() {
             )}
           </DropdownMenuContent>
         </DropdownMenu>
+        {switchingTo && <WorkspaceSwitchOverlay name={switchingTo} />}
       </SidebarMenuItem>
     </SidebarMenu>
   )
