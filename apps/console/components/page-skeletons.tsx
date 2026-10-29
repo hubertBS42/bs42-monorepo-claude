@@ -146,12 +146,11 @@ export function WizardPageSkeleton() {
   )
 }
 
-// A page of link cards (the catalogue, a store's details)
-export function HubPageSkeleton({ summary = false }: { summary?: boolean }) {
+// A page of link cards (the catalogue)
+export function HubPageSkeleton() {
   return (
     <Page kind="hub">
       <PageHeaderSkeleton />
-      {summary && <CardSkeleton lines={2} />}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {Array.from({ length: 4 }, (_, card) => (
           <CardFrame key={card} className="gap-3 px-6">
@@ -160,6 +159,40 @@ export function HubPageSkeleton({ summary = false }: { summary?: boolean }) {
             <Skeleton className="h-4 w-40 max-w-full" />
           </CardFrame>
         ))}
+      </div>
+    </Page>
+  )
+}
+
+// A store's details: its info (pairs of label and value) and the actions card
+export function StoreDetailsSkeleton() {
+  return (
+    <Page kind="store-details">
+      <PageHeaderSkeleton />
+      <div className="grid gap-4">
+        <CardFrame>
+          <div className="grid gap-2 px-6">
+            <Skeleton className="h-5 w-36" />
+            <Skeleton className="h-4 w-56 max-w-full" />
+          </div>
+          <div className="grid grid-cols-2 gap-4 px-6">
+            {Array.from({ length: 4 }, (_, item) => (
+              <div key={item} className="grid gap-1">
+                <Skeleton className="h-3 w-16" />
+                <Skeleton className="h-4 w-28" />
+              </div>
+            ))}
+          </div>
+        </CardFrame>
+        <CardFrame>
+          <div className="grid gap-2 px-6">
+            <Skeleton className="h-5 w-20" />
+            <Skeleton className="h-4 w-72 max-w-full" />
+          </div>
+          <div className="px-6">
+            <Skeleton className="h-9 w-full" />
+          </div>
+        </CardFrame>
       </div>
     </Page>
   )
