@@ -11,4 +11,6 @@ export type SeedConfig = {
   categories: { path: string[]; image: string | null; isFeatured: boolean; installationFeeGhs: string | null }[]
   brands: { name: string; logo: string | null; description: string | null; isFeatured: boolean }[]
   products: { name: string; installation: InstallationOption; installationFeeGhs: string | null }[]
+  // "Pairs well with" lists, each a category's (by path) or a product's (by name), its products by name in order
+  pairings: { category: string[] | null; product: string | null; paired: string[] }[]
 }

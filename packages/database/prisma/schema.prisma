@@ -358,6 +358,8 @@ model Category {
   createdAt          DateTime         @default(now())
   updatedAt          DateTime         @default(now()) @updatedAt
   productRequests    ProductRequest[]
+  // What its products (and those in the categories under it) pair well with, unless a product has its own
+  pairings           ProductPairing[]
 
   // Names are unique among siblings, and the first index also serves lookups by parent. Postgres treats NULLs as
   // distinct, so top-level categories need their own partial index.
@@ -414,6 +416,9 @@ model Product {
   createdAt       DateTime           @default(now())
   updatedAt       DateTime           @default(now()) @updatedAt
   productRequests ProductRequest[]
+  // Its own "pairs well with" list, which replaces its category's, and the lists it's on
+  pairings        ProductPairing[]   @relation("PairingSource")
+  pairedIn        ProductPairing[]   @relation("PairingTarget")
 
   @@index([brandId])
   @@index([categoryId])
@@ -447,6 +452,28 @@ model CategorySpec {
   // The unique index also serves lookups by category
   @@unique([categoryId, name])
   @@map("category_spec")
+}
+
+// A product that goes with a category's products, or with one product (whose own list replaces its category's): a
+// recorder for cameras, a hard drive for a recorder. Exactly one of categoryId and productId is set, and a product
+// doesn't pair with itself (CHECKs in the migration). The storefront shows those on sale, by position.
+model ProductPairing {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  categoryId      String?   @db.Uuid
+  category        Category? @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  productId       String?   @db.Uuid
+  product         Product?  @relation("PairingSource", fields: [productId], references: [id], onDelete: Cascade)
+  pairedProductId String    @db.Uuid
+  pairedProduct   Product   @relation("PairingTarget", fields: [pairedProductId], references: [id], onDelete: Cascade)
+  // Order in the list, lowest first
+  position        Int       @default(0)
+  createdAt       DateTime  @default(now())
+
+  // Each product once per list (NULLs are distinct, so each index covers only its own kind); they also serve lookups
+  @@unique([categoryId, pairedProductId])
+  @@unique([productId, pairedProductId])
+  @@index([pairedProductId])
+  @@map("product_pairing")
 }
 
 // A SELECT spec's choices. Products point at the row, so renaming one keeps their values.

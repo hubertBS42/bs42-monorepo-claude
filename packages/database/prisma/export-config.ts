@@ -1,7 +1,7 @@
 // Writes what has been set up in the console to seed-config.json, for seed-config.ts to put in a new database (going
 // live): Settings (general, pricing, notifications), delivery fees, installation areas, the Terms and Privacy pages, and
 // what the console adds to the seeded catalogue: category images, featured flags and installation fees, brand logos and
-// descriptions, and products' own installation choices. Not users, stores, listings, orders or exchange rates.
+// descriptions, products' own installation choices, and "pairs well with" lists. Not users, stores, listings, orders or exchange rates.
 // Run against the database that has been set up (usually development):
 //   pnpm --filter @workspace/db db:export-config
 // Check the file before seeding with it: it's the production setup. It's gitignored, as it holds contact details and
@@ -38,6 +38,24 @@ async function main() {
   const nameCounts = new Map<string, number>()
   for (const { name } of await prisma.product.findMany({ select: { name: true } })) nameCounts.set(name, (nameCounts.get(name) ?? 0) + 1)
 
+  // "Pairs well with" lists, by owner, in order; a product whose name another shares can't be found again
+  const pairingRows = await prisma.productPairing.findMany({
+    orderBy: [{ position: "asc" }, { createdAt: "asc" }],
+    select: { categoryId: true, product: { select: { name: true } }, pairedProduct: { select: { name: true } } },
+  })
+  const lists = new Map<string, { category: string[] | null; product: string | null; paired: string[] }>()
+  let pairingsSkipped = 0
+  for (const row of pairingRows) {
+    if ((row.product && nameCounts.get(row.product.name) !== 1) || nameCounts.get(row.pairedProduct.name) !== 1) {
+      pairingsSkipped++
+      continue
+    }
+    const key = row.categoryId ? `category:${row.categoryId}` : `product:${row.product!.name}`
+    const list = lists.get(key) ?? { category: row.categoryId ? path(row.categoryId) : null, product: row.product?.name ?? null, paired: [] }
+    list.paired.push(row.pairedProduct.name)
+    lists.set(key, list)
+  }
+
   const config: SeedConfig = {
     appSettings: app && toAppSettingsSeed(app),
     delivery: {
@@ -64,14 +82,16 @@ async function main() {
       .filter((product) => nameCounts.get(product.name) === 1)
       .map(({ name, installation, installationFeeGhs }) => ({ name, installation, installationFeeGhs: installationFeeGhs?.toString() ?? null }))
       .sort((a, b) => a.name.localeCompare(b.name)),
+    pairings: [...lists.values()].sort((a, b) => (a.category?.join("/") ?? `~${a.product}`).localeCompare(b.category?.join("/") ?? `~${b.product}`)),
   }
 
   await writeFile(new URL("./seed-config.json", import.meta.url), `${JSON.stringify(config, null, 2)}\n`)
   const skipped = products.length - config.products.length
   console.log(
-    `seed-config.json: settings ${app ? "saved" : "not set yet"}, ${config.delivery.rates.length} delivery fees, ${config.installationAreas.length} installation areas, legal pages ${legal ? "saved" : "not set yet"}, ${config.categories.length} categories, ${config.brands.length} brands, ${config.products.length} products`
+    `seed-config.json: settings ${app ? "saved" : "not set yet"}, ${config.delivery.rates.length} delivery fees, ${config.installationAreas.length} installation areas, legal pages ${legal ? "saved" : "not set yet"}, ${config.categories.length} categories, ${config.brands.length} brands, ${config.products.length} products, ${config.pairings.length} pairing lists`
   )
   if (skipped) console.log(`Left out ${skipped} products whose name another product shares: set their installation in the console`)
+  if (pairingsSkipped) console.log(`Left out ${pairingsSkipped} pairings with a product whose name another shares: add them in the console`)
 }
 
 try {

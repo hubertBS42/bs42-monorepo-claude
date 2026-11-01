@@ -5,6 +5,8 @@ import { requireSystemPermission } from "@/lib/auth-guard"
 import { notFound } from "next/navigation"
 import { getCategoryById, getCategoryOptions } from "@/lib/data/categories.data"
 import { getCategorySpecs } from "@/lib/data/category-specs.data"
+import { getPairings } from "@/lib/data/pairings.data"
+import { PairingsCard } from "@/components/pairings-card"
 
 export const metadata: Metadata = {
   title: "Edit Category",
@@ -26,13 +28,16 @@ export default async function EditCategoryPage({ params }: Props) {
   }
   if (!options.success) throw new Error(options.error)
   if (!specs.success) throw new Error(specs.error)
+  // Once the id is known to be a category's: a malformed one would fail the query
+  const pairings = await getPairings({ kind: "category", id: response.data.id })
 
   return (
     <EditCategoryForm category={response.data} parentOptions={options.data.options} disabledParentIds={options.data.disabledIds}>
       {/* Outside the form: each change saves on its own */}
       <div className="grid items-start gap-4 lg:grid-cols-3">
-        <div className="lg:col-span-2">
+        <div className="grid gap-4 lg:col-span-2">
           <CategorySpecs categoryId={response.data.id} specs={specs.data} />
+          <PairingsCard owner={{ kind: "category", id: response.data.id }} pairings={pairings} />
         </div>
       </div>
     </EditCategoryForm>

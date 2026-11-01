@@ -273,6 +273,26 @@ export interface CatalogueMatch {
   listingId: string | null
 }
 
+// "Pairs well with": whose list it is, a category's or a product's
+export type PairingOwner = { kind: "category" | "product"; id: string }
+
+// A product on a "pairs well with" list
+export interface PairingItem {
+  // The pairing's own id, for moving and removing it
+  id: string
+  productId: string
+  name: string
+  brandName: string
+  image: string | null
+  status: Status
+}
+
+export interface PairingsData {
+  items: PairingItem[]
+  // A product without a list of its own uses the nearest category up the tree that has one
+  inherited: { categoryName: string; items: PairingItem[] } | null
+}
+
 // Any catalogue product, for linking a request to it
 export interface CatalogueProductOption {
   id: string

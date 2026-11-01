@@ -10,14 +10,18 @@ import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbP
 import { formatPhoneNumber } from "@workspace/utils/phone"
 import { getEnumParam, getPositiveIntegerParam, getStringParam } from "@workspace/utils/search-params"
 
+import { ProductShelf } from "@/components/product/product-shelf"
 import { ProductView } from "@/components/product/product-view"
 import { ProductReviews } from "@/components/reviews/product-reviews"
 import type { SearchParams } from "@/lib/catalogue-filters"
-import { categoryHref, categoryPath, getCategoryTree } from "@/lib/data/categories"
+import { categoryHref, categoryPath, getCategoryTree, subtreeIds, type CategoryNode } from "@/lib/data/categories"
+import { getPairedProductIds } from "@/lib/data/pairings"
 import { loadProductCards } from "@/lib/data/product-cards"
 import { getProductDetails, plainText, summaryLines } from "@/lib/data/product-details"
 import { getProductReviews, getReviewSummary, REVIEW_SORTS, type ReviewSort } from "@/lib/data/reviews"
+import type { ProductCardData } from "@/lib/product-cards"
 import { priceCards } from "@/lib/pricing"
+import { similarProducts } from "@/lib/similar-products"
 import { getAppSettings, getFreeDeliveryFrom, getInstallationAreas, getShelfPricing } from "@/lib/settings"
 import { breadcrumbJsonLd, JsonLd, productJsonLd } from "@/lib/structured-data"
 
@@ -59,6 +63,24 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
   }
 }
 
+// How many products "You may also like" shows: one row on wide screens, two on phones
+const SIMILAR_COUNT = 4
+
+// What the product pairs well with (on sale, in the list's order), and products like it: its own category's first, then
+// the category above's when that's too few
+async function loadShelves(card: ProductCardData, path: CategoryNode[]) {
+  const pairedIds = await getPairedProductIds(card.id, path.map((node) => node.id).reverse())
+  const [pairedCards, sameCategory] = await Promise.all([pairedIds.length ? loadProductCards({ productIds: pairedIds }) : [], loadProductCards({ categoryIds: [card.categoryId] })])
+  const exclude = new Set(pairedIds)
+  const parent = path.at(-2)
+  const wider = sameCategory.filter((other) => other.id !== card.id && !exclude.has(other.id)).length < SIMILAR_COUNT && parent ? await loadProductCards({ categoryIds: subtreeIds(parent) }) : []
+  const byId = new Map(pairedCards.map((paired) => [paired.id, paired]))
+  return {
+    pairs: pairedIds.flatMap((id) => byId.get(id) ?? []),
+    similar: similarProducts(card, sameCategory, wider, exclude, SIMILAR_COUNT),
+  }
+}
+
 export default async function ProductPage({ params, searchParams }: ProductPageProps) {
   const [{ slug }, query] = await Promise.all([params, searchParams])
   const card = await findProduct(slug)
@@ -77,6 +99,7 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
   ])
   const [priced] = priceCards([card], pricing)
   const path = categoryPath(tree, card.categoryId)
+  const shelves = await loadShelves(card, path)
   const description = details.description ? <RichTextContent value={details.description} /> : null
   // Offered once installers work somewhere, and priced as the shelf is (with tax when it's on)
   const installationAreasText = describeInstallationAreas(installationAreas)
@@ -131,6 +154,8 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
         contact={{ phone: settings.contactPhone, phoneLabel: settings.contactPhone && formatPhoneNumber(settings.contactPhone), whatsapp: settings.contactWhatsapp }}
       />
 
+      <ProductShelf id="pairs-well-with" title="Pairs well with" cards={priceCards(shelves.pairs, pricing)} />
+
       <ProductReviews
         productSlug={card.slug}
         summary={reviewSummary}
@@ -140,6 +165,8 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
         pageCount={reviews.pageCount}
         href={(change) => reviewsHref(card.slug, query, reviewSort, change)}
       />
+
+      <ProductShelf id="you-may-also-like" title="You may also like" cards={priceCards(shelves.similar, pricing)} />
     </div>
   )
 }

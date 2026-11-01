@@ -50,7 +50,7 @@ On Azure the deploy workflow applies the migrations on every push (section 5); t
 
 **Before launch, on the database that's been set up (development):**
 
-- [ ] `pnpm --filter @workspace/db db:export-config` writes `packages/database/prisma/seed-config.json`: Settings, delivery fees, installation areas, Terms and Privacy, and what the console adds to the catalogue (category images, featured, installation fees; brand logos and descriptions; products' own installation). Read it through: it's the production setup. It's gitignored (it holds contact details and staff addresses, and the repository is public), so run `db:seed:config` from the machine that has it.
+- [ ] `pnpm --filter @workspace/db db:export-config` writes `packages/database/prisma/seed-config.json`: Settings, delivery fees, installation areas, Terms and Privacy, and what the console adds to the catalogue (category images, featured, installation fees; brand logos and descriptions; products' own installation; "pairs well with" lists). Read it through: it's the production setup. It's gitignored (it holds contact details and staff addresses, and the repository is public), so run `db:seed:config` from the machine that has it.
 
 **Then, with `packages/database/.env` pointing at production**, from the repo root:
 

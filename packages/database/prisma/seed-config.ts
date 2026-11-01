@@ -4,7 +4,7 @@
 // It only fills in what isn't set, so it never undoes a change made in the console: Settings, delivery fees,
 // installation areas and the legal pages only when the database has none at all; a category's image or installation
 // fee, or a brand's logo or description, only when it has none; featured only switched on; a product's installation
-// only while it still uses its category's.
+// only while it still uses its category's; a "pairs well with" list only for a category or product without one.
 import { readFile } from "node:fs/promises"
 import { prisma } from "../src/client"
 import type { Prisma } from "../generated/prisma/client"
@@ -117,6 +117,31 @@ async function seedProducts() {
   return counts
 }
 
+async function seedPairings() {
+  const counts = { updated: 0, missing: [] as string[] }
+  // A file exported before pairings existed has none
+  for (const seed of config.pairings ?? []) {
+    const owner = seed.category ? await findCategory(seed.category) : await prisma.product.findFirst({ where: { name: seed.product! }, select: { id: true } })
+    const ownerName = seed.category ? seed.category.join(" / ") : seed.product!
+    if (!owner) {
+      counts.missing.push(ownerName)
+      continue
+    }
+    const where = seed.category ? { categoryId: owner.id } : { productId: owner.id }
+    if (await prisma.productPairing.count({ where })) continue
+    const paired: string[] = []
+    for (const name of seed.paired) {
+      const products = await prisma.product.findMany({ where: { name }, select: { id: true } })
+      if (products.length === 1 && products[0]!.id !== owner.id) paired.push(products[0]!.id)
+      else counts.missing.push(`${name} (on ${ownerName}'s list)`)
+    }
+    if (!paired.length) continue
+    await prisma.productPairing.createMany({ data: paired.map((pairedProductId, position) => ({ ...where, pairedProductId, position })) })
+    counts.updated++
+  }
+  return counts
+}
+
 async function main() {
   console.log(`Settings: ${await seedAppSettings()}`)
   console.log(`Delivery fees: ${await seedDelivery()}`)
@@ -127,6 +152,7 @@ async function main() {
     ["Categories", seedCategories],
     ["Brands", seedBrands],
     ["Products' installation", seedProducts],
+    ["Pairs well with lists", seedPairings],
   ] as const) {
     const { updated, missing } = await seed()
     console.log(`${label}: ${updated} updated`)

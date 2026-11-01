@@ -7,6 +7,8 @@ import { getSpecFieldsByCategory } from "@/lib/data/category-specs.data"
 import { getProductForEdit } from "@/lib/data/products.data"
 import { getProductReviewStats } from "@/lib/data/reviews.data"
 import { getProductStorefrontLink } from "@/lib/data/storefront-links.data"
+import { getPairings } from "@/lib/data/pairings.data"
+import { PairingsCard } from "@/components/pairings-card"
 import { requireSystemPermission } from "@/lib/auth-guard"
 
 export const metadata: Metadata = {
@@ -42,7 +44,11 @@ export default async function EditProductPage({ params }: Props) {
   // getBrandsForSelect leaves archived brands out, which would leave this product's brand field empty. It's offered
   // so the form shows it; saving still asks for an active brand.
   const { brand } = product.data
-  const [storefrontLink, reviewStats] = await Promise.all([getProductStorefrontLink(product.data.id), getProductReviewStats(product.data.id)])
+  const [storefrontLink, reviewStats, pairings] = await Promise.all([
+    getProductStorefrontLink(product.data.id),
+    getProductReviewStats(product.data.id),
+    getPairings({ kind: "product", id: product.data.id }),
+  ])
   const brandOptions = brand.isArchived ? [...brands.data, { id: brand.id, name: `${brand.name} (archived)` }] : brands.data
 
   return (
@@ -55,6 +61,7 @@ export default async function EditProductPage({ params }: Props) {
       categoryInstallationFees={installationFees.data}
       storefrontLink={storefrontLink}
       reviewStats={reviewStats}
+      pairingsCard={<PairingsCard owner={{ kind: "product", id: product.data.id }} pairings={pairings} />}
     />
   )
 }

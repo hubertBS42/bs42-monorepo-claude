@@ -63,6 +63,8 @@ interface ProductFormProps {
   // Its storefront page and its reviews, when editing
   storefrontLink?: StorefrontLink
   reviewStats?: ProductReviewStats
+  // Edit only: the "Pairs well with" card, which saves on its own (it needs the product's id)
+  pairingsCard?: React.ReactNode
   // A store's pending request the new product answers: it fills the form in, and saving tells the store
   request?: ProductRequestForForm
 }
@@ -141,7 +143,7 @@ function describeRemoval(variants: VariantInput[], usage: Record<string, Variant
 
 type PendingChange = { kind: "removeVariant"; index: number } | { kind: "regenerate" } | { kind: "noVariants" }
 
-const ProductForm = ({ brands, categoryOptions, disabledCategoryIds, specFields, categoryInstallationFees, product, storefrontLink, reviewStats, request }: ProductFormProps) => {
+const ProductForm = ({ brands, categoryOptions, disabledCategoryIds, specFields, categoryInstallationFees, product, storefrontLink, reviewStats, request, pairingsCard }: ProductFormProps) => {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [editingVariantIndex, setEditingVariantIndex] = useState<number | null>(null)
@@ -636,6 +638,8 @@ const ProductForm = ({ brands, categoryOptions, disabledCategoryIds, specFields,
                   </div>
                 </CardContent>
               </Card>
+
+              {pairingsCard}
             </div>
 
             {/* Right column */}
