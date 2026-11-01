@@ -11,7 +11,7 @@ import { toast } from "@workspace/ui/components/toast"
 import SharedFormHeader from "@/components/shared-form-header"
 import SharedFormFooter from "@/components/shared-form-footer"
 import { createBrandAction } from "@/lib/actions/brand.actions"
-import { ImageField, SelectField, SwitchField, TextareaField, TextInputField } from "@workspace/forms"
+import { ImageField, SelectField, TextareaField, TextInputField } from "@workspace/forms"
 import { STATUS_OPTIONS } from "@/constants"
 import { Status } from "@workspace/db/enums"
 import { deleteImages, uploadImages } from "@/lib/storage"
@@ -129,16 +129,6 @@ const AddBrandForm = () => {
                     <TextInputField control={form.control} label="Website" name="website" disabled={isBusy} placeholder="https://example.com" />
                     <TextareaField control={form.control} label="Description" name="description" disabled={isBusy} />
                   </FieldGroup>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Settings</CardTitle>
-                  <CardDescription>Settings for this brand.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <SwitchField control={form.control} label="Featured" name="isFeatured" disabled={isBusy} description="Show this brand in featured sections" variant="card" />
                 </CardContent>
               </Card>
             </div>
