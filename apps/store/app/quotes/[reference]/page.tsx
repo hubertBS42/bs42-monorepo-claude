@@ -128,17 +128,18 @@ export default async function QuotePage({ params, searchParams }: QuotePageProps
       </div>
 
       <article className="rounded-xl border bg-card p-6 text-sm md:p-10 print:rounded-none print:border-0 print:bg-white print:p-0 print:text-black">
-        <header className="flex flex-wrap items-start justify-between gap-6">
-          <div>
+        {/* One row on phones too: the logo shrinks to make room for the reference */}
+        <header className="flex items-start justify-between gap-4 sm:gap-6">
+          <div className="min-w-0">
             {settings.logoUrl ? (
               // eslint-disable-next-line @next/next/no-img-element -- our own blob storage, not set up for next/image
-              <img src={settings.logoUrl} alt={storeName} className="h-10 w-auto" />
+              <img src={settings.logoUrl} alt={storeName} className="h-auto max-h-7 w-auto max-w-full sm:max-h-10" />
             ) : (
               <p className="text-lg font-bold">{storeName}</p>
             )}
           </div>
-          <div className="text-right">
-            <h1 className="text-2xl font-bold tracking-tight">Quotation</h1>
+          <div className="shrink-0 text-right">
+            <h1 className="text-xl font-bold tracking-tight sm:text-2xl">Quotation</h1>
             <p className="font-mono">{quote.reference}</p>
             <p className="text-muted-foreground">{formatDate(quote.createdAt, "d MMMM yyyy")}</p>
             <p className="font-medium">Valid until {lastDay}</p>
