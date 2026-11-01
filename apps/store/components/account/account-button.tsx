@@ -129,12 +129,17 @@ export function AccountButton() {
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          {ACCOUNT_LINKS.map(({ href, label, icon: Icon }) => (
+          {ACCOUNT_LINKS.filter((link) => link.inMenu).map(({ href, label, icon: Icon }) => (
             <DropdownMenuLinkItem key={href} render={<Link href={href} />}>
               <Icon aria-hidden />
               {label}
             </DropdownMenuLinkItem>
           ))}
+          {/* The rest are in the account pages' own menu */}
+          <DropdownMenuLinkItem render={<Link href="/account" />}>
+            <UserRound aria-hidden />
+            Account
+          </DropdownMenuLinkItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         {consoleUrl && (

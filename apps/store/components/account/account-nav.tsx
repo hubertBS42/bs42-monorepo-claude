@@ -5,10 +5,11 @@ import { usePathname } from "next/navigation"
 import { Briefcase, FileText, Heart, Mail, MapPin, MessageSquareText, Package } from "lucide-react"
 import { cn } from "@workspace/ui/lib/utils"
 
+// inMenu: also in the header's account menu, which keeps to the pages people come back to
 export const ACCOUNT_LINKS = [
-  { href: "/account/orders", label: "My orders", icon: Package },
-  { href: "/account/quotes", label: "Quotations", icon: FileText },
-  { href: "/account/wish-list", label: "Wish list", icon: Heart },
+  { href: "/account/orders", label: "My orders", icon: Package, inMenu: true },
+  { href: "/account/quotes", label: "Quotations", icon: FileText, inMenu: true },
+  { href: "/account/wish-list", label: "Wish list", icon: Heart, inMenu: true },
   { href: "/account/reviews", label: "Reviews", icon: MessageSquareText },
   { href: "/account/addresses", label: "Addresses", icon: MapPin },
   { href: "/account/trade", label: "Trade account", icon: Briefcase },
