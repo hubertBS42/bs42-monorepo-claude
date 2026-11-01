@@ -68,7 +68,7 @@ export default function LeaveStore({ store }: { store: Store }) {
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-          <AlertDialogDescription>{`You will be removed from ${store.name} and will lose access to all its resources.`}</AlertDialogDescription>
+          <AlertDialogDescription>{`You will be removed from ${store.name} and will lose access to its orders, listings and stock.`}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel disabled={isPending}>Cancel</AlertDialogCancel>

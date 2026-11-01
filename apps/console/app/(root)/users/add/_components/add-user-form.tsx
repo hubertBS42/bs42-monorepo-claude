@@ -143,7 +143,7 @@ export default function AddUserForm({ stores }: { stores: SelectItem[] }) {
       <div className="grid gap-y-6">
         <SharedFormHeader
           heading="Add User"
-          description="Create a new user to manage stores and products."
+          description="Give someone console access, as an admin or in the stores you choose."
           backTo="/users"
           isPending={isPending}
           isDirty={form.formState.isDirty}
@@ -182,7 +182,16 @@ export default function AddUserForm({ stores }: { stores: SelectItem[] }) {
                   <PhoneField control={form.control} label="Phone" name="phone" disabled={isPending} defaultCountry="GH" />
                 </div>
                 <div className="col-span-2 grid lg:col-span-1">
-                  <DateField control={form.control} name="dob" label="Date of birth" disabled={isPending} disabledDates={(date) => date > new Date() || date < new Date("1900-01-01")} captionLayout="dropdown" startMonth={new Date(1900, 0)} endMonth={new Date()} />
+                  <DateField
+                    control={form.control}
+                    name="dob"
+                    label="Date of birth"
+                    disabled={isPending}
+                    disabledDates={(date) => date > new Date() || date < new Date("1900-01-01")}
+                    captionLayout="dropdown"
+                    startMonth={new Date(1900, 0)}
+                    endMonth={new Date()}
+                  />
                 </div>
                 <div className="col-span-2 grid lg:col-span-1">
                   <SelectField control={form.control} label="System Role" name="systemRole" options={systemRoleOptions} disabled={isPending} placeholder="Select role" />
@@ -246,7 +255,7 @@ export default function AddUserForm({ stores }: { stores: SelectItem[] }) {
             <Card>
               <CardHeader>
                 <CardTitle>Settings</CardTitle>
-                <CardDescription>Settings for this user.</CardDescription>
+                <CardDescription>Which emails they get.</CardDescription>
               </CardHeader>
               <CardContent>
                 <FieldGroup className="gap-3">

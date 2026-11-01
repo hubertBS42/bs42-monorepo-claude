@@ -113,7 +113,7 @@ export default function TransferForm({ storeId, destinations }: { storeId: strin
                     Items
                     <InfoTip about="Items">The stock leaves this store when you send it. The other store adds what arrives when they receive it, and anything short is recorded as lost.</InfoTip>
                   </CardTitle>
-                  <CardDescription>Tracked listings in stock. The other store must list them too.</CardDescription>
+                  <CardDescription>Listings that track stock and have some to send. The other store must list them too.</CardDescription>
                 </CardHeader>
                 <CardContent className="grid gap-4">
                   <Input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search by product name or SKU" disabled={isBusy} aria-label="Search this store's listings" />

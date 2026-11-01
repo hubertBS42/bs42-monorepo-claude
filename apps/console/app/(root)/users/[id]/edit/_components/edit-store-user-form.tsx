@@ -153,7 +153,7 @@ const EditStoreUserForm = ({ user, stores }: { user: UserDetails; stores: Select
   return (
     <form onSubmit={form.handleSubmit(onSubmit)}>
       <div className="grid gap-y-6">
-        <SharedFormHeader heading="Edit User" description="Manage user's account." backTo="/users" isPending={isPending} isDirty={form.formState.isDirty} handleDiscard={handleDiscard} />
+        <SharedFormHeader heading="Edit User" description="Edit this user's details and access." backTo="/users" isPending={isPending} isDirty={form.formState.isDirty} handleDiscard={handleDiscard} />
 
         <div className="grid gap-8">
           <div className="grid gap-4">
@@ -165,7 +165,7 @@ const EditStoreUserForm = ({ user, stores }: { user: UserDetails; stores: Select
                 <Card>
                   <CardHeader>
                     <CardTitle>Stores</CardTitle>
-                    <CardDescription>Manage this user&apos;s store memberships</CardDescription>
+                    <CardDescription>Manage this user&apos;s store memberships.</CardDescription>
                   </CardHeader>
                   <CardContent className="grid gap-4">
                     {fields.map((field, index) => {

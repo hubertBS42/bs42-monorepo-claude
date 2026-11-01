@@ -5,7 +5,7 @@ import { capitalizeWord } from "@workspace/utils/text"
 import { getNameInitials } from "@workspace/utils/name"
 import { UserIcon, KeyRoundIcon, MonitorIcon, BellIcon, ArrowRightIcon } from "lucide-react"
 import Link from "next/link"
-import {requireConsoleAccess} from "@/lib/auth-guard"
+import { requireConsoleAccess } from "@/lib/auth-guard"
 import { buttonVariants } from "@workspace/ui/components/button"
 
 const overviewLinks = [
@@ -13,7 +13,7 @@ const overviewLinks = [
     href: "/account/profile",
     icon: UserIcon,
     title: "Profile",
-    description: "Update your name, email and avatar",
+    description: "Update your name and avatar",
   },
   {
     href: "/account/password",
@@ -36,7 +36,7 @@ const overviewLinks = [
 ]
 
 const AccountPage = async () => {
-  const {user} = await requireConsoleAccess()
+  const { user } = await requireConsoleAccess()
 
   return (
     <div className="grid gap-6">
@@ -68,11 +68,10 @@ const AccountPage = async () => {
                   <div className="flex size-9 items-center justify-center rounded-lg bg-primary/10">
                     <Icon className="size-5 text-primary" />
                   </div>
-                  
-                    <Link href={link.href} className={buttonVariants({variant: "ghost", size: "icon"})}>
-                      <ArrowRightIcon className="size-4" />
-                    </Link>
-                 
+
+                  <Link href={link.href} className={buttonVariants({ variant: "ghost", size: "icon" })}>
+                    <ArrowRightIcon className="size-4" />
+                  </Link>
                 </div>
                 <CardTitle className="text-base">{link.title}</CardTitle>
                 <CardDescription>{link.description}</CardDescription>

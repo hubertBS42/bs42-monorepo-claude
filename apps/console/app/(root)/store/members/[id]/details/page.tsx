@@ -58,7 +58,7 @@ export default async function MemberDetailsPage({ params }: MemberDetailsPagePro
         <Card>
           <CardHeader>
             <CardTitle>Basic Information</CardTitle>
-            <CardDescription>Member details and account information</CardDescription>
+            <CardDescription>Member details and account information.</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4">
             <div className="grid grid-cols-2 gap-4">

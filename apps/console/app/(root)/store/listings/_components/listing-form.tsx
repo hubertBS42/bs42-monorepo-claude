@@ -211,7 +211,7 @@ const ListingForm = ({ storeId, data, storefrontLink }: ListingFormProps) => {
                 <Card>
                   <CardHeader>
                     <CardTitle>Variants</CardTitle>
-                    <CardDescription>An empty price uses the listing&apos;s.</CardDescription>
+                    <CardDescription>A variant without a price sells at the listing&apos;s price.</CardDescription>
                   </CardHeader>
                   <CardContent>
                     {variantRows.length === 0 ? (
@@ -275,7 +275,7 @@ const ListingForm = ({ storeId, data, storefrontLink }: ListingFormProps) => {
                 <Card>
                   <CardHeader>
                     <CardTitle>Stock change</CardTitle>
-                    <CardDescription>Recorded in the stock history.</CardDescription>
+                    <CardDescription>Why the stock changed. Saved in the stock history.</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <FieldGroup>
@@ -296,11 +296,11 @@ const ListingForm = ({ storeId, data, storefrontLink }: ListingFormProps) => {
                 </CardHeader>
                 <CardContent className="grid gap-4">
                   <SelectField control={form.control} name="status" aria-label="Status" options={STATUS_OPTIONS} disabled={isPending} />
-                  <SwitchField control={form.control} variant="card" label="Featured" name="isFeatured" disabled={isPending} description="Show this listing in the store's featured sections" />
+                  <SwitchField control={form.control} variant="card" label="Featured" name="isFeatured" disabled={isPending} description="Show this product in the storefront's Featured products." />
                 </CardContent>
               </Card>
 
-              {storefrontLink && <StorefrontLinkCard link={storefrontLink} description="Shows the best offer across stores, which may not be this one." />}
+              {storefrontLink && <StorefrontLinkCard link={storefrontLink} description="The product page shows the best price across stores, which may not be this store's." />}
 
               {id && (
                 <Card>

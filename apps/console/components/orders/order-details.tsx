@@ -188,7 +188,7 @@ export function OrderCustomerCard({ customer, shipping, actions, trade, tradeHre
     <Card>
       <CardHeader>
         <CardTitle>Customer</CardTitle>
-        <CardDescription>{`${customer.isRegistered ? "Has an account" : "Walk-in, without an account"} · ${shipping ? "Delivery" : "Pickup"}`}</CardDescription>
+        <CardDescription>{`${customer.isRegistered ? "Has an account" : "Not linked to an account"} · ${shipping ? "Delivery" : "Pickup"}`}</CardDescription>
       </CardHeader>
       <CardContent className="grid gap-4">
         <Detail label="Name">{customer.name}</Detail>
@@ -251,7 +251,7 @@ export function OrderReturnsCard({ returns, actions }: { returns: OrderReturnEnt
     <Card>
       <CardHeader>
         <CardTitle>Returns</CardTitle>
-        <CardDescription>Items the customer brought back. Shipping isn&apos;t refunded.</CardDescription>
+        <CardDescription>Items the customer brought back. The delivery fee isn&apos;t refunded.</CardDescription>
       </CardHeader>
       <CardContent className="grid gap-4">
         {returns.length === 0 ? (

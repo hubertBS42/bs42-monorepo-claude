@@ -29,7 +29,7 @@ const StoreOverviewPage = async () => {
         <Card>
           <CardHeader>
             <CardTitle>{store.name}</CardTitle>
-            <CardDescription>General information about this store</CardDescription>
+            <CardDescription>General information about this store.</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4">
             <div className="grid grid-cols-2 gap-4">

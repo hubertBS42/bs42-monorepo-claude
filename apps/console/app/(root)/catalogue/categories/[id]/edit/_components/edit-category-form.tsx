@@ -156,7 +156,7 @@ export default function EditCategoryForm({ category, parentOptions, disabledPare
             <Card>
               <CardHeader>
                 <CardTitle>Settings</CardTitle>
-                <CardDescription>Settings for this category.</CardDescription>
+                <CardDescription>Homepage carousel and installation fee.</CardDescription>
               </CardHeader>
               <CardContent>
                 <FieldGroup>
@@ -169,7 +169,7 @@ export default function EditCategoryForm({ category, parentOptions, disabledPare
                     min={0}
                     prependText="GH₵"
                     disabled={isBusy}
-                    description="Per item, for products here and below without their own. Empty uses the parent's."
+                    description="Per item installed, for products here and below that use their category's fee. Empty uses the nearest category above with one."
                     info="Products set to use their category's fee take the nearest category up the tree that has one. If none does, they aren't installed."
                   />
                 </FieldGroup>

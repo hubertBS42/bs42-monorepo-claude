@@ -460,7 +460,7 @@ const ProductForm = ({ brands, categoryOptions, disabledCategoryIds, specFields,
               <Card>
                 <CardHeader>
                   <CardTitle>Settings</CardTitle>
-                  <CardDescription>Settings for this product.</CardDescription>
+                  <CardDescription>Whether it comes in variants, like sizes or colours.</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <SwitchField
@@ -500,7 +500,7 @@ const ProductForm = ({ brands, categoryOptions, disabledCategoryIds, specFields,
                 <Card>
                   <CardHeader>
                     <CardTitle>Variant Options</CardTitle>
-                    <CardDescription>Define variant types (Color, Size, etc.)</CardDescription>
+                    <CardDescription>The options it varies by, like colour or size.</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <FieldGroup>
@@ -548,7 +548,7 @@ const ProductForm = ({ brands, categoryOptions, disabledCategoryIds, specFields,
                 <Card>
                   <CardHeader>
                     <CardTitle>Variants</CardTitle>
-                    <CardDescription>Manage individual product variants</CardDescription>
+                    <CardDescription>Each combination&apos;s SKU, barcode, images, weight and size.</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <Table>
@@ -658,7 +658,7 @@ const ProductForm = ({ brands, categoryOptions, disabledCategoryIds, specFields,
               <Card>
                 <CardHeader>
                   <CardTitle>Images</CardTitle>
-                  <CardDescription>Upload product images</CardDescription>
+                  <CardDescription>Upload product images.</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <ImageField

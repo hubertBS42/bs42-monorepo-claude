@@ -88,7 +88,7 @@ export default function AddStoreForm() {
       <div className="grid gap-y-6">
         <ResourceFormHeader
           heading="Add Store"
-          description="Create a new store to manage members and products."
+          description="Create a store with its own team, listings and orders."
           backTo="/stores"
           isPending={isBusy}
           isDirty={form.formState.isDirty}

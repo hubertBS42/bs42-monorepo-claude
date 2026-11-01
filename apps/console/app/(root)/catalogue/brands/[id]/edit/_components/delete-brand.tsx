@@ -62,7 +62,7 @@ export default function DeleteBrand({ brand }: { brand: Pick<Brand, "id" | "name
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-            <AlertDialogDescription>{`This action cannot be undone. ${brand.name} will be permanently deleted.`}</AlertDialogDescription>
+            <AlertDialogDescription>{`This can't be undone. ${brand.name} will be permanently deleted.`}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isPending}>Cancel</AlertDialogCancel>

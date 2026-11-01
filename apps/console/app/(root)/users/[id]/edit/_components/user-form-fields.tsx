@@ -72,7 +72,16 @@ const UserFormFields = <T extends FieldValues>({ control, user, isPending, clear
             </div>
 
             <div className="col-span-2 grid lg:col-span-1">
-              <DateField control={control} name={"dob" as Path<T>} label="Date of birth" disabled={isPending} disabledDates={(date) => date > new Date() || date < new Date("1900-01-01")} captionLayout="dropdown" startMonth={new Date(1900, 0)} endMonth={new Date()} />
+              <DateField
+                control={control}
+                name={"dob" as Path<T>}
+                label="Date of birth"
+                disabled={isPending}
+                disabledDates={(date) => date > new Date() || date < new Date("1900-01-01")}
+                captionLayout="dropdown"
+                startMonth={new Date(1900, 0)}
+                endMonth={new Date()}
+              />
             </div>
             <div className="col-span-2 grid lg:col-span-1">
               {/* Rendered from props, so it updates after a promote or demote refreshes the page */}
@@ -102,7 +111,7 @@ const UserFormFields = <T extends FieldValues>({ control, user, isPending, clear
         <Card>
           <CardHeader>
             <CardTitle>Settings</CardTitle>
-            <CardDescription>Settings for this user.</CardDescription>
+            <CardDescription>Which emails they get.</CardDescription>
           </CardHeader>
           <CardContent>
             <FieldGroup className="gap-3">
@@ -150,7 +159,7 @@ const UserFormFields = <T extends FieldValues>({ control, user, isPending, clear
         <Card>
           <CardHeader>
             <CardTitle>Actions</CardTitle>
-            <CardDescription>Perform actions on this user.</CardDescription>
+            <CardDescription>Password, role, ban and delete.</CardDescription>
           </CardHeader>
           <CardContent>
             <UserActions user={user} />

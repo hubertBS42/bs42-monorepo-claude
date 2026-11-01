@@ -69,7 +69,7 @@ export default function DeleteCategory({ category, childCount }: DeleteCategoryP
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-            <AlertDialogDescription>{`This action cannot be undone. ${category.name} will be permanently deleted.`}</AlertDialogDescription>
+            <AlertDialogDescription>{`This can't be undone. ${category.name} will be permanently deleted.`}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isPending}>Cancel</AlertDialogCancel>

@@ -153,7 +153,7 @@ export default function ReviewStep({ storeId, form }: { storeId: string; form: U
       <Card>
         <CardHeader>
           <CardTitle>Discount</CardTitle>
-          <CardDescription>Split across the items, before tax.</CardDescription>
+          <CardDescription>Shared across the items and taken off before tax.</CardDescription>
         </CardHeader>
         <CardContent>
           {isLoading ? (

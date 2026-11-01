@@ -203,7 +203,9 @@ export default function ReviewStep<T extends StaffSaleFields, O>({ kind, form: w
       <Card>
         <CardHeader>
           <CardTitle>Discount</CardTitle>
-          <CardDescription>{customer?.trade ? "Starts at their trade discount. Split across the items, before tax." : "Split across the items, before tax."}</CardDescription>
+          <CardDescription>
+            {customer?.trade ? "Starts at their trade discount. Shared across the items and taken off before tax." : "Shared across the items and taken off before tax."}
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <FieldGroup>

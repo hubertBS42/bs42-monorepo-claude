@@ -185,7 +185,7 @@ export function PairingsCard({ owner, pairings }: { owner: PairingOwner; pairing
         <CardTitle className="flex items-center gap-1.5">
           Pairs well with
           <InfoTip about="Pairs well with">
-            Shown on the product page, those on sale only, in this order.{" "}
+            Shown on product pages in this order, skipping anything not on sale.{" "}
             {owner.kind === "category"
               ? "Categories under this one use this list unless they have their own, and a product with its own list uses that instead."
               : "A product without its own list uses the nearest category's above it."}

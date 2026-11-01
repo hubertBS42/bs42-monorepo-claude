@@ -71,7 +71,7 @@ export default function DeleteSupplier({ storeId, supplier }: DeleteSupplierProp
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-            <AlertDialogDescription>{`This action cannot be undone. ${supplier.name} will be permanently deleted.`}</AlertDialogDescription>
+            <AlertDialogDescription>{`This can't be undone. ${supplier.name} will be permanently deleted.`}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isPending}>Cancel</AlertDialogCancel>

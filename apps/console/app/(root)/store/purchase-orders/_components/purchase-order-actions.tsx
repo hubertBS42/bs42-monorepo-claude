@@ -238,7 +238,7 @@ function DeleteDraft({ storeId, order }: PurchaseOrderActionsProps) {
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-          <AlertDialogDescription>{`This action cannot be undone. ${order.reference} will be permanently deleted.`}</AlertDialogDescription>
+          <AlertDialogDescription>{`This can't be undone. ${order.reference} will be permanently deleted.`}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel disabled={isPending}>Cancel</AlertDialogCancel>

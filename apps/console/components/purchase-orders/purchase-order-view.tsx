@@ -92,7 +92,7 @@ export default function PurchaseOrderView({ order, backTo, statusContent, showSt
           <Card>
             <CardHeader>
               <CardTitle>Items</CardTitle>
-              <CardDescription>{isGhs ? `In GHS, as invoiced. Buy prices are set in USD at ${order.exchangeRate}.` : "In USD, as invoiced."}</CardDescription>
+              <CardDescription>{isGhs ? `In GHS, as invoiced. Buy prices are set in USD at GH₵${order.exchangeRate} per $1.` : "In USD, as invoiced."}</CardDescription>
             </CardHeader>
             <CardContent className="grid gap-4">
               <Table>

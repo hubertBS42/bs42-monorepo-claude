@@ -71,7 +71,7 @@ export default function DeleteProduct({ product, storeCount, hasOrders }: Delete
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-            <AlertDialogDescription>{`This action cannot be undone. ${product.name} will be permanently deleted.${listingWarning}`}</AlertDialogDescription>
+            <AlertDialogDescription>{`This can't be undone. ${product.name} will be permanently deleted.${listingWarning}`}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isPending}>Cancel</AlertDialogCancel>
