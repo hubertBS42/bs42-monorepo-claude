@@ -35,21 +35,23 @@ function CardSkeleton({ fields = 0, lines = 0, className }: { fields?: number; l
   )
 }
 
-// The page's title and its line, with buttons on the right (Back and Save, an add button)
-function PageHeaderSkeleton({ actions = 0 }: { actions?: number }) {
+// The page's title and its line, with buttons on the right: a form's Back and Save (at the bottom on phones, so not
+// here), or a list's add button (only its icon on phones)
+function PageHeaderSkeleton({ actions = 0, addButton = false }: { actions?: number; addButton?: boolean }) {
   return (
     <div className="flex items-end justify-between gap-4">
-      <div className="grid gap-2">
-        <Skeleton className="h-7 w-48 md:h-8" />
+      <div className="grid min-w-0 flex-1 gap-2">
+        <Skeleton className="h-7 w-48 max-w-full md:h-8" />
         <Skeleton className="h-4 w-72 max-w-full" />
       </div>
       {actions > 0 && (
-        <div className="flex gap-2">
+        <div className="hidden gap-2 md:flex">
           {Array.from({ length: actions }, (_, action) => (
             <Skeleton key={action} className="h-8 w-20" />
           ))}
         </div>
       )}
+      {addButton && <Skeleton className="size-8 shrink-0 md:w-28" />}
     </div>
   )
 }
@@ -83,9 +85,10 @@ function TableSkeleton({ rows = 8 }: { rows?: number }) {
 export function ListPageSkeleton({ addButton = false }: { addButton?: boolean }) {
   return (
     <Page kind="list">
-      <PageHeaderSkeleton actions={addButton ? 1 : 0} />
-      <div className="flex gap-2">
-        <Skeleton className="h-8 w-56 max-w-full" />
+      <PageHeaderSkeleton addButton={addButton} />
+      {/* The search takes the whole row on phones, as the toolbar's does */}
+      <div className="flex flex-wrap gap-2">
+        <Skeleton className="h-8 w-full sm:w-72" />
         <Skeleton className="h-8 w-24" />
         <Skeleton className="h-8 w-24" />
       </div>
@@ -129,7 +132,7 @@ export function WizardPageSkeleton() {
   return (
     <Page kind="wizard">
       <PageHeaderSkeleton />
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         {Array.from({ length: 4 }, (_, step) => (
           <Skeleton key={step} className="h-7 w-24 rounded-full" />
         ))}
@@ -257,13 +260,14 @@ export function DashboardSkeleton() {
           ))}
         </div>
         <div className="grid gap-4 md:gap-6 @5xl/main:grid-cols-[2fr_1fr]">
-          <CardFrame>
+          {/* The period is a select until the card is wide enough for its toggle, as on the chart */}
+          <CardFrame className="@container/card">
             <div className="flex items-start justify-between gap-4 px-6">
-              <div className="grid gap-2">
+              <div className="grid min-w-0 flex-1 gap-2">
                 <Skeleton className="h-5 w-28" />
                 <Skeleton className="h-4 w-64 max-w-full" />
               </div>
-              <Skeleton className="h-9 w-56" />
+              <Skeleton className="h-8 w-40 shrink-0 @[480px]/card:h-9 @[480px]/card:w-56" />
             </div>
             <div className="px-6">
               <Skeleton className="h-64 w-full" />

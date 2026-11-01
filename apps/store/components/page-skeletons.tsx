@@ -47,17 +47,35 @@ function SummaryBox() {
   )
 }
 
-// A product line: its picture, name and price
-function LineRow() {
+// A basket line: its picture, then its name over the quantity and price on phones, beside them from sm up
+function BasketLineRow() {
   return (
-    <div className="flex items-center gap-4 py-4">
-      <Skeleton className="size-16 shrink-0 rounded-lg" />
-      <div className="flex-1 space-y-2">
-        <Skeleton className="h-4 w-2/3" />
-        <Skeleton className="h-3 w-24" />
+    <div className="flex gap-4 py-5">
+      <Skeleton className="size-20 shrink-0 rounded-lg sm:size-24" />
+      <div className="flex min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0 flex-1 space-y-2">
+          <Skeleton className="h-4 w-2/3" />
+          <Skeleton className="h-3 w-24" />
+        </div>
+        <div className="flex items-center justify-between gap-4 sm:flex-col sm:items-end">
+          <Skeleton className="h-8 w-24" />
+          <Skeleton className="h-4 w-20" />
+        </div>
       </div>
-      <Skeleton className="h-8 w-24" />
-      <Skeleton className="h-4 w-20" />
+    </div>
+  )
+}
+
+// An order's line: its picture, name and price
+function OrderLineRow() {
+  return (
+    <div className="flex gap-3 py-4">
+      <Skeleton className="size-14 shrink-0 rounded-md" />
+      <div className="min-w-0 flex-1 space-y-2">
+        <Skeleton className="h-4 w-2/3" />
+        <Skeleton className="h-3 w-24 max-w-full" />
+      </div>
+      <Skeleton className="h-4 w-16 shrink-0" />
     </div>
   )
 }
@@ -87,7 +105,7 @@ export function BasketSkeleton() {
       <div className="mt-6 grid gap-8 lg:grid-cols-[1fr_22rem] lg:items-start">
         <div className="divide-y">
           {Array.from({ length: 3 }, (_, line) => (
-            <LineRow key={line} />
+            <BasketLineRow key={line} />
           ))}
         </div>
         <SummaryBox />
@@ -126,7 +144,7 @@ export function OrderPageSkeleton() {
       <div className="grid gap-6 md:grid-cols-[1fr_18rem]">
         <div className="rounded-xl border p-5">
           <Skeleton className="h-5 w-48" />
-          <LineRow />
+          <OrderLineRow />
           <div className="ml-auto max-w-xs space-y-2 border-t pt-4">
             <Lines count={3} />
           </div>
@@ -148,10 +166,11 @@ export function DocumentSkeleton() {
         <Skeleton className="h-4 w-28" />
         <Skeleton className="h-8 w-32" />
       </div>
-      <div className="space-y-8 rounded-xl border p-8">
-        <div className="flex items-start justify-between gap-6">
-          <Skeleton className="h-8 w-32" />
-          <div className="space-y-2">
+      <div className="space-y-8 rounded-xl border p-6 md:p-10">
+        {/* One row on phones too, with the smaller logo, as on the real one */}
+        <div className="flex items-start justify-between gap-4 sm:gap-6">
+          <Skeleton className="h-7 w-28 min-w-0 sm:h-10 sm:w-32" />
+          <div className="shrink-0 space-y-2">
             <Skeleton className="ml-auto h-5 w-24" />
             <Skeleton className="h-3 w-36" />
           </div>
@@ -182,25 +201,28 @@ export function CompareSkeleton() {
         <Skeleton className="h-8 w-72 max-w-full md:h-9" />
         <Skeleton className="h-5 w-44" />
       </div>
-      <div className="grid grid-cols-[8rem_repeat(3,minmax(0,1fr))] gap-4">
-        <div />
-        {Array.from({ length: 3 }, (_, product) => (
-          <div key={product} className="space-y-2">
-            <Skeleton className="aspect-square rounded-lg" />
-            <Skeleton className="h-3 w-16" />
-            <Skeleton className="h-4 w-full" />
-            <Skeleton className="h-5 w-24" />
-            <Skeleton className="h-8 w-full" />
-          </div>
-        ))}
-        {Array.from({ length: 4 }, (_, row) => (
-          <div key={row} className="col-span-4 grid grid-cols-subgrid border-t pt-3">
-            <Skeleton className="h-4 w-20" />
-            <Skeleton className="h-4 w-24" />
-            <Skeleton className="h-4 w-24" />
-            <Skeleton className="h-4 w-24" />
-          </div>
-        ))}
+      {/* Sideways on phones, as the real table scrolls */}
+      <div className="-mx-4 overflow-x-auto px-4 lg:mx-0 lg:px-0">
+        <div className="grid min-w-[40rem] grid-cols-[8rem_repeat(3,minmax(0,1fr))] gap-4">
+          <div />
+          {Array.from({ length: 3 }, (_, product) => (
+            <div key={product} className="space-y-2">
+              <Skeleton className="aspect-square rounded-lg" />
+              <Skeleton className="h-3 w-16" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-5 w-24" />
+              <Skeleton className="h-8 w-full" />
+            </div>
+          ))}
+          {Array.from({ length: 4 }, (_, row) => (
+            <div key={row} className="col-span-4 grid grid-cols-subgrid border-t pt-3">
+              <Skeleton className="h-4 w-20" />
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-4 w-24" />
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   )
