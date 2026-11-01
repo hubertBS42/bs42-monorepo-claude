@@ -246,7 +246,8 @@ const ImageField = <T extends FieldValues>({
               disabled={disabled || isBusy || imageUrls.length >= imageLimit}
               tabIndex={-1}
               aria-hidden="true"
-              className="sr-only"
+              // max-w-px: Field gives a hidden child width: auto, and a file input's own width then widens the page on phones
+              className="sr-only max-w-px"
               onBlur={field.onBlur}
               onChange={handleFileChange}
             />

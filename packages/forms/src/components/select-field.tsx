@@ -61,7 +61,7 @@ const SelectField = <T extends FieldValues>({
       name={name}
       control={control}
       render={({ field, fieldState }) => (
-        <Field data-invalid={fieldState.invalid} className="grid gap-1">
+        <Field data-invalid={fieldState.invalid} className="grid min-w-0 gap-1">
           {label && (
             <FieldLabelWithInfo htmlFor={inputId} label={label} info={info} />
           )}
@@ -79,9 +79,10 @@ const SelectField = <T extends FieldValues>({
               {...triggerProps}
               id={inputId}
               aria-invalid={fieldState.invalid}
-              className="w-full"
+              className="w-full min-w-0"
             >
-              <SelectValue placeholder={placeholder} />
+              {/* min-w-0 and block: a long label ends in an ellipsis instead of pushing out of the field */}
+              <SelectValue placeholder={placeholder} className="min-w-0 block! truncate" />
             </SelectTrigger>
             <SelectContent>
               {options.map((option) => (

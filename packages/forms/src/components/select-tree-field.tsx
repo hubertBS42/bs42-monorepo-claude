@@ -107,7 +107,7 @@ const SelectTreeField = <T extends FieldValues>({
 
         return (
           <Field
-            className={className ?? "grid gap-1"}
+            className={className ?? "grid min-w-0 gap-1"}
             data-disabled={disabled}
             data-invalid={fieldState.invalid}
           >
@@ -128,11 +128,11 @@ const SelectTreeField = <T extends FieldValues>({
                 id={inputId}
                 ref={field.ref}
                 size={size}
-                className="w-full"
+                className="w-full min-w-0"
                 aria-invalid={fieldState.invalid}
                 aria-describedby={describedBy}
               >
-                <SelectValue placeholder={placeholder} />
+                <SelectValue placeholder={placeholder} className="min-w-0 block! truncate" />
               </SelectTrigger>
 
               <SelectContent side={side}>
