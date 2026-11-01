@@ -132,7 +132,6 @@ export default function QuoteForm({ delivery, installationAreas, validityDays, c
                 index === step ? "border-primary bg-primary text-primary-foreground" : index < step ? "hover:bg-accent" : "text-muted-foreground"
               )}
             >
-              <span className="font-mono text-xs">{index + 1}</span>
               {item.title}
             </button>
           </li>
