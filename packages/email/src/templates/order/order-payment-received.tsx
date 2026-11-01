@@ -10,11 +10,13 @@ interface OrderPaymentReceivedProps {
   appName: string
   /** Absolute https URL of the uploaded logo. When missing, the app name is shown as text instead. */
   logoUrl?: string | null
+  /** The order's page on the storefront, with its progress and invoice */
+  orderUrl?: string | null
 }
 
-export const OrderPaymentReceived = ({ customerName, reference, amountGhs, paymentMethod, appName, logoUrl }: OrderPaymentReceivedProps) => {
+export const OrderPaymentReceived = ({ customerName, reference, amountGhs, paymentMethod, appName, logoUrl, orderUrl }: OrderPaymentReceivedProps) => {
   return (
-    <OrderLayout preview={`We've received your payment for order ${reference}`} heading="Payment Received" appName={appName} logoUrl={logoUrl}>
+    <OrderLayout preview={`We've received your payment for order ${reference}`} heading="Payment Received" appName={appName} logoUrl={logoUrl} orderUrl={orderUrl}>
       <Text className="mt-0 text-sm leading-relaxed text-[#71717a]">Hi {customerName},</Text>
       <Text className="mt-0 text-sm leading-relaxed text-[#71717a]">
         We&apos;ve received your payment for order <strong className="text-[#18181b]">{reference}</strong>. Thank you!

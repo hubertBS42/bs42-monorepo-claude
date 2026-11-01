@@ -1,4 +1,4 @@
-import { Body, Container, Head, Heading, Html, Img, Preview, Section, Tailwind, Text } from "react-email"
+import { Body, Button, Container, Head, Heading, Html, Img, Preview, Section, Tailwind, Text } from "react-email"
 import { DARK_FILL } from "../../dark-fill.js"
 
 interface OrderLayoutProps {
@@ -8,9 +8,11 @@ interface OrderLayoutProps {
   appName: string
   /** Absolute https URL of the uploaded logo. When missing, the app name is shown as text instead. */
   logoUrl?: string | null
+  /** The order's page on the storefront: a "View your order" button below the email's own content */
+  orderUrl?: string | null
 }
 
-export const OrderLayout = ({ preview, heading, children, appName, logoUrl }: OrderLayoutProps) => {
+export const OrderLayout = ({ preview, heading, children, appName, logoUrl, orderUrl }: OrderLayoutProps) => {
   return (
     <Html>
       <Head />
@@ -28,6 +30,15 @@ export const OrderLayout = ({ preview, heading, children, appName, logoUrl }: Or
               <Heading className="m-0 mb-2 text-xl font-semibold text-[#18181b]">{heading}</Heading>
 
               {children}
+
+              {orderUrl && (
+                <Section className="mt-8 text-center">
+                  <Button href={orderUrl} className="rounded-lg bg-[#18181b] px-6 py-3 text-sm font-medium text-white no-underline">
+                    View your order
+                  </Button>
+                  <Text className="m-0 mt-3 text-xs text-[#71717a]">Its progress and invoice, any time.</Text>
+                </Section>
+              )}
             </Section>
 
             {/* Footer */}

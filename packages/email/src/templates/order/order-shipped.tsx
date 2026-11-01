@@ -9,11 +9,13 @@ interface OrderShippedProps {
   appName: string
   /** Absolute https URL of the uploaded logo. When missing, the app name is shown as text instead. */
   logoUrl?: string | null
+  /** The order's page on the storefront, with its progress and invoice */
+  orderUrl?: string | null
 }
 
-export const OrderShipped = ({ customerName, reference, shippingAddress, note, appName, logoUrl }: OrderShippedProps) => {
+export const OrderShipped = ({ customerName, reference, shippingAddress, note, appName, logoUrl, orderUrl }: OrderShippedProps) => {
   return (
-    <OrderLayout preview={`Your order ${reference} is on its way`} heading="Your Order is On Its Way" appName={appName} logoUrl={logoUrl}>
+    <OrderLayout preview={`Your order ${reference} is on its way`} heading="Your Order is On Its Way" appName={appName} logoUrl={logoUrl} orderUrl={orderUrl}>
       <Text className="mt-0 text-sm leading-relaxed text-[#71717a]">Hi {customerName},</Text>
       <Text className="mt-0 text-sm leading-relaxed text-[#71717a]">
         Your order <strong className="text-[#18181b]">{reference}</strong> has been dispatched and is on its way to you.

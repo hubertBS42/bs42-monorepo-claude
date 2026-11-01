@@ -233,3 +233,12 @@ test("order summary shows each line's stored GHS amount and hides a zero discoun
   assert.ok(!html.includes("Discount"))
   assert.ok(!/>0</.test(html))
 })
+
+test("order emails link to the order's page when given one, and show no button without it", async () => {
+  const url = "https://example.com/orders/BS42-20261101-00001?key=abc"
+  const withLink = await render(OrderShipped({ ...orderDetails, shippingAddress: "123 Example Street", orderUrl: url }))
+  assert.ok(withLink.includes(url.replace("&", "&amp;")))
+  assert.ok(withLink.includes("View your order"))
+  const without = await render(OrderShipped({ ...orderDetails, shippingAddress: "123 Example Street" }))
+  assert.ok(!without.includes("View your order"))
+})

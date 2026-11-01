@@ -8,11 +8,13 @@ interface OrderConfirmedProps {
   appName: string
   /** Absolute https URL of the uploaded logo. When missing, the app name is shown as text instead. */
   logoUrl?: string | null
+  /** The order's page on the storefront, with its progress and invoice */
+  orderUrl?: string | null
 }
 
-export const OrderConfirmed = ({ customerName, reference, note, appName, logoUrl }: OrderConfirmedProps) => {
+export const OrderConfirmed = ({ customerName, reference, note, appName, logoUrl, orderUrl }: OrderConfirmedProps) => {
   return (
-    <OrderLayout preview={`Your order ${reference} has been confirmed`} heading="Order Confirmed" appName={appName} logoUrl={logoUrl}>
+    <OrderLayout preview={`Your order ${reference} has been confirmed`} heading="Order Confirmed" appName={appName} logoUrl={logoUrl} orderUrl={orderUrl}>
       <Text className="mt-0 text-sm leading-relaxed text-[#71717a]">Hi {customerName},</Text>
       <Text className="mt-0 text-sm leading-relaxed text-[#71717a]">
         Great news! Your order <strong className="text-[#18181b]">{reference}</strong> has been confirmed. We are now preparing your order.

@@ -22,6 +22,7 @@ import {
   type ReviewRequestItem,
 } from "@workspace/email"
 import { formatDate } from "@workspace/utils/date"
+import { orderUrl as signedOrderUrl } from "./order-links"
 import { awaitsBankTransfer, hasBeenPaid, PAYMENT_METHOD_LABELS } from "./order-status"
 import { unreviewedOrderProducts } from "./reviews"
 
@@ -85,8 +86,9 @@ export type OrderEmail =
 // The stored amounts as they are, for display: nothing here recalculates them
 const amount = (value: Prisma.Decimal) => Number(value.toFixed(2))
 
-// What a refund or a return adds to its email: the amount given back, and for a return what came back. An unpaid
-// order's cancellation adds the order page's address and how long there was to pay. A completed order adds the
+// What a refund or a return adds to its email: the amount given back, and for a return what came back. orderUrl is the
+// order's page, which every email links to (an unpaid order's cancellation with its own button), adding how long there
+// was to pay. A completed order adds the
 // products to ask for reviews of. A new order adds Settings' bank details, for one paid by bank transfer.
 export interface OrderEmailExtra {
   bankTransferDetails?: string | null
@@ -109,7 +111,7 @@ export function buildOrderEmail(
   // Walk-in customers may give no email; an account can turn order emails off
   if (!order.customerEmail || order.user?.getOrderEmails === false) return null
 
-  const base: BaseOrderEmail = { to: order.customerEmail, customerName: order.customerName, reference: order.reference, appName: brand.appName, logoUrl: brand.logoUrl }
+  const base: BaseOrderEmail = { to: order.customerEmail, customerName: order.customerName, reference: order.reference, appName: brand.appName, logoUrl: brand.logoUrl, orderUrl }
   const isDelivery = order.shippingMethod === ShippingMethod.DELIVERY
   const address = [order.shippingLine1, order.shippingLine2, order.shippingTown, order.shippingRegion].filter(Boolean).join(", ")
 
@@ -215,6 +217,9 @@ export async function sendOrderEmail(orderId: string, event: OrderEmailEvent, no
     }
 
     if (event === "CREATED") extra = { ...extra, bankTransferDetails: settings.bankTransferDetails }
+
+    // Signed, so a guest opens it without an account: its progress and its invoice
+    extra = { orderUrl: signedOrderUrl(order.reference, orderId), ...extra }
 
     // Customer emails carry the storefront's name and logo, not the console's
     const email = buildOrderEmail(order, event, note, { appName: resolveStoreName(settings), logoUrl: resolveDarkLogoUrl(settings) }, extra)

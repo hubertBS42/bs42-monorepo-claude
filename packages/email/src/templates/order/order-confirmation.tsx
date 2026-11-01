@@ -25,6 +25,8 @@ interface OrderConfirmationProps {
   appName: string
   /** Absolute https URL of the uploaded logo. When missing, the app name is shown as text instead. */
   logoUrl?: string | null
+  /** The order's page on the storefront, with its progress and invoice */
+  orderUrl?: string | null
 }
 
 export const OrderConfirmation = ({
@@ -47,9 +49,10 @@ export const OrderConfirmation = ({
   bankTransfer = null,
   appName,
   logoUrl,
+  orderUrl,
 }: OrderConfirmationProps) => {
   return (
-    <OrderLayout preview={`Order ${reference} confirmed — thank you for your order!`} heading="Order Confirmation" appName={appName} logoUrl={logoUrl}>
+    <OrderLayout preview={`Order ${reference} confirmed — thank you for your order!`} heading="Order Confirmation" appName={appName} logoUrl={logoUrl} orderUrl={orderUrl}>
       <Text className="mt-0 text-sm leading-relaxed text-[#71717a]">Hi {customerName},</Text>
       <Text className="mt-0 text-sm leading-relaxed text-[#71717a]">
         Thank you for your order! We have received your order and it is being reviewed. Your order reference is <strong className="text-[#18181b]">{reference}</strong>.

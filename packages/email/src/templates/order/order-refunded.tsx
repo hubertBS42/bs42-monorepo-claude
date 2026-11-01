@@ -10,11 +10,13 @@ interface OrderRefundedProps {
   appName: string
   /** Absolute https URL of the uploaded logo. When missing, the app name is shown as text instead. */
   logoUrl?: string | null
+  /** The order's page on the storefront, with its progress and invoice */
+  orderUrl?: string | null
 }
 
-export const OrderRefunded = ({ customerName, reference, refundReason, refundAmountGhs, appName, logoUrl }: OrderRefundedProps) => {
+export const OrderRefunded = ({ customerName, reference, refundReason, refundAmountGhs, appName, logoUrl, orderUrl }: OrderRefundedProps) => {
   return (
-    <OrderLayout preview={`Your order ${reference} has been refunded`} heading="Order Refunded" appName={appName} logoUrl={logoUrl}>
+    <OrderLayout preview={`Your order ${reference} has been refunded`} heading="Order Refunded" appName={appName} logoUrl={logoUrl} orderUrl={orderUrl}>
       <Text className="mt-0 text-sm leading-relaxed text-[#71717a]">Hi {customerName},</Text>
       <Text className="mt-0 text-sm leading-relaxed text-[#71717a]">
         Your order <strong className="text-[#18181b]">{reference}</strong> has been refunded.

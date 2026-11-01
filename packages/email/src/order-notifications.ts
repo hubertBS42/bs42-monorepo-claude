@@ -19,6 +19,8 @@ export interface BaseOrderEmail {
   reference: string
   appName: string
   logoUrl?: string | null
+  // The order's page on the storefront (signed, so it opens without an account); the email links to it when given
+  orderUrl?: string | null
 }
 
 export interface OrderConfirmationEmail extends BaseOrderEmail {
@@ -67,6 +69,7 @@ export async function sendOrderConfirmationEmail(data: OrderConfirmationEmail) {
       bankTransfer: data.bankTransfer,
       appName: data.appName,
       logoUrl: data.logoUrl,
+      orderUrl: data.orderUrl,
     }),
   })
 }
@@ -82,6 +85,7 @@ export async function sendOrderConfirmedEmail(data: BaseOrderEmail & { note?: st
       note: data.note,
       appName: data.appName,
       logoUrl: data.logoUrl,
+      orderUrl: data.orderUrl,
     }),
   })
 }
@@ -99,6 +103,7 @@ export async function sendOrderInstallationBookedEmail(data: BaseOrderEmail & { 
       note: data.note,
       appName: data.appName,
       logoUrl: data.logoUrl,
+      orderUrl: data.orderUrl,
     }),
   })
 }
@@ -116,6 +121,7 @@ export async function sendOrderPaymentReceivedEmail(data: BaseOrderEmail & { amo
       paymentMethod: data.paymentMethod,
       appName: data.appName,
       logoUrl: data.logoUrl,
+      orderUrl: data.orderUrl,
     }),
   })
 }
@@ -132,6 +138,7 @@ export async function sendOrderShippedEmail(data: BaseOrderEmail & { shippingAdd
       note: data.note,
       appName: data.appName,
       logoUrl: data.logoUrl,
+      orderUrl: data.orderUrl,
     }),
   })
 }
@@ -147,6 +154,7 @@ export async function sendOrderDeliveredEmail(data: BaseOrderEmail & { note?: st
       note: data.note,
       appName: data.appName,
       logoUrl: data.logoUrl,
+      orderUrl: data.orderUrl,
     }),
   })
 }
@@ -194,6 +202,7 @@ export async function sendOrderCancelledEmail(data: BaseOrderEmail & { cancellat
       totalGhs: data.totalGhs,
       appName: data.appName,
       logoUrl: data.logoUrl,
+      orderUrl: data.orderUrl,
     }),
   })
 }
@@ -211,6 +220,7 @@ export async function sendOrderRefundedEmail(data: BaseOrderEmail & { refundReas
       refundAmountGhs: data.refundAmountGhs,
       appName: data.appName,
       logoUrl: data.logoUrl,
+      orderUrl: data.orderUrl,
     }),
   })
 }
@@ -229,6 +239,7 @@ export async function sendOrderReturnedEmail(data: BaseOrderEmail & { items: Ret
       refundAmountGhs: data.refundAmountGhs,
       appName: data.appName,
       logoUrl: data.logoUrl,
+      orderUrl: data.orderUrl,
     }),
   })
 }

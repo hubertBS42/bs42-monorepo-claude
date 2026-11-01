@@ -10,11 +10,13 @@ interface OrderCancelledProps {
   appName: string
   /** Absolute https URL of the uploaded logo. When missing, the app name is shown as text instead. */
   logoUrl?: string | null
+  /** The order's page on the storefront, with its progress and invoice */
+  orderUrl?: string | null
 }
 
-export const OrderCancelled = ({ customerName, reference, cancellationReason, totalGhs, appName, logoUrl }: OrderCancelledProps) => {
+export const OrderCancelled = ({ customerName, reference, cancellationReason, totalGhs, appName, logoUrl, orderUrl }: OrderCancelledProps) => {
   return (
-    <OrderLayout preview={`Your order ${reference} has been cancelled`} heading="Order Cancelled" appName={appName} logoUrl={logoUrl}>
+    <OrderLayout preview={`Your order ${reference} has been cancelled`} heading="Order Cancelled" appName={appName} logoUrl={logoUrl} orderUrl={orderUrl}>
       <Text className="mt-0 text-sm leading-relaxed text-[#71717a]">Hi {customerName},</Text>
       <Text className="text-[#71717a]">
         Unfortunately your order <strong>{reference}</strong> has been cancelled.
