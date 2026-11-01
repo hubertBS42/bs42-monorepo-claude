@@ -8,7 +8,9 @@ export default defineConfig({
   migrations: {
     path: "prisma/migrations",
   },
+  // The CLI (migrations) takes the direct connection when there is one: on a pooled connection (Neon's pooler, Prisma
+  // Postgres) migrate's advisory lock can stay held after it finishes. The apps connect with DATABASE_URL, the pooled one.
   datasource: {
-    url: process.env["DATABASE_URL"],
+    url: process.env["DIRECT_URL"] || process.env["DATABASE_URL"],
   },
 });

@@ -3,3 +3,6 @@ node_modules
 .env
 
 /generated/prisma
+
+# The console's setup, from db:export-config: contact details and staff addresses, and the repo is public
+/prisma/seed-config.json

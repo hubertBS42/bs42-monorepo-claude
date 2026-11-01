@@ -40,6 +40,8 @@ jobs:
       - run: pnpm --filter @workspace/db db:deploy
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          # The database's direct (unpooled) connection, for migrate's lock; optional
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}
 
   deploy:
     needs: migrate

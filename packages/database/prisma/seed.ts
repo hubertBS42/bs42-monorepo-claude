@@ -11,9 +11,9 @@
 // `db:seed:demo` (`--demo`) also adds a demo store to browse and order from: listings for most published products, with
 // a mix of stock levels, sale prices and a few listings hidden from customers, and today's exchange rate if there's none.
 // It's for development databases only: the rate is made up.
-import { readFile } from "node:fs/promises"
 import { generateUniqueSku, prisma } from "../src/client"
 import { Prisma } from "../generated/prisma/client"
+import { listingVariantPrices, productSeeds } from "./product-seeds"
 
 type CategorySeed = {
   name: string
@@ -25,29 +25,6 @@ type BrandSeed = {
   name: string
   website: string | null
 }
-
-// A product in seed-products.json. Prices are USD, as strings so they reach the Decimal columns exactly. `category` is a
-// leaf category's name, `description` the editor's JSON, and the files are URLs in the storage container. `from` names
-// the old product(s) it was made from. Each of `variants` has a value for every option, and its old product's prices:
-// catalogue variants have no price of their own, so only the demo store's listings use them.
-type ProductSeed = {
-  from: string[]
-  name: string
-  brand: string
-  category: string
-  condition: "NEW" | "USED_GOOD"
-  sell: string
-  buy: string
-  status: "PUBLISHED" | "DRAFT"
-  description: string | null
-  tags: string[]
-  images: string[]
-  documents: { name: string; url: string }[]
-  options?: { name: string; values: string[] }[]
-  variants?: { values: Record<string, string>; sell: string; buy: string; images: string[] }[]
-}
-
-const productSeeds: ProductSeed[] = JSON.parse(await readFile(new URL("./seed-products.json", import.meta.url), "utf8"))
 
 const categories: CategorySeed[] = [
   {
@@ -461,8 +438,6 @@ async function seedDemoListings(storeId: string, createdById: string | null) {
       variants: { where: { status: "PUBLISHED" }, orderBy: { position: "asc" }, select: { id: true, position: true } },
     },
   })
-  // Each variant's old prices, by product name and then the variant's position (seedProducts creates them in file order)
-  const variantPrices = new Map(productSeeds.flatMap((seed) => (seed.variants ? [[seed.name, seed.variants] as const] : [])))
   const listed = new Set((await prisma.storeListing.findMany({ where: { organizationId: storeId }, select: { productId: true } })).map((row) => row.productId))
 
   let withVariants = 0
@@ -495,11 +470,9 @@ async function seedDemoListings(storeId: string, createdById: string | null) {
           status: i % 20 === 10 ? "DRAFT" : "PUBLISHED",
           storeListingVariants: {
             create: product.variants.map((variant, position) => {
-              const prices = variantPrices.get(product.name)?.[variant.position]
               return {
                 variantId: variant.id,
-                sellPrice: prices && !sellPrice.equals(prices.sell) ? new Prisma.Decimal(prices.sell) : null,
-                buyPrice: prices && !product.baseBuyPrice.equals(prices.buy) ? new Prisma.Decimal(prices.buy) : null,
+                ...listingVariantPrices(product, variant.position),
                 stock: demoStock(i * 7 + position * 3),
                 status: variantsOffSale ? "DRAFT" : "PUBLISHED",
                 trackInventory,

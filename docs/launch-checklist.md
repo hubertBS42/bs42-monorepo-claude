@@ -14,7 +14,7 @@ Everything needed to run BS42.NET in production: the console at `console.bs42.ne
 
 ## 2. Environment variables
 
-On Azure App Service they're each app's app settings (section 5). Elsewhere, put them in each app's `.env` (`apps/console/.env`, `apps/store/.env`), and `DATABASE_URL` also in `packages/database/.env` for migrations. Both apps must use **the same** `BETTER_AUTH_SECRET`, URLs and cookie domain: they share sign-ins, and the store signs order links with the secret.
+On Azure App Service they're each app's app settings (section 5). Elsewhere, put them in each app's `.env` (`apps/console/.env`, `apps/store/.env`), and `DATABASE_URL` also in `packages/database/.env` for migrations and the seeds. With a pooled database (Neon), `DATABASE_URL` is the pooled connection and `DIRECT_URL` the direct one: Prisma's CLI uses the direct one for migrations, whose lock can stay held on a pooled connection. Both apps must use **the same** `BETTER_AUTH_SECRET`, URLs and cookie domain: they share sign-ins, and the store signs order links with the secret.
 
 | Variable | Console | Store | Value |
 |---|:-:|:-:|---|
@@ -46,15 +46,32 @@ Azure sign-in for uploads uses `DefaultAzureCredential`: a managed identity when
 
 ## 4. Database
 
-On Azure the deploy workflow applies the migrations on every push (section 5); the seed is still run once, by hand. From the repo root, with `packages/database/.env` pointing at production:
+On Azure the deploy workflow applies the migrations on every push (section 5); the seeds are run once, by hand. Every seed skips what's already there, so running one again is safe.
+
+**Before launch, on the database that's been set up (development):**
+
+- [ ] `pnpm --filter @workspace/db db:export-config` writes `packages/database/prisma/seed-config.json`: Settings, delivery fees, installation areas, Terms and Privacy, and what the console adds to the catalogue (category images, featured, installation fees; brand logos and descriptions; products' own installation). Read it through: it's the production setup. It's gitignored (it holds contact details and staff addresses, and the repository is public), so run `db:seed:config` from the machine that has it.
+
+**Then, with `packages/database/.env` pointing at production**, from the repo root:
 
 ```bash
 pnpm install --frozen-lockfile
-pnpm --filter @workspace/db db:deploy   # apply every migration
-pnpm --filter @workspace/db db:seed     # the catalogue: categories, brands and the old site's products; skips ones that exist
+pnpm --filter @workspace/db db:deploy        # apply every migration
+pnpm --filter @workspace/db db:seed          # the catalogue: categories, brands and the old site's products
+pnpm --filter @workspace/db db:seed:config   # seed-config.json: only what isn't set yet, so run it before saving anything in Settings
 ```
 
-Don't run `db:seed:demo` in production: it creates a demo store.
+After `/setup` (section 5) and creating the store in the console (Stores → Add Store):
+
+```bash
+pnpm --filter @workspace/db db:seed:listings --store <slug>   # the store's slug, from its URL in the console
+```
+
+That lists every published product at the old site's prices, with stock 0: everything shows as out of stock until it's counted in, on each listing's form or by receiving a purchase order.
+
+Don't run `db:seed:demo` in production: it creates a demo store with made-up stock and exchange rate.
+
+The uploaded files in `seed-config.json` and the catalogue seed are URLs in the storage container the development database uses: production must use the same container, or those images break. Development and production then share one container, so deleting a seeded product, brand or category on development deletes its files on production too, and only production may run the file cleanup job (section 7).
 
 ## 5. Build and start
 
@@ -77,7 +94,7 @@ Don't run `db:seed:demo` in production: it creates a demo store.
 **For the workflow:**
 
 - [ ] An Entra ID app registration with a **federated credential** for this repository's `production` environment (GitHub OpenID Connect, so no Azure password is stored), given the Website Contributor role on the resource group.
-- [ ] A GitHub environment named `production` with these **secrets**: `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`, `DATABASE_URL`, `BETTER_AUTH_SECRET`.
+- [ ] A GitHub environment named `production` with these **secrets**: `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`, `DATABASE_URL`, `BETTER_AUTH_SECRET`, and `DIRECT_URL` with a pooled database (Neon's connection without `-pooler`), for the migrations.
 - [ ] And these **variables**: `CONSOLE_WEBAPP_NAME`, `STORE_WEBAPP_NAME`, `AZURE_RESOURCE_GROUP`, `AUTH_COOKIE_DOMAIN`, `CONSOLE_AUTH_URL`, `STORE_AUTH_URL`, and `DEPLOY_SLOT` (the staging slot's name, e.g. `staging`; leave it unset without slots).
 - [ ] The database must accept connections from GitHub's runners: the workflow runs the migrations, and both apps' builds connect to it (the store's prerenders its homepage and sitemap from it). On Azure Database for PostgreSQL, that means allowing public access with SSL and a strong password (GitHub's runners have no fixed addresses), or running the workflow on a self-hosted runner inside the network.
 
@@ -122,9 +139,11 @@ On Azure, a **Logic App** (Consumption plan) does this for a few cents a month: 
 
 Try `file-cleanup` once with `?dryRun=1` first: it lists what it would delete without deleting.
 
+Run `file-cleanup` against production only, never a development console sharing its container: each database's cleanup deletes the files only the other one uses.
+
 ## 8. In the console
 
-Signed in as the superAdmin, in Settings:
+Signed in as the superAdmin, in Settings. `db:seed:config` (section 4) fills most of this in: check each page rather than starting from scratch.
 
 - [ ] **General:** the store's and console's names, logo and favicon.
 - [ ] **Pricing:** today's exchange rate (until the first daily fetch runs), the markup if any, quotation validity, and the bank details for bank-transfer orders.

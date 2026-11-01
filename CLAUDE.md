@@ -31,7 +31,7 @@ Lint uses the shared flat configs in `packages/eslint-config` (`base`, `react-in
 
 Scope to one package with `--filter`, e.g. `pnpm --filter console dev`, `pnpm --filter @workspace/db db:migrate`.
 
-Database (`packages/database`, reads `DATABASE_URL` from `packages/database/.env`):
+Database (`packages/database`, reads `DATABASE_URL` from `packages/database/.env`; Prisma's CLI takes `DIRECT_URL` instead when it's set, a pooled database's direct connection, since migrate's advisory lock can stay held on a pooled one):
 
 ```bash
 pnpm --filter @workspace/db db:generate   # prisma generate -> packages/database/generated/prisma
@@ -39,10 +39,13 @@ pnpm --filter @workspace/db db:migrate    # prisma migrate dev
 pnpm --filter @workspace/db db:deploy     # prisma migrate deploy
 pnpm --filter @workspace/db db:seed       # the catalogue: categories, brands and the old site's products (prisma/seed.ts + seed-products.json, via tsx); skips existing ones
 pnpm --filter @workspace/db db:seed:demo  # the same, plus a demo store with listings and today's rate if none (dev only)
+pnpm --filter @workspace/db db:export-config  # writes prisma/seed-config.json (gitignored): Settings, delivery, installation areas, legal pages, the console's catalogue additions
+pnpm --filter @workspace/db db:seed:config    # seed-config.json into a database, only what isn't set (going live, after db:seed)
+pnpm --filter @workspace/db db:seed:listings --store <slug>  # a real store's listings at the old site's prices, stock 0 (going live)
 pnpm --filter @workspace/db db:backfill-rates [days]  # past days' USD→GHS rates from Open Exchange Rates (default 90), only days with none
 ```
 
-The seed's products are the old bs42.net catalogue: `prisma/seed-products.json` (276 products, generated, don't edit by hand) is built by `scripts/build-seed-data.mts` in the `bs42-legacy-products` folder beside this repo (the old site's export, with the migration's decisions in its `variant-groups.json` and a README), which also uploaded their images and documents to the storage container. So the seed's file URLs only work against that container, and a seeded product deleted in the console takes its files with it. Catalogue variants have no price, so each variant's old price is kept in the file and only the demo store's listing variants use it.
+The seed's products are the old bs42.net catalogue: `prisma/seed-products.json` (276 products, generated, don't edit by hand) is built by `scripts/build-seed-data.mts` in the `bs42-legacy-products` folder beside this repo (the old site's export, with the migration's decisions in its `variant-groups.json` and a README), which also uploaded their images and documents to the storage container. So the seed's file URLs only work against that container, and a seeded product deleted in the console takes its files with it. Catalogue variants have no price, so each variant's old price is kept in the file and only seeded listings use it (`listingVariantPrices` in `prisma/product-seeds.ts`, for the demo store and `db:seed:listings`). The go-live order is in `docs/launch-checklist.md` (section 4).
 
 Better Auth owns most of the schema. After changing auth plugins or `additionalFields`, regenerate the Prisma schema with `pnpm --filter @workspace/auth auth:generate` (writes `packages/database/prisma/schema.prisma`), then create a migration. The script runs the CLI with `--conditions=react-server` (so `server-only` imports load) and `--env-file=../database/.env` (the plugins import the database client). It keeps the non-auth models; its only side effect is a blank line after top-level comments.
 
