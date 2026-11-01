@@ -21,7 +21,13 @@ function getSafeCallbackURL(callbackURL: string) {
   return callbackURL
 }
 
-export function LoginForm({ callbackURL, setupComplete = false }: { callbackURL: string; setupComplete?: boolean }) {
+// Set by proxy.ts when it signs a session out (lib/console-session.ts)
+const SIGNED_OUT_MESSAGES = {
+  idle: "You were signed out after 12 hours without activity. Sign in to continue.",
+  expired: "Sessions last 7 days. Sign in again to continue.",
+}
+
+export function LoginForm({ callbackURL, setupComplete = false, signedOut }: { callbackURL: string; setupComplete?: boolean; signedOut?: keyof typeof SIGNED_OUT_MESSAGES }) {
   const router = useRouter()
   const safeCallbackURL = getSafeCallbackURL(callbackURL)
 
@@ -113,7 +119,9 @@ export function LoginForm({ callbackURL, setupComplete = false }: { callbackURL:
     <Card>
       <CardHeader>
         <CardTitle>Sign in to the console</CardTitle>
-        <CardDescription>{setupComplete ? "Your administrator account is ready. Sign in to continue." : "Use the email address your invitation was sent to."}</CardDescription>
+        <CardDescription>
+          {setupComplete ? "Your administrator account is ready. Sign in to continue." : signedOut ? SIGNED_OUT_MESSAGES[signedOut] : "Use the email address your invitation was sent to."}
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={form.handleSubmit(onSubmit)} id="sign-in-form">

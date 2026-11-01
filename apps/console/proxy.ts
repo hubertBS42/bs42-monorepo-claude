@@ -4,6 +4,7 @@ import { prisma } from "@workspace/db"
 import { getSessionCookie } from "better-auth/cookies"
 import { NextResponse, type NextRequest } from "next/server"
 import { checkAccess, type RouteContext } from "@/lib/route-access"
+import { consoleSessionLapse, recordConsoleActivity, type ConsoleSessionLapse } from "@/lib/console-session"
 
 // /accept-invitation decides for itself: a signed-out invitee goes to sign-up or login from there
 const publicPaths = new Set(["/login", "/sign-up", "/reset-password", "/set-password", "/forbidden", "/setup", "/accept-invitation"])
@@ -45,11 +46,30 @@ async function switchWorkspace(request: NextRequest, organizationId: string, to:
   return response
 }
 
-function redirectToLogin(request: NextRequest) {
-  const loginUrl = new URL("/login", request.url)
-  loginUrl.searchParams.set("callbackURL", `${request.nextUrl.pathname}${request.nextUrl.search}`)
+function loginUrl(request: NextRequest) {
+  const url = new URL("/login", request.url)
+  url.searchParams.set("callbackURL", `${request.nextUrl.pathname}${request.nextUrl.search}`)
+  return url
+}
 
-  return NextResponse.redirect(loginUrl)
+function redirectToLogin(request: NextRequest) {
+  return NextResponse.redirect(loginUrl(request))
+}
+
+type ConsoleSession = NonNullable<Awaited<ReturnType<typeof consoleAuth.api.getSession>>>
+
+// Ends the session everywhere (the storefront shares it), then the login page says why
+async function signOutLapsed(request: NextRequest, lapse: ConsoleSessionLapse) {
+  const url = loginUrl(request)
+  url.searchParams.set("signedOut", lapse)
+  const response = NextResponse.redirect(url)
+  try {
+    const { headers } = await consoleAuth.api.signOut({ headers: request.headers, returnHeaders: true })
+    for (const cookie of headers.getSetCookie()) response.headers.append("set-cookie", cookie)
+  } catch (error) {
+    console.error("Could not sign out a lapsed console session:", error)
+  }
+  return response
 }
 
 export async function proxy(request: NextRequest) {
@@ -71,6 +91,23 @@ export async function proxy(request: NextRequest) {
     return redirectToLogin(request)
   }
 
+  const lapse = consoleSessionLapse(session.session)
+  if (lapse) {
+    return signOutLapsed(request, lapse)
+  }
+
+  try {
+    await recordConsoleActivity(session.session)
+  } catch (error) {
+    console.error("Could not record console activity:", error)
+  }
+
+  return routeSession(request, session)
+}
+
+// Workspace switches and route access, for a session within the console's limits
+async function routeSession(request: NextRequest, session: ConsoleSession) {
+  const pathname = request.nextUrl.pathname
   const activeOrganizationId = session.session.activeOrganizationId
 
   // A link from a notification names the workspace its page belongs to (?workspace=, a store's or the platform's id),

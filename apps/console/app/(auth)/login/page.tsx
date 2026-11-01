@@ -8,15 +8,15 @@ export const metadata: Metadata = {
 }
 
 type LoginPageProps = {
-  searchParams: Promise<{ callbackURL?: string; setupComplete?: string }>
+  searchParams: Promise<{ callbackURL?: string; setupComplete?: string; signedOut?: string }>
 }
 
 export default async function LoginPage({ searchParams }: LoginPageProps) {
-  const { callbackURL, setupComplete } = await searchParams
+  const { callbackURL, setupComplete, signedOut } = await searchParams
 
   if ((await prisma.user.count()) === 0) {
     redirect("/setup")
   }
 
-  return <LoginForm callbackURL={callbackURL ?? "/"} setupComplete={setupComplete === "1"} />
+  return <LoginForm callbackURL={callbackURL ?? "/"} setupComplete={setupComplete === "1"} signedOut={signedOut === "idle" || signedOut === "expired" ? signedOut : undefined} />
 }
