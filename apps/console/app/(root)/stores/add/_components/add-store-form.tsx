@@ -92,7 +92,6 @@ export default function AddStoreForm() {
           backTo="/stores"
           isPending={isBusy}
           isDirty={form.formState.isDirty}
-          handleDiscard={handleDiscard}
         />
 
         <div className="grid gap-8">

@@ -101,7 +101,6 @@ export default function TransferForm({ storeId, destinations }: { storeId: strin
           backTo={BACK_TO}
           isPending={isBusy}
           isDirty={form.formState.isDirty}
-          handleDiscard={() => router.push(BACK_TO)}
         />
 
         <div className="grid gap-8">

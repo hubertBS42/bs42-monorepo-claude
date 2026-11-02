@@ -89,7 +89,7 @@ const EditAdminForm = ({ user }: { user: UserDetails }) => {
   return (
     <form onSubmit={form.handleSubmit(onSubmit)}>
       <div className="grid gap-y-6">
-        <SharedFormHeader heading="Edit User" description="Edit this user's details and access." backTo="/users" isPending={isPending} isDirty={form.formState.isDirty} handleDiscard={handleDiscard} />
+        <SharedFormHeader heading="Edit User" description="Edit this user's details and access." backTo="/users" isPending={isPending} isDirty={form.formState.isDirty} />
 
         <div className="grid gap-8">
           <UserFormFields control={form.control} user={user} isPending={isPending} clearErrors={form.clearErrors} />

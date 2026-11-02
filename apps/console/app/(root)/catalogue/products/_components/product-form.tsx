@@ -408,7 +408,6 @@ const ProductForm = ({ brands, categoryOptions, disabledCategoryIds, specFields,
           backTo="/catalogue/products"
           isPending={isBusy}
           isDirty={form.formState.isDirty}
-          handleDiscard={handleDiscard}
         />
 
         <div className="grid gap-8">

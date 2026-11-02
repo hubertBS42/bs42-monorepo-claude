@@ -213,7 +213,6 @@ export default function PurchaseOrderForm({ storeId, suppliers, rate, order, sug
           backTo={backTo}
           isPending={isBusy}
           isDirty={form.formState.isDirty}
-          handleDiscard={() => router.push(backTo)}
         />
 
         <div className="grid gap-8">

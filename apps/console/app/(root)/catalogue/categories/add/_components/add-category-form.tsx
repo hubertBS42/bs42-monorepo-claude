@@ -106,7 +106,6 @@ const AddCategoryForm = ({ parentOptions, disabledParentIds }: AddCategoryFormPr
           backTo="/catalogue/categories"
           isPending={isBusy}
           isDirty={form.formState.isDirty}
-          handleDiscard={handleDiscard}
         />
 
         <div className="grid gap-8">

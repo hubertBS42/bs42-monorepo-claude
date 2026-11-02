@@ -96,7 +96,7 @@ export default function EditBrandForm({ brand }: { brand: Brand }) {
   return (
     <form onSubmit={form.handleSubmit(onSubmit)}>
       <div className="grid gap-y-6">
-        <SharedFormHeader heading="Edit Brand" description="Edit this product brand." backTo="/catalogue/brands" isPending={isBusy} isDirty={form.formState.isDirty} handleDiscard={handleDiscard} />
+        <SharedFormHeader heading="Edit Brand" description="Edit this product brand." backTo="/catalogue/brands" isPending={isBusy} isDirty={form.formState.isDirty} />
 
         <div className="grid gap-8">
           <div className="grid items-start gap-4 lg:grid-cols-3">

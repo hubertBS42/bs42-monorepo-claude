@@ -116,7 +116,6 @@ export default function EditCategoryForm({ category, parentOptions, disabledPare
           backTo="/catalogue/categories"
           isPending={isBusy}
           isDirty={form.formState.isDirty}
-          handleDiscard={handleDiscard}
         />
 
         <div className="grid items-start gap-4 lg:grid-cols-3">

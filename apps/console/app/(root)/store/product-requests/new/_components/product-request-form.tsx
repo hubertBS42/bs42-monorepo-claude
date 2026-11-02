@@ -92,7 +92,6 @@ export default function ProductRequestForm({ storeId, brands, categories }: Prod
           backTo={BACK_TO}
           isPending={isBusy}
           isDirty={form.formState.isDirty}
-          handleDiscard={() => router.push(BACK_TO)}
         />
 
         <div className="grid gap-8">

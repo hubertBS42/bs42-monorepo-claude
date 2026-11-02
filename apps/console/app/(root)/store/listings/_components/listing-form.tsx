@@ -136,7 +136,6 @@ const ListingForm = ({ storeId, data, storefrontLink }: ListingFormProps) => {
           backTo="/store/listings"
           isPending={isPending}
           isDirty={form.formState.isDirty}
-          handleDiscard={handleDiscard}
         />
 
         <div className="grid gap-8">

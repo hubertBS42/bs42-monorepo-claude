@@ -97,7 +97,6 @@ const AddBrandForm = () => {
           backTo="/catalogue/brands"
           isPending={isBusy}
           isDirty={form.formState.isDirty}
-          handleDiscard={handleDiscard}
         />
 
         <div className="grid gap-8">
