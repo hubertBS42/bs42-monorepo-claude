@@ -405,7 +405,7 @@ const ProductForm = ({ brands, categoryOptions, disabledCategoryIds, specFields,
       <div className="grid gap-y-6">
         <SharedFormHeader
           heading={isEditing ? "Edit Product" : "Add Product"}
-          description={isEditing ? "Edit this product." : "Create a new product."}
+          description={isEditing ? "Changes apply to every store's listing of it." : "Add a product to the catalogue for stores to list."}
           backTo="/catalogue/products"
           isPending={isBusy}
           isDirty={form.formState.isDirty}
@@ -418,7 +418,7 @@ const ProductForm = ({ brands, categoryOptions, disabledCategoryIds, specFields,
               <Card>
                 <CardHeader>
                   <CardTitle>Product Details</CardTitle>
-                  <CardDescription>Configure the basic information for this product.</CardDescription>
+                  <CardDescription>Its name, description, prices and category.</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <FieldGroup>
@@ -648,7 +648,7 @@ const ProductForm = ({ brands, categoryOptions, disabledCategoryIds, specFields,
               <Card>
                 <CardHeader>
                   <CardTitle>Status</CardTitle>
-                  <CardDescription>Set the status for this product.</CardDescription>
+                  <CardDescription>Only published products can go on sale.</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <SelectField control={form.control} name="status" aria-label="Status" disabled={isBusy} options={STATUS_OPTIONS} />
@@ -658,7 +658,7 @@ const ProductForm = ({ brands, categoryOptions, disabledCategoryIds, specFields,
               <Card>
                 <CardHeader>
                   <CardTitle>Images</CardTitle>
-                  <CardDescription>Upload product images.</CardDescription>
+                  <CardDescription>The first one shows on product cards.</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <ImageField
@@ -678,7 +678,7 @@ const ProductForm = ({ brands, categoryOptions, disabledCategoryIds, specFields,
               <Card>
                 <CardHeader>
                   <CardTitle>Documents</CardTitle>
-                  <CardDescription>Attach product related documents.</CardDescription>
+                  <CardDescription>Manuals and datasheets customers can download.</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <DocumentField

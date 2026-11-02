@@ -43,7 +43,7 @@ const UserFormFields = <T extends FieldValues>({ control, user, isPending, clear
         <Card>
           <CardHeader>
             <CardTitle>User Details</CardTitle>
-            <CardDescription>Basic information about the user.</CardDescription>
+            <CardDescription>Who they are and how to reach them.</CardDescription>
           </CardHeader>
           <CardContent className="grid grid-cols-2 gap-5">
             <div className="col-span-2 grid">

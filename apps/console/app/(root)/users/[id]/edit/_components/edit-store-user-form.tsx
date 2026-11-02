@@ -165,7 +165,7 @@ const EditStoreUserForm = ({ user, stores }: { user: UserDetails; stores: Select
                 <Card>
                   <CardHeader>
                     <CardTitle>Stores</CardTitle>
-                    <CardDescription>Manage this user&apos;s store memberships.</CardDescription>
+                    <CardDescription>The stores they work in, and their role in each.</CardDescription>
                   </CardHeader>
                   <CardContent className="grid gap-4">
                     {fields.map((field, index) => {

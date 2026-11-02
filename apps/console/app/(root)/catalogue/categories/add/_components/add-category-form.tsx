@@ -102,7 +102,7 @@ const AddCategoryForm = ({ parentOptions, disabledParentIds }: AddCategoryFormPr
       <div className="grid gap-y-6">
         <SharedFormHeader
           heading="Create Category"
-          description="Create a new product category."
+          description="Categories make up the storefront's menu."
           backTo="/catalogue/categories"
           isPending={isBusy}
           isDirty={form.formState.isDirty}
@@ -115,7 +115,7 @@ const AddCategoryForm = ({ parentOptions, disabledParentIds }: AddCategoryFormPr
               <Card>
                 <CardHeader>
                   <CardTitle>Category Details</CardTitle>
-                  <CardDescription>Configure the basic information for this category.</CardDescription>
+                  <CardDescription>Its name, place in the menu, banner and description.</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <FieldGroup>
@@ -170,7 +170,7 @@ const AddCategoryForm = ({ parentOptions, disabledParentIds }: AddCategoryFormPr
             <Card>
               <CardHeader>
                 <CardTitle>Status</CardTitle>
-                <CardDescription>Set the status for this category.</CardDescription>
+                <CardDescription>An unpublished category hides everything under it.</CardDescription>
               </CardHeader>
               <CardContent>
                 <SelectField control={form.control} name="status" disabled={isBusy} options={STATUS_OPTIONS} aria-label="Status" />

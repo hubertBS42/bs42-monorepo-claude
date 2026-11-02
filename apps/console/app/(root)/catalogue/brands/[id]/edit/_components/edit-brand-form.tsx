@@ -97,7 +97,7 @@ export default function EditBrandForm({ brand }: { brand: Brand }) {
   return (
     <form onSubmit={form.handleSubmit(onSubmit)}>
       <div className="grid gap-y-6">
-        <SharedFormHeader heading="Edit Brand" description="Edit this product brand." backTo="/catalogue/brands" isPending={isBusy} isDirty={form.formState.isDirty} />
+        <SharedFormHeader heading="Edit Brand" description="Its details show on its storefront page." backTo="/catalogue/brands" isPending={isBusy} isDirty={form.formState.isDirty} />
 
         <div className="grid gap-8">
           <div className="grid items-start gap-4 lg:grid-cols-3">
@@ -106,7 +106,7 @@ export default function EditBrandForm({ brand }: { brand: Brand }) {
               <Card>
                 <CardHeader>
                   <CardTitle>Brand Details</CardTitle>
-                  <CardDescription>Configure the basic information for this brand.</CardDescription>
+                  <CardDescription>Its logo, name, website and description, as customers see them.</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <FieldGroup>
@@ -138,7 +138,7 @@ export default function EditBrandForm({ brand }: { brand: Brand }) {
               <Card>
                 <CardHeader>
                   <CardTitle>Status</CardTitle>
-                  <CardDescription>Set the status for this brand.</CardDescription>
+                  <CardDescription>Products of an unpublished brand aren&apos;t on sale.</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <SelectField control={form.control} name="status" disabled={isBusy} options={STATUS_OPTIONS} aria-label="Status" />

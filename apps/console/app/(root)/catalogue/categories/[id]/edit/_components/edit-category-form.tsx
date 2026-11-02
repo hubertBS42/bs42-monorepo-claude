@@ -113,7 +113,7 @@ export default function EditCategoryForm({ category, parentOptions, disabledPare
       <form id={formId} onSubmit={form.handleSubmit(onSubmit)} className="grid gap-y-6">
         <SharedFormHeader
           heading="Edit Category"
-          description="Edit this product category."
+          description="Changes apply to the categories and products under it."
           backTo="/catalogue/categories"
           isPending={isBusy}
           isDirty={form.formState.isDirty}
@@ -125,7 +125,7 @@ export default function EditCategoryForm({ category, parentOptions, disabledPare
             <Card>
               <CardHeader>
                 <CardTitle>Category Details</CardTitle>
-                <CardDescription>Configure the basic information for this category.</CardDescription>
+                <CardDescription>Its name, place in the menu, banner and description.</CardDescription>
               </CardHeader>
               <CardContent>
                 <FieldGroup>
@@ -182,7 +182,7 @@ export default function EditCategoryForm({ category, parentOptions, disabledPare
             <Card>
               <CardHeader>
                 <CardTitle>Status</CardTitle>
-                <CardDescription>Set the status for this category.</CardDescription>
+                <CardDescription>An unpublished category hides everything under it.</CardDescription>
               </CardHeader>
               <CardContent>
                 <SelectField control={form.control} name="status" disabled={isBusy} options={STATUS_OPTIONS} aria-label="Status" />

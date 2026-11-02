@@ -93,7 +93,7 @@ const AddBrandForm = () => {
       <div className="grid gap-y-6">
         <SharedFormHeader
           heading="Create Brand"
-          description="Create a new product brand."
+          description="Customers can browse the storefront by brand."
           backTo="/catalogue/brands"
           isPending={isBusy}
           isDirty={form.formState.isDirty}
@@ -106,7 +106,7 @@ const AddBrandForm = () => {
               <Card>
                 <CardHeader>
                   <CardTitle>Brand Details</CardTitle>
-                  <CardDescription>Configure the basic information for this brand.</CardDescription>
+                  <CardDescription>Its logo, name, website and description, as customers see them.</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <FieldGroup>
@@ -136,7 +136,7 @@ const AddBrandForm = () => {
             <Card>
               <CardHeader>
                 <CardTitle>Status</CardTitle>
-                <CardDescription>Set the status for this brand.</CardDescription>
+                <CardDescription>Products of an unpublished brand aren&apos;t on sale.</CardDescription>
               </CardHeader>
               <CardContent>
                 <SelectField control={form.control} name="status" disabled={isBusy} options={STATUS_OPTIONS} aria-label="Status" />

@@ -101,7 +101,7 @@ export default function AddStoreForm() {
               <Card>
                 <CardHeader>
                   <CardTitle>Store Details</CardTitle>
-                  <CardDescription>Configure the basic information and settings for your store.</CardDescription>
+                  <CardDescription>Its name and logo, which only staff see.</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <FieldGroup>
@@ -128,7 +128,7 @@ export default function AddStoreForm() {
             <Card>
               <CardHeader>
                 <CardTitle>Status</CardTitle>
-                <CardDescription>Set the status for this store.</CardDescription>
+                <CardDescription>A suspended store&apos;s listings aren&apos;t on sale.</CardDescription>
               </CardHeader>
               <CardContent>
                 <SelectField control={form.control} name="status" disabled={isBusy} options={STORE_STATUS_OPTIONS} aria-label="Status" />
