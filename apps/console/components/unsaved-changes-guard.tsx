@@ -13,6 +13,10 @@ import {
   AlertDialogTitle,
 } from "@workspace/ui/components/alert-dialog"
 
+// The parts of the browser's Navigation API used here (TypeScript's DOM types don't have it yet)
+type NavigateEventLike = Event & { navigationType: "push" | "replace" | "reload" | "traverse"; cancelable: boolean; destination: { key: string } }
+type NavigationLike = EventTarget & { traverseTo: (key: string) => { committed: Promise<unknown>; finished: Promise<unknown> } }
+
 // Warns before leaving a page form with unsaved changes (SharedFormFooter renders it, so every page form has it).
 // - Closing or reloading the tab, or a full page load: the browser's own prompt (beforeunload; browsers show their
 //   own words).
@@ -20,11 +24,15 @@ import {
 //   global navigation guard, only Link's per-link onNavigate, so a capture listener on the document stops the click
 //   before Link sees it. Leaving replays the click, so whatever the link does (a client navigation, a full page load
 //   switching workspace) happens as before.
-// Not covered: the browser's back and forward buttons, which Next handles without an event that can be cancelled.
+// - The browser's back and forward buttons to another console page: our dialog. Next handles them on popstate, which
+//   can't be cancelled, but the Navigation API's navigate event comes first and can be, for a step between entries of
+//   this page load. Leaving takes the same step. A step to an entry from an earlier page load unloads the page, so
+//   beforeunload asks instead; browsers without the Navigation API, or one that won't let it be cancelled (Chrome
+//   lets a page cancel a back or forward only once per click or keypress on it), go without asking.
 // Uploads made on the page and left behind are removed by the orphaned-file sweep.
 export function UnsavedChangesGuard({ when }: { when: boolean }) {
   const router = useRouter()
-  const [target, setTarget] = useState<{ anchor: HTMLAnchorElement; href: string } | null>(null)
+  const [target, setTarget] = useState<{ kind: "link"; anchor: HTMLAnchorElement; href: string } | { kind: "history"; key: string } | null>(null)
   // Set once the user chooses to leave, so the replayed click and the page unloading aren't stopped again
   const leaving = useRef(false)
 
@@ -52,14 +60,25 @@ export function UnsavedChangesGuard({ when }: { when: boolean }) {
 
       event.preventDefault()
       event.stopPropagation()
-      setTarget({ anchor, href: `${url.pathname}${url.search}${url.hash}` })
+      setTarget({ kind: "link", anchor, href: `${url.pathname}${url.search}${url.hash}` })
+    }
+
+    // Back and forward: only traversals, as links and router.push are push navigations, handled above or by the form
+    const navigation = (window as Window & { navigation?: NavigationLike }).navigation
+    const onNavigate = (event: Event) => {
+      const navigate = event as NavigateEventLike
+      if (leaving.current || navigate.navigationType !== "traverse" || !navigate.cancelable) return
+      navigate.preventDefault()
+      setTarget({ kind: "history", key: navigate.destination.key })
     }
 
     window.addEventListener("beforeunload", onBeforeUnload)
     document.addEventListener("click", onClick, true)
+    navigation?.addEventListener("navigate", onNavigate)
     return () => {
       window.removeEventListener("beforeunload", onBeforeUnload)
       document.removeEventListener("click", onClick, true)
+      navigation?.removeEventListener("navigate", onNavigate)
     }
   }, [when])
 
@@ -67,6 +86,14 @@ export function UnsavedChangesGuard({ when }: { when: boolean }) {
     if (!target) return
     leaving.current = true
     setTarget(null)
+    if (target.kind === "history") {
+      // The same back or forward step, to the entry it was going to
+      const step = (window as Window & { navigation?: NavigationLike }).navigation?.traverseTo(target.key)
+      // They reject when the step is cut short (another navigation, or the entry is gone): nothing to do then
+      step?.committed.catch(() => {})
+      step?.finished.catch(() => {})
+      return
+    }
     // A link in a menu may have closed with it; a link no longer on the page can't be clicked
     if (target.anchor.isConnected) target.anchor.click()
     else router.push(target.href)
