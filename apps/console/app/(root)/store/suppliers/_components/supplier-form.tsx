@@ -10,7 +10,6 @@ import PhoneField from "@workspace/forms/components/phone-field"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@workspace/ui/components/card"
 import { FieldGroup } from "@workspace/ui/components/field"
 import { toast } from "@workspace/ui/components/toast"
-import { cn } from "@workspace/ui/lib/utils"
 import SharedFormFooter from "@/components/shared-form-footer"
 import { DangerZoneCard } from "@/components/danger-zone-card"
 import SharedFormHeader from "@/components/shared-form-header"
@@ -83,8 +82,8 @@ export default function SupplierForm({ storeId, supplier }: SupplierFormProps) {
 
         <div className="grid gap-8">
           <div className="grid items-start gap-4 lg:grid-cols-3">
-            {/* Left column, the whole width when adding: the right column's cards are for a saved supplier */}
-            <div className={cn("grid gap-4", supplier ? "lg:col-span-2" : "lg:col-span-3")}>
+            {/* One column, as wide as the two-column forms' main one: there is no sidebar, Status is in the details */}
+            <div className="grid gap-4 lg:col-span-2">
               <Card>
                 <CardHeader>
                   <CardTitle>Supplier Details</CardTitle>
@@ -100,25 +99,11 @@ export default function SupplierForm({ storeId, supplier }: SupplierFormProps) {
                     <PhoneField control={form.control} label="Phone" name="phone" disabled={isBusy} defaultCountry="GH" />
                     <TextareaField control={form.control} label="Address" name="address" disabled={isBusy} placeholder="Optional" />
                     <TextareaField control={form.control} label="Notes" name="notes" disabled={isBusy} placeholder="Payment terms, account numbers, lead times…" />
+                    {supplier && <SwitchField control={form.control} label="Archived" name="isArchived" disabled={isBusy} description="Archived suppliers can't be chosen for new orders." variant="card" />}
                   </FieldGroup>
                 </CardContent>
               </Card>
             </div>
-
-            {/* Right column */}
-            {supplier && (
-              <div className="grid gap-4">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Status</CardTitle>
-                    <CardDescription>Archived suppliers can&apos;t be chosen for new orders.</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <SwitchField control={form.control} label="Archived" name="isArchived" disabled={isBusy} variant="card" />
-                  </CardContent>
-                </Card>
-              </div>
-            )}
           </div>
 
           {supplier && (

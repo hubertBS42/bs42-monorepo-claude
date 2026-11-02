@@ -116,44 +116,50 @@ export function TwoColumnPageSkeleton({ actions = 2 }: { actions?: number }) {
   )
 }
 
-// Add and edit store: Store Details (the logo's square tile, then the name) beside Status, and on the edit page the
-// Danger Zone below them, as wide as Store Details, with its delete button
-export function StoreFormSkeleton({ deleteCard = false }: { deleteCard?: boolean }) {
-  const title = (
+// A form in one column as wide as the two-column forms' main column (brands, categories, stores, suppliers): each card
+// with its title and fields (the first may start with an image's square tile), then on an edit page the Danger Zone
+function CardTitleSkeleton() {
+  return (
     <div className="grid gap-2 px-6">
       <Skeleton className="h-5 w-36" />
       <Skeleton className="h-4 w-56 max-w-full" />
     </div>
   )
+}
+
+export function MainColumnFormSkeleton({ cards, image = false, deleteCard = false }: { cards: number[]; image?: boolean; deleteCard?: boolean }) {
   return (
-    <Page kind="store-form">
+    <Page kind="main-column-form">
       <PageHeaderSkeleton actions={2} />
       <div className="grid gap-8">
         <div className="grid items-start gap-4 lg:grid-cols-3">
-          <CardFrame className="lg:col-span-2">
-            {title}
-            <div className="grid gap-5 px-6">
-              <div className="grid gap-2">
-                <Skeleton className="h-4 w-12" />
-                <Skeleton className="size-32 rounded-lg" />
-              </div>
-              <div className="grid gap-2">
-                <Skeleton className="h-4 w-24" />
-                <Skeleton className="h-9 w-full" />
-              </div>
-            </div>
-          </CardFrame>
-          <CardFrame>
-            {title}
-            <div className="px-6">
-              <Skeleton className="h-9 w-full" />
-            </div>
-          </CardFrame>
+          <div className="grid gap-4 lg:col-span-2">
+            {cards.map((fields, card) => (
+              <CardFrame key={card}>
+                <CardTitleSkeleton />
+                <div className="grid gap-5 px-6">
+                  {image && card === 0 && (
+                    <div className="grid gap-2">
+                      <Skeleton className="h-4 w-12" />
+                      <Skeleton className="size-32 rounded-lg" />
+                    </div>
+                  )}
+                  {Array.from({ length: fields }, (_, field) => (
+                    <div key={field} className="grid gap-2">
+                      <Skeleton className="h-4 w-24" />
+                      <Skeleton className="h-9 w-full" />
+                    </div>
+                  ))}
+                </div>
+              </CardFrame>
+            ))}
+          </div>
         </div>
+        {/* As DangerZoneCard draws it: the main column's width, 16px below the cards */}
         {deleteCard && (
           <div className="-mt-4 grid gap-4 lg:grid-cols-3">
             <CardFrame className="lg:col-span-2">
-              {title}
+              <CardTitleSkeleton />
               <div className="px-6">
                 <Skeleton className="h-9 w-full sm:w-40" />
               </div>

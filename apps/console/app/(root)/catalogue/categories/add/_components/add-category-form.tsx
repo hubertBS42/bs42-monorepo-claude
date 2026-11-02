@@ -110,7 +110,7 @@ const AddCategoryForm = ({ parentOptions, disabledParentIds }: AddCategoryFormPr
 
         <div className="grid gap-8">
           <div className="grid items-start gap-4 lg:grid-cols-3">
-            {/* Left column */}
+            {/* One column, as wide as the two-column forms' main one: there is no sidebar, Status is in the details */}
             <div className="grid gap-4 lg:col-span-2">
               <Card>
                 <CardHeader>
@@ -138,6 +138,7 @@ const AddCategoryForm = ({ parentOptions, disabledParentIds }: AddCategoryFormPr
                     <SelectTreeField control={form.control} name="parentId" label="Parent category" options={options} disabledOptions={disabledParentIds} disabled={isBusy} />
 
                     <TextareaField control={form.control} label="Description" name="description" disabled={isBusy} />
+                    <SelectField control={form.control} label="Status" name="status" disabled={isBusy} options={STATUS_OPTIONS} description="An unpublished category hides everything under it." />
                   </FieldGroup>
                 </CardContent>
               </Card>
@@ -165,17 +166,6 @@ const AddCategoryForm = ({ parentOptions, disabledParentIds }: AddCategoryFormPr
                 </CardContent>
               </Card>
             </div>
-
-            {/* Right column */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Status</CardTitle>
-                <CardDescription>An unpublished category hides everything under it.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <SelectField control={form.control} name="status" disabled={isBusy} options={STATUS_OPTIONS} aria-label="Status" />
-              </CardContent>
-            </Card>
           </div>
 
           <SharedFormFooter backTo="/catalogue/categories" isPending={isBusy} isDirty={form.formState.isDirty} handleDiscard={handleDiscard} />

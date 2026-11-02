@@ -1,5 +1,5 @@
-import { SingleColumnPageSkeleton } from "@/components/page-skeletons"
+import { MainColumnFormSkeleton } from "@/components/page-skeletons"
 
 export default function Loading() {
-  return <SingleColumnPageSkeleton />
+  return <MainColumnFormSkeleton cards={[6]} />
 }

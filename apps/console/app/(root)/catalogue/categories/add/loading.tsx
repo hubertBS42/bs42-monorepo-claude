@@ -1,5 +1,5 @@
-import { TwoColumnPageSkeleton } from "@/components/page-skeletons"
+import { MainColumnFormSkeleton } from "@/components/page-skeletons"
 
 export default function Loading() {
-  return <TwoColumnPageSkeleton />
+  return <MainColumnFormSkeleton image cards={[4, 2]} />
 }
