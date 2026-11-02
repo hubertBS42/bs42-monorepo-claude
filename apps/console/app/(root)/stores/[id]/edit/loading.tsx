@@ -1,5 +1,5 @@
-import { MainColumnFormSkeleton } from "@/components/page-skeletons"
+import { StoreFormSkeleton } from "@/components/page-skeletons"
 
 export default function Loading() {
-  return <MainColumnFormSkeleton image cards={[2]} deleteCard />
+  return <StoreFormSkeleton deleteCard />
 }

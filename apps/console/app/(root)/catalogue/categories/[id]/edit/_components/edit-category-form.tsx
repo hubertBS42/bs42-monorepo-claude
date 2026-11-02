@@ -120,7 +120,7 @@ export default function EditCategoryForm({ category, parentOptions, disabledPare
         />
 
         <div className="grid items-start gap-4 lg:grid-cols-3">
-          {/* One column, as wide as the two-column forms' main one: there is no sidebar, Status is in the details */}
+          {/* Left column */}
           <div className="grid gap-4 lg:col-span-2">
             <Card>
               <CardHeader>
@@ -149,7 +149,6 @@ export default function EditCategoryForm({ category, parentOptions, disabledPare
                   <SelectTreeField control={form.control} name="parentId" label="Parent category" options={options} disabledOptions={disabledParentIds} disabled={isBusy} />
 
                   <TextareaField control={form.control} label="Description" name="description" disabled={isBusy} />
-                  <SelectField control={form.control} label="Status" name="status" disabled={isBusy} options={STATUS_OPTIONS} description="An unpublished category hides everything under it." />
                 </FieldGroup>
               </CardContent>
             </Card>
@@ -174,6 +173,19 @@ export default function EditCategoryForm({ category, parentOptions, disabledPare
                     info="Products set to use their category's fee take the nearest category up the tree that has one. If none does, they aren't installed."
                   />
                 </FieldGroup>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Right column */}
+          <div className="grid gap-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Status</CardTitle>
+                <CardDescription>An unpublished category hides everything under it.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <SelectField control={form.control} name="status" disabled={isBusy} options={STATUS_OPTIONS} aria-label="Status" />
               </CardContent>
             </Card>
           </div>

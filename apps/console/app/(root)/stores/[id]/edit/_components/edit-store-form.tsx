@@ -108,7 +108,7 @@ export default function EditStoreForm({ store }: { store: Store }) {
 
         <div className="grid gap-8">
           <div className="grid items-start gap-4 lg:grid-cols-3">
-            {/* One column, as wide as the two-column forms' main one: there is no sidebar, Status is in the details */}
+            {/* Left column */}
             <div className="lg:col-span-2">
               <Card>
                 <CardHeader>
@@ -131,8 +131,20 @@ export default function EditStoreForm({ store }: { store: Store }) {
                       defaultValues={store.logo}
                     />
                     <TextInputField control={form.control} label="Name" name="name" disabled={isBusy} autoFocus />
-                    <SelectField control={form.control} label="Status" name="status" disabled={isBusy} options={STORE_STATUS_OPTIONS} description="A suspended store's listings aren't on sale." />
                   </FieldGroup>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Right column */}
+            <div className="grid gap-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Status</CardTitle>
+                  <CardDescription>A suspended store&apos;s listings aren&apos;t on sale.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <SelectField control={form.control} name="status" disabled={isBusy} options={STORE_STATUS_OPTIONS} aria-label="Status" />
                 </CardContent>
               </Card>
             </div>
