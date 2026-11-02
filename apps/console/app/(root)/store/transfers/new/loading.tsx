@@ -1,5 +1,5 @@
-import { SingleColumnPageSkeleton } from "@/components/page-skeletons"
+import { TwoColumnPageSkeleton } from "@/components/page-skeletons"
 
 export default function Loading() {
-  return <SingleColumnPageSkeleton />
+  return <TwoColumnPageSkeleton />
 }

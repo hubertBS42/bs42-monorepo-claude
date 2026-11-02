@@ -10,15 +10,16 @@ function CardFrame({ children, className }: { children: React.ReactNode; classNa
   return <div className={`flex flex-col gap-6 rounded-xl bg-card py-6 shadow-xs ring-1 ring-foreground/10 ${className ?? ""}`}>{children}</div>
 }
 
-// A card with its title and description, then form fields (label over input), or lines of text
-function CardSkeleton({ fields = 0, lines = 0, className }: { fields?: number; lines?: number; className?: string }) {
+// A card with its title and description, then form fields (label over input), or lines of text, and optionally its
+// button at the bottom right
+function CardSkeleton({ fields = 0, lines = 0, button = false, className }: { fields?: number; lines?: number; button?: boolean; className?: string }) {
   return (
     <CardFrame className={className}>
       <div className="grid gap-2 px-6">
         <Skeleton className="h-5 w-36" />
         <Skeleton className="h-4 w-56 max-w-full" />
       </div>
-      {(fields > 0 || lines > 0) && (
+      {(fields > 0 || lines > 0 || button) && (
         <div className="grid gap-5 px-6">
           {Array.from({ length: fields }, (_, field) => (
             <div key={field} className="grid gap-2">
@@ -29,6 +30,7 @@ function CardSkeleton({ fields = 0, lines = 0, className }: { fields?: number; l
           {Array.from({ length: lines }, (_, line) => (
             <Skeleton key={line} className={`h-4 ${line % 3 === 2 ? "w-2/3" : "w-full"}`} />
           ))}
+          {button && <Skeleton className="h-8 w-32 justify-self-end" />}
         </div>
       )}
     </CardFrame>
@@ -81,38 +83,79 @@ function TableSkeleton({ rows = 8 }: { rows?: number }) {
   )
 }
 
-// A list: the title (and its add button), the filters toolbar and the table
-export function ListPageSkeleton({ addButton = false }: { addButton?: boolean }) {
+// A list: the title (and its add button, or a Back button), then the table's frame as DataTable draws it: the filters
+// toolbar, the rows and the pagination
+export function ListPageSkeleton({ addButton = false, actions = 0 }: { addButton?: boolean; actions?: number }) {
   return (
     <Page kind="list">
-      <PageHeaderSkeleton addButton={addButton} />
-      {/* The search takes the whole row on phones, as the toolbar's does */}
-      <div className="flex flex-wrap gap-2">
-        <Skeleton className="h-8 w-full sm:w-72" />
-        <Skeleton className="h-8 w-24" />
-        <Skeleton className="h-8 w-24" />
+      <PageHeaderSkeleton addButton={addButton} actions={actions} />
+      <div className="grid overflow-hidden rounded-md border">
+        {/* The search takes the whole row on phones, as the toolbar's does */}
+        <div className="flex flex-wrap gap-2 p-3">
+          <Skeleton className="h-8 w-full sm:w-72" />
+          <Skeleton className="h-8 w-24" />
+          <Skeleton className="h-8 w-24" />
+        </div>
+        <Skeleton className="h-10 rounded-none" />
+        {Array.from({ length: 8 }, (_, row) => (
+          <div key={row} className="flex items-center gap-4 border-t px-4 py-3">
+            <Skeleton className="h-4 w-1/4" />
+            <Skeleton className="h-4 w-1/5" />
+            <Skeleton className="h-4 w-1/6" />
+            <Skeleton className="ml-auto h-4 w-16" />
+          </div>
+        ))}
+        <div className="flex items-center justify-between gap-4 border-t p-4">
+          <Skeleton className="hidden h-4 w-20 lg:block" />
+          {/* Narrower on phones, where the real one's buttons only just fit */}
+          <div className="flex w-full items-center justify-between gap-3 sm:gap-6 lg:w-fit">
+            <Skeleton className="h-8 w-17" />
+            <Skeleton className="h-4 w-20" />
+            <Skeleton className="h-8 w-28 sm:w-36" />
+          </div>
+        </div>
       </div>
-      <TableSkeleton />
     </Page>
   )
 }
 
-// A form or a record's page in two columns: the main cards, and narrower ones beside them (lg:grid-cols-3)
-export function TwoColumnPageSkeleton({ actions = 2 }: { actions?: number }) {
+// A form or a record's page in two columns: the main cards, and narrower ones beside them (lg:grid-cols-3); on an edit
+// form, the Danger Zone below them, as wide as the main column
+export function TwoColumnPageSkeleton({ actions = 2, deleteCard = false }: { actions?: number; deleteCard?: boolean }) {
   return (
     <Page kind="two-column">
       <PageHeaderSkeleton actions={actions} />
-      <div className="grid gap-4 lg:grid-cols-3">
-        <div className="grid content-start gap-4 lg:col-span-2">
-          <CardSkeleton fields={3} />
-          <CardSkeleton fields={2} />
+      <div className="grid gap-8">
+        <div className="grid gap-4 lg:grid-cols-3">
+          <div className="grid content-start gap-4 lg:col-span-2">
+            <CardSkeleton fields={3} />
+            <CardSkeleton fields={2} />
+          </div>
+          <div className="grid content-start gap-4">
+            <CardSkeleton fields={1} />
+            <CardSkeleton lines={3} />
+          </div>
         </div>
-        <div className="grid content-start gap-4">
-          <CardSkeleton fields={1} />
-          <CardSkeleton lines={3} />
-        </div>
+        {deleteCard && <DangerZoneSkeleton />}
       </div>
     </Page>
+  )
+}
+
+// DangerZoneCard: as wide as the main column, 16px under the cards above it, with its delete button
+function DangerZoneSkeleton() {
+  return (
+    <div className="-mt-4 grid gap-4 lg:grid-cols-3">
+      <CardFrame className="lg:col-span-2">
+        <div className="grid gap-2 px-6">
+          <Skeleton className="h-5 w-36" />
+          <Skeleton className="h-4 w-56 max-w-full" />
+        </div>
+        <div className="px-6">
+          <Skeleton className="h-9 w-full sm:w-40" />
+        </div>
+      </CardFrame>
+    </div>
   )
 }
 
@@ -150,28 +193,20 @@ export function StoreFormSkeleton({ deleteCard = false }: { deleteCard?: boolean
             </div>
           </CardFrame>
         </div>
-        {deleteCard && (
-          <div className="-mt-4 grid gap-4 lg:grid-cols-3">
-            <CardFrame className="lg:col-span-2">
-              {title}
-              <div className="px-6">
-                <Skeleton className="h-9 w-full sm:w-40" />
-              </div>
-            </CardFrame>
-          </div>
-        )}
+        {deleteCard && <DangerZoneSkeleton />}
       </div>
     </Page>
   )
 }
 
-// A form in one column of full-width cards
-export function SingleColumnPageSkeleton() {
+// A form in one column of full-width cards, given the number of fields in each
+export function SingleColumnPageSkeleton({ cards = [4, 2] }: { cards?: number[] }) {
   return (
     <Page kind="single-column">
       <PageHeaderSkeleton actions={2} />
-      <CardSkeleton fields={4} />
-      <CardSkeleton fields={2} />
+      {cards.map((fields, card) => (
+        <CardSkeleton key={card} fields={fields} />
+      ))}
     </Page>
   )
 }
@@ -216,11 +251,11 @@ export function HubPageSkeleton() {
   )
 }
 
-// A store's details: its info (pairs of label and value) and the actions card
-export function StoreDetailsSkeleton() {
+// A record's details (a store, a member): its info (pairs of label and value) and the actions card with its button
+export function DetailsPageSkeleton({ actions = 0 }: { actions?: number }) {
   return (
-    <Page kind="store-details">
-      <PageHeaderSkeleton />
+    <Page kind="details">
+      <PageHeaderSkeleton actions={actions} />
       <div className="grid gap-4">
         <CardFrame>
           <div className="grid gap-2 px-6">
@@ -242,7 +277,7 @@ export function StoreDetailsSkeleton() {
             <Skeleton className="h-4 w-72 max-w-full" />
           </div>
           <div className="px-6">
-            <Skeleton className="h-9 w-full" />
+            <Skeleton className="h-8 w-28" />
           </div>
         </CardFrame>
       </div>
@@ -259,6 +294,7 @@ export function PickerPageSkeleton() {
         <Skeleton className="h-9 flex-1" />
         <Skeleton className="h-9 w-20" />
       </div>
+      <Skeleton className="h-4 w-80 max-w-full" />
       <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-5">
         {Array.from({ length: 10 }, (_, card) => (
           <div key={card} className="flex flex-col gap-2 overflow-hidden rounded-xl ring-1 ring-foreground/10">
@@ -275,8 +311,9 @@ export function PickerPageSkeleton() {
   )
 }
 
-// A section inside Settings or Account, whose layout keeps its own title and menu while the section loads
-export function SectionSkeleton({ heading = false }: { heading?: boolean }) {
+// A section inside Settings or Account, whose layout keeps its own title and menu while the section loads: given the
+// number of fields in each card, and whether it ends with a button at its bottom right (Account's forms)
+export function SectionSkeleton({ heading = false, cards = [2, 2], button = false }: { heading?: boolean; cards?: number[]; button?: boolean }) {
   return (
     <div className="flex flex-col gap-4" role="status" aria-label="Loading" data-skeleton="section">
       {heading && (
@@ -285,8 +322,9 @@ export function SectionSkeleton({ heading = false }: { heading?: boolean }) {
           <Skeleton className="h-4 w-56 max-w-full" />
         </div>
       )}
-      <CardSkeleton fields={2} />
-      <CardSkeleton fields={2} />
+      {cards.map((fields, card) => (
+        <CardSkeleton key={card} fields={fields} button={button} />
+      ))}
     </div>
   )
 }
