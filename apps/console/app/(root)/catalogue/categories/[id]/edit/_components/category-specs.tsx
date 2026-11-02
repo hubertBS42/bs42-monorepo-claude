@@ -130,11 +130,9 @@ export default function CategorySpecs({ categoryId, specs }: { categoryId: strin
         )}
 
         {isSessionLoading ? (
-          <Skeleton className="h-9 w-40 rounded-md" />
+          <Skeleton className="h-8 w-full rounded-md" />
         ) : canEdit ? (
-          <div>
-            <SpecDialog categoryId={categoryId} />
-          </div>
+          <SpecDialog categoryId={categoryId} />
         ) : (
           <p className="text-xs text-muted-foreground">Your role cannot change specifications.</p>
         )}
@@ -157,7 +155,7 @@ function SpecDialog({ categoryId, spec }: { categoryId: string; spec?: CategoryS
             <Pencil />
           </Button>
         ) : (
-          <Button type="button" variant="outline" size="sm">
+          <Button type="button" variant="outline" size="sm" className="w-full">
             <PlusCircle />
             Add specification
           </Button>
