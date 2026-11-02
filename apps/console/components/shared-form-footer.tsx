@@ -2,6 +2,7 @@ import { cn } from "@workspace/ui/lib/utils"
 import BackButton from "./back-button"
 import DiscardChangesButton from "./discard-changes-button"
 import SaveButton from "./save-button"
+import { UnsavedChangesGuard } from "./unsaved-changes-guard"
 
 interface ResourceFormFooterProps {
   backTo: string
@@ -16,6 +17,7 @@ interface ResourceFormFooterProps {
 // Once something changes, it's a bar pinned to the bottom of the screen on every size, so Save never scrolls out of
 // reach, and the header hides its own buttons. Sticky, not fixed: it settles into place at the end of the page, so it
 // never covers the last card, and it spans the content (the negative margins undo the page's padding), not the sidebar.
+// Leaving the page with changes asks first (UnsavedChangesGuard).
 // min-w-0: the form is a grid, which would otherwise widen to fit the bar on a narrow phone (the words wrap instead).
 const ResourceFormFooter = ({ backTo, isPending, isDirty, handleDiscard, form }: ResourceFormFooterProps) => {
   return (
@@ -38,6 +40,8 @@ const ResourceFormFooter = ({ backTo, isPending, isDirty, handleDiscard, form }:
         <BackButton link={backTo} />
       )}
       <SaveButton isLoading={isPending} isDisabled={!isDirty} form={form} />
+      {/* Not while saving: a successful save leaves the page itself, still dirty */}
+      <UnsavedChangesGuard when={isDirty && !isPending} />
     </div>
   )
 }
