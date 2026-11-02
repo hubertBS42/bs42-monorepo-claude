@@ -117,7 +117,7 @@ export function TwoColumnPageSkeleton({ actions = 2 }: { actions?: number }) {
 }
 
 // Add and edit store: Store Details (the logo's square tile, then the name) beside Status, and on the edit page the
-// Danger Zone below them, full width, with its delete button
+// Danger Zone below them, as wide as Store Details, with its delete button
 export function StoreFormSkeleton({ deleteCard = false }: { deleteCard?: boolean }) {
   const title = (
     <div className="grid gap-2 px-6">
@@ -151,12 +151,14 @@ export function StoreFormSkeleton({ deleteCard = false }: { deleteCard?: boolean
           </CardFrame>
         </div>
         {deleteCard && (
-          <CardFrame>
-            {title}
-            <div className="px-6">
-              <Skeleton className="h-9 w-full sm:w-40" />
-            </div>
-          </CardFrame>
+          <div className="-mt-4 grid gap-4 lg:grid-cols-3">
+            <CardFrame className="lg:col-span-2">
+              {title}
+              <div className="px-6">
+                <Skeleton className="h-9 w-full sm:w-40" />
+              </div>
+            </CardFrame>
+          </div>
         )}
       </div>
     </Page>
