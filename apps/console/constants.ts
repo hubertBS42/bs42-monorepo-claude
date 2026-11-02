@@ -463,17 +463,10 @@ export const BREADCRUMB_DATA: BreadcrumbConfig[] = [
     ],
   },
   {
-    pathname: "/account",
-    segments: [
-      { text: "Dashboard", href: "/" },
-      { text: "Account", href: "#" },
-    ],
-  },
-  {
     pathname: "/account/profile",
     segments: [
       { text: "Dashboard", href: "/" },
-      { text: "Account", href: "/account" },
+      { text: "Account", href: "/account/profile" },
       { text: "Profile", href: "#" },
     ],
   },
@@ -481,7 +474,7 @@ export const BREADCRUMB_DATA: BreadcrumbConfig[] = [
     pathname: "/account/password",
     segments: [
       { text: "Dashboard", href: "/" },
-      { text: "Account", href: "/account" },
+      { text: "Account", href: "/account/profile" },
       { text: "Password", href: "#" },
     ],
   },
@@ -489,7 +482,7 @@ export const BREADCRUMB_DATA: BreadcrumbConfig[] = [
     pathname: "/account/sessions",
     segments: [
       { text: "Dashboard", href: "/" },
-      { text: "Account", href: "/account" },
+      { text: "Account", href: "/account/profile" },
       { text: "Sessions", href: "#" },
     ],
   },
@@ -497,7 +490,7 @@ export const BREADCRUMB_DATA: BreadcrumbConfig[] = [
     pathname: "/account/notifications",
     segments: [
       { text: "Dashboard", href: "/" },
-      { text: "Account", href: "/account" },
+      { text: "Account", href: "/account/profile" },
       { text: "Notifications", href: "#" },
     ],
   },

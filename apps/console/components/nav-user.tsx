@@ -85,7 +85,7 @@ export function NavUser({ storefrontUrl }: { storefrontUrl: string }) {
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuLinkItem render={<Link href="/account" />}>
+              <DropdownMenuLinkItem render={<Link href="/account/profile" />}>
                 <CircleUserIcon />
                 Account
               </DropdownMenuLinkItem>

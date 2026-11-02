@@ -1,6 +1,7 @@
 import { Metadata } from "next"
-import AccountNav from "./_components/account-nav"
 import { ReactNode } from "react"
+import SectionLayout from "@/components/section-layout"
+import AccountNav from "./_components/account-nav"
 
 export const metadata: Metadata = {
   title: "Account",
@@ -8,16 +9,9 @@ export const metadata: Metadata = {
 
 const AccountLayout = ({ children }: { children: ReactNode }) => {
   return (
-    <div className="flex flex-col gap-y-6">
-      <div className="grid">
-        <h1 className="text-xl font-bold md:text-2xl">Account</h1>
-        <p className="text-sm text-muted-foreground">
-          Manage your account settings and preferences.
-        </p>
-      </div>
-      <AccountNav />
+    <SectionLayout title="Account" description="Manage your account settings and preferences." nav={<AccountNav />}>
       {children}
-    </div>
+    </SectionLayout>
   )
 }
 

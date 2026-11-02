@@ -23,6 +23,11 @@ const nextConfig: NextConfig = {
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }]
   },
+  // Account has no page of its own: it opens on its first section. Before the page renders, so it's a real redirect
+  // (redirect() in a page would stream after the section's loading state)
+  async redirects() {
+    return [{ source: "/account", destination: "/account/profile", permanent: false }]
+  },
 }
 
 export default nextConfig
