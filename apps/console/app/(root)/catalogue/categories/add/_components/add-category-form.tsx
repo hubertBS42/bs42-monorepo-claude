@@ -101,7 +101,7 @@ const AddCategoryForm = ({ parentOptions, disabledParentIds }: AddCategoryFormPr
     <form onSubmit={form.handleSubmit(onSubmit)}>
       <div className="grid gap-y-6">
         <SharedFormHeader
-          heading="Create Category"
+          heading="Add Category"
           description="Categories make up the storefront's menu."
           backTo="/catalogue/categories"
           isPending={isBusy}

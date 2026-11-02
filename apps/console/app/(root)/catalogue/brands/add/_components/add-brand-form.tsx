@@ -92,7 +92,7 @@ const AddBrandForm = () => {
     <form onSubmit={form.handleSubmit(onSubmit)}>
       <div className="grid gap-y-6">
         <SharedFormHeader
-          heading="Create Brand"
+          heading="Add Brand"
           description="Customers can browse the storefront by brand."
           backTo="/catalogue/brands"
           isPending={isBusy}
