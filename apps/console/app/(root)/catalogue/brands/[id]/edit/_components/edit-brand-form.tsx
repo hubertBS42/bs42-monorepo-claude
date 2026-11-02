@@ -10,6 +10,7 @@ import { z } from "zod"
 import { toast } from "@workspace/ui/components/toast"
 import SharedFormHeader from "@/components/shared-form-header"
 import SharedFormFooter from "@/components/shared-form-footer"
+import { DangerZoneCard } from "@/components/danger-zone-card"
 import { updateBrandAction } from "@/lib/actions/brand.actions"
 import { ImageField, SelectField, TextareaField, TextInputField } from "@workspace/forms"
 import { STATUS_OPTIONS } from "@/constants"
@@ -143,18 +144,12 @@ export default function EditBrandForm({ brand }: { brand: Brand }) {
                   <SelectField control={form.control} name="status" disabled={isBusy} options={STATUS_OPTIONS} aria-label="Status" />
                 </CardContent>
               </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Danger Zone</CardTitle>
-                  <CardDescription>Permanently delete this brand.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <DeleteBrand brand={brand} />
-                </CardContent>
-              </Card>
             </div>
           </div>
+
+          <DangerZoneCard description="Permanently delete this brand.">
+            <DeleteBrand brand={brand} />
+          </DangerZoneCard>
 
           <SharedFormFooter backTo="/catalogue/brands" isPending={isBusy} isDirty={form.formState.isDirty} handleDiscard={handleDiscard} />
         </div>

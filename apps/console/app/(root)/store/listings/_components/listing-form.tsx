@@ -15,6 +15,7 @@ import { FieldGroup } from "@workspace/ui/components/field"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@workspace/ui/components/table"
 import { toast } from "@workspace/ui/components/toast"
 import SharedFormFooter from "@/components/shared-form-footer"
+import { DangerZoneCard } from "@/components/danger-zone-card"
 import SharedFormHeader from "@/components/shared-form-header"
 import { StorefrontLinkCard } from "@/components/storefront-link-card"
 import type { StorefrontLink } from "@/lib/data/storefront-links.data"
@@ -314,20 +315,14 @@ const ListingForm = ({ storeId, data, storefrontLink }: ListingFormProps) => {
                   </CardContent>
                 </Card>
               )}
-
-              {id && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Danger Zone</CardTitle>
-                    <CardDescription>Listings that have been ordered can only be archived.</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <DeleteListing listing={{ id, name: product.name }} storeId={storeId} hasOrders={data.hasOrders} />
-                  </CardContent>
-                </Card>
-              )}
             </div>
           </div>
+
+          {id && (
+            <DangerZoneCard description="Listings that have been ordered can only be archived.">
+              <DeleteListing listing={{ id, name: product.name }} storeId={storeId} hasOrders={data.hasOrders} />
+            </DangerZoneCard>
+          )}
 
           <SharedFormFooter backTo="/store/listings" isPending={isPending} isDirty={form.formState.isDirty} handleDiscard={handleDiscard} />
         </div>

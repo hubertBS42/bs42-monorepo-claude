@@ -16,6 +16,7 @@ import { StorefrontLinkCard } from "@/components/storefront-link-card"
 import type { ProductReviewStats } from "@/lib/data/reviews.data"
 import type { StorefrontLink } from "@/lib/data/storefront-links.data"
 import SharedFormFooter from "@/components/shared-form-footer"
+import { DangerZoneCard } from "@/components/danger-zone-card"
 import { Condition, InstallationOption, Status } from "@workspace/db/enums"
 import { formatCurrency } from "@workspace/utils/currency"
 import { createProductAction, updateProductAction } from "@/lib/actions/product.actions"
@@ -696,20 +697,14 @@ const ProductForm = ({ brands, categoryOptions, disabledCategoryIds, specFields,
               {storefrontLink && <StorefrontLinkCard link={storefrontLink} description="As customers see it. Changes show within a minute." />}
 
               {product && reviewStats && <ProductReviewsCard productId={product.id} stats={reviewStats} />}
-
-              {product && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Danger Zone</CardTitle>
-                    <CardDescription>Products that have been ordered can only be archived.</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <DeleteProduct product={{ id: product.id, name: product.name }} storeCount={product.storeCount} hasOrders={product.hasOrders} />
-                  </CardContent>
-                </Card>
-              )}
             </div>
           </div>
+
+          {product && (
+            <DangerZoneCard description="Products that have been ordered can only be archived.">
+              <DeleteProduct product={{ id: product.id, name: product.name }} storeCount={product.storeCount} hasOrders={product.hasOrders} />
+            </DangerZoneCard>
+          )}
 
           <SharedFormFooter backTo="/catalogue/products" isPending={isBusy} isDirty={form.formState.isDirty} handleDiscard={handleDiscard} />
         </div>

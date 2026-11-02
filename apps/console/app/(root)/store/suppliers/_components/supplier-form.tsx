@@ -12,6 +12,7 @@ import { FieldGroup } from "@workspace/ui/components/field"
 import { toast } from "@workspace/ui/components/toast"
 import { cn } from "@workspace/ui/lib/utils"
 import SharedFormFooter from "@/components/shared-form-footer"
+import { DangerZoneCard } from "@/components/danger-zone-card"
 import SharedFormHeader from "@/components/shared-form-header"
 import { createSupplierAction, updateSupplierAction } from "@/lib/actions/supplier.actions"
 import { supplierEditFormSchema } from "@/lib/schemas/supplier.schemas"
@@ -116,19 +117,15 @@ export default function SupplierForm({ storeId, supplier }: SupplierFormProps) {
                     <SwitchField control={form.control} label="Archived" name="isArchived" disabled={isBusy} variant="card" />
                   </CardContent>
                 </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Danger Zone</CardTitle>
-                    <CardDescription>Suppliers on purchase orders can only be archived.</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <DeleteSupplier storeId={storeId} supplier={supplier} />
-                  </CardContent>
-                </Card>
               </div>
             )}
           </div>
+
+          {supplier && (
+            <DangerZoneCard description="Suppliers on purchase orders can only be archived.">
+              <DeleteSupplier storeId={storeId} supplier={supplier} />
+            </DangerZoneCard>
+          )}
 
           <SharedFormFooter backTo={BACK_TO} isPending={isBusy} isDirty={form.formState.isDirty} handleDiscard={() => router.push(BACK_TO)} />
         </div>

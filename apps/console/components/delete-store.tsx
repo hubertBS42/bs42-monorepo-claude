@@ -30,7 +30,7 @@ export default function DeleteStore({ store }: { store: Store }) {
   const { role, isLoading } = useMemberRole(store.id)
   const { data: session, isPending: isSessionLoading } = consoleAuthClient.useSession()
 
-  if (isLoading || isSessionLoading) return <Skeleton className="h-9 rounded-md" />
+  if (isLoading || isSessionLoading) return <Skeleton className="h-9 rounded-md sm:w-40" />
 
   // getStoreById never returns the platform organization; this is defence in depth
   const isPlatformOrganization = store.slug === PLATFORM_ORGANIZATION_SLUG
@@ -87,11 +87,11 @@ export default function DeleteStore({ store }: { store: Store }) {
   }
 
   return (
-    <div className="grid gap-2">
+    <div className="grid gap-2 sm:justify-items-start">
       <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
         <AlertDialogTrigger
           render={
-            <Button type="button" className="w-full" variant="destructive" disabled={!canDelete}>
+            <Button type="button" className="w-full sm:w-auto" variant="destructive" disabled={!canDelete}>
               Delete Store
             </Button>
           }

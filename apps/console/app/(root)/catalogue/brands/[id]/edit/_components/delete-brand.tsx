@@ -28,7 +28,7 @@ export default function DeleteBrand({ brand }: { brand: Pick<Brand, "id" | "name
   const router = useRouter()
   const { data: session, isPending: isSessionLoading } = consoleAuthClient.useSession()
 
-  if (isSessionLoading) return <Skeleton className="h-9 rounded-md" />
+  if (isSessionLoading) return <Skeleton className="h-9 rounded-md sm:w-40" />
 
   // hasSystemPermission, not checkRolePermission: roles can be comma-separated. deleteBrandAction checks again on the server.
   const canDelete = hasSystemPermission(session?.user.role, { brand: ["delete"] })
@@ -50,11 +50,11 @@ export default function DeleteBrand({ brand }: { brand: Pick<Brand, "id" | "name
   }
 
   return (
-    <div className="grid gap-2">
+    <div className="grid gap-2 sm:justify-items-start">
       <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
         <AlertDialogTrigger
           render={
-            <Button type="button" className="w-full" variant="destructive" disabled={!canDelete}>
+            <Button type="button" className="w-full sm:w-auto" variant="destructive" disabled={!canDelete}>
               Delete Brand
             </Button>
           }

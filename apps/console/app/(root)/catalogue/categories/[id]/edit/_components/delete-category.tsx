@@ -34,7 +34,7 @@ export default function DeleteCategory({ category, childCount }: DeleteCategoryP
   const router = useRouter()
   const { data: session, isPending: isSessionLoading } = consoleAuthClient.useSession()
 
-  if (isSessionLoading) return <Skeleton className="h-9 rounded-md" />
+  if (isSessionLoading) return <Skeleton className="h-9 rounded-md sm:w-40" />
 
   // hasSystemPermission, not checkRolePermission: roles can be comma-separated. deleteCategoryAction checks again on the server.
   const canDelete = hasSystemPermission(session?.user.role, { category: ["delete"] })
@@ -57,11 +57,11 @@ export default function DeleteCategory({ category, childCount }: DeleteCategoryP
   }
 
   return (
-    <div className="grid gap-2">
+    <div className="grid gap-2 sm:justify-items-start">
       <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
         <AlertDialogTrigger
           render={
-            <Button type="button" className="w-full" variant="destructive" disabled={!canDelete || hasChildren}>
+            <Button type="button" className="w-full sm:w-auto" variant="destructive" disabled={!canDelete || hasChildren}>
               Delete Category
             </Button>
           }

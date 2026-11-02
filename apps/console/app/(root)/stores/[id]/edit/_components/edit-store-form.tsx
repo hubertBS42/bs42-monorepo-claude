@@ -15,6 +15,7 @@ import { SubmitHandler, useForm } from "react-hook-form"
 import z from "zod"
 import { STORE_STATUS_OPTIONS } from "@/constants"
 import ResourceFormFooter from "@/components/shared-form-footer"
+import { DangerZoneCard } from "@/components/danger-zone-card"
 import DeleteStore from "@/components/delete-store"
 
 export default function EditStoreForm({ store }: { store: Store }) {
@@ -146,18 +147,13 @@ export default function EditStoreForm({ store }: { store: Store }) {
                   <SelectField control={form.control} name="status" disabled={isBusy} options={STORE_STATUS_OPTIONS} aria-label="Status" />
                 </CardContent>
               </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Danger Zone</CardTitle>
-                  <CardDescription>Permanently delete this store.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <DeleteStore store={store} />
-                </CardContent>
-              </Card>
             </div>
           </div>
+
+          <DangerZoneCard description="Permanently delete this store.">
+            <DeleteStore store={store} />
+          </DangerZoneCard>
+
           <ResourceFormFooter backTo="/stores" isPending={isBusy} isDirty={form.formState.isDirty} handleDiscard={handleDiscard} />
         </div>
       </div>

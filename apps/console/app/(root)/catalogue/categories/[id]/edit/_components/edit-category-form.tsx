@@ -10,6 +10,7 @@ import { z } from "zod"
 import { toast } from "@workspace/ui/components/toast"
 import SharedFormHeader from "@/components/shared-form-header"
 import SharedFormFooter from "@/components/shared-form-footer"
+import { DangerZoneCard } from "@/components/danger-zone-card"
 import { updateCategoryAction } from "@/lib/actions/category.actions"
 import { ImageField, NumberInputField, SelectField, SelectTreeField, SwitchField, TextareaField, TextInputField, type TreeSelectOption } from "@workspace/forms"
 import { STATUS_OPTIONS } from "@/constants"
@@ -187,21 +188,15 @@ export default function EditCategoryForm({ category, parentOptions, disabledPare
                 <SelectField control={form.control} name="status" disabled={isBusy} options={STATUS_OPTIONS} aria-label="Status" />
               </CardContent>
             </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Danger Zone</CardTitle>
-                <CardDescription>Permanently delete this category.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <DeleteCategory category={category} childCount={category.childCount} />
-              </CardContent>
-            </Card>
           </div>
         </div>
       </form>
 
       {children}
+
+      <DangerZoneCard description="Permanently delete this category.">
+        <DeleteCategory category={category} childCount={category.childCount} />
+      </DangerZoneCard>
 
       <SharedFormFooter form={formId} backTo="/catalogue/categories" isPending={isBusy} isDirty={form.formState.isDirty} handleDiscard={handleDiscard} />
     </div>

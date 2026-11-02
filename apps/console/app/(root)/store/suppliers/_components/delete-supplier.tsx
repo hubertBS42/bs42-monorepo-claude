@@ -34,7 +34,7 @@ export default function DeleteSupplier({ storeId, supplier }: DeleteSupplierProp
   const router = useRouter()
   const { role, isLoading } = useMemberRole(storeId)
 
-  if (isLoading) return <Skeleton className="h-9 rounded-md" />
+  if (isLoading) return <Skeleton className="h-9 rounded-md sm:w-40" />
   const canDelete = role !== null && consoleAuthClient.organization.checkRolePermission({ role, permissions: { supplier: ["delete"] } })
   const isUsed = supplier.purchaseOrderCount > 0
 
@@ -59,11 +59,11 @@ export default function DeleteSupplier({ storeId, supplier }: DeleteSupplierProp
   }
 
   return (
-    <div className="grid gap-2">
+    <div className="grid gap-2 sm:justify-items-start">
       <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
         <AlertDialogTrigger
           render={
-            <Button type="button" className="w-full" variant="destructive" disabled={!canDelete || isUsed}>
+            <Button type="button" className="w-full sm:w-auto" variant="destructive" disabled={!canDelete || isUsed}>
               Delete Supplier
             </Button>
           }

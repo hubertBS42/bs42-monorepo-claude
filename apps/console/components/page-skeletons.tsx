@@ -117,50 +117,47 @@ export function TwoColumnPageSkeleton({ actions = 2 }: { actions?: number }) {
 }
 
 // Add and edit store: Store Details (the logo's square tile, then the name) beside Status, and on the edit page the
-// Danger Zone's delete button under it
+// Danger Zone below them, full width, with its delete button
 export function StoreFormSkeleton({ deleteCard = false }: { deleteCard?: boolean }) {
+  const title = (
+    <div className="grid gap-2 px-6">
+      <Skeleton className="h-5 w-36" />
+      <Skeleton className="h-4 w-56 max-w-full" />
+    </div>
+  )
   return (
     <Page kind="store-form">
       <PageHeaderSkeleton actions={2} />
-      <div className="grid items-start gap-4 lg:grid-cols-3">
-        <CardFrame className="lg:col-span-2">
-          <div className="grid gap-2 px-6">
-            <Skeleton className="h-5 w-36" />
-            <Skeleton className="h-4 w-56 max-w-full" />
-          </div>
-          <div className="grid gap-5 px-6">
-            <div className="grid gap-2">
-              <Skeleton className="h-4 w-12" />
-              <Skeleton className="size-32 rounded-lg" />
+      <div className="grid gap-8">
+        <div className="grid items-start gap-4 lg:grid-cols-3">
+          <CardFrame className="lg:col-span-2">
+            {title}
+            <div className="grid gap-5 px-6">
+              <div className="grid gap-2">
+                <Skeleton className="h-4 w-12" />
+                <Skeleton className="size-32 rounded-lg" />
+              </div>
+              <div className="grid gap-2">
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-9 w-full" />
+              </div>
             </div>
-            <div className="grid gap-2">
-              <Skeleton className="h-4 w-24" />
-              <Skeleton className="h-9 w-full" />
-            </div>
-          </div>
-        </CardFrame>
-        <div className="grid gap-4">
+          </CardFrame>
           <CardFrame>
-            <div className="grid gap-2 px-6">
-              <Skeleton className="h-5 w-36" />
-              <Skeleton className="h-4 w-56 max-w-full" />
-            </div>
+            {title}
             <div className="px-6">
               <Skeleton className="h-9 w-full" />
             </div>
           </CardFrame>
-          {deleteCard && (
-            <CardFrame>
-              <div className="grid gap-2 px-6">
-                <Skeleton className="h-5 w-36" />
-                <Skeleton className="h-4 w-56 max-w-full" />
-              </div>
-              <div className="px-6">
-                <Skeleton className="h-9 w-full" />
-              </div>
-            </CardFrame>
-          )}
         </div>
+        {deleteCard && (
+          <CardFrame>
+            {title}
+            <div className="px-6">
+              <Skeleton className="h-9 w-full sm:w-40" />
+            </div>
+          </CardFrame>
+        )}
       </div>
     </Page>
   )
