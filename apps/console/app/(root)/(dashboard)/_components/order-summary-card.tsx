@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { ChevronLeft, ChevronRight, Copy } from "lucide-react"
+import { ArrowRight, ChevronLeft, ChevronRight, Copy } from "lucide-react"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@workspace/ui/components/accordion"
 import { Button, buttonVariants } from "@workspace/ui/components/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@workspace/ui/components/card"
@@ -67,8 +67,9 @@ export default function OrderSummaryCard({ order, position, count, onPrevious, o
       <CardHeader className="flex flex-row items-start bg-muted/50 py-6">
         <div className="grid min-w-0 gap-0.5">
           <CardTitle className="group flex items-center gap-2 text-lg">
-            <span className="truncate font-mono">{order.reference}</span>
-            <Button size="icon-xs" variant="outline" className="opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100" onClick={copyReference}>
+            {/* min-w-0 lets the reference shorten with an ellipsis rather than run under the View order button */}
+            <span className="min-w-0 truncate font-mono">{order.reference}</span>
+            <Button size="icon-xs" variant="outline" className="shrink-0 opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100" onClick={copyReference}>
               <Copy />
               <span className="sr-only">Copy reference</span>
             </Button>
@@ -79,8 +80,10 @@ export default function OrderSummaryCard({ order, position, count, onPrevious, o
             <PaymentStatusBadge status={order.paymentStatus} />
           </div>
         </div>
-        <Link href={order.href} className={buttonVariants({ variant: "outline", size: "sm", className: "ml-auto" })}>
-          View order
+        {/* Only its icon on phones, where the reference needs the room */}
+        <Link href={order.href} className={buttonVariants({ variant: "outline", size: "sm", className: "ml-auto shrink-0 max-sm:w-8 max-sm:px-0" })}>
+          <ArrowRight className="sm:hidden" aria-hidden />
+          <span className="max-sm:sr-only">View order</span>
         </Link>
       </CardHeader>
 
