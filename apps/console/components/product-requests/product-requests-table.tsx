@@ -26,7 +26,7 @@ const productColumn = (href: ((row: ProductRequestListItem) => string) | null): 
   header: () => <ColumnHeader title="Product" />,
   meta: { rendersRowLink: true },
   cell: ({ row }) => (
-    <div className="grid gap-y-0.5">
+    <div className="grid min-w-40 gap-y-0.5 whitespace-normal">
       {href ? (
         <RowLink href={href(row.original)} className="w-fit">
           {row.original.name}
@@ -45,19 +45,19 @@ const statusColumn = (forStore: boolean): ColumnDef<ProductRequestListItem, unkn
   cell: ({ row }) => {
     const { status, product, declineReason } = row.original
     return (
-      <div className="grid justify-items-start gap-y-0.5">
+      <div className="grid justify-items-start gap-y-0.5 whitespace-normal">
         <ProductRequestStatusBadge status={status} />
         {product &&
           (forStore ? (
-            <Link href={`/store/products/${product.id}`} className="text-[11px] text-muted-foreground underline-offset-4 hover:text-foreground hover:underline">
+            <Link href={`/store/products/${product.id}`} className="max-w-64 min-w-40 text-[11px] text-muted-foreground underline-offset-4 hover:text-foreground hover:underline">
               {product.name}
             </Link>
           ) : (
-            <Link href={`/catalogue/products/${product.id}/edit`} className="text-[11px] text-muted-foreground underline-offset-4 hover:text-foreground hover:underline">
+            <Link href={`/catalogue/products/${product.id}/edit`} className="max-w-64 min-w-40 text-[11px] text-muted-foreground underline-offset-4 hover:text-foreground hover:underline">
               {product.name}
             </Link>
           ))}
-        {declineReason && <span className="max-w-64 text-[11px] text-muted-foreground">{declineReason}</span>}
+        {declineReason && <span className="max-w-64 min-w-40 text-[11px] text-muted-foreground">{declineReason}</span>}
       </div>
     )
   },
