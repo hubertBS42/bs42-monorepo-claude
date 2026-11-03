@@ -2,26 +2,12 @@ import Link from "next/link"
 import type { ColumnDef } from "@tanstack/react-table"
 import { ColumnHeader } from "@workspace/tables"
 import { Badge } from "@workspace/ui/components/badge"
-import { Checkbox } from "@workspace/ui/components/checkbox"
 import { formatCurrency } from "@workspace/utils/currency"
 import { formatDate } from "@workspace/utils/date"
 import { QUOTE_STATUS } from "@/components/quote-status"
 import type { QuoteRow } from "@/types"
 
 export const columns: ColumnDef<QuoteRow, unknown>[] = [
-  {
-    id: "select",
-    header: ({ table }) => (
-      <Checkbox
-        checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && "indeterminate")}
-        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-        aria-label="Select all"
-      />
-    ),
-    cell: ({ row }) => <Checkbox checked={row.getIsSelected()} onCheckedChange={(value) => row.toggleSelected(!!value)} onClick={(e) => e.stopPropagation()} aria-label="Select row" />,
-    enableSorting: false,
-    enableHiding: false,
-  },
   {
     accessorKey: "reference",
     header: () => <ColumnHeader title="Reference" />,

@@ -2,25 +2,11 @@ import type { ColumnDef } from "@tanstack/react-table"
 import { formatDate } from "@workspace/utils/date"
 import { formatCurrency } from "@workspace/utils/currency"
 import { Badge } from "@workspace/ui/components/badge"
-import { Checkbox } from "@workspace/ui/components/checkbox"
 import { ColumnHeader } from "@workspace/tables"
 import { OrderStatusBadge, PaymentStatusBadge } from "@/components/order-badges"
 import type { StoreOrderListItem } from "@/types"
 
 export const columns: ColumnDef<StoreOrderListItem, unknown>[] = [
-  {
-    id: "select",
-    header: ({ table }) => (
-      <Checkbox
-        checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && "indeterminate")}
-        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-        aria-label="Select all"
-      />
-    ),
-    cell: ({ row }) => <Checkbox checked={row.getIsSelected()} onCheckedChange={(value) => row.toggleSelected(!!value)} aria-label="Select row" onClick={(e) => e.stopPropagation()} />,
-    enableSorting: false,
-    enableHiding: false,
-  },
   {
     accessorKey: "reference",
     header: () => <ColumnHeader title="Reference" sortKey="reference" />,

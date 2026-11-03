@@ -9,7 +9,6 @@ import { consoleAuthClient } from "@workspace/auth/console-client"
 import { ProductRequestStatus } from "@workspace/db/enums"
 import { ColumnHeader, DataTable, RowLink, type FilterConfig } from "@workspace/tables"
 import { Button } from "@workspace/ui/components/button"
-import { Checkbox } from "@workspace/ui/components/checkbox"
 import { toast } from "@workspace/ui/components/toast"
 import { formatDate } from "@workspace/utils/date"
 import { PRODUCT_REQUEST_STATUS_LABELS, ProductRequestStatusBadge } from "@/components/order-badges"
@@ -21,20 +20,6 @@ import type { ProductRequestListItem, SelectItem } from "@/types"
 // each row opens the request's page; a store's shows what became of each, and "Cancel" while it's pending.
 
 const statusOptions = [{ label: "All statuses", value: "all" }, ...Object.values(ProductRequestStatus).map((status) => ({ label: PRODUCT_REQUEST_STATUS_LABELS[status], value: status }))]
-
-const selectColumn: ColumnDef<ProductRequestListItem, unknown> = {
-  id: "select",
-  header: ({ table }) => (
-    <Checkbox
-      checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && "indeterminate")}
-      onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-      aria-label="Select all"
-    />
-  ),
-  cell: ({ row }) => <Checkbox checked={row.getIsSelected()} onCheckedChange={(value) => row.toggleSelected(!!value)} aria-label="Select row" onClick={(e) => e.stopPropagation()} />,
-  enableSorting: false,
-  enableHiding: false,
-}
 
 const productColumn = (href: ((row: ProductRequestListItem) => string) | null): ColumnDef<ProductRequestListItem, unknown> => ({
   id: "name",
@@ -93,7 +78,7 @@ const storeColumn: ColumnDef<ProductRequestListItem, unknown> = { accessorKey: "
 
 const requestHref = (row: ProductRequestListItem) => `/catalogue/product-requests/${row.id}`
 
-const platformColumns = [selectColumn, productColumn(requestHref), storeColumn, statusColumn(false), requestedColumn]
+const platformColumns = [productColumn(requestHref), storeColumn, statusColumn(false), requestedColumn]
 
 function CancelRequest({ storeId, request, canCancel }: { storeId: string; request: ProductRequestListItem; canCancel: boolean }) {
   const router = useRouter()
@@ -144,7 +129,6 @@ export default function ProductRequestsTable({ data, storeId, stores }: ProductR
 
   const columns: ColumnDef<ProductRequestListItem, unknown>[] = storeId
     ? [
-        selectColumn,
         productColumn(null),
         statusColumn(true),
         requestedColumn,

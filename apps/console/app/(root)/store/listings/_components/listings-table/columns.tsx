@@ -9,7 +9,6 @@ import { Badge } from "@workspace/ui/components/badge"
 import { ColumnHeader, RowLink } from "@workspace/tables"
 import type { Status } from "@workspace/db/enums"
 import type { ListingListItem } from "@/types"
-import { Checkbox } from "@workspace/ui/components/checkbox"
 import CategoryPath from "@/components/category-path"
 import GlobalWorkspaceLink from "@/components/global-workspace-link"
 
@@ -25,19 +24,6 @@ export const getListingHref = (listing: ListingListItem) => `/store/listings/${l
 // Table cells don't wrap, so the name, category path and not-on-sale reason wrap at a minimum width instead, as on the
 // products table: their longest values would otherwise push the table wider than a laptop screen
 export const columns: ColumnDef<ListingListItem, unknown>[] = [
-  {
-    id: "select",
-    header: ({ table }) => (
-      <Checkbox
-        checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && "indeterminate")}
-        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-        aria-label="Select all"
-      />
-    ),
-    cell: ({ row }) => <Checkbox checked={row.getIsSelected()} onCheckedChange={(value) => row.toggleSelected(!!value)} aria-label="Select row" onClick={(e) => e.stopPropagation()} />,
-    enableSorting: false,
-    enableHiding: false,
-  },
   {
     id: "name",
     header: () => <ColumnHeader title="Product" sortKey="name" />,

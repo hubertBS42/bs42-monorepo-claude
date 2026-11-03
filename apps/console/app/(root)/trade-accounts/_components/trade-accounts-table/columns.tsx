@@ -1,26 +1,11 @@
 import type { ColumnDef } from "@tanstack/react-table"
 import { ColumnHeader } from "@workspace/tables"
-import { Checkbox } from "@workspace/ui/components/checkbox"
 import { formatDate } from "@workspace/utils/date"
 import { BUSINESS_TYPE_LABELS } from "@workspace/commerce/trade-account-status"
 import { TradeAccountStatusBadge } from "@/components/order-badges"
 import type { TradeAccountRow } from "@/types"
 
 export const columns: ColumnDef<TradeAccountRow, unknown>[] = [
-  {
-    id: "select",
-    header: ({ table }) => (
-      <Checkbox
-        checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && "indeterminate")}
-        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-        aria-label="Select all"
-      />
-    ),
-    // stopPropagation: ticking the box mustn't open the row
-    cell: ({ row }) => <Checkbox checked={row.getIsSelected()} onCheckedChange={(value) => row.toggleSelected(!!value)} onClick={(e) => e.stopPropagation()} aria-label="Select row" />,
-    enableSorting: false,
-    enableHiding: false,
-  },
   {
     accessorKey: "companyName",
     header: () => <ColumnHeader title="Company" sortKey="companyName" />,

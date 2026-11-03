@@ -1,7 +1,6 @@
 import { ColumnDef } from "@tanstack/react-table"
 import { formatDate } from "@workspace/utils/date"
 import { ColumnHeader } from "@workspace/tables"
-import { Checkbox } from "@workspace/ui/components/checkbox"
 import { Skeleton } from "@workspace/ui/components/skeleton"
 import { UserStatusBadge } from "@/components/user-badges"
 import type { StoreMember } from "@/types"
@@ -16,19 +15,6 @@ interface ColumnOptions {
 
 export function getColumns({ viewerUserId, canUpdateRoles }: ColumnOptions): ColumnDef<StoreMember, unknown>[] {
   return [
-    {
-      id: "select",
-      header: ({ table }) => (
-        <Checkbox
-          checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && "indeterminate")}
-          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-          aria-label="Select all"
-        />
-      ),
-      cell: ({ row }) => <Checkbox checked={row.getIsSelected()} onCheckedChange={(value) => row.toggleSelected(!!value)} aria-label="Select row" onClick={(e) => e.stopPropagation()} />,
-      enableSorting: false,
-      enableHiding: false,
-    },
     {
       id: "name",
       accessorFn: (row) => row.user.name,

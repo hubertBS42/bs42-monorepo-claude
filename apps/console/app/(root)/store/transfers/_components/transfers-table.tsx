@@ -4,7 +4,6 @@ import { ArrowLeftRight } from "lucide-react"
 import type { ColumnDef } from "@tanstack/react-table"
 import { StockTransferStatus } from "@workspace/db/enums"
 import { ColumnHeader, DataTable, type FilterConfig } from "@workspace/tables"
-import { Checkbox } from "@workspace/ui/components/checkbox"
 import { formatDate } from "@workspace/utils/date"
 import { StockTransferStatusBadge } from "@/components/order-badges"
 import { STOCK_TRANSFER_STATUS_LABELS } from "@/lib/stock-transfer-status"
@@ -33,19 +32,6 @@ const filters: FilterConfig[] = [
 ]
 
 const columns: ColumnDef<StockTransferListItem, unknown>[] = [
-  {
-    id: "select",
-    header: ({ table }) => (
-      <Checkbox
-        checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && "indeterminate")}
-        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-        aria-label="Select all"
-      />
-    ),
-    cell: ({ row }) => <Checkbox checked={row.getIsSelected()} onCheckedChange={(value) => row.toggleSelected(!!value)} aria-label="Select row" onClick={(e) => e.stopPropagation()} />,
-    enableSorting: false,
-    enableHiding: false,
-  },
   {
     accessorKey: "reference",
     header: () => <ColumnHeader title="Reference" />,

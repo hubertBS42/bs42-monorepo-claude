@@ -1,6 +1,5 @@
 import type { ColumnDef } from "@tanstack/react-table"
 import { Badge } from "@workspace/ui/components/badge"
-import { Checkbox } from "@workspace/ui/components/checkbox"
 import { ColumnHeader } from "@workspace/tables"
 import { formatDate } from "@workspace/utils/date"
 import { PurchaseOrderStatusBadge } from "@/components/order-badges"
@@ -12,19 +11,6 @@ const formatDay = (day: string) => formatDate(new Date(`${day}T12:00:00Z`), "MMM
 
 // With a Store column on the platform's list
 export const getColumns = (showStore: boolean): ColumnDef<PurchaseOrderListItem, unknown>[] => [
-  {
-    id: "select",
-    header: ({ table }) => (
-      <Checkbox
-        checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && "indeterminate")}
-        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-        aria-label="Select all"
-      />
-    ),
-    cell: ({ row }) => <Checkbox checked={row.getIsSelected()} onCheckedChange={(value) => row.toggleSelected(!!value)} aria-label="Select row" onClick={(e) => e.stopPropagation()} />,
-    enableSorting: false,
-    enableHiding: false,
-  },
   {
     accessorKey: "reference",
     header: () => <ColumnHeader title="Reference" sortKey="reference" />,

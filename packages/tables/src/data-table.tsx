@@ -1,9 +1,10 @@
 "use client"
 
-import type { ReactNode } from "react"
+import { useMemo, type ReactNode } from "react"
 import type { CascaderOption } from "@workspace/ui/components/cascader"
 import { flexRender, getCoreRowModel, useReactTable, type ColumnDef } from "@tanstack/react-table"
 import { Button } from "@workspace/ui/components/button"
+import { Checkbox } from "@workspace/ui/components/checkbox"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@workspace/ui/components/table"
 import { cn } from "@workspace/ui/lib/utils"
 import { RowLink } from "./row-link"
@@ -51,6 +52,22 @@ interface DataTableProps<TData, TValue> {
   empty?: TableEmptyConfig
 }
 
+// The tick boxes, added only to a table with selectionActions: a box that leads nowhere just takes up room
+const selectColumn: ColumnDef<unknown, unknown> = {
+  id: "select",
+  header: ({ table }) => (
+    <Checkbox
+      checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && "indeterminate")}
+      onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+      aria-label="Select all"
+    />
+  ),
+  // stopPropagation: ticking the box mustn't open the row
+  cell: ({ row }) => <Checkbox checked={row.getIsSelected()} onCheckedChange={(value) => row.toggleSelected(!!value)} onClick={(e) => e.stopPropagation()} aria-label="Select row" />,
+  enableSorting: false,
+  enableHiding: false,
+}
+
 export function DataTable<TData, TValue>({
   columns,
   data,
@@ -64,11 +81,13 @@ export function DataTable<TData, TValue>({
   empty,
 }: DataTableProps<TData, TValue>) {
   const { handleRowClick, handleRowAuxClick } = useRowLink()
+  const selectable = !!selectionActions
+  const tableColumns = useMemo(() => (selectable ? [selectColumn as ColumnDef<TData, TValue>, ...columns] : columns), [selectable, columns])
 
   // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
     data,
-    columns,
+    columns: tableColumns,
     getCoreRowModel: getCoreRowModel(),
     getRowId,
     manualPagination: true,

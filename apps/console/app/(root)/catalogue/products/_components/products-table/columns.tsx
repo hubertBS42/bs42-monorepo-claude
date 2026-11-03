@@ -2,7 +2,6 @@
 import type { ColumnDef } from "@tanstack/react-table"
 import { formatDate } from "@workspace/utils/date"
 import { Badge } from "@workspace/ui/components/badge"
-import { Checkbox } from "@workspace/ui/components/checkbox"
 import { ColumnHeader, RowLink } from "@workspace/tables"
 import Link from "next/link"
 import { capitalizeWord } from "@workspace/utils/text"
@@ -33,19 +32,6 @@ export const getProductHref = (product: ProductListItem) => `/catalogue/products
 // Table cells don't wrap, so the name, category path and missing-details note wrap at a minimum width instead: their
 // longest values would otherwise push the table wider than a laptop screen
 export const columns: ColumnDef<ProductListItem, unknown>[] = [
-  {
-    id: "select",
-    header: ({ table }) => (
-      <Checkbox
-        checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && "indeterminate")}
-        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-        aria-label="Select all"
-      />
-    ),
-    cell: ({ row }) => <Checkbox checked={row.getIsSelected()} onCheckedChange={(value) => row.toggleSelected(!!value)} aria-label="Select row" onClick={(e) => e.stopPropagation()} />,
-    enableSorting: false,
-    enableHiding: false,
-  },
   {
     accessorKey: "name",
     header: () => <ColumnHeader title="Name" sortKey="name" />,
