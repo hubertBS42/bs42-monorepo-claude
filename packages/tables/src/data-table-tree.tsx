@@ -52,7 +52,7 @@ export function DataTableTree<TData extends { id: string }, TValue>({ columns, d
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id}>{header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}</TableHead>
+                  <TableHead key={header.id} className="first:pl-3">{header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}</TableHead>
                 ))}
               </TableRow>
             ))}
@@ -77,13 +77,13 @@ export function DataTableTree<TData extends { id: string }, TValue>({ columns, d
                       const content = flexRender(cell.column.columnDef.cell, cell.getContext())
                       if (cell.column.id !== expanderColumnId) {
                         return (
-                          <TableCell key={cell.id} className={cn(idx === row.getVisibleCells().length - 1 && "w-7")}>
+                          <TableCell key={cell.id} className={cn("first:pl-3", idx === row.getVisibleCells().length - 1 && "w-7")}>
                             {content}
                           </TableCell>
                         )
                       }
                       return (
-                        <TableCell key={cell.id}>
+                        <TableCell key={cell.id} className="first:pl-3">
                           <div className="flex items-center gap-2" style={{ paddingLeft: `${row.depth * 1.5}rem` }}>
                             {/* Leaves keep an empty slot of the same width so siblings line up */}
                             {row.getCanExpand() ? (

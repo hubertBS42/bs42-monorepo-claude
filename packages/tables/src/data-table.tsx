@@ -126,8 +126,8 @@ export function DataTable<TData, TValue>({
           <TableHeader className="sticky top-0 z-10 bg-muted">
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header, idx) => (
-                  <TableHead key={header.id} className={cn(idx === 0 && "w-7")}>
+                {headerGroup.headers.map((header) => (
+                  <TableHead key={header.id} className={cn("first:pl-3", header.column.id === "select" && "w-7")}>
                     {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
                   </TableHead>
                 ))}
@@ -149,7 +149,7 @@ export function DataTable<TData, TValue>({
                     {row.getVisibleCells().map((cell, idx) => {
                       const content = flexRender(cell.column.columnDef.cell, cell.getContext())
                       return (
-                        <TableCell key={cell.id} className={cn(idx === row.getVisibleCells().length - 1 && "w-7")}>
+                        <TableCell key={cell.id} className={cn("first:pl-3", idx === row.getVisibleCells().length - 1 && "w-7")}>
                           {href && cell.column.id === linkColumnId && !cell.column.columnDef.meta?.rendersRowLink ? <RowLink href={href}>{content}</RowLink> : content}
                         </TableCell>
                       )
@@ -158,7 +158,7 @@ export function DataTable<TData, TValue>({
                 )
               })
             ) : (
-              <TableEmpty colSpan={columns.length} filters={filters} empty={empty} />
+              <TableEmpty colSpan={tableColumns.length} filters={filters} empty={empty} />
             )}
           </TableBody>
         </Table>
