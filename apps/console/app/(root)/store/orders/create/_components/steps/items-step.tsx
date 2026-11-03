@@ -169,7 +169,7 @@ export default function ItemsStep({ storeId, form, chosen, onChosenChange }: Ite
                   const overStock = info?.stock != null && typeof quantity === "number" && quantity > info.stock
                   return (
                     <TableRow key={field.id}>
-                      <TableCell>
+                      <TableCell className="whitespace-normal">
                         <div className="grid">
                           <span>{info?.label ?? "Item"}</span>
                           <span className="text-xs text-muted-foreground">{[info?.priceGhs && `${ghs(info.priceGhs)} each`, info?.sku].filter(Boolean).join(" · ")}</span>
@@ -177,7 +177,10 @@ export default function ItemsStep({ storeId, form, chosen, onChosenChange }: Ite
                         </div>
                       </TableCell>
                       <TableCell className="align-top">
-                        <NumberInputField control={form.control} name={`items.${index}.quantity`} min={1} max={999} aria-label={`Quantity of ${info?.label ?? "item"}`} />
+                        {/* A width of its own, or a long item name squeezes it to nothing on a phone */}
+                        <div className="w-20 sm:w-24">
+                          <NumberInputField control={form.control} name={`items.${index}.quantity`} min={1} max={999} aria-label={`Quantity of ${info?.label ?? "item"}`} />
+                        </div>
                       </TableCell>
                       <TableCell className="align-top">
                         <Button type="button" variant="ghost" size="icon-sm" aria-label={`Remove ${info?.label ?? "item"}`} onClick={() => remove(index)}>

@@ -202,7 +202,10 @@ export default function ItemsStep<T extends StaffSaleFields, O>({ kind, form: wi
                         </div>
                       </TableCell>
                       <TableCell className="align-top">
-                        <NumberInputField control={form.control} name={`items.${index}.quantity`} min={1} max={999} aria-label={`Quantity of ${info?.label ?? "item"}`} />
+                        {/* A width of its own, or a long item name squeezes it to nothing on a phone */}
+                        <div className="w-20 sm:w-24">
+                          <NumberInputField control={form.control} name={`items.${index}.quantity`} min={1} max={999} aria-label={`Quantity of ${info?.label ?? "item"}`} />
+                        </div>
                       </TableCell>
                       <TableCell className="align-top">
                         <Button type="button" variant="ghost" size="icon-sm" aria-label={`Remove ${info?.label ?? "item"}`} onClick={() => remove(index)}>
