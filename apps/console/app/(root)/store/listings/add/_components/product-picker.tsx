@@ -50,7 +50,7 @@ const ProductPicker = ({ products, total, search, nextLimit }: ProductPickerProp
         />
       )}
       {products.length > 0 && (
-        <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
           {products.map((product) => (
             <Link key={product.id} href={`/store/listings/add?productId=${product.id}`} className="rounded-xl focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none">
               <Card className="h-full gap-3 overflow-hidden p-0 transition-colors hover:bg-accent/50">
@@ -67,7 +67,7 @@ const ProductPicker = ({ products, total, search, nextLimit }: ProductPickerProp
                   )}
                 </div>
                 <CardContent className="grid gap-1 px-3 pb-3">
-                  <p className="truncate leading-tight font-medium">{product.name}</p>
+                  <p className="line-clamp-2 leading-tight font-medium">{product.name}</p>
                   <p className="text-xs text-muted-foreground">{product.brandName}</p>
                   <p className="text-sm">{formatCurrency(product.baseSellPrice)}</p>
                   <p className="truncate text-xs text-muted-foreground">{product.categoryPath}</p>

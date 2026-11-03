@@ -295,7 +295,7 @@ export function PickerPageSkeleton() {
         <Skeleton className="h-9 w-20" />
       </div>
       <Skeleton className="h-4 w-80 max-w-full" />
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-5">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
         {Array.from({ length: 10 }, (_, card) => (
           <div key={card} className="flex flex-col gap-2 overflow-hidden rounded-xl ring-1 ring-foreground/10">
             <Skeleton className="aspect-square rounded-none" />
@@ -303,6 +303,7 @@ export function PickerPageSkeleton() {
               <Skeleton className="h-4 w-full" />
               <Skeleton className="h-3 w-16" />
               <Skeleton className="h-4 w-12" />
+              <Skeleton className="h-3 w-24" />
             </div>
           </div>
         ))}
