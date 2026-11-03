@@ -45,9 +45,10 @@ export default async function QuotePage({ params }: QuotePageProps) {
 
   return (
     <div className="flex flex-col gap-y-6">
-      <div className="flex items-end justify-between gap-4">
+      {/* The buttons go under the reference on phones, which it needs the whole width for (and never breaks at its hyphens) */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="grid gap-1">
-          <h1 className="font-mono text-xl font-bold md:text-2xl">{quote.reference}</h1>
+          <h1 className="font-mono text-xl font-bold whitespace-nowrap md:text-2xl">{quote.reference}</h1>
           <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
             <span>{`Made ${formatDate(quote.createdAt, "MMM d, yyyy, h:mm a")} ${quote.createdBy ? `by ${quote.createdBy}` : "by the customer on the storefront"}`}</span>
             <Badge variant={status.variant}>{status.label}</Badge>
