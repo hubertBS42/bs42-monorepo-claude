@@ -12,6 +12,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@work
 import { EmptyState } from "@workspace/ui/components/empty-state"
 import { InfoTip } from "@workspace/ui/components/info-tip"
 import { Input } from "@workspace/ui/components/input"
+import { ScrollArea } from "@workspace/ui/components/scroll-area"
 import { Skeleton } from "@workspace/ui/components/skeleton"
 import { Spinner } from "@workspace/ui/components/spinner"
 import { toast } from "@workspace/ui/components/toast"
@@ -141,33 +142,35 @@ function AddProduct({ owner, listed }: { owner: PairingOwner; listed: Set<string
         autoComplete="off"
       />
       {results && (
-        <ul className="grid max-h-60 gap-1 overflow-y-auto rounded-md border p-1" aria-label="Products to add">
-          {results.length === 0 && <li className="px-2 py-1.5 text-sm text-muted-foreground">No matches</li>}
-          {results.map((product) => {
-            const isListed = listed.has(product.id)
-            return (
-              <li key={product.id}>
-                <button
-                  type="button"
-                  disabled={isListed || add.isPending}
-                  onClick={() =>
-                    add.run(
-                      () => addPairingAction({ owner, productId: product.id }),
-                      () => setSearch("")
-                    )
-                  }
-                  className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-sm hover:bg-accent disabled:opacity-50 disabled:hover:bg-transparent"
-                >
-                  <span className="grid min-w-0 flex-1">
-                    <span className="truncate">{product.name}</span>
-                    <span className="text-xs text-muted-foreground">{product.status === Status.PUBLISHED ? product.brandName : `${product.brandName} · ${product.status.toLowerCase()}`}</span>
-                  </span>
-                  {isListed ? <span className="text-xs text-muted-foreground">On the list</span> : <Plus className="size-4 shrink-0" aria-hidden />}
-                </button>
-              </li>
-            )
-          })}
-        </ul>
+        <ScrollArea className="flex max-h-60 flex-col rounded-md border">
+          <ul className="grid gap-1 p-1 pr-3" aria-label="Products to add">
+            {results.length === 0 && <li className="px-2 py-1.5 text-sm text-muted-foreground">No matches</li>}
+            {results.map((product) => {
+              const isListed = listed.has(product.id)
+              return (
+                <li key={product.id}>
+                  <button
+                    type="button"
+                    disabled={isListed || add.isPending}
+                    onClick={() =>
+                      add.run(
+                        () => addPairingAction({ owner, productId: product.id }),
+                        () => setSearch("")
+                      )
+                    }
+                    className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-sm hover:bg-accent disabled:opacity-50 disabled:hover:bg-transparent"
+                  >
+                    <span className="grid min-w-0 flex-1">
+                      <span className="truncate">{product.name}</span>
+                      <span className="text-xs text-muted-foreground">{product.status === Status.PUBLISHED ? product.brandName : `${product.brandName} · ${product.status.toLowerCase()}`}</span>
+                    </span>
+                    {isListed ? <span className="text-xs text-muted-foreground">On the list</span> : <Plus className="size-4 shrink-0" aria-hidden />}
+                  </button>
+                </li>
+              )
+            })}
+          </ul>
+        </ScrollArea>
       )}
     </div>
   )
