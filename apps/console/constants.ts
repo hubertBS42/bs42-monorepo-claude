@@ -418,6 +418,22 @@ export const BREADCRUMB_DATA: BreadcrumbConfig[] = [
     ],
   },
   {
+    pathname: "/store/reports/sales",
+    segments: [
+      { text: "Dashboard", href: "/" },
+      { text: "Reports", href: "/store/reports" },
+      { text: "Sales", href: "#" },
+    ],
+  },
+  {
+    pathname: "/store/reports/refunds",
+    segments: [
+      { text: "Dashboard", href: "/" },
+      { text: "Reports", href: "/store/reports" },
+      { text: "Refunds & Returns", href: "#" },
+    ],
+  },
+  {
     pathname: "/reports",
     segments: [
       { text: "Dashboard", href: "/" },
@@ -438,6 +454,14 @@ export const BREADCRUMB_DATA: BreadcrumbConfig[] = [
       { text: "Dashboard", href: "/" },
       { text: "Reports", href: "/reports" },
       { text: "Tax", href: "#" },
+    ],
+  },
+  {
+    pathname: "/reports/refunds",
+    segments: [
+      { text: "Dashboard", href: "/" },
+      { text: "Reports", href: "/reports" },
+      { text: "Refunds & Returns", href: "#" },
     ],
   },
   {

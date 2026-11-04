@@ -1,5 +1,6 @@
 import "server-only"
 
+import { PAYMENT_METHOD_LABELS } from "@workspace/commerce/order-status"
 import type { prisma } from "@workspace/db"
 import { Prisma } from "@workspace/db/client"
 import { OrderStatus, PaymentStatus } from "@workspace/db/enums"
@@ -310,5 +311,154 @@ export async function getTaxReport(tx: Tx, range: ReportRange): Promise<TaxRepor
     byRate: [...rates.values()]
       .sort((a, b) => b.rate.comparedTo(a.rate))
       .map((row) => ({ rate: row.rate.toFixed(4), paidOrders: row.paidOrders, salesExTaxGhs: row.sales.toFixed(2), taxGhs: row.tax.toFixed(2) })),
+  }
+}
+
+// ---- Refunds and returns ----
+
+export interface RefundsPeriodRow {
+  key: string
+  label: string
+  refunds: number
+  refundedGhs: string
+  returns: number
+  unitsReturned: number
+}
+
+export interface RefundRow {
+  id: string
+  at: Date
+  reference: string
+  href: string
+  // The platform's only: the stores whose items are on the order
+  stores: string | null
+  amountGhs: string
+  method: string
+  reason: string
+  by: string | null
+  withReturn: boolean
+}
+
+export interface ReturnRow {
+  id: string
+  at: Date
+  reference: string
+  href: string
+  stores: string | null
+  reason: string
+  units: number
+  restocked: number
+  refundGhs: string | null
+  by: string | null
+}
+
+export interface ReturnedProductRow {
+  id: string
+  name: string
+  href: string | null
+  units: number
+  restocked: number
+}
+
+export interface RefundsReport {
+  summary: { refundedGhs: string; refunds: number; returns: number; unitsReturned: number; unitsRestocked: number }
+  periods: RefundsPeriodRow[]
+  // Newest first
+  refunds: RefundRow[]
+  returns: ReturnRow[]
+  byProduct: ReturnedProductRow[]
+}
+
+// Refunds by when they were given and returns by when they were recorded, as the dashboard counts them. storeId: a
+// store's own, on orders made only of its items (refunds and returns on shared orders are the platform's), or null
+// for every order.
+export async function getRefundsReport(tx: Tx, storeId: string | null, range: ReportRange): Promise<RefundsReport> {
+  const ownOrder = storeId ? { order: { orderItems: { some: { organizationId: storeId }, every: { organizationId: storeId } } } } : {}
+  const order = { select: { id: true, reference: true, orderItems: { select: { storeName: true } } } }
+  const [refunds, returns] = await Promise.all([
+    tx.orderRefund.findMany({
+      where: { ...ownOrder, createdAt: within(range) },
+      select: { id: true, createdAt: true, amountGhs: true, method: true, reason: true, refundedBy: { select: { name: true } }, return: { select: { id: true } }, order },
+      orderBy: { createdAt: "desc" },
+    }),
+    tx.orderReturn.findMany({
+      where: { ...ownOrder, createdAt: within(range) },
+      select: {
+        id: true,
+        createdAt: true,
+        reason: true,
+        recordedBy: { select: { name: true } },
+        refund: { select: { amountGhs: true } },
+        items: { select: { quantity: true, restocked: true, orderItem: { select: { storeListingId: true, productId: true, productName: true } } } },
+        order,
+      },
+      orderBy: { createdAt: "desc" },
+    }),
+  ])
+
+  const orderHref = (id: string) => (storeId ? `/store/orders/${id}/details` : `/orders/${id}/details`)
+  const storeNames = (row: { order: { orderItems: { storeName: string }[] } }) => (storeId ? null : [...new Set(row.order.orderItems.map((line) => line.storeName))].join(", "))
+  const units = (row: (typeof returns)[number]) => row.items.reduce((total, item) => total + item.quantity, 0)
+  const restocked = (row: (typeof returns)[number]) => row.items.reduce((total, item) => total + (item.restocked ? item.quantity : 0), 0)
+
+  const returnGroups = new Map(byPeriod(range, returns, (row) => row.createdAt).map((group) => [group.key, group.rows]))
+  const periods = byPeriod(range, refunds, (row) => row.createdAt).map((group): RefundsPeriodRow => {
+    const returned = returnGroups.get(group.key) ?? []
+    return {
+      key: group.key,
+      label: group.label,
+      refunds: group.rows.length,
+      refundedGhs: sum(group.rows, (row) => row.amountGhs).toFixed(2),
+      returns: returned.length,
+      unitsReturned: returned.reduce((total, row) => total + units(row), 0),
+    }
+  })
+
+  // A store's per listing, the platform's per catalogue product, as on the Sales report. The name is the latest return's.
+  const products = new Map<string, ReturnedProductRow>()
+  for (const row of [...returns].reverse()) {
+    for (const item of row.items) {
+      const line = item.orderItem
+      const id = storeId ? line.storeListingId : (line.productId ?? line.storeListingId)
+      const href = storeId ? listingHref(line.storeListingId) : line.productId ? catalogueProductHref(line.productId) : null
+      const product = products.get(id) ?? { id, name: line.productName, href, units: 0, restocked: 0 }
+      products.set(id, { ...product, name: line.productName, units: product.units + item.quantity, restocked: product.restocked + (item.restocked ? item.quantity : 0) })
+    }
+  }
+
+  return {
+    summary: {
+      refundedGhs: sum(refunds, (row) => row.amountGhs).toFixed(2),
+      refunds: refunds.length,
+      returns: returns.length,
+      unitsReturned: returns.reduce((total, row) => total + units(row), 0),
+      unitsRestocked: returns.reduce((total, row) => total + restocked(row), 0),
+    },
+    periods,
+    refunds: refunds.map((row) => ({
+      id: row.id,
+      at: row.createdAt,
+      reference: row.order.reference,
+      href: orderHref(row.order.id),
+      stores: storeNames(row),
+      amountGhs: row.amountGhs.toFixed(2),
+      method: PAYMENT_METHOD_LABELS[row.method],
+      reason: row.reason,
+      by: row.refundedBy?.name ?? null,
+      withReturn: row.return !== null,
+    })),
+    returns: returns.map((row) => ({
+      id: row.id,
+      at: row.createdAt,
+      reference: row.order.reference,
+      href: orderHref(row.order.id),
+      stores: storeNames(row),
+      reason: row.reason,
+      units: units(row),
+      restocked: restocked(row),
+      refundGhs: row.refund?.amountGhs.toFixed(2) ?? null,
+      by: row.recordedBy?.name ?? null,
+    })),
+    byProduct: [...products.values()].sort((a, b) => b.units - a.units || a.name.localeCompare(b.name)),
   }
 }
