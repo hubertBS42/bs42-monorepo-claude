@@ -22,6 +22,8 @@
 // - Stock: each listed product (or variant) the store hasn't counted yet gets the old count as initial stock. A product
 //   the store doesn't list (a draft with no price, which db:seed:listings skips) gets a draft listing holding its
 //   count, for staff to price and publish.
+// - Costs: the old orders didn't record what each item cost, so each line's is estimated from the buy price now (the
+//   store's listing's, else the catalogue's) and marked as estimated, for the profit report.
 // - Orders are staff-made (--by), so the storefront's unpaid-order job leaves the open ones alone. Their lines took no
 //   stock (tracksStock false): stock comes from the old counts instead. Walk-in sales carry the shop's own address,
 //   which is dropped (it would hand them all to whoever verified it); the name and phone stay.
@@ -33,6 +35,7 @@ import { PLATFORM_ORGANIZATION_SLUG } from "@workspace/contracts"
 import { removePrivateFiles, uploadPrivateFiles } from "@workspace/storage"
 import { Prisma } from "../generated/prisma/client"
 import { prisma } from "../src/client"
+import { listingVariantPrices } from "./product-seeds"
 
 const D = (value: number | string) => new Prisma.Decimal(value)
 const money = (value: Prisma.Decimal) => value.toDecimalPlaces(2, Prisma.Decimal.ROUND_HALF_UP)
@@ -248,9 +251,10 @@ async function main() {
       sku: true,
       images: true,
       baseSellPrice: true,
+      baseBuyPrice: true,
       variants: {
         orderBy: { position: "asc" },
-        select: { id: true, sku: true, images: true, variantValues: { select: { optionValue: { select: { value: true, option: { select: { name: true, position: true } } } } } } },
+        select: { id: true, position: true, sku: true, images: true, variantValues: { select: { optionValue: { select: { value: true, option: { select: { name: true, position: true } } } } } } },
       },
     },
   })
@@ -283,7 +287,16 @@ async function main() {
 
   const existing = await prisma.storeListing.findMany({
     where: { organizationId: store.id },
-    select: { id: true, productId: true, stock: true, trackInventory: true, lowStockThreshold: true, _count: { select: { stockMovements: true } }, storeListingVariants: { select: { id: true, variantId: true, stock: true, trackInventory: true, lowStockThreshold: true, _count: { select: { stockMovements: true } } } } },
+    select: {
+      id: true,
+      productId: true,
+      buyPrice: true,
+      stock: true,
+      trackInventory: true,
+      lowStockThreshold: true,
+      _count: { select: { stockMovements: true } },
+      storeListingVariants: { select: { id: true, variantId: true, buyPrice: true, stock: true, trackInventory: true, lowStockThreshold: true, _count: { select: { stockMovements: true } } } },
+    },
   })
   const listingByProduct = new Map(existing.map((listing) => [listing.productId, listing]))
   const newListings: Prisma.StoreListingCreateManyInput[] = []
@@ -308,6 +321,18 @@ async function main() {
       newListingVariants.push({ id: listingVariantId, storeListingId: listingId, variantId: t.variant.id, trackInventory: false, lowStockThreshold: LOW_STOCK_THRESHOLD, stock: 0, status: "ARCHIVED" })
     }
     return { listingId, listingVariantId }
+  }
+
+  // What a sold unit cost, estimated from the buy price now (the old orders didn't record it): the store's variant's,
+  // else its listing's, as a sale does; for a product the store doesn't list, the catalogue's (the old site's). The
+  // placeholder and a buy price of 0 have none.
+  function estimatedCost(t: Target | null) {
+    if (!t) return null
+    const own = listingByProduct.get(t.product.id)
+    const cost = own
+      ? ((t.variant && own.storeListingVariants.find((row) => row.variantId === t.variant!.id)?.buyPrice) ?? own.buyPrice)
+      : ((t.variant && listingVariantPrices(t.product, t.variant.position).buyPrice) ?? t.product.baseBuyPrice)
+    return cost?.gt(0) ? cost : null
   }
 
   // The placeholder for lines with no product, made inside the transaction (its slug and SKU come from query hooks)
@@ -468,10 +493,10 @@ async function main() {
       createdAt: placedAt,
       updatedAt: history.at(-1)!.at,
     })
-    for (const line of priced) orderItems.push({ id: randomUUID(), orderId: id, tracksStock: false, ...lineSnapshot(line) })
+    for (const line of priced) orderItems.push({ id: randomUUID(), orderId: id, tracksStock: false, ...lineSnapshot(line), unitCostUsd: estimatedCost(line.t), costEstimated: true })
     for (const step of history) orderHistory.push({ id: randomUUID(), orderId: id, status: step.status, note: step.note, changedById: by.id, createdAt: step.at })
   }
-  report.orders = { count: orderRows.length, lines: orderItems.length, paid: orderRows.filter((row) => row.paymentStatus === "PAID").length, open: orderRows.filter((row) => row.status !== "COMPLETED" && row.status !== "CANCELLED").length, withEmail: orderRows.filter((row) => row.customerEmail).length, totalMismatches: totalMismatches.length }
+  report.orders = { count: orderRows.length, lines: orderItems.length, paid: orderRows.filter((row) => row.paymentStatus === "PAID").length, open: orderRows.filter((row) => row.status !== "COMPLETED" && row.status !== "CANCELLED").length, withEmail: orderRows.filter((row) => row.customerEmail).length, linesWithCost: orderItems.filter((item) => item.unitCostUsd).length, totalMismatches: totalMismatches.length }
 
   // ---- Quotations ----
 

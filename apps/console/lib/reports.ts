@@ -90,8 +90,10 @@ const goodsLines = (tx: Tx, range: ReportRange, storeId: string | null) =>
       quantity: true,
       totalPriceGhs: true,
       discountGhs: true,
+      unitCostUsd: true,
+      costEstimated: true,
       returns: { select: { quantity: true } },
-      order: { select: { paidAt: true } },
+      order: { select: { paidAt: true, exchangeRate: true } },
     },
   })
 
@@ -203,6 +205,150 @@ export async function getSalesReport(tx: Tx, storeId: string | null, range: Repo
       }),
       byStore: storeId ? null : groupGoods(lines, (line) => ({ id: line.organizationId, name: line.storeName, href: null })),
     },
+  }
+}
+
+// ---- Profit and margins ----
+
+export interface ProfitRow {
+  id: string
+  name: string
+  href: string | null
+  units: number
+  // Every line's goods, and those of the lines with a cost, which profit and margin are worked out from
+  goodsGhs: string
+  costedGoodsGhs: string
+  // Goods whose lines have no cost (no buy price at the sale), left out of profit and margin
+  uncostedGoodsGhs: string
+  costGhs: string
+  // The part of the cost estimated rather than recorded at the sale (the old site's orders)
+  estimatedCostGhs: string
+  profitGhs: string
+  // A fraction of the costed goods, or null with none
+  margin: string | null
+}
+
+export interface ProfitPeriodRow extends Omit<ProfitRow, "id" | "name" | "href" | "units"> {
+  key: string
+  label: string
+}
+
+export interface ProfitReport {
+  summary: Omit<ProfitRow, "id" | "name" | "href"> & {
+    uncostedLines: number
+    // Profit on the lines whose cost is estimated
+    estimatedProfitGhs: string
+  }
+  periods: ProfitPeriodRow[]
+  byProduct: ProfitRow[]
+  byCategory: ProfitRow[]
+  byBrand: ProfitRow[]
+  // The platform's only
+  byStore: ProfitRow[] | null
+}
+
+type ProfitLine = GoodsLine & { costGhs: Prisma.Decimal | null }
+
+// Adds lines' goods, cost and profit up
+function profitTotals(lines: ProfitLine[]) {
+  let goods = ZERO
+  let costedGoods = ZERO
+  let cost = ZERO
+  let estimatedCost = ZERO
+  let estimatedGoods = ZERO
+  for (const line of lines) {
+    goods = goods.plus(line.goodsGhs)
+    if (!line.costGhs) continue
+    costedGoods = costedGoods.plus(line.goodsGhs)
+    cost = cost.plus(line.costGhs)
+    if (line.costEstimated) {
+      estimatedCost = estimatedCost.plus(line.costGhs)
+      estimatedGoods = estimatedGoods.plus(line.goodsGhs)
+    }
+  }
+  const profit = costedGoods.minus(cost)
+  return {
+    units: lines.reduce((total, line) => total + line.units, 0),
+    goods,
+    estimatedProfit: estimatedGoods.minus(estimatedCost),
+    row: {
+      goodsGhs: goods.toFixed(2),
+      costedGoodsGhs: costedGoods.toFixed(2),
+      uncostedGoodsGhs: goods.minus(costedGoods).toFixed(2),
+      costGhs: cost.toFixed(2),
+      estimatedCostGhs: estimatedCost.toFixed(2),
+      profitGhs: profit.toFixed(2),
+      margin: costedGoods.gt(0) ? profit.dividedBy(costedGoods).toFixed(4) : null,
+    },
+  }
+}
+
+// The lines per group, the most profit first (then the most goods, for groups without a cost)
+function groupProfit(lines: ProfitLine[], group: (line: ProfitLine) => { id: string; name: string; href: string | null }): ProfitRow[] {
+  const groups = new Map<string, { id: string; name: string; href: string | null; latest: Date; lines: ProfitLine[] }>()
+  for (const line of lines) {
+    const { id, name, href } = group(line)
+    const paidAt = line.order.paidAt!
+    const row = groups.get(id)
+    if (!row) groups.set(id, { id, name, href, latest: paidAt, lines: [line] })
+    else {
+      row.lines.push(line)
+      // The latest sale's name, so a renamed product shows its current name
+      if (paidAt > row.latest) Object.assign(row, { name, latest: paidAt })
+    }
+  }
+  return [...groups.values()]
+    .map((row) => ({ row, totals: profitTotals(row.lines) }))
+    .sort((a, b) => new Prisma.Decimal(b.totals.row.profitGhs).comparedTo(a.totals.row.profitGhs) || b.totals.goods.comparedTo(a.totals.goods) || a.row.name.localeCompare(b.row.name))
+    .map(({ row, totals }) => ({ id: row.id, name: row.name, href: row.href, units: totals.units, ...totals.row }))
+}
+
+// What goods sold for (as the sales report counts them) against what they cost: each line's unit cost (in USD, as
+// buy prices are kept) at its order's exchange rate, for the units not returned. Lines without a cost are counted in
+// the goods but left out of profit and margin.
+export async function getProfitReport(tx: Tx, storeId: string | null, range: ReportRange): Promise<ProfitReport> {
+  const rawLines = await goodsLines(tx, range, storeId)
+  const lines: ProfitLine[] = rawLines.flatMap((line) => {
+    const units = line.quantity - line.returns.reduce((total, row) => total + row.quantity, 0)
+    if (units <= 0) return []
+    const goodsGhs = line.totalPriceGhs.minus(line.discountGhs).times(units).dividedBy(line.quantity)
+    const costGhs = line.unitCostUsd ? line.unitCostUsd.times(units).times(line.order.exchangeRate).toDecimalPlaces(2, Prisma.Decimal.ROUND_HALF_UP) : null
+    return [{ ...line, units, goodsGhs, costGhs }]
+  })
+
+  const productIds = [...new Set(lines.flatMap((line) => (line.productId ? [line.productId] : [])))]
+  const [products, categories] = await Promise.all([
+    tx.product.findMany({ where: { id: { in: productIds } }, select: { id: true, categoryId: true, brand: { select: { id: true, name: true } } } }),
+    tx.category.findMany({ select: { id: true, name: true, parentId: true } }),
+  ])
+  const productById = new Map(products.map((product) => [product.id, product]))
+  const categoryPaths = getCategoryPaths(categories)
+  const unknown = { id: "unknown", name: "Unknown", href: null }
+
+  const totals = profitTotals(lines)
+
+  return {
+    summary: {
+      units: totals.units,
+      ...totals.row,
+      uncostedLines: lines.filter((line) => !line.costGhs).length,
+      estimatedProfitGhs: totals.estimatedProfit.toFixed(2),
+    },
+    periods: byPeriod(range, lines, (line) => line.order.paidAt!).map((group) => ({ key: group.key, label: group.label, ...profitTotals(group.rows).row })),
+    byProduct: groupProfit(lines, (line) =>
+      storeId
+        ? { id: line.storeListingId, name: line.productName, href: listingHref(line.storeListingId) }
+        : { id: line.productId ?? line.storeListingId, name: line.productName, href: line.productId ? catalogueProductHref(line.productId) : null }
+    ),
+    byCategory: groupProfit(lines, (line) => {
+      const categoryId = productById.get(line.productId ?? "")?.categoryId
+      return categoryId ? { id: categoryId, name: categoryPaths.get(categoryId) ?? "Unknown", href: null } : unknown
+    }),
+    byBrand: groupProfit(lines, (line) => {
+      const brand = productById.get(line.productId ?? "")?.brand
+      return brand ? { id: brand.id, name: brand.name, href: null } : { ...unknown, name: "No brand" }
+    }),
+    byStore: storeId ? null : groupProfit(lines, (line) => ({ id: line.organizationId, name: line.storeName, href: null })),
   }
 }
 

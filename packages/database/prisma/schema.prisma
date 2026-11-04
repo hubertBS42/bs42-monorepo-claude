@@ -1117,6 +1117,12 @@ model OrderItem {
   installationTotalGhs Decimal  @default(0) @db.Decimal(12, 2)
   installationTaxGhs   Decimal  @default(0) @db.Decimal(12, 2)
 
+  // What one unit cost the store, in USD as buy prices are kept: the variant's buy price at the sale (else the
+  // listing's), for the profit report. Null when there was none. Estimated for lines sold before costs were recorded
+  // (the old site's orders), from the buy price at the time they came across.
+  unitCostUsd   Decimal? @db.Decimal(12, 2)
+  costEstimated Boolean  @default(false)
+
   // Snapshot
   productName        String
   productSlug        String

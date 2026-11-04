@@ -57,6 +57,8 @@ export interface ResolvedLine {
   listingVariantId: string | null
   quantity: number
   unitPriceUsd: Prisma.Decimal
+  // What one unit cost, kept on the order line for the profit report: the buy price, null without one
+  unitCostUsd: Prisma.Decimal | null
   // Installing one unit, in GHS; null without installation
   installationUnitGhs: Prisma.Decimal | null
   // What the stock check and reservation need. The threshold is the listing's: saving a listing copies it to its variants.
@@ -90,6 +92,7 @@ export async function resolveOrderLines(client: Client, storeId: string | null, 
       organizationId: true,
       status: true,
       sellPrice: true,
+      buyPrice: true,
       stock: true,
       trackInventory: true,
       lowStockThreshold: true,
@@ -103,6 +106,7 @@ export async function resolveOrderLines(client: Client, storeId: string | null, 
           id: true,
           status: true,
           sellPrice: true,
+          buyPrice: true,
           stock: true,
           trackInventory: true,
           variant: {
@@ -144,6 +148,9 @@ export async function resolveOrderLines(client: Client, storeId: string | null, 
     const unitPriceUsd = row?.sellPrice ?? listing.sellPrice
     if (unitPriceUsd.lte(0)) throw new OrderItemError("ITEM_UNAVAILABLE", label)
 
+    // A variant without its own buy price cost the listing's; 0 means nobody entered one
+    const unitCostUsd = row?.buyPrice ?? listing.buyPrice
+
     const installationUnitGhs = item.installation ? (fees.get(product.id) ?? null) : null
     if (item.installation && !installationUnitGhs) throw new OrderItemError("NO_INSTALLATION", label)
 
@@ -153,6 +160,7 @@ export async function resolveOrderLines(client: Client, storeId: string | null, 
       listingVariantId: row?.id ?? null,
       quantity: item.quantity,
       unitPriceUsd,
+      unitCostUsd: unitCostUsd?.gt(0) ? unitCostUsd : null,
       installationUnitGhs,
       stock: row?.stock ?? listing.stock,
       trackInventory: row?.trackInventory ?? listing.trackInventory,
@@ -282,6 +290,7 @@ export async function createOrder(tx: Tx, order: NewOrder) {
             installationUnitGhs: amounts.installationUnitGhs,
             installationTotalGhs: amounts.installationTotalGhs,
             installationTaxGhs: amounts.installationTaxGhs,
+            unitCostUsd: line.unitCostUsd,
             productName: line.productName,
             productSlug: line.productSlug,
             productImage: line.productImage,
