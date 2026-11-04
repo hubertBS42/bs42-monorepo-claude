@@ -38,10 +38,12 @@ function StatCard({ label, value, change, period, note, headline }: StatCardProp
     <Card className="@container/card">
       <CardHeader>
         <CardDescription>{label}</CardDescription>
-        <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">{value}</CardTitle>
-        <CardAction>
+        {/* The badge sits beside the label and the amount gets the whole width below, so a long amount (GH₵1,362,437.51)
+            never pushes the badge out of a narrow card; it only takes the larger size once there's room for it */}
+        <CardAction className="row-span-1">
           <TrendBadge change={change} />
         </CardAction>
+        <CardTitle className="col-span-full text-2xl font-semibold tabular-nums @[300px]/card:text-3xl">{value}</CardTitle>
       </CardHeader>
       <CardFooter className="flex-col items-start gap-1.5 text-sm">
         <div className="line-clamp-1 flex gap-2 font-medium">
