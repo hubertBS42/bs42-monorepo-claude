@@ -2,6 +2,7 @@ import {
   ArrowLeftRight,
   Briefcase,
   Building2,
+  ChartColumn,
   ClipboardList,
   FileText,
   LayoutDashboard,
@@ -53,8 +54,9 @@ export const navConfig: NavItem[] = [
   { url: "/store/purchase-orders", title: "Purchase Orders", icon: ClipboardList, group: "main", order: 5 },
   { url: "/store/transfers", title: "Transfers", icon: ArrowLeftRight, group: "main", order: 6 },
   { url: "/store/suppliers", title: "Suppliers", icon: Truck, group: "main", order: 7 },
-  { url: "/store/members", title: "Members", icon: Users, group: "main", order: 8 },
-  { url: "/store/invitations", title: "Invitations", icon: Mail, group: "main", order: 9 },
+  { url: "/store/reports", title: "Reports", icon: ChartColumn, group: "main", order: 8 },
+  { url: "/store/members", title: "Members", icon: Users, group: "main", order: 9 },
+  { url: "/store/invitations", title: "Invitations", icon: Mail, group: "main", order: 10 },
   // The store's own details, with Leave and Delete: occasional, so at the bottom like the platform's Settings
   { url: "/store", title: "Store Details", icon: Store, group: "secondary", order: 1, exact: true },
   {
@@ -98,6 +100,13 @@ export const navConfig: NavItem[] = [
     icon: Briefcase,
     group: "main",
     order: 8,
+  },
+  {
+    url: "/reports",
+    title: "Reports",
+    icon: ChartColumn,
+    group: "main",
+    order: 9,
   },
   {
     url: "/settings",

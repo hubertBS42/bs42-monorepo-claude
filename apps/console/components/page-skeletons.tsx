@@ -375,3 +375,30 @@ export function DashboardSkeleton() {
     </Page>
   )
 }
+
+// A report: its range controls, the headline figures and the tables' cards
+export function ReportPageSkeleton() {
+  return (
+    <Page kind="report">
+      <PageHeaderSkeleton />
+      <div className="grid gap-4">
+        <div className="flex flex-wrap gap-2">
+          <Skeleton className="h-9 w-40" />
+          <Skeleton className="h-9 w-56" />
+          <Skeleton className="h-9 w-44" />
+        </div>
+        <div className="grid grid-cols-1 gap-4 @xl/main:grid-cols-2 @5xl/main:grid-cols-4">
+          {Array.from({ length: 4 }, (_, card) => (
+            <CardFrame key={card} className="gap-3 px-6">
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-8 w-40" />
+              <Skeleton className="mt-2 h-4 w-32" />
+            </CardFrame>
+          ))}
+        </div>
+        <CardSkeleton lines={8} />
+        <CardSkeleton lines={6} />
+      </div>
+    </Page>
+  )
+}
