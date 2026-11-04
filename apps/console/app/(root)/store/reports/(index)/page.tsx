@@ -13,11 +13,12 @@ export default async function StoreReportsPage() {
 
   return (
     <ReportsHub
-      description="This store's sales, refunds and returns, and the value of its stock."
+      description="This store's sales, refunds and returns, stock and purchases."
       reports={[
         { report: "sales", href: "/store/reports/sales" },
         { report: "refunds", href: "/store/reports/refunds" },
         { report: "stock", href: "/store/reports/stock" },
+        { report: "purchases", href: "/store/reports/purchases" },
       ]}
     />
   )

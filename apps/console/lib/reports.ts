@@ -4,7 +4,7 @@ import { PAYMENT_METHOD_LABELS } from "@workspace/commerce/order-status"
 import { describeVariant } from "@workspace/commerce/order-writes"
 import type { prisma } from "@workspace/db"
 import { Prisma } from "@workspace/db/client"
-import { OrderStatus, PaymentStatus } from "@workspace/db/enums"
+import { Currency, OrderStatus, PaymentStatus, PurchaseOrderStatus } from "@workspace/db/enums"
 import { dayStart } from "@workspace/utils/date"
 import { getCategoryPaths } from "./data/products.data"
 import { sumLines } from "./order-details"
@@ -551,7 +551,7 @@ export async function getStockValueReport(tx: Tx, storeId: string | null): Promi
         name: listing.product.name,
         variant,
         store: storeId ? null : listing.organization.name,
-        href: listingHref(listing.id),
+        href: storeId ? listingHref(listing.id) : catalogueProductHref(listing.product.id),
         units,
         unitCostUsd: buyPrice?.toFixed(2) ?? null,
         costUsd: cost?.toFixed(2) ?? null,
@@ -617,5 +617,178 @@ export async function getStockValueReport(tx: Tx, storeId: string | null): Promi
     byCategory: group((row) => ({ id: row.listing.product.categoryId, name: categoryPaths.get(row.listing.product.categoryId) ?? "Unknown" })),
     byBrand: group((row) => row.listing.product.brand),
     byStore: storeId ? null : group((row) => row.listing.organization),
+  }
+}
+
+// ---- Purchases by supplier ----
+
+export interface PurchasesPeriodRow {
+  key: string
+  label: string
+  ordersPlaced: number
+  orderedUsd: string
+  receivedUsd: string
+}
+
+export interface SupplierRow {
+  id: string
+  name: string
+  // The platform's only: suppliers belong to a store
+  store: string | null
+  href: string | null
+  ordersPlaced: number
+  unitsOrdered: number
+  orderedUsd: string
+  unitsReceived: number
+  receivedUsd: string
+}
+
+export interface PurchaseOrderRow {
+  id: string
+  orderedAt: Date
+  reference: string
+  href: string
+  supplier: string
+  store: string | null
+  status: PurchaseOrderStatus
+  currency: string
+  totalUsd: string
+}
+
+export interface ReceivedProductRow {
+  id: string
+  name: string
+  href: string
+  units: number
+  receivedUsd: string
+}
+
+export interface PurchasesReport {
+  summary: { ordersPlaced: number; orderedUsd: string; shippingUsd: string; deliveries: number; unitsReceived: number; receivedUsd: string }
+  periods: PurchasesPeriodRow[]
+  suppliers: SupplierRow[]
+  // Newest first
+  orders: PurchaseOrderRow[]
+  products: ReceivedProductRow[]
+}
+
+// What was bought in, in US dollars as buy prices are kept: an order in cedis takes each line's USD cost and its shipping
+// at the rate it was ordered at. Ordered: purchase orders marked as ordered in the range, except those cancelled since
+// (nothing came), goods and shipping. Received: what deliveries in the range brought, at each line's cost, goods only.
+// storeId: a store's own, or null for every store's.
+export async function getPurchasesReport(tx: Tx, storeId: string | null, range: ReportRange): Promise<PurchasesReport> {
+  const inStore = storeId ? { organizationId: storeId } : {}
+  const supplier = { select: { id: true, name: true } }
+  const store = { select: { name: true } }
+  const [ordered, receipts] = await Promise.all([
+    tx.purchaseOrder.findMany({
+      where: { ...inStore, orderedAt: within(range), status: { not: PurchaseOrderStatus.CANCELLED } },
+      select: {
+        id: true,
+        reference: true,
+        status: true,
+        currency: true,
+        exchangeRate: true,
+        shippingCost: true,
+        orderedAt: true,
+        supplier,
+        organization: store,
+        items: { select: { quantityOrdered: true, unitCostUsd: true } },
+      },
+      orderBy: { orderedAt: "desc" },
+    }),
+    tx.purchaseOrderReceipt.findMany({
+      where: { createdAt: within(range), purchaseOrder: inStore },
+      select: {
+        createdAt: true,
+        purchaseOrder: { select: { supplier, organization: store } },
+        items: { select: { quantity: true, purchaseOrderItem: { select: { storeListingId: true, productName: true, unitCostUsd: true, storeListing: { select: { productId: true } } } } } },
+      },
+    }),
+  ])
+
+  // An order in cedis has its rate from when it was marked as ordered, so every order here has one
+  const shippingUsd = (order: (typeof ordered)[number]) =>
+    order.currency === Currency.USD || !order.exchangeRate ? order.shippingCost : order.shippingCost.dividedBy(order.exchangeRate).toDecimalPlaces(2)
+  const goodsUsd = (order: (typeof ordered)[number]) => sum(order.items, (item) => item.unitCostUsd.times(item.quantityOrdered))
+  const orderUsd = (order: (typeof ordered)[number]) => goodsUsd(order).plus(shippingUsd(order))
+  const receiptUsd = (receipt: (typeof receipts)[number]) => sum(receipt.items, (item) => item.purchaseOrderItem.unitCostUsd.times(item.quantity))
+  const receiptUnits = (receipt: (typeof receipts)[number]) => receipt.items.reduce((total, item) => total + item.quantity, 0)
+
+  const receiptGroups = new Map(byPeriod(range, receipts, (row) => row.createdAt).map((group) => [group.key, group.rows]))
+  const periods = byPeriod(range, ordered, (order) => order.orderedAt!).map((group): PurchasesPeriodRow => ({
+    key: group.key,
+    label: group.label,
+    ordersPlaced: group.rows.length,
+    orderedUsd: sum(group.rows, orderUsd).toFixed(2),
+    receivedUsd: sum(receiptGroups.get(group.key) ?? [], receiptUsd).toFixed(2),
+  }))
+
+  const suppliers = new Map<string, Omit<SupplierRow, "orderedUsd" | "receivedUsd"> & { ordered: Prisma.Decimal; received: Prisma.Decimal }>()
+  const supplierRow = (row: { supplier: { id: string; name: string }; organization: { name: string } }) => {
+    const entry = suppliers.get(row.supplier.id) ?? {
+      id: row.supplier.id,
+      name: row.supplier.name,
+      store: storeId ? null : row.organization.name,
+      href: storeId ? `/store/suppliers/${row.supplier.id}/edit` : null,
+      ordersPlaced: 0,
+      unitsOrdered: 0,
+      ordered: ZERO,
+      unitsReceived: 0,
+      received: ZERO,
+    }
+    suppliers.set(row.supplier.id, entry)
+    return entry
+  }
+  for (const order of ordered) {
+    const entry = supplierRow(order)
+    entry.ordersPlaced += 1
+    entry.unitsOrdered += order.items.reduce((total, item) => total + item.quantityOrdered, 0)
+    entry.ordered = entry.ordered.plus(orderUsd(order))
+  }
+  const products = new Map<string, { id: string; name: string; href: string; units: number; received: Prisma.Decimal }>()
+  for (const receipt of receipts) {
+    const entry = supplierRow(receipt.purchaseOrder)
+    entry.unitsReceived += receiptUnits(receipt)
+    entry.received = entry.received.plus(receiptUsd(receipt))
+    for (const item of receipt.items) {
+      const line = item.purchaseOrderItem
+      // A store's per listing; the platform's per catalogue product, as on the Sales report
+      const id = storeId ? line.storeListingId : line.storeListing.productId
+      const href = storeId ? listingHref(line.storeListingId) : catalogueProductHref(line.storeListing.productId)
+      const product = products.get(id) ?? { id, name: line.productName, href, units: 0, received: ZERO }
+      products.set(id, { ...product, name: line.productName, units: product.units + item.quantity, received: product.received.plus(line.unitCostUsd.times(item.quantity)) })
+    }
+  }
+
+  const orderedTotal = sum(ordered, orderUsd)
+  const receivedTotal = sum(receipts, receiptUsd)
+  return {
+    summary: {
+      ordersPlaced: ordered.length,
+      orderedUsd: orderedTotal.toFixed(2),
+      shippingUsd: sum(ordered, shippingUsd).toFixed(2),
+      deliveries: receipts.length,
+      unitsReceived: receipts.reduce((total, receipt) => total + receiptUnits(receipt), 0),
+      receivedUsd: receivedTotal.toFixed(2),
+    },
+    periods,
+    suppliers: [...suppliers.values()]
+      .sort((a, b) => b.ordered.plus(b.received).comparedTo(a.ordered.plus(a.received)) || a.name.localeCompare(b.name))
+      .map(({ ordered: orderedUsd, received, ...entry }) => ({ ...entry, orderedUsd: orderedUsd.toFixed(2), receivedUsd: received.toFixed(2) })),
+    orders: ordered.map((order) => ({
+      id: order.id,
+      orderedAt: order.orderedAt!,
+      reference: order.reference,
+      href: storeId ? `/store/purchase-orders/${order.id}/details` : `/purchase-orders/${order.id}/details`,
+      supplier: order.supplier.name,
+      store: storeId ? null : order.organization.name,
+      status: order.status,
+      currency: order.currency,
+      totalUsd: orderUsd(order).toFixed(2),
+    })),
+    products: [...products.values()]
+      .sort((a, b) => b.received.comparedTo(a.received) || b.units - a.units || a.name.localeCompare(b.name))
+      .map(({ received, ...product }) => ({ ...product, receivedUsd: received.toFixed(2) })),
   }
 }
