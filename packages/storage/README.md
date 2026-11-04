@@ -10,7 +10,7 @@ Set `AZURE_STORAGE_ACCOUNT_NAME` to the storage account name. The package uses
 Identity SDK and grant it the **Storage Blob Data Contributor** role on the
 target storage account or container.
 
-`AZURE_STORAGE_CONTAINER_NAME` is optional and defaults to `bs42`.
+`AZURE_STORAGE_CONTAINER_NAME` is optional and defaults to `bs42-public`.
 
 The package returns stable HTTPS blob URLs. To make those URLs readable by
 browsers without SAS tokens, allow blob public access on the storage account

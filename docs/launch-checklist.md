@@ -29,7 +29,7 @@ On Azure App Service they're each app's app settings (section 5). Elsewhere, put
 | `SITE_MAILER_PASSWORD` | ✓ | ✓ | |
 | `PAYSTACK_SECRET_KEY` | ✓ | ✓ | `sk_live_…`. The store takes payments; the console's unpaid-order job asks Paystack before cancelling. |
 | `AZURE_STORAGE_ACCOUNT_NAME` | ✓ | | The storage account's name |
-| `AZURE_STORAGE_CONTAINER_NAME` | ✓ | | Optional, defaults to `bs42` |
+| `AZURE_STORAGE_CONTAINER_NAME` | ✓ | | Optional, defaults to `bs42-public` |
 | `CRON_SECRET` | ✓ | | Random (`openssl rand -hex 32`); the scheduler sends it |
 | `OPEN_EXCHANGE_RATES_API_KEY` | ✓ | | |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | | ✓ | Optional: "Continue with Google". Redirect URI `https://bs42.net/api/auth/callback/google` |
@@ -41,7 +41,7 @@ Azure sign-in for uploads uses `DefaultAzureCredential`: a managed identity when
 ## 3. Storage (Azure)
 
 - [ ] Give the console's identity the **Storage Blob Data Contributor** role on the account or container.
-- [ ] Allow blob public access on the account, and set the container's public access level to **Blob**: browsers load images straight from their URLs.
+- [ ] Allow blob public access on the account, and set the `bs42-public` container's public access level to **Blob** (not Container, which lets anyone list every file): browsers load images straight from their URLs.
 - [ ] Turn on blob soft delete (undo after a delete relies on it).
 
 ## 4. Database

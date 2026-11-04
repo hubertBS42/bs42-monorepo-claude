@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto"
 import { DefaultAzureCredential } from "@azure/identity"
 import { BlobServiceClient, type ContainerClient } from "@azure/storage-blob"
 
-const DEFAULT_CONTAINER_NAME = "bs42"
+const DEFAULT_CONTAINER_NAME = "bs42-public"
 
 export class StorageValidationError extends Error {
   constructor(
