@@ -170,7 +170,7 @@ export function toSalesTrend(period: DashboardPeriod, rows: TrendRows, now = new
   for (const row of payments.current) add(row.at, row.amountGhs)
   for (const row of refunds.current) add(row.at, row.amountGhs.negated())
 
-  return { current, changes, days: currentDays.map((date) => ({ date, netSalesGhs: (net.get(date) ?? new Prisma.Decimal(0)).toFixed(2) })) }
+  return { current, previous, changes, days: currentDays.map((date) => ({ date, netSalesGhs: (net.get(date) ?? new Prisma.Decimal(0)).toFixed(2) })) }
 }
 
 type RateRow = { date: Date; rate: Prisma.Decimal; marketRate: Prisma.Decimal | null; source: ExchangeRateSource }

@@ -7,14 +7,17 @@ import { PREVIOUS_PERIODS } from "./periods"
 
 const plural = (count: number, word: string) => `${count} ${word}${count === 1 ? "" : "s"}`
 
+// A rise of 100% or more reads better as a multiple: "+208.8%" is 3.1 times as much, which many would read as double
+const isMultiple = (change: number) => change >= 100
+const multiple = (change: number) => `${(1 + change / 100).toFixed(1).replace(/\.0$/, "")}×`
+
 function TrendBadge({ change }: { change: number | null }) {
   if (change === null) return null
   const Icon = change < 0 ? TrendingDown : TrendingUp
   return (
     <Badge variant="outline">
       <Icon />
-      {change > 0 ? "+" : ""}
-      {change}%
+      {isMultiple(change) ? multiple(change) : `${change > 0 ? "+" : ""}${change}%`}
     </Badge>
   )
 }
@@ -22,6 +25,8 @@ function TrendBadge({ change }: { change: number | null }) {
 interface StatCardProps {
   label: string
   value: string
+  // The previous period's figure, named beside a multiple
+  previousValue: string
   change: number | null
   period: DashboardPeriod
   note: string
@@ -29,9 +34,16 @@ interface StatCardProps {
   headline?: string
 }
 
-function StatCard({ label, value, change, period, note, headline }: StatCardProps) {
+function StatCard({ label, value, previousValue, change, period, note, headline }: StatCardProps) {
   const previous = PREVIOUS_PERIODS[period]
-  const comparison = change === null ? `Nothing to compare with in ${previous}` : change === 0 ? `Level with ${previous}` : `${change > 0 ? "Up" : "Down"} ${Math.abs(change)}% on ${previous}`
+  const comparison =
+    change === null
+      ? `Nothing to compare with in ${previous}`
+      : change === 0
+        ? `Level with ${previous}`
+        : isMultiple(change)
+          ? `${multiple(change)} ${previous} (${previousValue})`
+          : `${change > 0 ? "Up" : "Down"} ${Math.abs(change)}% on ${previous}`
   const Icon = change !== null && change < 0 ? TrendingDown : TrendingUp
 
   return (
@@ -57,15 +69,23 @@ function StatCard({ label, value, change, period, note, headline }: StatCardProp
 }
 
 export default function SectionCards({ sales, period }: { sales: DashboardSalesTrend; period: DashboardPeriod }) {
-  const { current, changes } = sales
+  const { current, previous, changes } = sales
   return (
     <div className="grid grid-cols-1 gap-4 *:data-[slot=card]:bg-linear-to-t *:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card *:data-[slot=card]:shadow-xs @xl/main:grid-cols-2 @5xl/main:grid-cols-4 dark:*:data-[slot=card]:bg-card">
-      <StatCard label="Net sales" value={ghs(current.netSalesGhs)} change={changes.netSales} period={period} note="Payments recorded, less refunds given" />
-      <StatCard label="Paid orders" value={String(current.paidOrders)} change={changes.paidOrders} period={period} note="Orders with their payment recorded" />
-      <StatCard label="Average order" value={current.averageOrderGhs ? ghs(current.averageOrderGhs) : "—"} change={changes.averageOrder} period={period} note="Per paid order, before refunds" />
+      <StatCard label="Net sales" value={ghs(current.netSalesGhs)} previousValue={ghs(previous.netSalesGhs)} change={changes.netSales} period={period} note="Payments recorded, less refunds given" />
+      <StatCard label="Paid orders" value={String(current.paidOrders)} previousValue={String(previous.paidOrders)} change={changes.paidOrders} period={period} note="Orders with their payment recorded" />
+      <StatCard
+        label="Average order"
+        value={current.averageOrderGhs ? ghs(current.averageOrderGhs) : "—"}
+        previousValue={previous.averageOrderGhs ? ghs(previous.averageOrderGhs) : "—"}
+        change={changes.averageOrder}
+        period={period}
+        note="Per paid order, before refunds"
+      />
       <StatCard
         label="Refunds"
         value={ghs(current.refundedGhs)}
+        previousValue={ghs(previous.refundedGhs)}
         change={changes.refunded}
         period={period}
         headline={`${plural(current.refunds, "refund")}, ${plural(current.returns, "return")}`}

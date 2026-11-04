@@ -730,6 +730,8 @@ export interface DashboardChanges {
 
 export interface DashboardSalesTrend {
   current: DashboardSales
+  // The period before, which a change of 100% or more names ("3.1× the previous 30 days (GH₵32,496.28)")
+  previous: DashboardSales
   changes: DashboardChanges
   // One per day of the current period, oldest first, for the chart
   days: { date: string; netSalesGhs: string }[]
