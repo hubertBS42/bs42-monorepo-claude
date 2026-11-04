@@ -45,6 +45,10 @@ const PLACEHOLDER_PRODUCT = "Item from the old site"
 const PLACEHOLDER_CATEGORY = "Old site services"
 const BATCH = 500
 const LOG_FILE = "legacy-import-log.json"
+// The old system's test records, left behind like its test product (which the catalogue seed dropped): a supplier, and
+// any inventory order made up only of test products
+const TEST_SUPPLIERS = ["acme ltd"]
+const TEST_PRODUCT_SLUGS = ["test-product"]
 
 // ---- The old system's records (only the fields used) ----
 
@@ -219,6 +223,7 @@ async function main() {
 
   const report: Record<string, unknown> = {}
   const warnings: string[] = []
+  const skipped = { testRecords: [] as string[] }
 
   // Old staff → console users with the same email
   const consoleUsers = await prisma.user.findMany({ where: { email: { in: oldUsers.map((user) => user.email.trim().toLowerCase()) } }, select: { id: true, email: true } })
@@ -525,6 +530,10 @@ async function main() {
   const supplierIdByOld = new Map<string, string>()
   for (const old of suppliers) {
     const name = text(old.name) ?? "Supplier"
+    if (TEST_SUPPLIERS.includes(name.toLowerCase())) {
+      skipped.testRecords.push(`supplier ${name}`)
+      continue
+    }
     const reuse = existingSuppliers.get(name.toLowerCase())
     if (reuse) {
       supplierIdByOld.set(old._id, reuse)
@@ -569,7 +578,12 @@ async function main() {
   const receipts: Prisma.PurchaseOrderReceiptCreateManyInput[] = []
   const receiptItems: Prisma.PurchaseOrderReceiptItemCreateManyInput[] = []
   const poFiles: { purchaseOrderId: string; url: string; name: string }[] = []
+  const isTestProduct = (line: OldLine) => TEST_PRODUCT_SLUGS.includes(slugByOldId.get(line.productRef ?? "") ?? "") || line.title.trim().toLowerCase() === "test product"
   for (const old of [...inventoryOrders].sort((a, b) => a.createdAt.localeCompare(b.createdAt))) {
+    if (old.products.length && old.products.every(isTestProduct)) {
+      skipped.testRecords.push(`inventory order ${old.orderNumber}`)
+      continue
+    }
     const supplierId = supplierIdByOld.get(refId(old.supplier) ?? "")
     if (!supplierId) {
       warnings.push(`Inventory order ${old.orderNumber} has no supplier: skipped`)
@@ -689,6 +703,7 @@ async function main() {
     placeholderLines: placeholder.used,
   }
   report.notInCatalogue = Object.fromEntries(unmatched)
+  report.skipped = skipped.testRecords
 
   console.log(JSON.stringify(report, null, 1))
   if (totalMismatches.length) console.log("Totals that don't match the old system's:\n  " + totalMismatches.join("\n  "))
