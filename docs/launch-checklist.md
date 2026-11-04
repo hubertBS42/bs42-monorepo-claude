@@ -71,6 +71,19 @@ pnpm --filter @workspace/db db:seed:listings --store <slug>   # the store's slug
 
 That lists every published product at the old site's prices, with stock 0: everything shows as out of stock until it's counted in, on each listing's form or by receiving a purchase order.
 
+**Then bring the old system's records across**, once the old site (bs42.net and portal.bs42.net) has stopped taking orders, so nothing made after the export is missed:
+
+```bash
+pnpm --filter @workspace/db db:legacy:export --out ~/bs42-legacy-data   # read only: the old portal's orders, quotations, suppliers, inventory orders, stock levels, staff
+AZURE_STORAGE_ACCOUNT_NAME=bs42shopstorage pnpm --filter @workspace/db db:legacy:import --store <slug> --data ~/bs42-legacy-data --by <your email> --dry-run
+AZURE_STORAGE_ACCOUNT_NAME=bs42shopstorage pnpm --filter @workspace/db db:legacy:import --store <slug> --data ~/bs42-legacy-data --by <your email>
+```
+
+- [ ] The dry run reports every order's total matching the old system's ("totalMismatches": 0) and lists the old products that aren't in the catalogue (their lines keep their names on an archived "Item from the old site").
+- [ ] The import brings in the orders and quotations as history (walk-in sales without the shop's own email), the suppliers, the inventory orders as purchase orders with their files (into `bs42-private`), and the old stock counts as each listing's opening stock (draft listings for stocked products with no price). It sends no emails. Rehearsed on development on 2026-11-04 (909 orders, 72 quotations, 20 suppliers, 25 purchase orders, 278 listings' stock).
+- [ ] Keep the export folder private (customers' details), out of the repository. `legacy-import-log.json` in it records what was written; `--undo` removes exactly that.
+- [ ] Then count a few listings against the shelves: the old counts are only as good as the old system's.
+
 Don't run `db:seed:demo` in production: it creates a demo store with made-up stock and exchange rate.
 
 The uploaded files in `seed-config.json` and the catalogue seed are URLs in the storage container the development database uses: production must use the same container, or those images break. Development and production then share one container, so deleting a seeded product, brand or category on development deletes its files on production too, and only production may run the file cleanup job (section 7).
