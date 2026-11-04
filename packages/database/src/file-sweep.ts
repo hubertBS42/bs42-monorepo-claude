@@ -1,4 +1,4 @@
-import { deleteFiles, listFiles } from "@workspace/storage"
+import { deleteFiles, deletePrivateFiles, listFiles, listPrivateFiles } from "@workspace/storage"
 import { prisma } from "./client"
 
 // Forms upload an image as soon as it's picked, before the record is saved, so a new blob is unreferenced
@@ -80,9 +80,12 @@ export async function findReferencedFileUrls(urls: readonly string[]): Promise<s
 
 export interface FileSweepResult {
   scanned: number
+  // Public files by URL, private ones as "private:<blob name>"
   orphaned: string[]
   deleted: number
 }
+
+const PRIVATE_PREFIX = "private:"
 
 /**
  * Deletes blobs that no database row references, such as images uploaded on a form that was then left without
@@ -90,7 +93,12 @@ export interface FileSweepResult {
  */
 export async function sweepOrphanedFiles({ gracePeriodMs = DEFAULT_GRACE_PERIOD_MS, dryRun = false } = {}): Promise<FileSweepResult> {
   // Load the references first: if this fails, nothing is deleted
-  const referenced = await getReferencedFileUrls()
+  const [referenced, referencedPrivate] = await Promise.all([
+    getReferencedFileUrls(),
+    // The private container holds purchase order files, whose rows are written right after the upload: one is only
+    // orphaned when that write failed
+    prisma.purchaseOrderFile.findMany({ select: { blobName: true } }).then((files) => new Set(files.map((file) => file.blobName))),
+  ])
   const cutoff = Date.now() - gracePeriodMs
 
   let scanned = 0
@@ -99,13 +107,20 @@ export async function sweepOrphanedFiles({ gracePeriodMs = DEFAULT_GRACE_PERIOD_
     scanned++
     if (file.lastModified.getTime() < cutoff && !referenced.has(file.url)) orphaned.push(file.url)
   }
+  for await (const file of listPrivateFiles()) {
+    scanned++
+    if (file.lastModified.getTime() < cutoff && !referencedPrivate.has(file.name)) orphaned.push(PRIVATE_PREFIX + file.name)
+  }
 
   if (dryRun) return { scanned, orphaned, deleted: 0 }
 
   let deleted = 0
   for (let i = 0; i < orphaned.length; i += DELETE_BATCH_SIZE) {
     const batch = orphaned.slice(i, i + DELETE_BATCH_SIZE)
-    await deleteFiles(batch)
+    const privateNames = batch.filter((file) => file.startsWith(PRIVATE_PREFIX)).map((file) => file.slice(PRIVATE_PREFIX.length))
+    const urls = batch.filter((file) => !file.startsWith(PRIVATE_PREFIX))
+    if (urls.length) await deleteFiles(urls)
+    if (privateNames.length) await deletePrivateFiles(privateNames)
     deleted += batch.length
   }
 

@@ -34,6 +34,7 @@ export default async function PurchaseOrderDetailsPage({ params }: PurchaseOrder
     <PurchaseOrderView
       order={order}
       backTo="/store/purchase-orders"
+      storeId={storeId}
       // Keyed by status and deliveries, so the dialogs start afresh after a change
       statusContent={<PurchaseOrderActions key={`${order.status}:${order.receipts.length}`} storeId={storeId} order={order} />}
     />

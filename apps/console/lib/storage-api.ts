@@ -4,8 +4,9 @@ import type { DocumentItem } from "@workspace/contracts"
 import { consoleAuth } from "@workspace/auth/console"
 import { findReferencedFileUrls } from "@workspace/db"
 import { hasConsoleAccess } from "@/lib/auth-guard"
+import { MAX_FILES_PER_UPLOAD, MAX_PURCHASE_ORDER_FILE_BYTES, PURCHASE_ORDER_FILE_TYPES } from "@/lib/purchase-order-file-rules"
 
-interface UploadPolicy {
+export interface UploadPolicy {
   maxFiles: number
   maxFileSizeBytes: number
   maxTotalSizeBytes: number
@@ -31,6 +32,14 @@ export const documentUploadPolicy: UploadPolicy = {
   acceptedTypes: ["application/pdf"],
 }
 
+// Invoices, receipts and delivery notes: PDFs or photos of them. Kept in the private container.
+export const purchaseOrderFileUploadPolicy: UploadPolicy = {
+  maxFiles: MAX_FILES_PER_UPLOAD,
+  maxFileSizeBytes: MAX_PURCHASE_ORDER_FILE_BYTES,
+  maxTotalSizeBytes: MAX_FILES_PER_UPLOAD * MAX_PURCHASE_ORDER_FILE_BYTES,
+  acceptedTypes: PURCHASE_ORDER_FILE_TYPES,
+}
+
 const ascii = (bytes: Uint8Array, start: number, end: number) => String.fromCharCode(...bytes.subarray(start, end))
 
 // How each accepted type's files begin. A file's type is the uploader's word, and the blob is served with it, so the
@@ -51,7 +60,7 @@ function getRequestSize(request: Request): number | null {
   return Number.isSafeInteger(size) && size >= 0 ? size : null
 }
 
-async function readUploadFiles(request: Request, policy: UploadPolicy): Promise<File[]> {
+export async function readUploadFiles(request: Request, policy: UploadPolicy): Promise<File[]> {
   const requestSize = getRequestSize(request)
   if (requestSize !== null && requestSize > policy.maxTotalSizeBytes + MULTIPART_OVERHEAD_BYTES) {
     throw new StorageValidationError("The upload request is too large.", 413)
@@ -144,7 +153,7 @@ async function refuseUnlessConsoleUser(request: Request): Promise<NextResponse |
   return null
 }
 
-function errorResponse(error: unknown): NextResponse {
+export function errorResponse(error: unknown): NextResponse {
   if (error instanceof StorageValidationError) {
     return NextResponse.json({ error: error.message }, { status: error.statusCode })
   }

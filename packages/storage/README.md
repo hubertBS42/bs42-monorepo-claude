@@ -11,6 +11,10 @@ Identity SDK and grant it the **Storage Blob Data Contributor** role on the
 target storage account or container.
 
 `AZURE_STORAGE_CONTAINER_NAME` is optional and defaults to `bs42-public`.
+`AZURE_STORAGE_PRIVATE_CONTAINER_NAME` is optional and defaults to `bs42-private`:
+files only signed-in staff may open (purchase order files), with no public
+access. They are stored by blob name, not URL, and served through the console
+(`readPrivateFile`), which checks who is asking.
 
 The package returns stable HTTPS blob URLs. To make those URLs readable by
 browsers without SAS tokens, allow blob public access on the storage account

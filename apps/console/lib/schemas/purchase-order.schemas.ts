@@ -54,6 +54,10 @@ export const purchaseOrderRefSchema = z.object({
   id: z.uuid("Invalid purchase order ID"),
 })
 
+export const removePurchaseOrderFileSchema = purchaseOrderRefSchema.extend({
+  fileId: z.uuid("Invalid file ID"),
+})
+
 export const receivePurchaseOrderFormSchema = z.object({
   items: z.array(z.object({ purchaseOrderItemId: z.uuid(), quantity: z.number("Enter a quantity").int("Enter a whole number").min(0, "Can't be negative") })),
   updateBuyPrices: z.boolean(),

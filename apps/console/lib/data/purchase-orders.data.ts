@@ -177,6 +177,10 @@ export const getPurchaseOrderDetails = async (storeId: string | null, id: string
             storeListingVariant: { select: { stock: true, trackInventory: true } },
           },
         },
+        files: {
+          orderBy: { createdAt: "asc" },
+          select: { id: true, name: true, contentType: true, size: true, createdAt: true, uploadedById: true, receiptId: true, uploadedBy: { select: { name: true, email: true } } },
+        },
         receipts: {
           orderBy: { createdAt: "asc" },
           include: {
@@ -241,6 +245,7 @@ export const getPurchaseOrderDetails = async (storeId: string | null, id: string
           updatedBuyPrices: receipt.updatedBuyPrices,
           items: receipt.items.map((item) => ({ label: label(item.purchaseOrderItem), quantity: item.quantity })),
         })),
+        files: order.files.map(({ uploadedBy, ...file }) => ({ ...file, uploadedBy: who(uploadedBy), href: `/api/purchase-orders/${order.id}/files/${file.id}` })),
       },
     }
   } catch (error) {

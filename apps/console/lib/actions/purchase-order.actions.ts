@@ -1,6 +1,8 @@
 "use server"
 
+import { after } from "next/server"
 import z from "zod"
+import { removePrivateFiles } from "@workspace/storage"
 import { formatError } from "@workspace/auth/format-error"
 import { ActionResponse, DataResponse } from "@workspace/contracts"
 import { prisma } from "@workspace/db"
@@ -26,6 +28,7 @@ import {
   purchaseOrderFormSchema,
   purchaseOrderRefSchema,
   receivePurchaseOrderSchema,
+  removePurchaseOrderFileSchema,
   searchPurchasableListingsSchema,
   updatePurchaseOrderSchema,
 } from "@/lib/schemas/purchase-order.schemas"
@@ -165,7 +168,8 @@ export async function markPurchaseOrderedAction(input: z.input<typeof purchaseOr
   }
 }
 
-export async function receivePurchaseOrderAction(input: z.input<typeof receivePurchaseOrderSchema>): Promise<ActionResponse> {
+// Returns the delivery's id, so files picked in the dialog can be added to it
+export async function receivePurchaseOrderAction(input: z.input<typeof receivePurchaseOrderSchema>): Promise<DataResponse<{ receiptId: string }>> {
   const session = await requireConsoleAccess()
 
   try {
@@ -179,8 +183,8 @@ export async function receivePurchaseOrderAction(input: z.input<typeof receivePu
     // Buy prices are part of the listing
     if (updateBuyPrices && !(await hasStorePermission(session.user.id, storeId, { listing: ["update"] }))) return FORBIDDEN
 
-    await prisma.$transaction((tx) => receivePurchaseOrder(tx, { storeId, id, receiptCount, items, updateBuyPrices, note, receivedById: session.user.id }), TRANSACTION_OPTIONS)
-    return { success: true }
+    const { receiptId } = await prisma.$transaction((tx) => receivePurchaseOrder(tx, { storeId, id, receiptCount, items, updateBuyPrices, note, receivedById: session.user.id }), TRANSACTION_OPTIONS)
+    return { success: true, data: { receiptId } }
   } catch (error) {
     return writeError(error)
   }
@@ -214,7 +218,30 @@ export async function deletePurchaseOrderAction(input: z.input<typeof purchaseOr
 
     if (!(await hasStorePermission(session.user.id, storeId, { purchaseOrder: ["cancel"] }))) return FORBIDDEN
 
-    await deleteDraftPurchaseOrder(prisma, { storeId, id })
+    const blobNames = await deleteDraftPurchaseOrder(prisma, { storeId, id })
+    after(() => removePrivateFiles(blobNames, "Purchase order file cleanup"))
+    return { success: true }
+  } catch (error) {
+    return writeError(error)
+  }
+}
+
+// Owners and admins remove any file; others only the ones they added
+export async function removePurchaseOrderFileAction(input: z.input<typeof removePurchaseOrderFileSchema>): Promise<ActionResponse> {
+  const session = await requireConsoleAccess()
+
+  try {
+    const parsed = removePurchaseOrderFileSchema.safeParse(input)
+    if (!parsed.success) return invalidInput(parsed.error)
+    const { storeId, id, fileId } = parsed.data
+
+    if (!(await hasStorePermission(session.user.id, storeId, { purchaseOrder: ["receive"] }))) return FORBIDDEN
+    const file = await prisma.purchaseOrderFile.findFirst({ where: { id: fileId, purchaseOrderId: id, purchaseOrder: { organizationId: storeId } }, select: { blobName: true, uploadedById: true } })
+    if (!file) return { success: false, error: "This file has already been removed.", code: "NOT_FOUND" }
+    if (file.uploadedById !== session.user.id && !(await hasStorePermission(session.user.id, storeId, { purchaseOrder: ["update"] }))) return FORBIDDEN
+
+    await prisma.purchaseOrderFile.deleteMany({ where: { id: fileId } })
+    after(() => removePrivateFiles([file.blobName], "Purchase order file cleanup"))
     return { success: true }
   } catch (error) {
     return writeError(error)

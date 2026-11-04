@@ -219,6 +219,7 @@ model User {
   purchaseOrdersPlaced    PurchaseOrder[]        @relation("PurchaseOrderOrderedBy")
   purchaseOrdersClosed    PurchaseOrder[]        @relation("PurchaseOrderClosedBy")
   purchaseOrdersReceived  PurchaseOrderReceipt[]
+  purchaseOrderFiles      PurchaseOrderFile[]
   stockMovements          StockMovement[]
   notifications           Notification[]
   platformAlertSettings   PlatformAlertSetting[]
@@ -1223,6 +1224,7 @@ model PurchaseOrder {
 
   items     PurchaseOrderItem[]
   receipts  PurchaseOrderReceipt[]
+  files     PurchaseOrderFile[]
   createdAt DateTime               @default(now())
   // The version an edit form loaded: a save from a stale form is refused
   updatedAt DateTime               @updatedAt
@@ -1280,11 +1282,36 @@ model PurchaseOrderReceipt {
   updatedBuyPrices Boolean
   items            PurchaseOrderReceiptItem[]
   stockMovements   StockMovement[]
+  files            PurchaseOrderFile[]
   createdAt        DateTime                   @default(now())
 
   @@index([purchaseOrderId])
   @@index([receivedById])
   @@map("purchase_order_receipt")
+}
+
+// An invoice, receipt or delivery note for a purchase order, in the private storage container (served only through
+// the console, to the store's members). Tied to a delivery when it was added while receiving one.
+model PurchaseOrderFile {
+  id              String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  purchaseOrderId String                @db.Uuid
+  purchaseOrder   PurchaseOrder         @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+  receiptId       String?               @db.Uuid
+  receipt         PurchaseOrderReceipt? @relation(fields: [receiptId], references: [id], onDelete: SetNull)
+  // The blob's name in the private container
+  blobName        String                @unique
+  // The name it was uploaded with
+  name            String
+  contentType     String
+  size            Int
+  uploadedById    String?               @db.Uuid
+  uploadedBy      User?                 @relation(fields: [uploadedById], references: [id], onDelete: SetNull)
+  createdAt       DateTime              @default(now())
+
+  @@index([purchaseOrderId, createdAt])
+  @@index([receiptId])
+  @@index([uploadedById])
+  @@map("purchase_order_file")
 }
 
 model PurchaseOrderReceiptItem {

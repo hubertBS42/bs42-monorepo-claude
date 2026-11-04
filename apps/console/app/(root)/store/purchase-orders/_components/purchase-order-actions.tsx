@@ -1,9 +1,10 @@
 "use client"
 
-import { useState, useTransition } from "react"
+import { useRef, useState, useTransition } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useWatch, type UseFormReturn } from "react-hook-form"
+import { Paperclip, X } from "lucide-react"
 import type { z } from "zod"
 import { consoleAuthClient } from "@workspace/auth/console-client"
 import { Currency, PurchaseOrderStatus } from "@workspace/db/enums"
@@ -24,8 +25,10 @@ import { Skeleton } from "@workspace/ui/components/skeleton"
 import { Spinner } from "@workspace/ui/components/spinner"
 import { toast } from "@workspace/ui/components/toast"
 import FormDialog from "@/components/form-dialog"
+import { checkPickedFiles } from "@/components/purchase-orders/purchase-order-files-card"
 import { useMemberRole } from "@/hooks/use-member-role"
 import { cancelPurchaseOrderAction, deletePurchaseOrderAction, markPurchaseOrderedAction, receivePurchaseOrderAction } from "@/lib/actions/purchase-order.actions"
+import { formatFileSize, MAX_FILES_PER_PURCHASE_ORDER, PURCHASE_ORDER_FILE_ACCEPT, uploadPurchaseOrderFiles } from "@/lib/purchase-order-file-rules"
 import { cancelTarget, isEditablePurchaseOrder, isOpenPurchaseOrder } from "@/lib/purchase-order-status"
 import { cancelPurchaseOrderFormSchema, receivePurchaseOrderFormSchema } from "@/lib/schemas/purchase-order.schemas"
 import type { PurchaseOrderDetails } from "@/types"
@@ -104,16 +107,65 @@ function MarkOrdered({ storeId, order }: PurchaseOrderActionsProps) {
   )
 }
 
+// Files to add with the delivery, uploaded once it's saved
+function AttachFiles({ files, setFiles, room, disabled }: { files: File[]; setFiles: (files: File[]) => void; room: number; disabled: boolean }) {
+  const input = useRef<HTMLInputElement>(null)
+  if (room <= 0) return null
+
+  return (
+    <div className="grid gap-2">
+      <input
+        ref={input}
+        type="file"
+        multiple
+        accept={PURCHASE_ORDER_FILE_ACCEPT}
+        className="hidden"
+        onChange={(event) => {
+          const picked = [...files, ...Array.from(event.target.files ?? [])]
+          event.target.value = ""
+          const problem = checkPickedFiles(picked, room)
+          if (problem) toast.add({ title: "Unable to attach the files", description: problem, type: "error" })
+          else setFiles(picked)
+        }}
+      />
+      {files.length > 0 && (
+        <ul className="grid gap-1">
+          {files.map((file, index) => (
+            <li key={`${file.name}-${index}`} className="flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm">
+              <Paperclip className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
+              <span className="min-w-0 flex-1 truncate">{file.name}</span>
+              <span className="shrink-0 text-xs text-muted-foreground">{formatFileSize(file.size)}</span>
+              <Button type="button" variant="ghost" size="icon-xs" aria-label={`Don't attach ${file.name}`} disabled={disabled} onClick={() => setFiles(files.filter((_, i) => i !== index))}>
+                <X />
+              </Button>
+            </li>
+          ))}
+        </ul>
+      )}
+      <Button type="button" variant="outline" size="sm" className="justify-self-start" disabled={disabled} onClick={() => input.current?.click()}>
+        <Paperclip />
+        Attach a delivery note or invoice
+      </Button>
+    </div>
+  )
+}
+
 function ReceiveFields({
   form,
   isPending,
   lines,
   canSetBuyPrices,
+  files,
+  setFiles,
+  room,
 }: {
   form: UseFormReturn<ReceiveFormInput, unknown, ReceiveFormOutput>
   isPending: boolean
   lines: PurchaseOrderDetails["lines"]
   canSetBuyPrices: boolean
+  files: File[]
+  setFiles: (files: File[]) => void
+  room: number
 }) {
   const items = useWatch({ control: form.control, name: "items" })
   const count = (items ?? []).reduce((sum, item) => sum + (Number(item.quantity) || 0), 0)
@@ -140,6 +192,7 @@ function ReceiveFields({
         <SwitchField control={form.control} label="Update buy prices" name="updateBuyPrices" description="Set listings' buy prices to this order's costs" disabled={isPending} variant="card" />
       )}
       <TextareaField control={form.control} label="Note" name="note" placeholder="Optional: a delivery note number, damaged boxes…" disabled={isPending} />
+      <AttachFiles files={files} setFiles={setFiles} room={room} disabled={isPending} />
       <p className="text-sm text-muted-foreground">
         {count === 1 ? "1 item will be added to stock." : `${count} items will be added to stock.`} Items that don&apos;t track stock are only counted as received.
       </p>
@@ -149,6 +202,18 @@ function ReceiveFields({
 
 function ReceiveItems({ storeId, order, canSetBuyPrices }: PurchaseOrderActionsProps & { canSetBuyPrices: boolean }) {
   const lines = order.lines.filter((line) => line.quantityReceived < line.quantityOrdered)
+  const [files, setFiles] = useState<File[]>([])
+
+  const receive = async (values: ReceiveFormOutput) => {
+    const response = await receivePurchaseOrderAction({ ...values, updateBuyPrices: canSetBuyPrices && values.updateBuyPrices, storeId, id: order.id, receiptCount: order.receipts.length })
+    if (response.success && files.length) {
+      // The delivery is saved either way: say so, and where to add the files again
+      const upload = await uploadPurchaseOrderFiles(order.id, files, response.data.receiptId)
+      if (!upload.ok) toast.add({ title: "The files weren't attached", description: `${upload.error} The delivery was recorded: add them on the Files card.`, type: "error" })
+      else setFiles([])
+    }
+    return response
+  }
 
   return (
     <FormDialog
@@ -165,13 +230,15 @@ function ReceiveItems({ storeId, order, canSetBuyPrices }: PurchaseOrderActionsP
         updateBuyPrices: canSetBuyPrices,
         note: "",
       }}
-      save={(values) => receivePurchaseOrderAction({ ...values, updateBuyPrices: canSetBuyPrices && values.updateBuyPrices, storeId, id: order.id, receiptCount: order.receipts.length })}
+      save={receive}
       success={(values) => {
         const count = values.items.reduce((sum, item) => sum + item.quantity, 0)
         return { title: "Items received", description: count === 1 ? "1 item has been received." : `${count} items have been received.` }
       }}
     >
-      {(form, isPending) => <ReceiveFields form={form} isPending={isPending} lines={lines} canSetBuyPrices={canSetBuyPrices} />}
+      {(form, isPending) => (
+        <ReceiveFields form={form} isPending={isPending} lines={lines} canSetBuyPrices={canSetBuyPrices} files={files} setFiles={setFiles} room={MAX_FILES_PER_PURCHASE_ORDER - order.files.length} />
+      )}
     </FormDialog>
   )
 }

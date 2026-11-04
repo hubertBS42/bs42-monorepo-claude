@@ -9,6 +9,7 @@ import { formatCurrency } from "@workspace/utils/currency"
 import { formatDate } from "@workspace/utils/date"
 import BackButton from "@/components/back-button"
 import { PurchaseOrderStatusBadge } from "@/components/order-badges"
+import PurchaseOrderFilesCard from "@/components/purchase-orders/purchase-order-files-card"
 import { Detail, TotalRow } from "@/components/orders/order-details"
 import { formatCost, PURCHASE_ORDER_STATUS_LABELS } from "@/lib/purchase-order-status"
 import type { PurchaseOrderDetails } from "@/types"
@@ -61,12 +62,14 @@ interface PurchaseOrderViewProps {
   backTo: string
   // The Status card's content: the store's actions, or the platform's note that the store manages it
   statusContent: ReactNode
+  // The store's id on its own page, for the Files card's buttons; null on the platform's read-only view
+  storeId: string | null
   // Names the store under the reference, on the platform's page
   showStore?: boolean
 }
 
 // A purchase order's page, in its store's workspace and in the platform's read-only view
-export default function PurchaseOrderView({ order, backTo, statusContent, showStore = false }: PurchaseOrderViewProps) {
+export default function PurchaseOrderView({ order, backTo, statusContent, storeId, showStore = false }: PurchaseOrderViewProps) {
   const money = (amount: string) => formatCost(amount, order.currency)
   const isGhs = order.currency === Currency.GHS
   const timeline = toTimeline(order)
@@ -210,6 +213,8 @@ export default function PurchaseOrderView({ order, backTo, statusContent, showSt
               {order.orderedAt && <Detail label="Ordered">{dateTime(order.orderedAt)}</Detail>}
             </CardContent>
           </Card>
+
+          <PurchaseOrderFilesCard order={order} storeId={storeId} />
 
           {order.notes && (
             <Card>

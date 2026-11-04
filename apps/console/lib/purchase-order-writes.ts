@@ -302,7 +302,7 @@ export interface ReceiptInput {
   receivedById: string
 }
 
-// Adds a delivery to stock, on the rows that track it, and returns the order's new status
+// Adds a delivery to stock, on the rows that track it, and returns the order's new status and the delivery's id
 export async function receivePurchaseOrder(tx: Tx, input: ReceiptInput) {
   const saved = await lockPurchaseOrder(tx, input.storeId, input.id)
   if (saved._count.receipts !== input.receiptCount) {
@@ -353,7 +353,7 @@ export async function receivePurchaseOrder(tx: Tx, input: ReceiptInput) {
   const allHere = saved.items.every((item) => item.quantityReceived + (received.get(item.id) ?? 0) === item.quantityOrdered)
   const status = allHere ? PurchaseOrderStatus.RECEIVED : PurchaseOrderStatus.PARTIALLY_RECEIVED
   await tx.purchaseOrder.update({ where: { id: input.id }, data: { status } })
-  return { status }
+  return { status, receiptId: receipt.id }
 }
 
 // Cancels an order nothing has arrived on, or closes one that is partly here (what came in stays in stock). Only
@@ -367,8 +367,12 @@ export async function cancelPurchaseOrder(tx: Tx, { storeId, id, from, reason, c
   return { status: to }
 }
 
-// Only a draft can be deleted: once ordered, the order is kept and cancelled instead
-export async function deleteDraftPurchaseOrder(client: Client, { storeId, id }: { storeId: string; id: string }) {
+// Only a draft can be deleted: once ordered, the order is kept and cancelled instead. Returns its files' blob names,
+// for the caller to remove once this has committed (the rows go with the order).
+export async function deleteDraftPurchaseOrder(client: Client, { storeId, id }: { storeId: string; id: string }): Promise<string[]> {
+  const files = await client.purchaseOrderFile.findMany({ where: { purchaseOrderId: id, purchaseOrder: { organizationId: storeId } }, select: { blobName: true } })
   const { count } = await client.purchaseOrder.deleteMany({ where: { id, organizationId: storeId, status: PurchaseOrderStatus.DRAFT } })
   if (count === 0) throw statusChanged()
+  // A file added between the two queries is left to the orphaned-file sweep
+  return files.map((file) => file.blobName)
 }

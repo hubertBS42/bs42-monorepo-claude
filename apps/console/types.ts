@@ -916,6 +916,21 @@ export interface PurchaseOrderDetails {
   version: string
   lines: PurchaseOrderLine[]
   receipts: PurchaseOrderReceiptEntry[]
+  files: PurchaseOrderFileItem[]
+}
+
+// An invoice, receipt or delivery note on a purchase order, opened through the console's route (href)
+export interface PurchaseOrderFileItem {
+  id: string
+  name: string
+  contentType: string
+  size: number
+  createdAt: Date
+  uploadedBy: string | null
+  uploadedById: string | null
+  // The delivery it came with, if it was added while receiving one
+  receiptId: string | null
+  href: string
 }
 
 // A store listing as the purchase order form offers it: one row per thing to buy (the listing, or each variant)

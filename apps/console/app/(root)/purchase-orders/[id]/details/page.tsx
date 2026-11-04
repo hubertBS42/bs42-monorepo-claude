@@ -33,6 +33,7 @@ export default async function PlatformPurchaseOrderDetailsPage({ params }: Purch
     <PurchaseOrderView
       order={order}
       backTo="/purchase-orders"
+      storeId={null}
       showStore
       statusContent={
         <div className="grid gap-3">
