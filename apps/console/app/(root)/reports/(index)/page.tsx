@@ -9,11 +9,12 @@ export default async function ReportsPage() {
 
   return (
     <ReportsHub
-      description="Sales, tax, refunds and returns for any range of dates."
+      description="Sales, tax, refunds and returns, and the value of stock."
       reports={[
         { report: "sales", href: "/reports/sales" },
         { report: "tax", href: "/reports/tax" },
         { report: "refunds", href: "/reports/refunds" },
+        { report: "stock", href: "/reports/stock" },
       ]}
     />
   )

@@ -1,6 +1,7 @@
 import "server-only"
 
 import { PAYMENT_METHOD_LABELS } from "@workspace/commerce/order-status"
+import { describeVariant } from "@workspace/commerce/order-writes"
 import type { prisma } from "@workspace/db"
 import { Prisma } from "@workspace/db/client"
 import { OrderStatus, PaymentStatus } from "@workspace/db/enums"
@@ -460,5 +461,161 @@ export async function getRefundsReport(tx: Tx, storeId: string | null, range: Re
       by: row.recordedBy?.name ?? null,
     })),
     byProduct: [...products.values()].sort((a, b) => b.units - a.units || a.name.localeCompare(b.name)),
+  }
+}
+
+// ---- Stock value ----
+
+export interface StockItemRow {
+  id: string
+  name: string
+  variant: string | null
+  // The platform's only
+  store: string | null
+  href: string
+  units: number
+  unitCostUsd: string | null
+  costUsd: string | null
+  retailUsd: string
+}
+
+export interface StockGroupRow {
+  id: string
+  name: string
+  units: number
+  costUsd: string
+  retailUsd: string
+  // Units in this group with no buy price, so left out of its cost
+  unitsWithoutCost: number
+}
+
+export interface StockValueReport {
+  // The latest USD→GHS rate, for the cedi figures; null when there's none
+  rate: { rate: string; date: Date } | null
+  summary: {
+    units: number
+    items: number
+    costUsd: string
+    costGhs: string | null
+    retailUsd: string
+    retailGhs: string | null
+    itemsWithoutCost: number
+    unitsWithoutCost: number
+  }
+  // The most valuable first
+  items: StockItemRow[]
+  byCategory: StockGroupRow[]
+  byBrand: StockGroupRow[]
+  byStore: StockGroupRow[] | null
+}
+
+// What's on the shelves now, at buy prices and at selling prices (before tax), in USD as prices are kept. A row counts
+// as the listings table counts it: a product without variants by its listing's stock, one with variants by each
+// variant's, whatever its status (the stock is there either way), when it tracks stock and has some. A variant
+// without its own buy or sell price takes the listing's. There's no history of buy prices, so it's today's value only.
+export async function getStockValueReport(tx: Tx, storeId: string | null): Promise<StockValueReport> {
+  const [listings, categories, latestRate] = await Promise.all([
+    tx.storeListing.findMany({
+      where: storeId ? { organizationId: storeId } : {},
+      select: {
+        id: true,
+        trackInventory: true,
+        stock: true,
+        buyPrice: true,
+        sellPrice: true,
+        organization: { select: { id: true, name: true } },
+        product: { select: { id: true, name: true, hasVariants: true, categoryId: true, brand: { select: { id: true, name: true } } } },
+        storeListingVariants: {
+          where: { trackInventory: true, stock: { gt: 0 } },
+          select: {
+            id: true,
+            stock: true,
+            buyPrice: true,
+            sellPrice: true,
+            variant: { select: { variantValues: { select: { optionValue: { select: { value: true, option: { select: { name: true, position: true } } } } } } } },
+          },
+        },
+      },
+    }),
+    tx.category.findMany({ select: { id: true, name: true, parentId: true } }),
+    tx.exchangeRate.findFirst({ where: { from: "USD", to: "GHS" }, orderBy: { date: "desc" }, select: { rate: true, date: true } }),
+  ])
+
+  type Row = StockItemRow & { cost: Prisma.Decimal | null; retail: Prisma.Decimal; listing: (typeof listings)[number] }
+  const rows: Row[] = listings.flatMap((listing) => {
+    const make = (id: string, variant: string | null, units: number, buyPrice: Prisma.Decimal | null, sellPrice: Prisma.Decimal): Row => {
+      const cost = buyPrice?.times(units) ?? null
+      const retail = sellPrice.times(units)
+      return {
+        id,
+        name: listing.product.name,
+        variant,
+        store: storeId ? null : listing.organization.name,
+        href: listingHref(listing.id),
+        units,
+        unitCostUsd: buyPrice?.toFixed(2) ?? null,
+        costUsd: cost?.toFixed(2) ?? null,
+        retailUsd: retail.toFixed(2),
+        cost,
+        retail,
+        listing,
+      }
+    }
+    if (!listing.product.hasVariants) return listing.trackInventory && listing.stock > 0 ? [make(listing.id, null, listing.stock, listing.buyPrice, listing.sellPrice)] : []
+    return listing.storeListingVariants.map((row) => make(row.id, describeVariant(row.variant.variantValues), row.stock, row.buyPrice ?? listing.buyPrice, row.sellPrice ?? listing.sellPrice))
+  })
+
+  const categoryPaths = getCategoryPaths(categories)
+  const group = (key: (row: Row) => { id: string; name: string }): StockGroupRow[] => {
+    const groups = new Map<string, { id: string; name: string; units: number; cost: Prisma.Decimal; retail: Prisma.Decimal; unitsWithoutCost: number }>()
+    for (const row of rows) {
+      const { id, name } = key(row)
+      const entry = groups.get(id) ?? { id, name, units: 0, cost: ZERO, retail: ZERO, unitsWithoutCost: 0 }
+      groups.set(id, {
+        ...entry,
+        units: entry.units + row.units,
+        cost: entry.cost.plus(row.cost ?? ZERO),
+        retail: entry.retail.plus(row.retail),
+        unitsWithoutCost: entry.unitsWithoutCost + (row.cost ? 0 : row.units),
+      })
+    }
+    return [...groups.values()]
+      .sort((a, b) => b.cost.comparedTo(a.cost) || b.retail.comparedTo(a.retail) || a.name.localeCompare(b.name))
+      .map(({ cost, retail, ...entry }) => ({ ...entry, costUsd: cost.toFixed(2), retailUsd: retail.toFixed(2) }))
+  }
+
+  const cost = sum(rows, (row) => row.cost ?? ZERO)
+  const retail = sum(rows, (row) => row.retail)
+  const toGhs = (usd: Prisma.Decimal) => (latestRate ? usd.times(latestRate.rate).toFixed(2) : null)
+  const withoutCost = rows.filter((row) => !row.cost)
+
+  return {
+    rate: latestRate ? { rate: latestRate.rate.toString(), date: latestRate.date } : null,
+    summary: {
+      units: rows.reduce((total, row) => total + row.units, 0),
+      items: rows.length,
+      costUsd: cost.toFixed(2),
+      costGhs: toGhs(cost),
+      retailUsd: retail.toFixed(2),
+      retailGhs: toGhs(retail),
+      itemsWithoutCost: withoutCost.length,
+      unitsWithoutCost: withoutCost.reduce((total, row) => total + row.units, 0),
+    },
+    items: [...rows]
+      .sort((a, b) => (b.cost ?? ZERO).comparedTo(a.cost ?? ZERO) || b.retail.comparedTo(a.retail) || a.name.localeCompare(b.name))
+      .map((row) => ({
+        id: row.id,
+        name: row.name,
+        variant: row.variant,
+        store: row.store,
+        href: row.href,
+        units: row.units,
+        unitCostUsd: row.unitCostUsd,
+        costUsd: row.costUsd,
+        retailUsd: row.retailUsd,
+      })),
+    byCategory: group((row) => ({ id: row.listing.product.categoryId, name: categoryPaths.get(row.listing.product.categoryId) ?? "Unknown" })),
+    byBrand: group((row) => row.listing.product.brand),
+    byStore: storeId ? null : group((row) => row.listing.organization),
   }
 }

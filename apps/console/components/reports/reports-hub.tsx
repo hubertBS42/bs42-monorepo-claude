@@ -1,11 +1,12 @@
 import Link from "next/link"
-import { ArrowRightIcon, ChartColumn, Landmark, Undo2, type LucideIcon } from "lucide-react"
+import { ArrowRightIcon, ChartColumn, Landmark, Package, Undo2, type LucideIcon } from "lucide-react"
 import { Card, CardDescription, CardHeader, CardTitle } from "@workspace/ui/components/card"
 
-const REPORTS: Record<"sales" | "tax" | "refunds", { icon: LucideIcon; title: string; description: string }> = {
+const REPORTS: Record<"sales" | "tax" | "refunds" | "stock", { icon: LucideIcon; title: string; description: string }> = {
   sales: { icon: ChartColumn, title: "Sales", description: "Payments, refunds and what sold" },
   tax: { icon: Landmark, title: "Tax", description: "Tax charged and refunded" },
   refunds: { icon: Undo2, title: "Refunds & Returns", description: "Money given back and items brought back" },
+  stock: { icon: Package, title: "Stock Value", description: "What's on the shelves, at cost and price" },
 }
 
 interface ReportsHubProps {
