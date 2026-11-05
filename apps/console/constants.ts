@@ -115,6 +115,29 @@ export const BREADCRUMB_DATA: BreadcrumbConfig[] = [
     ],
   },
   {
+    pathname: "/blog",
+    segments: [
+      { text: "Dashboard", href: "/" },
+      { text: "Blog", href: "#" },
+    ],
+  },
+  {
+    pathname: "/blog/add",
+    segments: [
+      { text: "Dashboard", href: "/" },
+      { text: "Blog", href: "/blog" },
+      { text: "Add Post", href: "#" },
+    ],
+  },
+  {
+    pathname: "/blog/[id]/edit",
+    segments: [
+      { text: "Dashboard", href: "/" },
+      { text: "Blog", href: "/blog" },
+      { text: "Edit Post", href: "#" },
+    ],
+  },
+  {
     pathname: "/catalogue/reviews",
     segments: [
       { text: "Dashboard", href: "/" },

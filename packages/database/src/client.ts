@@ -5,7 +5,7 @@ import slugify from "slugify"
 import { removeFiles } from "@workspace/storage"
 import { PLATFORM_ORGANIZATION_SLUG } from "@workspace/contracts"
 
-type ModelType = "organization" | "brand" | "category" | "product"
+type ModelType = "organization" | "brand" | "category" | "product" | "blogPost"
 type SlugClient = PrismaClient | Prisma.TransactionClient
 
 const MAX_SLUG_RETRIES = 4
@@ -77,6 +77,11 @@ const generateUniqueSlug = async ({ name, id, model, client, prefix }: { name: s
           where: { slug },
           select: { id: true },
         }),
+    },
+    // A post's slug comes from its title
+    blogPost: {
+      getById: (id) => client.blogPost.findUnique({ where: { id }, select: { title: true, slug: true } }).then((post) => post && { name: post.title, slug: post.slug }),
+      getBySlug: (slug) => client.blogPost.findUnique({ where: { slug }, select: { id: true } }),
     },
   }
 
@@ -514,6 +519,69 @@ function createPrisma() {
         },
       },
 
+      blogPost: {
+        async create({ args, query }) {
+          return withUniqueSlugRetry({
+            name: args.data.title,
+            model: "blogPost",
+            client: base,
+            run: (slug) => {
+              args.data.slug = slug
+              return query(args)
+            },
+          })
+        },
+        async update({ args, query }) {
+          const titleUpdate = args.data.title
+          const title = typeof titleUpdate === "string" ? titleUpdate : titleUpdate?.set
+          // Clients can never set the slug on update
+          delete args.data.slug
+          if (title === undefined) {
+            return query(args)
+          }
+          const existing = await base.blogPost.findUnique({
+            where: args.where,
+            select: { id: true },
+          })
+          if (!existing) {
+            return query(args)
+          }
+          return withUniqueSlugRetry({
+            name: title,
+            id: existing.id,
+            model: "blogPost",
+            client: base,
+            run: (slug) => {
+              args.data.slug = slug
+              return query(args)
+            },
+          })
+        },
+        async delete({ args, query }) {
+          // Read the image first so `select`/`include` on the caller's args still apply
+          const existing = await base.blogPost.findUnique({
+            where: args.where,
+            select: { image: true },
+          })
+          const deleted = await query(args)
+          await removeFiles([existing?.image])
+          return deleted
+        },
+        async deleteMany({ args }) {
+          const { result, images } = await base.$transaction(async (tx) => {
+            const posts = await tx.blogPost.findMany({
+              where: args.where,
+              select: { id: true, image: true },
+            })
+            const result = await tx.blogPost.deleteMany({
+              where: { id: { in: posts.map((post) => post.id) } },
+            })
+            return { result, images: posts.map((post) => post.image) }
+          })
+          await removeFiles(images)
+          return result
+        },
+      },
       product: {
         async create({ args, query }) {
           // Simple products without a SKU get one; a product with variants has a SKU per variant instead

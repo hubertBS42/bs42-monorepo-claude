@@ -1,6 +1,7 @@
 import { authURLs } from "@workspace/auth/constants"
 import type { Condition } from "@workspace/db/enums"
 
+import type { BlogPost } from "@/lib/data/blog"
 import type { ProductReview } from "@/lib/data/reviews"
 import type { PricedCard } from "@/lib/product-cards"
 
@@ -72,6 +73,22 @@ export function breadcrumbJsonLd(items: { name: string; path: string }[]) {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
     itemListElement: items.map((item, index) => ({ "@type": "ListItem", position: index + 1, name: item.name, item: siteUrl(item.path) })),
+  }
+}
+
+// A blog post, for search engines: its headline, summary, image and dates, published by the store
+export function blogPostingJsonLd(post: BlogPost, storeName: string) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    headline: post.title,
+    description: post.excerpt,
+    ...(post.image && { image: [post.image] }),
+    datePublished: post.publishedAt,
+    dateModified: post.updatedAt,
+    mainEntityOfPage: siteUrl(`/blog/${post.slug}`),
+    author: { "@type": "Organization", name: storeName, url: siteUrl("/") },
+    publisher: { "@type": "Organization", name: storeName, url: siteUrl("/") },
   }
 }
 

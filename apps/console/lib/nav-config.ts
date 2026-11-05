@@ -6,6 +6,7 @@ import {
   ClipboardList,
   FileText,
   LayoutDashboard,
+  Newspaper,
   Mail,
   Settings,
   ShoppingBag,
@@ -107,6 +108,13 @@ export const navConfig: NavItem[] = [
     icon: ChartColumn,
     group: "main",
     order: 9,
+  },
+  {
+    url: "/blog",
+    title: "Blog",
+    icon: Newspaper,
+    group: "main",
+    order: 10,
   },
   {
     url: "/settings",

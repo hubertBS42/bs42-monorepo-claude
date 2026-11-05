@@ -1,7 +1,7 @@
 "use client"
 
 import type { LucideIcon } from "lucide-react"
-import { Building2, CirclePlusIcon, FileText, FolderTree, Package, ShoppingCart, Tags, UserRound } from "lucide-react"
+import { Building2, CirclePlusIcon, FileText, FolderTree, Newspaper, Package, ShoppingCart, Tags, UserRound } from "lucide-react"
 import Link from "next/link"
 import { Fragment } from "react"
 import { useShellSession } from "@/components/shell-data"
@@ -19,7 +19,7 @@ interface QuickCreateItem {
   permission: SystemPermission
 }
 
-// The global workspace's add pages: sales, then the catalogue, then stores and people
+// The global workspace's add pages: sales, then the catalogue (and the blog), then stores and people
 const quickCreateGroups: QuickCreateItem[][] = [
   [
     { label: "New order", url: "/orders/create", icon: ShoppingCart, permission: { order: ["create"] } },
@@ -29,6 +29,7 @@ const quickCreateGroups: QuickCreateItem[][] = [
     { label: "New product", url: "/catalogue/products/add", icon: Package, permission: { product: ["create"] } },
     { label: "New category", url: "/catalogue/categories/add", icon: FolderTree, permission: { category: ["create"] } },
     { label: "New brand", url: "/catalogue/brands/add", icon: Tags, permission: { brand: ["create"] } },
+    { label: "New blog post", url: "/blog/add", icon: Newspaper, permission: { blogPost: ["create"] } },
   ],
   [
     { label: "New store", url: "/stores/add", icon: Building2, permission: { organization: ["create"] } },

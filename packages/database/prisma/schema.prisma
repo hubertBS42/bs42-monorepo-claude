@@ -262,6 +262,26 @@ model LegalPages {
   @@map("legal_pages")
 }
 
+// A post on the storefront's blog, at /blog/<slug>. The slug comes from the title (the Prisma hook), as a product's does.
+model BlogPost {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title       String
+  slug        String    @unique
+  // The post's card, and its description for search engines
+  excerpt     String
+  // Rich text (TipTap JSON), saved through sanitizeRichText; null when empty
+  body        String?
+  image       String?
+  status      Status    @default(DRAFT)
+  // The post's date: set when it's first published, kept if it's unpublished and published again
+  publishedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([status, publishedAt])
+  @@map("blog_post")
+}
+
 // A region's delivery fee (town null), or a town's, which overrides its region's. An address in a region with neither
 // isn't delivered to. Region and town names are GEODATA's (@workspace/contracts), as addresses store them.
 model DeliveryRate {

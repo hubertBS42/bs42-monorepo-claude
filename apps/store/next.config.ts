@@ -20,6 +20,10 @@ const nextConfig: NextConfig = {
   outputFileTracingRoot: fileURLToPath(new URL("../..", import.meta.url)),
   transpilePackages: ["@workspace/ui"],
   poweredByHeader: false,
+  // The old bs42.net listed its posts at /blogs; each post kept its /blog/<slug> address
+  async redirects() {
+    return [{ source: "/blogs", destination: "/blog", permanent: true }]
+  },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }]
   },

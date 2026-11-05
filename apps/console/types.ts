@@ -144,6 +144,38 @@ export interface BrandsParams extends PaginationParams {
 
 export type BrandsData = PaginatedResult<Brand>
 
+export interface BlogPostsParams extends PaginationParams {
+  // Matches the title or the excerpt
+  search?: string
+  status?: Status
+}
+
+// A blog table row. Dates are strings, as they reach a client component
+export interface BlogPostListItem {
+  id: string
+  title: string
+  slug: string
+  image: string | null
+  status: Status
+  publishedAt: string | null
+  updatedAt: string
+}
+
+export type BlogPostsData = PaginatedResult<BlogPostListItem>
+
+// The edit form's post: the body as saved (TipTap JSON), and updatedAt as the version the save sends back
+export interface BlogPostForEdit {
+  id: string
+  title: string
+  slug: string
+  excerpt: string
+  body: string | null
+  image: string | null
+  status: Status
+  publishedAt: string | null
+  updatedAt: string
+}
+
 export interface ReviewsParams extends PaginationParams {
   // The product's name, the customer's name or email, or the review's title
   search?: string

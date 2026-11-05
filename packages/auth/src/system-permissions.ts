@@ -7,6 +7,8 @@ const statement = {
   brand: ["create", "update", "delete"],
   category: ["create", "update", "delete"],
   product: ["create", "update", "delete"],
+  // The storefront's blog
+  blogPost: ["create", "update", "delete"],
   // Platform orders (the platform is the seller). update covers status, shipping and tax overrides; refund gives money back.
   order: ["read", "create", "update", "refund"],
   // Storefront customers' trade accounts: update approves, rejects, suspends and sets the discount
@@ -29,6 +31,7 @@ export const systemRoles = {
     brand: ["create", "update", "delete"],
     category: ["create", "update", "delete"],
     product: ["create", "update", "delete"],
+    blogPost: ["create", "update", "delete"],
     // Refunds give money back, so they're for superAdmins only
     order: ["read", "create", "update"],
     tradeAccount: ["read", "update"],
@@ -39,6 +42,7 @@ export const systemRoles = {
     brand: ["create", "update", "delete"],
     category: ["create", "update", "delete"],
     product: ["create", "update", "delete"],
+    blogPost: ["create", "update", "delete"],
     order: ["read", "create", "update", "refund"],
     tradeAccount: ["read", "update"],
     appSettings: ["update"],

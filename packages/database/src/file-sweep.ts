@@ -13,7 +13,7 @@ const DELETE_BATCH_SIZE = 100
  * Order items keep their product image as a snapshot of what was sold, so it counts too.
  */
 async function getReferencedFileUrls(): Promise<Set<string>> {
-  const [users, organizations, brands, categories, appSettings, products, variants, documents, orderItems] = await Promise.all([
+  const [users, organizations, brands, categories, appSettings, products, variants, documents, orderItems, blogPosts] = await Promise.all([
     prisma.user.findMany({ where: { image: { not: null } }, select: { image: true } }),
     prisma.organization.findMany({ where: { logo: { not: null } }, select: { logo: true } }),
     prisma.brand.findMany({ where: { logo: { not: null } }, select: { logo: true } }),
@@ -23,6 +23,7 @@ async function getReferencedFileUrls(): Promise<Set<string>> {
     prisma.productVariant.findMany({ select: { images: true } }),
     prisma.productDocument.findMany({ select: { url: true } }),
     prisma.orderItem.findMany({ where: { productImage: { not: null } }, select: { productImage: true } }),
+    prisma.blogPost.findMany({ where: { image: { not: null } }, select: { image: true } }),
   ])
 
   const urls = [
@@ -35,6 +36,7 @@ async function getReferencedFileUrls(): Promise<Set<string>> {
     ...variants.flatMap((variant) => variant.images),
     ...documents.map((document) => document.url),
     ...orderItems.map((item) => item.productImage),
+    ...blogPosts.map((post) => post.image),
   ]
 
   return new Set(urls.filter((url): url is string => !!url))
@@ -48,7 +50,7 @@ export async function findReferencedFileUrls(urls: readonly string[]): Promise<s
   if (urls.length === 0) return []
   const list = [...urls]
 
-  const [users, organizations, brands, categories, appSettings, products, variants, documents, orderItems] = await Promise.all([
+  const [users, organizations, brands, categories, appSettings, products, variants, documents, orderItems, blogPosts] = await Promise.all([
     prisma.user.findMany({ where: { image: { in: list } }, select: { image: true } }),
     prisma.organization.findMany({ where: { logo: { in: list } }, select: { logo: true } }),
     prisma.brand.findMany({ where: { logo: { in: list } }, select: { logo: true } }),
@@ -61,6 +63,7 @@ export async function findReferencedFileUrls(urls: readonly string[]): Promise<s
     prisma.productVariant.findMany({ where: { images: { hasSome: list } }, select: { images: true } }),
     prisma.productDocument.findMany({ where: { url: { in: list } }, select: { url: true } }),
     prisma.orderItem.findMany({ where: { productImage: { in: list } }, select: { productImage: true } }),
+    prisma.blogPost.findMany({ where: { image: { in: list } }, select: { image: true } }),
   ])
 
   const found = new Set<string | null>([
@@ -73,6 +76,7 @@ export async function findReferencedFileUrls(urls: readonly string[]): Promise<s
     ...variants.flatMap((variant) => variant.images),
     ...documents.map((document) => document.url),
     ...orderItems.map((item) => item.productImage),
+    ...blogPosts.map((post) => post.image),
   ])
 
   return list.filter((url) => found.has(url))

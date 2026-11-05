@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next"
 
+import { getBlogPosts } from "@/lib/data/blog"
 import { categoryHref, getCategoryTree } from "@/lib/data/categories"
 import { loadProductCards } from "@/lib/data/product-cards"
 import { getLegalPages } from "@/lib/settings"
@@ -9,12 +10,13 @@ import { siteUrl } from "@/lib/structured-data"
 export const revalidate = 60
 
 // Every page customers can reach: the homepage, each category with something on sale, each brand with something on
-// sale, each product with an offer, and the Terms and Privacy pages once they're written. Search results are left out (they're noindex).
+// sale, each product with an offer, the blog and its published posts, and the Terms and Privacy pages once they're written. Search results are left out (they're noindex).
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const tree = await getCategoryTree()
   const cards = await loadProductCards({ categoryIds: [...tree.byId.keys()] })
   const brands = [...new Set(cards.map((card) => card.brand.slug))].sort()
   const legal = await getLegalPages()
+  const posts = await getBlogPosts()
 
   return [
     { url: siteUrl("/"), changeFrequency: "daily", priority: 1 },
@@ -22,6 +24,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...[...tree.byId.values()].map((node) => ({ url: siteUrl(categoryHref(tree, node.id)), changeFrequency: "daily" as const, priority: 0.8 })),
     ...brands.map((slug) => ({ url: siteUrl(`/b/${slug}`), changeFrequency: "weekly" as const, priority: 0.5 })),
     ...cards.map((card) => ({ url: siteUrl(`/p/${card.slug}`), changeFrequency: "daily" as const, priority: 0.7, ...(card.image && { images: [card.image] }) })),
+    { url: siteUrl("/blog"), changeFrequency: "weekly", priority: 0.4 },
+    ...posts.map((post) => ({ url: siteUrl(`/blog/${post.slug}`), lastModified: post.publishedAt, changeFrequency: "monthly" as const, priority: 0.4, ...(post.image && { images: [post.image] }) })),
     ...(legal.terms ? [{ url: siteUrl("/terms"), lastModified: legal.terms.updatedAt, changeFrequency: "yearly" as const, priority: 0.1 }] : []),
     ...(legal.privacy ? [{ url: siteUrl("/privacy"), lastModified: legal.privacy.updatedAt, changeFrequency: "yearly" as const, priority: 0.1 }] : []),
   ]

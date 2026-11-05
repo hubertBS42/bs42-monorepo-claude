@@ -169,6 +169,7 @@ Signed in as the superAdmin, in Settings. `db:seed:config` (section 4) fills mos
 - [ ] **Delivery:** delivery fees per region and town, the free-delivery threshold, and installation areas.
 - [ ] **Notifications:** the email addresses that get staff alerts.
 - [ ] **Legal:** Terms and Privacy Policy (each page is hidden until it has text).
+- [ ] **Blog** (sidebar): the old site's 13 posts come with the migrations, at their old addresses. Read them through, and publish or delete the draft "CCTV and Networking Class" (a course announcement from June 2024).
 
 Then create the stores, invite their staff, and add listings.
 
