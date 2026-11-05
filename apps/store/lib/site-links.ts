@@ -3,5 +3,6 @@ export const siteLinks = [
   { name: "Blog", href: "/blog" },
   { name: "Trade accounts", href: "/trade" },
   { name: "Find an order", href: "/orders/find" },
+  { name: "Contact us", href: "/contact-us" },
 ]
 

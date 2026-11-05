@@ -52,6 +52,18 @@ export const settingsSectionSchemas = {
       .max(254)
       .refine((value) => !value || z.email().safeParse(value).success, "Invalid email address"),
     contactAddress: z.string().trim().max(200),
+    contactPhone2: z
+      .string()
+      .trim()
+      .refine((value) => !value || isPossiblePhoneNumber(value), "Invalid phone number"),
+    contactPhone2Label: z.string().trim().max(30),
+    contactHours: z.string().trim().max(200),
+    // http(s) only, so the link can't be a javascript: URL
+    contactMapUrl: z
+      .string()
+      .trim()
+      .max(500)
+      .refine((value) => !value || z.httpUrl().safeParse(value).success, "Enter a link starting with https://"),
   }),
   tax: taxSchema,
   markup: z.object({

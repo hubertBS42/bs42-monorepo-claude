@@ -14,6 +14,10 @@ export function sectionValues<S extends SettingsSection>(settings: AppSettingsDa
       contactWhatsapp: settings.contactWhatsapp ?? "",
       contactEmail: settings.contactEmail ?? "",
       contactAddress: settings.contactAddress ?? "",
+      contactPhone2: settings.contactPhone2 ?? "",
+      contactPhone2Label: settings.contactPhone2Label ?? "",
+      contactHours: settings.contactHours ?? "",
+      contactMapUrl: settings.contactMapUrl ?? "",
     },
     tax: {
       taxEnabled: settings.taxEnabled,

@@ -106,11 +106,18 @@ model AppSettings {
   // The logo on dark backgrounds: the sites' dark mode and the emails' header. Null: logoUrl is used there too.
   logoDarkUrl        String?
   faviconUrl         String?
-  // How customers reach the business, in the storefront's footer. Phones are international ("+233244123456").
+  // How customers reach the business, in the storefront's footer and Contact page. Phones are international ("+233244123456").
   contactPhone       String?
   contactWhatsapp    String?
   contactEmail       String?
   contactAddress     String?
+  // Another number (another country's office, say), with what to call it ("UK")
+  contactPhone2      String?
+  contactPhone2Label String?
+  // As typed, one line per day or range ("Monday to Friday: 9am to 5:30pm")
+  contactHours       String?
+  // A maps link to the address, for "Get directions"
+  contactMapUrl      String?
   // The platform is the seller of record, so one tax rate applies to every order. A fraction: 0.15 is 15%.
   // Shown prices exclude tax: it's added on top at checkout (see Order.taxGhs).
   // Each order copies it (Order.taxRate), so changing it never alters past orders.

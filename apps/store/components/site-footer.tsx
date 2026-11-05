@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { Mail, MapPin, Phone } from "lucide-react"
+import { Clock, Mail, MapPin, Phone } from "lucide-react"
 import type { AppSettingsData } from "@workspace/contracts"
 import { formatPhoneNumber } from "@workspace/utils/phone"
 
@@ -9,7 +9,7 @@ import { PromiseStrip } from "@/components/promise-strip"
 import { StoreLogo } from "@/components/store-logo"
 import type { MenuItem } from "@/lib/menu"
 
-export type FooterContact = Pick<AppSettingsData, "contactPhone" | "contactWhatsapp" | "contactEmail" | "contactAddress">
+export type FooterContact = Pick<AppSettingsData, "contactPhone" | "contactWhatsapp" | "contactEmail" | "contactAddress" | "contactPhone2" | "contactPhone2Label" | "contactHours">
 
 export function SiteFooter({
   storeName,
@@ -108,6 +108,15 @@ function ContactList({ contact }: { contact: FooterContact }) {
             </a>
           </li>
         )}
+        {contact.contactPhone2 && (
+          <li>
+            <a href={`tel:${contact.contactPhone2}`} className={linkClass}>
+              <Phone className={iconClass} aria-hidden />
+              {formatPhoneNumber(contact.contactPhone2)}
+              {contact.contactPhone2Label && ` (${contact.contactPhone2Label})`}
+            </a>
+          </li>
+        )}
         {contact.contactWhatsapp && (
           <li>
             {/* wa.me takes the international number as digits only */}
@@ -131,6 +140,17 @@ function ContactList({ contact }: { contact: FooterContact }) {
             <address className="whitespace-pre-line not-italic">{contact.contactAddress}</address>
           </li>
         )}
+        {contact.contactHours && (
+          <li className="flex items-start gap-2">
+            <Clock className={iconClass} aria-hidden />
+            <p className="whitespace-pre-line">{contact.contactHours}</p>
+          </li>
+        )}
+        <li>
+          <Link href="/contact-us" className="font-medium text-white underline-offset-4 hover:underline">
+            All the ways to reach us
+          </Link>
+        </li>
       </ul>
     </div>
   )

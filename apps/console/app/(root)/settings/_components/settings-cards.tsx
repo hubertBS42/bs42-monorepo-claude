@@ -99,7 +99,7 @@ export function BrandingCard({ settings }: CardProps) {
 
 export function ContactCard({ settings }: CardProps) {
   return (
-    <SettingsCard section="contact" settings={settings} title="Contact" description="How customers reach you, shown in the storefront's footer.">
+    <SettingsCard section="contact" settings={settings} title="Contact" description="How customers reach you, shown in the storefront's footer and Contact page.">
       {(form, isPending) => (
         <>
           <div className="grid gap-5 sm:grid-cols-2">
@@ -108,6 +108,28 @@ export function ContactCard({ settings }: CardProps) {
           </div>
           <TextInputField control={form.control} name="contactEmail" label="Email" type="email" placeholder="hello@example.com" disabled={isPending} />
           <TextareaField control={form.control} name="contactAddress" label="Address" placeholder={"Street\nTown"} rows={3} maxLength={200} showCount disabled={isPending} />
+          <TextInputField
+            control={form.control}
+            name="contactMapUrl"
+            label="Map link"
+            placeholder="https://maps.app.goo.gl/..."
+            info="The address's link from Google Maps (Share → Copy link), for the Contact page's directions."
+            disabled={isPending}
+          />
+          <TextareaField
+            control={form.control}
+            name="contactHours"
+            label="Opening hours"
+            placeholder={"Monday to Friday: 9am to 5:30pm\nSaturday: 10am to 2pm"}
+            rows={3}
+            maxLength={200}
+            showCount
+            disabled={isPending}
+          />
+          <div className="grid gap-5 sm:grid-cols-2">
+            <PhoneField control={form.control} name="contactPhone2" label="Second phone" defaultCountry="GH" disabled={isPending} />
+            <TextInputField control={form.control} name="contactPhone2Label" label="Second phone's label" placeholder="UK office" maxLength={30} disabled={isPending} />
+          </div>
         </>
       )}
     </SettingsCard>

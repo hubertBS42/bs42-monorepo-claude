@@ -162,7 +162,7 @@ Run `file-cleanup` against production only, never a development console sharing 
 
 Signed in as the superAdmin, in Settings. `db:seed:config` (section 4) fills most of this in: check each page rather than starting from scratch.
 
-- [ ] **General:** the store's and console's names, logo and favicon.
+- [ ] **General:** the store's and console's names, logo and favicon, and the Contact card (phones, WhatsApp, email, address, map link, opening hours), which the footer and the Contact us page show.
 - [ ] **Pricing:** today's exchange rate (until the first daily fetch runs), the markup if any, quotation validity, and the bank details for bank-transfer orders.
 - [ ] Optional, after setting the markup: fill in the last 90 days' exchange rates for the dashboard's chart, from a machine with the production `DATABASE_URL` and the API key: `pnpm --filter @workspace/db db:backfill-rates`. It adds only days with no rate.
 - [ ] **Pricing → Tax:** leave off until the VAT and levy rates are confirmed with an accountant or the GRA.

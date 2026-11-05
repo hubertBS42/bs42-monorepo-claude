@@ -33,8 +33,17 @@ function toData(section: SettingsSection, values: SectionOutput<SettingsSection>
       return { logoUrl: logoUrl || null, logoDarkUrl: logoDarkUrl || null, faviconUrl: faviconUrl || null }
     }
     case "contact": {
-      const { contactPhone, contactWhatsapp, contactEmail, contactAddress } = values as SectionOutput<"contact">
-      return { contactPhone: contactPhone || null, contactWhatsapp: contactWhatsapp || null, contactEmail: contactEmail || null, contactAddress: contactAddress || null }
+      const { contactPhone, contactWhatsapp, contactEmail, contactAddress, contactPhone2, contactPhone2Label, contactHours, contactMapUrl } = values as SectionOutput<"contact">
+      return {
+        contactPhone: contactPhone || null,
+        contactWhatsapp: contactWhatsapp || null,
+        contactEmail: contactEmail || null,
+        contactAddress: contactAddress || null,
+        contactPhone2: contactPhone2 || null,
+        contactPhone2Label: contactPhone2Label || null,
+        contactHours: contactHours || null,
+        contactMapUrl: contactMapUrl || null,
+      }
     }
     case "tax": {
       const { taxEnabled, taxRatePercent, taxShipping } = values as SectionOutput<"tax">
