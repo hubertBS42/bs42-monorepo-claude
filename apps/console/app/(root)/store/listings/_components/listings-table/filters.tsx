@@ -10,7 +10,17 @@ export function getListingFilters({ brands, categories }: ProductFilterOptions):
     { key: "stock", label: "Stock", type: "select", placeholder: "Any stock", options: [{ label: "Any stock", value: "all" }, ...LISTING_STOCK_OPTIONS] },
     { key: "brandId", label: "Brand", type: "select", placeholder: "All brands", options: [{ label: "All brands", value: "all" }, ...brands] },
     // Choosing a category also shows the listings in the categories under it
-    { key: "categoryId", label: "Category", type: "select", placeholder: "All categories", options: [{ label: "All categories", value: "all" }, ...categories] },
+    { key: "categoryId", label: "Category", type: "tree", placeholder: "All categories", tree: categories },
+    {
+      key: "hasVariants",
+      label: "Variants",
+      type: "boolean",
+      placeholder: "All listings",
+      options: [
+        { label: "With variants", value: "true" },
+        { label: "Without variants", value: "false" },
+      ],
+    },
     {
       key: "visible",
       label: "Visible to customers",

@@ -28,6 +28,7 @@ export default async function StoreListingsPage({ searchParams }: StoreListingsP
     stock: getEnumParam(params.stock, LISTING_STOCK_STATES),
     brandId: getStringParam(params.brandId),
     categoryId: getStringParam(params.categoryId),
+    hasVariants: { true: true, false: false, none: undefined }[getEnumParam(params.hasVariants, ["true", "false"]) ?? "none"],
     visible: getEnumParam(params.visible, ["true", "false"]),
     featured: getEnumParam(params.featured, ["true", "false"]),
     page: getPositiveIntegerParam(params.page, 1),

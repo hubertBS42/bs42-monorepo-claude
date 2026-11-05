@@ -371,6 +371,8 @@ export interface ListingsParams extends PaginationParams {
   brandId?: string
   // Includes its subcategories
   categoryId?: string
+  // The catalogue product's, not whether the store sells every variant
+  hasVariants?: boolean
   // "true": customers can buy it; "false": they can't (a draft, or published but its product or every variant isn't)
   visible?: "true" | "false"
   // Featured on the storefront's homepage
