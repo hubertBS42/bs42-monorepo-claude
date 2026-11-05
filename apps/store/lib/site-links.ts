@@ -6,3 +6,11 @@ export const siteLinks = [
   { name: "Contact us", href: "/contact-us" },
 ]
 
+// The footer's column of the site's other pages, beside Shop and Contact
+export const footerLinks = [
+  { name: "VoIP for business", href: "/voip" },
+  { name: "BS42 Academy", href: "/academy" },
+  { name: "Blog", href: "/blog" },
+  { name: "Trade accounts", href: "/trade" },
+  { name: "Contact us", href: "/contact-us" },
+]

@@ -8,6 +8,7 @@ import type { LegalLinks } from "@/components/legal-consent"
 import { PromiseStrip } from "@/components/promise-strip"
 import { StoreLogo } from "@/components/store-logo"
 import type { MenuItem } from "@/lib/menu"
+import { footerLinks } from "@/lib/site-links"
 
 export type FooterContact = Pick<AppSettingsData, "contactPhone" | "contactWhatsapp" | "contactEmail" | "contactAddress" | "contactPhone2" | "contactPhone2Label" | "contactHours">
 
@@ -46,7 +47,7 @@ export function SiteFooter({
             </p>
           </div>
         )}
-        <div className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:grid-cols-2 lg:grid-cols-[1.5fr_2fr_1.5fr] lg:px-6">
+        <div className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:grid-cols-2 lg:grid-cols-[1.5fr_2fr_1fr_1.5fr] lg:px-6">
           <div className="space-y-3">
             <StoreLogo storeName={storeName} logoUrl={logoUrl} logoDarkUrl={logoDarkUrl} className="text-white" />
             {storeDescription && <p className="max-w-xs text-xs">{storeDescription}</p>}
@@ -58,6 +59,18 @@ export function SiteFooter({
                 <li key={item.href}>
                   <Link href={item.href} className="transition-colors hover:text-white">
                     {item.name}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
+          <nav aria-label="More from us">
+            <h2 className={headingClass}>More</h2>
+            <ul className="grid gap-2.5 text-xs">
+              {footerLinks.map((link) => (
+                <li key={link.href}>
+                  <Link href={link.href} className="transition-colors hover:text-white">
+                    {link.name}
                   </Link>
                 </li>
               ))}
@@ -146,11 +159,6 @@ function ContactList({ contact }: { contact: FooterContact }) {
             <p className="whitespace-pre-line">{contact.contactHours}</p>
           </li>
         )}
-        <li>
-          <Link href="/contact-us" className="font-medium text-white underline-offset-4 hover:underline">
-            All the ways to reach us
-          </Link>
-        </li>
       </ul>
     </div>
   )
