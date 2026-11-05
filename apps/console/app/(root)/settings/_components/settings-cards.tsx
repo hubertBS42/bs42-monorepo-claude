@@ -202,6 +202,29 @@ export function QuotationsCard({ settings }: CardProps) {
   )
 }
 
+export function OnlinePaymentsCard({ settings }: CardProps) {
+  return (
+    <SettingsCard
+      section="payments"
+      settings={settings}
+      title="Online Payments"
+      description="Whether customers pay by card or mobile money at checkout."
+      info="Turned off, checkout and the Pay buttons are closed: customers ask for a quotation or contact you, and staff create their orders here. The storefront follows within a minute."
+    >
+      {(form, isPending) => (
+        <SwitchField
+          control={form.control}
+          name="onlinePaymentsEnabled"
+          label="Take payments online"
+          description="Through Paystack, with its live key in both apps"
+          variant="card"
+          disabled={isPending}
+        />
+      )}
+    </SettingsCard>
+  )
+}
+
 export function BankTransferCard({ settings }: CardProps) {
   return (
     <SettingsCard section="bankTransfer" settings={settings} title="Bank Transfer" description="Shown to customers paying a staff-made order by bank transfer.">

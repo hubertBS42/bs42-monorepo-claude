@@ -14,7 +14,7 @@ import { z } from "zod"
 
 import { readCartId } from "@/lib/cart-cookie"
 import { CheckoutError } from "@/lib/checkout"
-import { paymentRedirect, visitorIp } from "@/lib/payments"
+import { onlinePaymentsOpen, PAYMENTS_OFF, paymentRedirect, visitorIp } from "@/lib/payments"
 import { acceptQuote, cancelQuote, createQuote } from "@/lib/quotes"
 import { quoteRequestSchema, type QuoteRequestValues } from "@/lib/schemas/quote.schemas"
 import { getStoreSession, getTradeTerms } from "@/lib/session"
@@ -79,6 +79,9 @@ export async function acceptQuoteAction(quoteId: string): Promise<DataResponse<{
     const session = await getStoreSession()
     if (!session) return SIGNED_OUT
     if (!z.uuid().safeParse(quoteId).success) return { success: false, error: "We can't find that quotation.", code: "NOT_FOUND" }
+    // Accepting places the order and pays for it at once, so it waits for online payments; staff can place the order
+    // from the quotation in the console meanwhile
+    if (!(await onlinePaymentsOpen())) return PAYMENTS_OFF
 
     const ip = await visitorIp()
     const { stockAlerts, ...order } = await prisma.$transaction((tx) => acceptQuote(tx, quoteId, session.user, ip), TRANSACTION_OPTIONS)

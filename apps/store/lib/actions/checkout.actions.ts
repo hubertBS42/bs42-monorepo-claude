@@ -13,7 +13,7 @@ import { isOrderKey } from "@workspace/commerce/order-links"
 import { rememberAddress } from "@/lib/addresses"
 import { readCartId } from "@/lib/cart-cookie"
 import { CheckoutError, placeOrder, priceCheckout, type CheckoutSummary } from "@/lib/checkout"
-import { paymentRedirect, startPayment, visitorIp } from "@/lib/payments"
+import { onlinePaymentsOpen, PAYMENTS_OFF, paymentRedirect, startPayment, visitorIp } from "@/lib/payments"
 import { areaSchema, placeOrderSchema } from "@/lib/schemas/checkout.schemas"
 import { getStoreSession, getTradeTerms } from "@/lib/session"
 
@@ -55,6 +55,7 @@ export async function placeOrderAction(input: unknown): Promise<DataResponse<{ r
     const parsed = placeOrderSchema.safeParse(input)
     if (!parsed.success) return { success: false, error: parsed.error.issues[0]?.message ?? "Check your details.", code: "INVALID_INPUT" }
 
+    if (!(await onlinePaymentsOpen())) return PAYMENTS_OFF
     const [cartId, pricing, session] = await Promise.all([readCartId(), getPricingContext(), getStoreSession()])
     if (!cartId) return EMPTY_BASKET
     if (!pricing) return NO_RATE
@@ -79,6 +80,7 @@ export async function placeOrderAction(input: unknown): Promise<DataResponse<{ r
 export async function payOrderAction(orderId: string, key: string): Promise<DataResponse<{ redirectTo: string }>> {
   try {
     if (!isOrderKey(orderId, key)) return { success: false, error: "We can't find that order.", code: "NOT_FOUND" }
+    if (!(await onlinePaymentsOpen())) return PAYMENTS_OFF
     return { success: true, data: { redirectTo: await startPayment(orderId) } }
   } catch (error) {
     if (error instanceof PaymentClosedError) return { success: false, error: "This order can't be paid for any more.", code: "PAYMENT_CLOSED" }

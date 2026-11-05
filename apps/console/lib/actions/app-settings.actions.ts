@@ -54,6 +54,8 @@ function toData(section: SettingsSection, values: SectionOutput<SettingsSection>
       return { exchangeRateMarkupPercent: new Prisma.Decimal((values as SectionOutput<"markup">).exchangeRateMarkupPercent.toFixed(2)) }
     case "quotations":
       return { quoteValidityDays: (values as SectionOutput<"quotations">).quoteValidityDays }
+    case "payments":
+      return { onlinePaymentsEnabled: (values as SectionOutput<"payments">).onlinePaymentsEnabled }
     case "bankTransfer":
       return { bankTransferDetails: (values as SectionOutput<"bankTransfer">).bankTransferDetails || null }
     case "notifications": {

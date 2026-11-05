@@ -71,6 +71,8 @@ export type AppSettingsData = {
   quoteValidityDays: number
   // Where customers send a bank transfer, as typed in Settings; null when none are set
   bankTransferDetails: string | null
+  // Off: the storefront takes no payment online, and offers quotes and the contact details instead
+  onlinePaymentsEnabled: boolean
   // Added to the rate fetched each day, a percentage (2 is 2%), as a plain number like taxRate
   exchangeRateMarkupPercent: number
 }

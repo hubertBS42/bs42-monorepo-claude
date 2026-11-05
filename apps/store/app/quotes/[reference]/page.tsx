@@ -7,6 +7,7 @@ import { prisma } from "@workspace/db"
 import { Prisma } from "@workspace/db/client"
 import { QuoteStatus } from "@workspace/db/enums"
 import { Badge } from "@workspace/ui/components/badge"
+import { Button } from "@workspace/ui/components/button"
 import { formatDate } from "@workspace/utils/date"
 import { getStringParam } from "@workspace/utils/search-params"
 
@@ -80,10 +81,18 @@ export default async function QuotePage({ params, searchParams }: QuotePageProps
           <div className="flex flex-wrap items-center gap-2 rounded-xl border p-4">
             <div className="mr-auto text-sm">
               <p className="font-medium">Ready to order?</p>
-              <p className="text-muted-foreground">We&apos;ll check everything is still in stock, then you pay as at checkout.</p>
+              <p className="text-muted-foreground">
+                {settings.onlinePaymentsEnabled
+                  ? "We'll check everything is still in stock, then you pay as at checkout."
+                  : "Contact us with this quotation's reference and we'll place your order at these prices."}
+              </p>
             </div>
             <CancelQuoteButton quoteId={quote.id} />
-            <AcceptQuoteButton quoteId={quote.id} label={`Accept and pay ${money(quote.totalGhs)}`} />
+            {settings.onlinePaymentsEnabled ? (
+              <AcceptQuoteButton quoteId={quote.id} label={`Accept and pay ${money(quote.totalGhs)}`} />
+            ) : (
+              <Button render={<Link href="/contact-us" />}>Contact us to order</Button>
+            )}
           </div>
         )}
         {isOwner && (expired || quote.status === QuoteStatus.CANCELLED) && (

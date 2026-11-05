@@ -5,7 +5,7 @@ import { authURLs } from "@workspace/auth/constants"
 import { createPaymentAttempt, markAttemptFailed } from "@workspace/commerce/online-payments"
 import { orderHref } from "@workspace/commerce/order-links"
 import { initializeTransaction } from "@workspace/commerce/paystack"
-import { prisma } from "@workspace/db"
+import { prisma, readAppSettings } from "@workspace/db"
 
 // Paying for a storefront order on Paystack, for the actions that place one (checkout, accepting a quote) and the
 // order page's "Pay now"
@@ -22,6 +22,18 @@ export async function visitorIp() {
   if (bracketed) return bracketed[1]!
   // One colon is IPv4 with a port; a bare IPv6 address has several
   return first.split(":").length === 2 ? first.split(":")[0]! : first
+}
+
+// Settings' Online Payments switch, read fresh rather than from the minute-long cache: the actions that would send a
+// customer to Paystack refuse once it's off, whatever an older page still shows
+export async function onlinePaymentsOpen() {
+  return (await readAppSettings()).onlinePaymentsEnabled
+}
+
+export const PAYMENTS_OFF = {
+  success: false as const,
+  error: "We're not taking payment online yet. Contact us and we'll place your order.",
+  code: "PAYMENTS_OFF",
 }
 
 // Starts paying for an order on Paystack: a new attempt, and the page on Paystack to send the customer to

@@ -39,7 +39,7 @@ async function quoteRequestProps() {
 export default async function BasketPage() {
   const cartId = await readCartId()
   // Priced fresh, not from the shelf's minute-long cache: this is what checkout will charge
-  const [pricing, freeDeliveryFrom, installationAreas] = await Promise.all([getPricingContext(), getFreeDeliveryFrom(), getInstallationAreas()])
+  const [pricing, freeDeliveryFrom, installationAreas, { onlinePaymentsEnabled }] = await Promise.all([getPricingContext(), getFreeDeliveryFrom(), getInstallationAreas(), getAppSettings()])
   const basket = cartId ? await loadCart(prisma, cartId, pricing, await getTradeTerms()) : null
   const lines = basket?.lines ?? []
   const trade = basket?.trade ?? null
@@ -145,7 +145,7 @@ export default async function BasketPage() {
                   </div>
                   <div className="flex justify-between gap-4 text-muted-foreground">
                     <span>Delivery</span>
-                    <span>Worked out at checkout</span>
+                    <span>{onlinePaymentsEnabled ? "Worked out at checkout" : "Worked out in your quote"}</span>
                   </div>
                   {notes}
                 </>
@@ -171,7 +171,7 @@ export default async function BasketPage() {
                   )}
                   <div className="flex justify-between gap-4 text-muted-foreground">
                     <span>Delivery</span>
-                    <span>Worked out at checkout</span>
+                    <span>{onlinePaymentsEnabled ? "Worked out at checkout" : "Worked out in your quote"}</span>
                   </div>
                   {notes}
                 </>
@@ -180,16 +180,29 @@ export default async function BasketPage() {
               )}
             </CardContent>
             <CardFooter className="flex-col gap-2">
-              {basket?.totals ? (
-                <Button render={<Link href="/checkout" />} size="lg" className="w-full">
-                  Go to checkout
-                </Button>
+              {/* Settings' Online Payments switch: off, there's no checkout, and a quotation or a call is how to order */}
+              {!onlinePaymentsEnabled ? (
+                <>
+                  <p className="text-sm text-muted-foreground">We&apos;re not taking payment online yet. Get a quote, or contact us and we&apos;ll place your order.</p>
+                  {quote && <QuoteRequestDialog {...quote} primary />}
+                  <Button render={<Link href="/contact-us" />} variant="outline" className="w-full">
+                    Contact us to order
+                  </Button>
+                </>
               ) : (
-                <Button size="lg" className="w-full" disabled>
-                  Go to checkout
-                </Button>
+                <>
+                  {basket?.totals ? (
+                    <Button render={<Link href="/checkout" />} size="lg" className="w-full">
+                      Go to checkout
+                    </Button>
+                  ) : (
+                    <Button size="lg" className="w-full" disabled>
+                      Go to checkout
+                    </Button>
+                  )}
+                  {quote && <QuoteRequestDialog {...quote} />}
+                </>
               )}
-              {quote && <QuoteRequestDialog {...quote} />}
               <Button render={<Link href="/" />} variant="ghost" className="w-full">
                 Continue shopping
               </Button>

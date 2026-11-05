@@ -192,7 +192,7 @@ Production already runs at its App Service addresses; this is the switch from th
 - [ ] Recommended: correct the store's wrong buy prices first (those equal to the selling price, and stocked items without one; the Stock Value report lists them). The import estimates each old order line's cost from the buy price as it runs, and those estimates don't change afterwards, so a wrong one shows as a 0% margin and a missing one as "Without a cost" in Profit & Margins for the old orders. New sales take the buy price at the time, so fix them soon after launch either way. The old prices are landed costs (shipping, duty and clearing included), as receiving a purchase order now sets them.
 - [x] Daniel Chan has a console account in the store (invited, accepted): every import step names him with `--by`.
 - [x] A real `OPEN_EXCHANGE_RATES_API_KEY` in the console's settings (section 2).
-- [ ] The live `PAYSTACK_SECRET_KEY`, waiting for Paystack's approval. Needed before the DNS switch (step 8): with the test key, the storefront's checkout is Paystack's test mode, where no real money is taken and a test card payment marks an order as paid.
+- [ ] The live `PAYSTACK_SECRET_KEY`, waiting for Paystack's approval. Needed before Online Payments is turned on (step 7): with the test key, checkout is Paystack's test mode, where no real money is taken and a test card payment marks an order as paid.
 - [x] The three scheduled jobs (section 7) exist and have run without failing.
 - [x] Settings → General's Contact card filled in, and the Blog's draft post dealt with (deleted).
 - [ ] The rest of Settings (section 8) checked.
@@ -206,7 +206,7 @@ Production already runs at its App Service addresses; this is the switch from th
 4. [ ] A fresh `db:legacy:export` (section 4): it only reads, but the old portal must still be running.
 5. [ ] The import's dry run, with `--by daniel@attelecomms.co.uk`: `totalMismatches` 0, and read the list of old products not in the catalogue. Then the import itself.
 6. [ ] Count a few listings against the shelves.
-7. [ ] Paystack (section 6): the live key in both apps, and the webhook URL `https://bs42.net/api/paystack/webhook` in live mode. Before the DNS switch, so the new storefront never takes a payment in test mode.
+7. [ ] Paystack (section 6): the live key in both apps, and the webhook URL `https://bs42.net/api/paystack/webhook` in live mode. Then turn on Settings → Pricing → Online Payments (off until then: the storefront offers quotes and the contact page instead, and staff create orders in the console). Going live without it is fine too: the storefront just doesn't take payments yet.
 8. [ ] Point `bs42.net` (and `www`) at the store's web app and add their managed certificates (section 5). Set `STORE_AUTH_URL=https://bs42.net` in both apps' settings and in the GitHub environment's variables, and run the deploy workflow again: the build bakes the URL in. With Google sign-in, add `https://bs42.net/api/auth/callback/google` as a redirect URI.
 9. [ ] The smoke test (section 9), with a real small order paid through Paystack, then refunded.
 10. [ ] Google Search Console: add `bs42.net` and submit `https://bs42.net/sitemap.xml`. The old site's addresses aren't redirected (decided: it had little search traffic), so this gets the new pages found sooner.

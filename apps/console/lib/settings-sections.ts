@@ -27,6 +27,7 @@ export function sectionValues<S extends SettingsSection>(settings: AppSettingsDa
     },
     markup: { exchangeRateMarkupPercent: settings.exchangeRateMarkupPercent },
     quotations: { quoteValidityDays: settings.quoteValidityDays },
+    payments: { onlinePaymentsEnabled: settings.onlinePaymentsEnabled },
     bankTransfer: { bankTransferDetails: settings.bankTransferDetails ?? "" },
     notifications: {
       notificationEmails: settings.notificationEmails,

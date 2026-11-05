@@ -155,6 +155,9 @@ model AppSettings {
   // Where customers send a bank transfer (bank, account name and number, branch), as typed; shown to a customer whose
   // staff-made order is unpaid by bank transfer
   bankTransferDetails       String?
+  // Whether the storefront takes payment online (Paystack). Off: checkout, the order page's Pay and a quotation's
+  // "Accept and pay" are closed, customers get a quote or contact the business, and staff create the order.
+  onlinePaymentsEnabled     Boolean  @default(false)
 
   updatedAt DateTime @updatedAt
 

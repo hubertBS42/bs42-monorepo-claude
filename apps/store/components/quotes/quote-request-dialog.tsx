@@ -19,8 +19,21 @@ import { quoteRequestSchema, type QuoteRequestValues } from "@/lib/schemas/quote
 import { useRevalidateOnChange } from "@workspace/forms/use-revalidate-on-change"
 
 // "Get a quote" under the basket's summary: who it's addressed to and where it would be delivered (the fee is part of
-// the quote), then the quote's page. A signed-out visitor is sent to sign in first, and back to the basket.
-export function QuoteRequestDialog({ signedIn, initial, areas, validityDays }: { signedIn: boolean; initial: QuoteRequestValues; areas: DeliveryArea[]; validityDays: number }) {
+// the quote), then the quote's page. A signed-out visitor is sent to sign in first, and back to the basket. `primary`
+// makes it the basket's main button, while online payments are off and there's no checkout.
+export function QuoteRequestDialog({
+  signedIn,
+  initial,
+  areas,
+  validityDays,
+  primary = false,
+}: {
+  signedIn: boolean
+  initial: QuoteRequestValues
+  areas: DeliveryArea[]
+  validityDays: number
+  primary?: boolean
+}) {
   const [open, setOpen] = useState(false)
   const form = useForm<QuoteRequestValues>({ resolver: zodResolver(quoteRequestSchema), defaultValues: initial })
   useRevalidateOnChange(form)
@@ -31,7 +44,7 @@ export function QuoteRequestDialog({ signedIn, initial, areas, validityDays }: {
 
   if (!signedIn) {
     return (
-      <Button render={<Link href="/sign-in?redirect=/basket" />} variant="outline" className="w-full">
+      <Button render={<Link href="/sign-in?redirect=/basket" />} variant={primary ? "default" : "outline"} size={primary ? "lg" : "default"} className="w-full">
         <FileText data-icon="inline-start" aria-hidden />
         Sign in to get a quote
       </Button>
@@ -53,7 +66,7 @@ export function QuoteRequestDialog({ signedIn, initial, areas, validityDays }: {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger
         render={
-          <Button variant="outline" className="w-full">
+          <Button variant={primary ? "default" : "outline"} size={primary ? "lg" : "default"} className="w-full">
             <FileText data-icon="inline-start" aria-hidden />
             Get a quote
           </Button>

@@ -6,6 +6,7 @@ import { canStartPayment, paymentDeadline } from "@workspace/commerce/online-pay
 import { awaitsBankTransfer, hasBeenPaid, ORDER_STATUS_LABELS, PAYMENT_METHOD_LABELS } from "@workspace/commerce/order-status"
 import { prisma } from "@workspace/db"
 import { OrderStatus, PaymentStatus, ShippingMethod } from "@workspace/db/enums"
+import { Button } from "@workspace/ui/components/button"
 import { Badge } from "@workspace/ui/components/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@workspace/ui/components/card"
 import { Separator } from "@workspace/ui/components/separator"
@@ -123,7 +124,8 @@ export default async function OrderPage({ params, searchParams }: OrderPageProps
   const staffMade = order.createdById !== null
   const method = PAYMENT_METHOD_LABELS[order.paymentMethod].toLowerCase()
   // Where to send it, from Settings (null details when none are set)
-  const bankTransfer = awaitsBankTransfer(order) && order.status !== OrderStatus.CANCELLED ? { details: (await getAppSettings()).bankTransferDetails } : null
+  const settings = await getAppSettings()
+  const bankTransfer = awaitsBankTransfer(order) && order.status !== OrderStatus.CANCELLED ? { details: settings.bankTransferDetails } : null
   const cancelled = order.status === OrderStatus.CANCELLED
   // A paid order's heading follows its delivery
   const firstName = order.customerName.split(" ")[0]
@@ -201,13 +203,21 @@ export default async function OrderPage({ params, searchParams }: OrderPageProps
             <Clock className="size-10 text-amber-500" aria-hidden />
             <h1 className="text-2xl font-bold tracking-tight md:text-3xl">Your order is waiting for payment</h1>
             {getStringParam(query.payment) === "unavailable" && <p className="font-medium text-destructive">We couldn't reach our payment provider just now. Please try again.</p>}
-            {payable ? (
+            {payable && settings.onlinePaymentsEnabled ? (
               <>
                 <p className="text-muted-foreground">
                   We're holding your items until {deadline}. If you've just paid, it can take a minute to show here: refresh the page. Otherwise, pay now to complete your order.
                 </p>
                 <div>
                   <PayNowButton orderId={order.id} orderKey={key} label={`Pay ${formatGhs(order.totalGhs.toFixed(2))}`} />
+                </div>
+              </>
+            ) : payable ? (
+              // Settings' Online Payments switch is off: an order placed before it was turned off
+              <>
+                <p className="text-muted-foreground">We're not taking payment online at the moment. Contact us with this order's reference and we'll arrange payment.</p>
+                <div>
+                  <Button render={<Link href="/contact-us" />}>Contact us</Button>
                 </div>
               </>
             ) : (

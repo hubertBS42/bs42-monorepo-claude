@@ -16,14 +16,21 @@ import { readCartId } from "@/lib/cart-cookie"
 import { CheckoutError, priceCheckout } from "@/lib/checkout"
 import { getDeliveryAreas } from "@/lib/delivery-areas"
 import { getStoreSession, getTradeTerms } from "@/lib/session"
-import { getInstallationAreas, getLegalPages } from "@/lib/settings"
+import { getAppSettings, getInstallationAreas, getLegalPages } from "@/lib/settings"
 
 export const metadata: Metadata = { title: "Checkout", robots: { index: false } }
 
 export default async function CheckoutPage() {
-  const [cartId, pricing, session, legal, installationAreas] = await Promise.all([readCartId(), getPricingContext(), getStoreSession(), getLegalPages(), getInstallationAreas()])
-  // Without a rate to sell at, the basket says so
-  if (!cartId || !pricing) redirect("/basket")
+  const [cartId, pricing, session, legal, installationAreas, settings] = await Promise.all([
+    readCartId(),
+    getPricingContext(),
+    getStoreSession(),
+    getLegalPages(),
+    getInstallationAreas(),
+    getAppSettings(),
+  ])
+  // Without a rate to sell at, or with online payments off (Settings), the basket says so
+  if (!cartId || !pricing || !settings.onlinePaymentsEnabled) redirect("/basket")
 
   const trade = await getTradeTerms()
   const checkout = await priceCheckout(prisma, cartId, pricing, null, trade).catch((error) => {

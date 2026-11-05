@@ -77,6 +77,7 @@ export const settingsSectionSchemas = {
   quotations: z.object({
     quoteValidityDays: z.number("Enter a number of days").int("Use whole days").min(1, "At least 1 day").max(90, "At most 90 days"),
   }),
+  payments: z.object({ onlinePaymentsEnabled: z.boolean() }),
   bankTransfer: z.object({
     // As typed, with its line breaks; empty for none
     bankTransferDetails: z.string().trim().max(1000, "Keep the details under 1,000 characters"),
