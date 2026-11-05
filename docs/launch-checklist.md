@@ -1,6 +1,6 @@
 # Launch checklist
 
-Everything needed to run BS42.NET in production: the console at `console.bs42.net`, the storefront at `bs42.net`. Work through it top to bottom. No secrets go in this file.
+Everything needed to run BS42.NET in production: the console at `console.bs42.net`, the storefront at `bs42.net`. Sections 1 to 9 set production up (work through them top to bottom); section 10 is the order for the day `bs42.net` moves from the old site to the new one. No secrets go in this file.
 
 ## 1. Have these ready
 
@@ -181,3 +181,37 @@ Then create the stores, invite their staff, and add listings.
 - [ ] Refund it in the console, and in Paystack's dashboard.
 - [ ] Upload a product image: it shows in the console and on the store.
 - [ ] The next day, Settings → Pricing shows the rate the job fetched.
+
+## 10. Going live
+
+Production already runs at its App Service addresses; this is the switch from the old site. The old system's records
+(section 4) come across once it has stopped taking orders, so nothing made after the export is missed.
+
+**Before the day:**
+
+- [ ] Recommended: correct the store's wrong buy prices first (those equal to the selling price, and stocked items without one; the Stock Value report lists them). The import estimates each old order line's cost from the buy price as it runs, and those estimates don't change afterwards, so a wrong one shows as a 0% margin and a missing one as "Without a cost" in Profit & Margins for the old orders. New sales take the buy price at the time, so fix them soon after launch either way. The old prices are landed costs (shipping, duty and clearing included), as receiving a purchase order now sets them.
+- [x] Daniel Chan has a console account in the store (invited, accepted): every import step names him with `--by`.
+- [x] A real `OPEN_EXCHANGE_RATES_API_KEY` in the console's settings (section 2).
+- [ ] The live `PAYSTACK_SECRET_KEY`, waiting for Paystack's approval. Needed before the DNS switch (step 8): with the test key, the storefront's checkout is Paystack's test mode, where no real money is taken and a test card payment marks an order as paid.
+- [x] The three scheduled jobs (section 7) exist and have run without failing.
+- [x] Settings → General's Contact card filled in, and the Blog's draft post dealt with (deleted).
+- [ ] The rest of Settings (section 8) checked.
+- [ ] DNS: the `asuid` TXT records for `bs42.net` and `www` added on the store's web app (they prove the domain without moving traffic), and the domain's TTL lowered a day ahead so the switch takes effect quickly.
+
+**On the day, in this order:**
+
+1. [ ] Stop the old system taking orders: the old storefront and staff entering orders on portal.bs42.net.
+2. [ ] Take a snapshot of the production database (a Neon branch): the way back if anything below goes wrong.
+3. [ ] Remove the preview import of 2026-11-04: `db:legacy:import --undo` with the preview's data folder, against production's direct connection. This is only clean if nothing has used its records since (orders, stock edits or deliveries on its listings); otherwise restore a snapshot from before it, or reset. `--undo` puts the imported rows' stock back to 0.
+4. [ ] A fresh `db:legacy:export` (section 4): it only reads, but the old portal must still be running.
+5. [ ] The import's dry run, with `--by daniel@attelecomms.co.uk`: `totalMismatches` 0, and read the list of old products not in the catalogue. Then the import itself.
+6. [ ] Count a few listings against the shelves.
+7. [ ] Paystack (section 6): the live key in both apps, and the webhook URL `https://bs42.net/api/paystack/webhook` in live mode. Before the DNS switch, so the new storefront never takes a payment in test mode.
+8. [ ] Point `bs42.net` (and `www`) at the store's web app and add their managed certificates (section 5). Set `STORE_AUTH_URL=https://bs42.net` in both apps' settings and in the GitHub environment's variables, and run the deploy workflow again: the build bakes the URL in. With Google sign-in, add `https://bs42.net/api/auth/callback/google` as a redirect URI.
+9. [ ] The smoke test (section 9), with a real small order paid through Paystack, then refunded.
+10. [ ] Google Search Console: add `bs42.net` and submit `https://bs42.net/sitemap.xml`. The old site's addresses aren't redirected (decided: it had little search traffic), so this gets the new pages found sooner.
+
+**Afterwards:**
+
+- [ ] Once the import has been checked, back up the old system's database, then stop its App Service (bs42-admin): its API answers without a sign-in and holds customers' details. Then stop the old storefront (bs42-client).
+- [ ] The next day, Settings → Pricing shows the rate the daily job fetched.
