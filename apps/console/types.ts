@@ -915,6 +915,8 @@ export interface PurchaseOrderLine {
   // In the order's currency, and in USD
   unitCost: string
   unitCostUsd: string
+  // The USD cost with its share of the order's shipping and import costs (landed-cost.ts); null for a draft in GHS
+  landedCostUsd: string | null
   total: string
   // The listing (or variant) row now: null stock when it doesn't track it
   stock: number | null

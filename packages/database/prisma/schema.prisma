@@ -1237,7 +1237,8 @@ model PurchaseOrder {
   currency     Currency
   // USD→GHS (GHS per 1 USD), copied from the day's rate when costs in GHS were converted to USD; null for USD
   exchangeRate Decimal? @db.Decimal(12, 6)
-  // In the order's currency. Shown in its totals; it isn't spread over the lines' costs.
+  // In the order's currency: shipping and import costs (freight, duty, clearing). Shown in its totals; receiving with
+  // "Update buy prices" shares it over the lines by value as their landed cost (apps/console/lib/landed-cost.ts).
   shippingCost Decimal  @default(0) @db.Decimal(12, 2)
 
   // The day the supplier said it would arrive

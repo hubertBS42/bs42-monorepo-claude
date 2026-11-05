@@ -49,7 +49,7 @@ export default function PurchasesReportView({ report, range, basePath, today, fi
 
       <div className="grid gap-4 @xl/main:grid-cols-2 @5xl/main:grid-cols-4">
         <ReportStat label="Ordered" value={usd(summary.orderedUsd)} note={plural(summary.ordersPlaced, "purchase order", "purchase orders")} />
-        <ReportStat label="Shipping" value={usd(summary.shippingUsd)} note="Included in what was ordered" />
+        <ReportStat label="Shipping and import costs" value={usd(summary.shippingUsd)} note="Included in what was ordered" />
         <ReportStat label="Received" value={usd(summary.receivedUsd)} note={plural(summary.unitsReceived, "unit", "units")} />
         <ReportStat label="Deliveries" value={summary.deliveries.toLocaleString("en-US")} note="Received in this range" />
       </div>
@@ -59,8 +59,8 @@ export default function PurchasesReportView({ report, range, basePath, today, fi
           <CardTitle className="flex items-center gap-1.5">
             {range.by === "day" ? "By day" : "By month"}
             <InfoTip about="Purchases over time">
-              Ordered counts purchase orders on the day they were marked as ordered, with their shipping, leaving out those cancelled since. Received counts deliveries on the day they arrived, at each
-              line&apos;s cost. Everything is in US dollars: an order in cedis converts at the rate it was ordered at.
+              Ordered counts purchase orders on the day they were marked as ordered, with their shipping and import costs, leaving out those cancelled since. Received counts deliveries on the day they
+              arrived, at each line&apos;s invoiced cost. Everything is in US dollars: an order in cedis converts at the rate it was ordered at.
             </InfoTip>
           </CardTitle>
           <CardDescription>What was ordered from suppliers and what arrived, in US dollars.</CardDescription>

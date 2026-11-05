@@ -406,7 +406,16 @@ export default function PurchaseOrderForm({ storeId, suppliers, rate, order, sug
                       }
                     />
                     <DateField control={form.control} name="expectedOn" label="Expected on" placeholder="When the supplier says" disabled={isBusy} />
-                    <NumberInputField control={form.control} label="Shipping" name="shippingCost" step={0.01} min={0} prependText={costPrefix} disabled={isBusy} />
+                    <NumberInputField
+                      control={form.control}
+                      label="Shipping and import costs"
+                      name="shippingCost"
+                      step={0.01}
+                      min={0}
+                      prependText={costPrefix}
+                      info="Freight, duty and clearing. When a delivery is received, it's shared across the lines by value and added to their buy prices."
+                      disabled={isBusy}
+                    />
                     <TextareaField control={form.control} label="Notes" name="notes" placeholder="Their invoice number, payment terms…" disabled={isBusy} />
                   </FieldGroup>
                 </CardContent>
@@ -422,7 +431,7 @@ export default function PurchaseOrderForm({ storeId, suppliers, rate, order, sug
                     <span className="tabular-nums">{money(subtotalCents)}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Shipping</span>
+                    <span className="text-muted-foreground">Shipping and import costs</span>
                     <span className="tabular-nums">{money(toCents(shippingCost))}</span>
                   </div>
                   <Separator className="my-1" />

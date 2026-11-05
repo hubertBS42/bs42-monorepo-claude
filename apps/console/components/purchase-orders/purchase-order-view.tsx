@@ -142,7 +142,7 @@ export default function PurchaseOrderView({ order, backTo, statusContent, storeI
               <Separator />
               <div className="ml-auto grid w-full max-w-xs gap-1.5">
                 <TotalRow label="Items" amount={money(order.subtotal)} />
-                <TotalRow label="Shipping" amount={money(order.shippingCost)} />
+                <TotalRow label="Shipping and import costs" amount={money(order.shippingCost)} />
                 <Separator className="my-1" />
                 <TotalRow label="Total" amount={money(order.total)} strong />
                 {isGhs && order.exchangeRate && (

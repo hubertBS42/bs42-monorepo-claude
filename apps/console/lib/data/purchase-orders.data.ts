@@ -12,6 +12,7 @@ import { consoleAdminRoles, hasSystemRole } from "@workspace/auth/system-permiss
 import { hasStorePermission } from "@/lib/auth-guard"
 import { getRateDate } from "@workspace/commerce/exchange-rates"
 import { catalogueProductHref, listingHref } from "@/lib/product-links"
+import { landedUnitCostsUsd, orderAmountInUsd } from "@/lib/landed-cost"
 import { isOpenPurchaseOrder, OPEN_PURCHASE_ORDER_STATUSES, overduePurchaseOrderWhere } from "@/lib/purchase-order-status"
 import type { PurchasableListing, PurchaseOrderDetails, PurchaseOrdersData, PurchaseOrdersParams, SelectItem } from "@/types"
 
@@ -194,6 +195,9 @@ export const getPurchaseOrderDetails = async (storeId: string | null, id: string
 
     const who = (user: { name: string | null; email: string } | null) => (user ? user.name || user.email : null)
     const subtotal = sumLines(order.items)
+    // What receiving would set buy prices to; unknown for a draft in GHS, which has no rate yet
+    const shippingUsd = orderAmountInUsd(order.shippingCost, order.currency, order.exchangeRate)
+    const landed = shippingUsd && landedUnitCostsUsd(order.items, shippingUsd)
 
     return {
       success: true,
@@ -233,6 +237,7 @@ export const getPurchaseOrderDetails = async (storeId: string | null, id: string
             quantityReceived: item.quantityReceived,
             unitCost: item.unitCost.toFixed(2),
             unitCostUsd: item.unitCostUsd.toFixed(2),
+            landedCostUsd: landed?.get(item.id)?.toFixed(2) ?? null,
             total: item.unitCost.times(item.quantityOrdered).toFixed(2),
             stock: row.trackInventory ? row.stock : null,
           }

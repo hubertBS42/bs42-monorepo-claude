@@ -6,6 +6,7 @@ import { Currency, PurchaseOrderStatus, Status, StockMovementReason } from "@wor
 import { formatDate } from "@workspace/utils/date"
 import { cancelTarget, isEditablePurchaseOrder, isOpenPurchaseOrder } from "./purchase-order-status"
 import { addStock } from "@workspace/commerce/stock-movements"
+import { landedUnitCostsUsd } from "./landed-cost"
 
 // A store's purchase orders: saving one, marking it ordered, receiving deliveries into stock, and cancelling or
 // closing it. In their own module (like listing-sync.ts) so they can be tested against the database without a
@@ -167,6 +168,7 @@ async function lockPurchaseOrder(tx: Tx, storeId: string, id: string) {
       status: true,
       currency: true,
       exchangeRate: true,
+      shippingCost: true,
       updatedAt: true,
       _count: { select: { receipts: true } },
       items: {
@@ -296,7 +298,8 @@ export interface ReceiptInput {
   receiptCount: number
   // One entry per line that came in
   items: { purchaseOrderItemId: string; quantity: number }[]
-  // Set each line's listing (or variant) buy price to its cost in USD
+  // Set each line's listing (or variant) buy price to its landed cost in USD: its cost plus its share of the order's
+  // shipping and import costs (landed-cost.ts)
   updateBuyPrices: boolean
   note: string | null
   receivedById: string
@@ -319,6 +322,9 @@ export async function receivePurchaseOrder(tx: Tx, input: ReceiptInput) {
     return { line, quantity: entry.quantity }
   })
 
+  // An open order in GHS has the rate it was ordered at, so toUsd only refuses a malformed one
+  const landed = landedUnitCostsUsd(saved.items, toUsd(saved.shippingCost, saved.currency, saved.exchangeRate))
+
   const receipt = await tx.purchaseOrderReceipt.create({
     select: { id: true },
     data: {
@@ -334,8 +340,9 @@ export async function receivePurchaseOrder(tx: Tx, input: ReceiptInput) {
     await tx.purchaseOrderItem.update({ where: { id: line.id }, data: { quantityReceived: { increment: quantity } } })
 
     if (input.updateBuyPrices) {
-      if (line.storeListingVariantId) await tx.storeListingVariant.update({ where: { id: line.storeListingVariantId }, data: { buyPrice: line.unitCostUsd } })
-      else await tx.storeListing.update({ where: { id: line.storeListingId }, data: { buyPrice: line.unitCostUsd } })
+      const buyPrice = landed.get(line.id)!
+      if (line.storeListingVariantId) await tx.storeListingVariant.update({ where: { id: line.storeListingVariantId }, data: { buyPrice } })
+      else await tx.storeListing.update({ where: { id: line.storeListingId }, data: { buyPrice } })
     }
 
     // Stock goes up only on a row that tracks it, as sales take it down only there

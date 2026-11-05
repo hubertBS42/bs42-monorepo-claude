@@ -9,6 +9,7 @@ import type { z } from "zod"
 import { consoleAuthClient } from "@workspace/auth/console-client"
 import { Currency, PurchaseOrderStatus } from "@workspace/db/enums"
 import { NumberInputField, SwitchField, TextareaField } from "@workspace/forms"
+import { formatCurrency } from "@workspace/utils/currency"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -180,7 +181,14 @@ function ReceiveFields({
               <div className="grid gap-0.5">
                 <span className="text-sm font-medium">{label(line)}</span>
                 <span className="text-xs text-muted-foreground">
-                  {[line.sku, `${left} of ${line.quantityOrdered} to come`, line.stock === null ? "Stock not tracked" : `${line.stock} in stock`].filter(Boolean).join(" · ")}
+                  {[
+                    line.sku,
+                    `${left} of ${line.quantityOrdered} to come`,
+                    line.stock === null ? "Stock not tracked" : `${line.stock} in stock`,
+                    canSetBuyPrices && line.landedCostUsd && `landed cost ${formatCurrency(line.landedCostUsd, "USD", "en-US")}`,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
                 </span>
               </div>
               <NumberInputField control={form.control} name={`items.${index}.quantity`} step={1} min={0} max={left} disabled={isPending} aria-label={`How many of ${label(line)} came in`} />
@@ -189,7 +197,14 @@ function ReceiveFields({
         })}
       </div>
       {canSetBuyPrices && (
-        <SwitchField control={form.control} label="Update buy prices" name="updateBuyPrices" description="Set listings' buy prices to this order's costs" disabled={isPending} variant="card" />
+        <SwitchField
+          control={form.control}
+          label="Update buy prices"
+          name="updateBuyPrices"
+          description="Set each listing's buy price to its landed cost: its cost plus its share of shipping and import costs"
+          disabled={isPending}
+          variant="card"
+        />
       )}
       <TextareaField control={form.control} label="Note" name="note" placeholder="Optional: a delivery note number, damaged boxes…" disabled={isPending} />
       <AttachFiles files={files} setFiles={setFiles} room={room} disabled={isPending} />
