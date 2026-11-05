@@ -17,7 +17,8 @@ export const metadata: Metadata = {
   alternates: { canonical: "/contact-us" },
 }
 
-// Settings' contact details (General → Contact), each only when it's set
+// Settings' contact details (General → Contact), each only when it's set. Hours sit beside Email, both short, so the
+// address card (with its directions button) doesn't stretch either of them.
 export default async function ContactPage() {
   const settings = await getAppSettings()
   const { contactPhone, contactPhone2, contactPhone2Label, contactWhatsapp, contactEmail, contactAddress, contactMapUrl, contactHours } = settings
@@ -84,6 +85,11 @@ export default async function ContactPage() {
             </ContactCard>
           )}
 
+          {contactHours && (
+            <ContactCard icon={<Clock />} title="Opening hours">
+              <p className="whitespace-pre-line">{contactHours}</p>
+            </ContactCard>
+          )}
           {contactAddress && (
             <ContactCard icon={<MapPin />} title="Visit us">
               <address className="whitespace-pre-line not-italic">{contactAddress}</address>
@@ -93,12 +99,6 @@ export default async function ContactPage() {
                   <ExternalLink data-icon="inline-end" aria-hidden />
                 </Button>
               )}
-            </ContactCard>
-          )}
-
-          {contactHours && (
-            <ContactCard icon={<Clock />} title="Opening hours">
-              <p className="whitespace-pre-line">{contactHours}</p>
             </ContactCard>
           )}
         </div>
