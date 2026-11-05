@@ -83,7 +83,7 @@ export const getStoreListings = async (storeId: string, filters: ListingsParams 
       return { success: false, error: paginationError }
     }
 
-    const { search, status, stock, brandId, categoryId, hasVariants, visible, featured, page = 1, pageSize = 10, sort, order } = filters
+    const { search, status, stock, brandId, categoryId, hasVariants, condition, visible, featured, page = 1, pageSize = 10, sort, order } = filters
 
     // Brand and category ids are uuid columns, so a malformed one (a hand-edited URL) would make Prisma throw: it matches nothing
     const isUuid = (value: string | undefined) => !value || z.uuid().safeParse(value).success
@@ -107,6 +107,7 @@ export const getStoreListings = async (storeId: string, filters: ListingsParams 
         ...(brandId ? [{ product: { brandId } }] : []),
         ...(categoryId ? [{ product: { categoryId: { in: getSubtreeIds(categories, categoryId) } } }] : []),
         ...(hasVariants !== undefined ? [{ product: { hasVariants } }] : []),
+        ...(condition ? [{ product: { condition } }] : []),
         ...(visible ? [visible === "true" ? visibleToCustomers : { NOT: visibleToCustomers }] : []),
         ...(featured ? [{ isFeatured: featured === "true" }] : []),
       ],

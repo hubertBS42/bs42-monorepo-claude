@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import { Status } from "@workspace/db/enums"
+import { Condition, Status } from "@workspace/db/enums"
 import { getEnumParam, getOrderParam, getPositiveIntegerParam, getSortParam, getStringParam } from "@workspace/utils/search-params"
 import { requireActiveStoreMember } from "@/lib/auth-guard"
 import { getStoreListings, LISTING_SORT_FIELDS, MAX_LISTINGS_PAGE_SIZE } from "@/lib/data/listings.data"
@@ -28,6 +28,7 @@ export default async function StoreListingsPage({ searchParams }: StoreListingsP
     stock: getEnumParam(params.stock, LISTING_STOCK_STATES),
     brandId: getStringParam(params.brandId),
     categoryId: getStringParam(params.categoryId),
+    condition: getEnumParam(params.condition, Object.values(Condition)),
     hasVariants: { true: true, false: false, none: undefined }[getEnumParam(params.hasVariants, ["true", "false"]) ?? "none"],
     visible: getEnumParam(params.visible, ["true", "false"]),
     featured: getEnumParam(params.featured, ["true", "false"]),

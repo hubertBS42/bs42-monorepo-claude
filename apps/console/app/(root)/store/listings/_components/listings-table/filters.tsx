@@ -1,5 +1,5 @@
 import type { FilterConfig } from "@workspace/tables"
-import { LISTING_STOCK_OPTIONS, STATUS_OPTIONS } from "@/constants"
+import { CONDITION_OPTIONS, LISTING_STOCK_OPTIONS, STATUS_OPTIONS } from "@/constants"
 import type { ProductFilterOptions } from "@/lib/data/products.data"
 
 export function getListingFilters({ brands, categories }: ProductFilterOptions): FilterConfig[] {
@@ -21,6 +21,7 @@ export function getListingFilters({ brands, categories }: ProductFilterOptions):
         { label: "Without variants", value: "false" },
       ],
     },
+    { key: "condition", label: "Condition", type: "select", placeholder: "All conditions", options: [{ label: "All conditions", value: "all" }, ...CONDITION_OPTIONS] },
     {
       key: "visible",
       label: "Visible to customers",
