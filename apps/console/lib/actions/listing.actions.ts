@@ -7,7 +7,7 @@ import { formatError } from "@workspace/auth/format-error"
 import { ActionResponse } from "@workspace/contracts"
 import { hasStorePermission, requireConsoleAccess } from "@/lib/auth-guard"
 import { ListingConflictError, ListingNotFoundError, StockChangedError, StockReasonRequiredError, syncListing } from "@/lib/listing-sync"
-import { createListingSchema, updateListingSchema } from "@/lib/schemas/listing.schemas"
+import { createListingSchema, setListingsFeaturedSchema, updateListingSchema } from "@/lib/schemas/listing.schemas"
 import { recordStockMovement } from "@workspace/commerce/stock-movements"
 import type { StockChangedResponse } from "@/types"
 
@@ -174,6 +174,25 @@ export async function deleteListingAction(input: z.input<typeof deleteListingSch
       // Ordered between the check and the delete
       if (error.code === "P2003") return HAS_ORDERS
     }
+    return { success: false, error: formatError(error) }
+  }
+}
+
+// The listings table's bulk action, for the listings ticked on one page. Only the store's own listings change,
+// and only those not already so, so the others keep their updatedAt.
+export async function setListingsFeaturedAction(input: z.input<typeof setListingsFeaturedSchema>): Promise<ActionResponse> {
+  const session = await requireConsoleAccess()
+
+  try {
+    const parsed = setListingsFeaturedSchema.safeParse(input)
+    if (!parsed.success) return invalidInput(parsed.error)
+    const { storeId, listingIds, featured } = parsed.data
+
+    if (!(await hasStorePermission(session.user.id, storeId, { listing: ["update"] }))) return FORBIDDEN
+
+    await prisma.storeListing.updateMany({ where: { id: { in: listingIds }, organizationId: storeId, isFeatured: !featured }, data: { isFeatured: featured } })
+    return { success: true }
+  } catch (error) {
     return { success: false, error: formatError(error) }
   }
 }

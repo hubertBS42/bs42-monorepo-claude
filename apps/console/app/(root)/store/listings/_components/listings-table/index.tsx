@@ -4,7 +4,7 @@ import { DataTable } from "@workspace/tables"
 import type { ListingsData } from "@/types"
 import type { ProductFilterOptions } from "@/lib/data/products.data"
 import { columns, getListingHref } from "./columns"
-import CreatePurchaseOrderButton from "./create-purchase-order-button"
+import ListingSelectionActions from "./listing-selection-actions"
 import { getListingFilters } from "./filters"
 
 interface ListingsTableProps {
@@ -22,7 +22,7 @@ const ListingsTable = ({ storeId, data, filterOptions }: ListingsTableProps) => 
       data={data.data}
       getRowHref={getListingHref}
       getRowId={(listing) => listing.id}
-      selectionActions={(listings) => <CreatePurchaseOrderButton storeId={storeId} listings={listings} />}
+      selectionActions={(listings, clear) => <ListingSelectionActions storeId={storeId} listings={listings} clear={clear} />}
       pagination={{
         total: data.total,
         page: data.page,

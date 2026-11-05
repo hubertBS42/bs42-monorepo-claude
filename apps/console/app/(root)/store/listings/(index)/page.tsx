@@ -29,6 +29,7 @@ export default async function StoreListingsPage({ searchParams }: StoreListingsP
     brandId: getStringParam(params.brandId),
     categoryId: getStringParam(params.categoryId),
     visible: getEnumParam(params.visible, ["true", "false"]),
+    featured: getEnumParam(params.featured, ["true", "false"]),
     page: getPositiveIntegerParam(params.page, 1),
     pageSize: getPositiveIntegerParam(params.pageSize, 10, MAX_LISTINGS_PAGE_SIZE),
     sort: getSortParam(params.sort, LISTING_SORT_FIELDS),

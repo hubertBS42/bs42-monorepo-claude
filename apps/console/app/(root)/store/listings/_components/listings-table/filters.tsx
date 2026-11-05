@@ -21,5 +21,15 @@ export function getListingFilters({ brands, categories }: ProductFilterOptions):
         { label: "Not visible", value: "false" },
       ],
     },
+    {
+      key: "featured",
+      label: "Featured",
+      type: "boolean",
+      placeholder: "All listings",
+      options: [
+        { label: "Featured", value: "true" },
+        { label: "Not featured", value: "false" },
+      ],
+    },
   ]
 }

@@ -373,6 +373,8 @@ export interface ListingsParams extends PaginationParams {
   categoryId?: string
   // "true": customers can buy it; "false": they can't (a draft, or published but its product or every variant isn't)
   visible?: "true" | "false"
+  // Featured on the storefront's homepage
+  featured?: "true" | "false"
 }
 
 // A store listings table row. Prices are strings because Decimal can't be passed to client components

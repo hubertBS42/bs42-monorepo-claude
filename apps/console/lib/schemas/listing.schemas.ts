@@ -81,3 +81,12 @@ export const updateListingSchema = listingFormSchema.extend({
   storeId: z.uuid("Invalid store ID"),
   original: listingSnapshotSchema,
 })
+
+// The listings ticked on one page of the listings table, which shows at most MAX_LISTINGS_PAGE_SIZE
+const MAX_BULK_LISTINGS = 100
+
+export const setListingsFeaturedSchema = z.object({
+  storeId: z.uuid("Invalid store ID"),
+  listingIds: z.array(z.uuid("Invalid listing ID")).min(1, "Tick at least one listing").max(MAX_BULK_LISTINGS, `At most ${MAX_BULK_LISTINGS} listings at a time`),
+  featured: z.boolean(),
+})
