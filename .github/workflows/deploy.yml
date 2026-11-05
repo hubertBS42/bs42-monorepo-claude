@@ -13,9 +13,10 @@ on:
     branches: [main]
   workflow_dispatch:
 
-# One deploy at a time; a newer push waits rather than cancelling one halfway through a swap
+# One deploy at a time; a newer push waits rather than cancelling one halfway through a swap. Renamed from "deploy"
+# on 2026-11-05: a run stranded by a GitHub Actions incident held that group's slot and couldn't be cancelled.
 concurrency:
-  group: deploy
+  group: deploy-production
   cancel-in-progress: false
 
 permissions:
