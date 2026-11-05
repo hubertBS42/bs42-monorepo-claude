@@ -15,7 +15,8 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint",
     "db:legacy:export": "tsx prisma/legacy-export.ts",
-    "db:legacy:import": "tsx --env-file=.env prisma/legacy-import.ts"
+    "db:legacy:import": "tsx --env-file=.env prisma/legacy-import.ts",
+    "db:reestimate-costs": "tsx --env-file=.env prisma/reestimate-costs.ts"
   },
   "devDependencies": {
     "@types/node": "^20",
