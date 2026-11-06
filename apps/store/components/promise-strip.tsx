@@ -27,7 +27,17 @@ export function PromiseStrip({ onlinePayments }: { onlinePayments: boolean }) {
   const [autoplay] = useState(() => Autoplay({ delay: SLIDE_SECONDS * 1000, playOnInit: false, stopOnInteraction: false, stopOnMouseEnter: true, stopOnFocusIn: true }))
 
   useEffect(() => {
-    if (api && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) autoplay.play()
+    if (!api || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return
+    // Only with somewhere to scroll to: when every promise fits (three, three to a view), the autoplay plugin doesn't set
+    // itself up, and play() would throw. A resize can change that, so again on each reInit.
+    const playIfScrollable = () => {
+      if (api.scrollSnapList().length > 1) autoplay.play()
+    }
+    playIfScrollable()
+    api.on("reInit", playIfScrollable)
+    return () => {
+      api.off("reInit", playIfScrollable)
+    }
   }, [api, autoplay])
 
   return (
