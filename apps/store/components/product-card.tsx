@@ -37,12 +37,14 @@ export function ProductCard({ card, variantId, onWishListChange }: { card: Price
   const label = values.length ? `${card.name} (${values.join(", ")})` : card.name
 
   return (
-    <article className="group relative flex h-full flex-col gap-3 rounded-xl border bg-card p-3 transition-shadow hover:shadow-md">
-      {/* Product photos are shot on white, so a tile with one is white in both themes: grey would frame the photo */}
-      <div className={cn("relative flex aspect-square items-center justify-center overflow-hidden rounded-lg", image ? "bg-white" : "bg-muted")}>
+    <article className="group relative flex h-full flex-col gap-3 overflow-hidden rounded-xl border bg-card transition-shadow hover:shadow-md">
+      {/* Product photos are shot on white, so a tile with one is white in both themes: grey would frame the photo. The tile
+          runs edge to edge across the card's top, as a blog card's image does; the photo is fitted in it, never cropped
+          (products come in every shape), with a margin so it doesn't touch the card's edges. */}
+      <div className={cn("relative flex aspect-square items-center justify-center overflow-hidden", image ? "bg-white" : "bg-muted")}>
         {image ? (
           // eslint-disable-next-line @next/next/no-img-element -- our own blob storage, not set up for next/image
-          <img src={image} alt="" className="size-full object-contain p-1 transition-transform group-hover:scale-105" />
+          <img src={image} alt="" className="size-full object-contain p-3 transition-transform group-hover:scale-105" />
         ) : (
           <Package className="size-14 text-muted-foreground/40" aria-hidden />
         )}
@@ -53,7 +55,7 @@ export function ProductCard({ card, variantId, onWishListChange }: { card: Price
         <WishListHeart item={{ productId: card.id, variantId: offer.variantId }} label={label} onChange={onWishListChange} className="absolute top-2 right-2 z-10" />
       </div>
 
-      <div className="flex flex-1 flex-col gap-1.5">
+      <div className="flex flex-1 flex-col gap-1.5 px-3 pb-3">
         <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">{card.brand.name}</p>
         <h3 className="line-clamp-2 leading-snug font-semibold normal-case">
           <Link href={href} className="after:absolute after:inset-0">

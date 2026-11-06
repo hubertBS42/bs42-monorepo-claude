@@ -24,11 +24,14 @@ export default function Loading() {
           </div>
           <ul className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 xl:grid-cols-4">
             {Array.from({ length: 8 }, (_, card) => (
-              <li key={card} className="flex flex-col gap-3 rounded-xl border bg-card p-3">
-                <Skeleton className="aspect-square rounded-lg" />
-                <Skeleton className="h-3 w-16" />
-                <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-5 w-24" />
+              // The product card's shape: the picture's tile edge to edge, the text inset
+              <li key={card} className="flex flex-col gap-3 overflow-hidden rounded-xl border bg-card pb-3">
+                <Skeleton className="aspect-square rounded-none" />
+                <div className="space-y-3 px-3">
+                  <Skeleton className="h-3 w-16" />
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-5 w-24" />
+                </div>
               </li>
             ))}
           </ul>

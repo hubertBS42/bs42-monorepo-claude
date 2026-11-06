@@ -20,16 +20,17 @@ function UnavailableItem({ entry, otherOptionsOnSale, onRemoved }: { entry: Wish
   const { isPending, toggle } = useWishListToggle({ productId: entry.productId, variantId: entry.variantId }, label, onRemoved)
 
   return (
-    <article className="flex h-full flex-col gap-3 rounded-xl border bg-card p-3">
-      <div className={cn("flex aspect-square items-center justify-center overflow-hidden rounded-lg", entry.image ? "bg-white" : "bg-muted")}>
+    // Shaped like a product card (components/product-card.tsx)
+    <article className="flex h-full flex-col gap-3 overflow-hidden rounded-xl border bg-card">
+      <div className={cn("flex aspect-square items-center justify-center overflow-hidden", entry.image ? "bg-white" : "bg-muted")}>
         {entry.image ? (
           // eslint-disable-next-line @next/next/no-img-element -- our own blob storage, not set up for next/image
-          <img src={entry.image} alt="" className="size-full object-contain p-1 opacity-50 grayscale" />
+          <img src={entry.image} alt="" className="size-full object-contain p-3 opacity-50 grayscale" />
         ) : (
           <Package className="size-14 text-muted-foreground/40" aria-hidden />
         )}
       </div>
-      <div className="flex flex-1 flex-col gap-1.5">
+      <div className="flex flex-1 flex-col gap-1.5 px-3 pb-3">
         <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">{entry.brandName}</p>
         <h3 className="line-clamp-2 leading-snug font-semibold normal-case">{entry.name}</h3>
         {entry.variantLabel && <p className="text-xs text-muted-foreground">{entry.variantLabel}</p>}
