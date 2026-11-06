@@ -199,7 +199,8 @@ const TagsField = <T extends FieldValues>({
                 }}
                 id={inputId}
                 value={inputValue}
-                placeholder={isAtLimit ? "" : placeholder}
+                // Only while empty: once there are tags, they show what goes here
+                placeholder={tags.length === 0 ? placeholder : ""}
                 autoComplete={autoComplete}
                 disabled={disabled || isAtLimit}
                 aria-invalid={fieldState.invalid || Boolean(inputError)}
