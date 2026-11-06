@@ -23,7 +23,7 @@ export function SiteHeader({
   logoUrl: string | null
   logoDarkUrl: string | null
   menu: MenuItem[]
-  contact: Pick<FooterContact, "contactPhone" | "contactEmail">
+  contact: Pick<FooterContact, "contactPhone" | "contactWhatsapp">
 }) {
   return (
     <>
