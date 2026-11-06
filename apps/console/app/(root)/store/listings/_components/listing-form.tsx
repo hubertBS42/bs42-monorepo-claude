@@ -171,9 +171,9 @@ const ListingForm = ({ storeId, data, storefrontLink }: ListingFormProps) => {
                 </CardHeader>
                 <CardContent>
                   <div className="grid gap-5 sm:grid-cols-3">
-                    <NumberInputField control={form.control} label="Sell price" name="sellPrice" step={0.01} min={0} prependText="$" disabled={isPending} />
-                    <NumberInputField control={form.control} label="Compare-at price" name="compareAtPrice" step={0.01} min={0} prependText="$" placeholder="None" disabled={isPending} />
                     <NumberInputField control={form.control} label="Buy price" name="buyPrice" step={0.01} min={0} prependText="$" placeholder="None" disabled={isPending} />
+                    <NumberInputField control={form.control} label="Compare-at price" name="compareAtPrice" step={0.01} min={0} prependText="$" placeholder="None" disabled={isPending} />
+                    <NumberInputField control={form.control} label="Sell price" name="sellPrice" step={0.01} min={0} prependText="$" disabled={isPending} />
                   </div>
                 </CardContent>
               </Card>
