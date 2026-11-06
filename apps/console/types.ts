@@ -1248,5 +1248,7 @@ export interface QuoteDetails {
   // href: the catalogue product, null once it's been deleted
   lines: { id: string; label: string; href: string | null; sku: string | null; storeName: string; quantity: number; unitPriceGhs: string; totalPriceGhs: string; installationGhs: string | null }[]
   totals: { subtotalGhs: string; discountAmountGhs: string | null; discountReason: string | null; installationGhs: string; shippingGhs: string; taxRate: string; taxGhs: string; totalGhs: string }
+  // Made while no delivery fees were set: the totals leave delivery out, and placing its order asks for the fee
+  deliveryToConfirm: boolean
   order: { id: string; reference: string } | null
 }

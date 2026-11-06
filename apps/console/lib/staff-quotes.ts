@@ -5,7 +5,7 @@ import { loadInstallationAreas, loadInstallationFees } from "@workspace/commerce
 import { installsIn } from "@workspace/commerce/installation-areas"
 import { describeVariant, resolveOrderLines } from "@workspace/commerce/order-writes"
 import { priceOrder } from "@workspace/commerce/pricing"
-import { lockOpenQuote, nextQuoteReference, placeQuotedOrder, QuoteError, quoteValidUntil } from "@workspace/commerce/quotes"
+import { lockOpenQuote, nextQuoteReference, placeQuotedOrder, QuoteError, quoteValidUntil, type QuoteDelivery } from "@workspace/commerce/quotes"
 import { loadTradeTerms } from "@workspace/commerce/trade-accounts"
 import { customerVisibleListingWhere, loadVisibleCategoryIds, variantOnSaleWhere } from "@workspace/commerce/visibility"
 import type { prisma } from "@workspace/db"
@@ -299,10 +299,11 @@ export async function createStaffQuote(tx: Tx, pricing: PricingContext, input: N
 
 // Places the order a quote describes, at its prices, for a customer paying by bank transfer, and marks the quote
 // accepted, in the caller's transaction. The order is staff-made, so the unpaid-order job leaves it for staff to
-// record the payment. Throws QuoteError, or OrderItemError when another order took the last of something meanwhile.
-export async function placeOrderFromQuote(tx: Tx, quoteId: string, staffId: string) {
+// record the payment. A quote whose delivery was to be confirmed takes the fee staff agreed (deliveryGhs), else
+// DELIVERY_TO_CONFIRM. Throws QuoteError, or OrderItemError when another order took the last of something meanwhile.
+export async function placeOrderFromQuote(tx: Tx, quoteId: string, staffId: string, delivery: QuoteDelivery | null = null) {
   const quote = await lockOpenQuote(tx, quoteId, null)
-  return placeQuotedOrder(tx, quote, { createdById: staffId, userId: quote.userId, paymentMethod: PaymentMethod.BANK_TRANSFER })
+  return placeQuotedOrder(tx, quote, { createdById: staffId, userId: quote.userId, paymentMethod: PaymentMethod.BANK_TRANSFER, delivery })
 }
 
 // Cancels an open quote (lapsed or not). Throws QuoteError (NOT_OPEN) when it was accepted or cancelled meanwhile.

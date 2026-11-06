@@ -58,6 +58,8 @@ export default async function QuotePage({ params, searchParams }: QuotePageProps
   const preparedBy = quote.createdById ? (quote.createdBy?.name?.trim().split(/\s+/)[0] ?? null) : null
   const expired = isExpired(quote)
   const isOpen = quote.status === QuoteStatus.OPEN && !expired
+  // A quote without its delivery fee is placed by staff, who add it
+  const acceptsOnline = settings.onlinePaymentsEnabled && !quote.deliveryToConfirm
   // validUntil is the start of the day after the last one its prices hold
   const lastDay = formatDate(new Date(quote.validUntil.getTime() - 1), "d MMMM yyyy")
   const discount = quote.discountAmountGhs?.gt(0) ? quote.discountAmountGhs : null
@@ -82,17 +84,15 @@ export default async function QuotePage({ params, searchParams }: QuotePageProps
             <div className="mr-auto text-sm">
               <p className="font-medium">Ready to order?</p>
               <p className="text-muted-foreground">
-                {settings.onlinePaymentsEnabled
+                {acceptsOnline
                   ? "We'll check everything is still in stock, then you pay as at checkout."
-                  : "Contact us with this quotation's reference and we'll place your order at these prices."}
+                  : quote.deliveryToConfirm
+                    ? "Contact us with this quotation's reference: we'll confirm the delivery fee and place your order at these prices."
+                    : "Contact us with this quotation's reference and we'll place your order at these prices."}
               </p>
             </div>
             <CancelQuoteButton quoteId={quote.id} />
-            {settings.onlinePaymentsEnabled ? (
-              <AcceptQuoteButton quoteId={quote.id} label={`Accept and pay ${money(quote.totalGhs)}`} />
-            ) : (
-              <Button render={<Link href="/contact-us" />}>Contact us to order</Button>
-            )}
+            {acceptsOnline ? <AcceptQuoteButton quoteId={quote.id} label={`Accept and pay ${money(quote.totalGhs)}`} /> : <Button render={<Link href="/contact-us" />}>Contact us to order</Button>}
           </div>
         )}
         {isOwner && (expired || quote.status === QuoteStatus.CANCELLED) && (
@@ -205,9 +205,9 @@ export default async function QuotePage({ params, searchParams }: QuotePageProps
           <TotalRow label="Subtotal" amount={money(quote.subtotalGhs)} />
           {discount && <TotalRow label={quote.discountReason ?? "Discount"} amount={`−${money(discount)}`} />}
           {quote.installationGhs.gt(0) && <TotalRow label="Installation" amount={money(quote.installationGhs)} />}
-          <TotalRow label="Delivery" amount={quote.shippingGhs.isZero() ? "Free" : money(quote.shippingGhs)} />
+          <TotalRow label="Delivery" amount={quote.deliveryToConfirm ? "To be confirmed" : quote.shippingGhs.isZero() ? "Free" : money(quote.shippingGhs)} />
           {quote.taxGhs.gt(0) && <TotalRow label={`Tax (${quote.taxRate.times(100).toNumber()}%)`} amount={money(quote.taxGhs)} />}
-          <TotalRow label="Total" amount={money(quote.totalGhs)} strong />
+          <TotalRow label={quote.deliveryToConfirm ? "Total before delivery" : "Total"} amount={money(quote.totalGhs)} strong />
         </section>
 
         {quote.notes && (

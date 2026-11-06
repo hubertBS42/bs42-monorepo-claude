@@ -102,3 +102,12 @@ export const searchQuotableItemsSchema = z.object({
 export const quoteTargetSchema = z.object({
   quoteId: z.uuid("Invalid quotation ID"),
 })
+
+// "Place order" on a quote whose delivery was to be confirmed: the fee agreed with the customer, in GHS
+export const quoteDeliveryFormSchema = z.object({
+  deliveryGhs: z
+    .union([decimalSchema, z.literal("")])
+    .refine((value) => value !== "", "Enter the delivery fee, or 0 for free delivery")
+    .transform((value) => value as number),
+})
+export const placeOrderFromQuoteSchema = quoteTargetSchema.extend({ deliveryGhs: decimalSchema.optional() })

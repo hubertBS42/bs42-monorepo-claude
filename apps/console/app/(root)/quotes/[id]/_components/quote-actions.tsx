@@ -21,7 +21,10 @@ import { Button, buttonVariants } from "@workspace/ui/components/button"
 import { Skeleton } from "@workspace/ui/components/skeleton"
 import { Spinner } from "@workspace/ui/components/spinner"
 import { toast } from "@workspace/ui/components/toast"
+import { NumberInputField } from "@workspace/forms"
+import FormDialog from "@/components/form-dialog"
 import { cancelQuoteAction, placeOrderFromQuoteAction } from "@/lib/actions/quote.actions"
+import { quoteDeliveryFormSchema } from "@/lib/schemas/quote.schemas"
 import type { QuoteDetails } from "@/types"
 
 // The quotation's buttons. Checks the viewer's system permission from the session; every action checks again.
@@ -38,7 +41,8 @@ export default function QuoteActions({ quote }: { quote: QuoteDetails }) {
 
   const isOpen = quote.status === "open"
   const buttons = [
-    isOpen && can("create") && (
+    isOpen && can("create") && quote.deliveryToConfirm && <PlaceOrderWithDelivery key="place" quote={quote} />,
+    isOpen && can("create") && !quote.deliveryToConfirm && (
       <ConfirmAction
         key="place"
         label="Place order"
@@ -136,5 +140,25 @@ function ConfirmAction({ label, title, description, confirmLabel, failureTitle, 
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
+  )
+}
+
+// "Place order" on a quote made while no delivery fees were set: the fee agreed with the customer goes on the order
+function PlaceOrderWithDelivery({ quote }: { quote: QuoteDetails }) {
+  return (
+    <FormDialog
+      trigger={<Button type="button">Place order</Button>}
+      title={`Place an order from ${quote.reference}`}
+      description="Creates an unpaid order at the quoted prices plus this delivery fee, and reserves its stock. The customer is emailed."
+      submitLabel="Place order"
+      failureTitle="Unable to place the order"
+      refreshOn={REFRESH_CODES}
+      schema={quoteDeliveryFormSchema}
+      values={{ deliveryGhs: "" }}
+      save={(values) => placeOrderFromQuoteAction({ quoteId: quote.id, deliveryGhs: values.deliveryGhs })}
+      success={() => ({ title: "Order placed", description: `${quote.reference} is accepted. Record the payment on its order once it arrives.` })}
+    >
+      {(form, isPending) => <NumberInputField control={form.control} label="Delivery fee" name="deliveryGhs" step={0.01} min={0} prependText="GH₵" disabled={isPending} />}
+    </FormDialog>
   )
 }

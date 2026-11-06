@@ -14,11 +14,13 @@ interface QuoteEmailProps {
   logoUrl?: string | null
   /** The staff member's first name when the quotation was made for the customer; left out when they made it themselves */
   preparedBy?: string | null
+  /** The total leaves delivery out, for staff to confirm (made while no delivery fees were set) */
+  deliveryToConfirm?: boolean
 }
 
 // Sent when a customer makes a quotation from their basket, or staff make one for them: its link, which they can forward
 // to whoever approves the purchase
-export const QuoteEmail = ({ name, reference, total, validUntil, url, appName, logoUrl, preparedBy }: QuoteEmailProps) => {
+export const QuoteEmail = ({ name, reference, total, validUntil, url, appName, logoUrl, preparedBy, deliveryToConfirm = false }: QuoteEmailProps) => {
   const previewText = `Your quotation ${reference}, valid until ${validUntil}`
 
   return (
@@ -39,8 +41,9 @@ export const QuoteEmail = ({ name, reference, total, validUntil, url, appName, l
               <Text className="mt-0 text-sm leading-relaxed text-[#71717a]">Hi {name},</Text>
               <Text className="mt-0 text-sm leading-relaxed text-[#71717a]">
                 {preparedBy ? `${preparedBy} at ${appName} has prepared a quotation for you, for ` : "Here's your quotation for "}
-                <strong className="text-[#18181b]">{total}</strong>. Its prices hold until <strong className="text-[#18181b]">{validUntil}</strong>; the items aren&apos;t reserved, so they&apos;re
-                subject to availability. Print it or forward this link to whoever approves the purchase, then accept it to pay.
+                <strong className="text-[#18181b]">{total}</strong>
+                {deliveryToConfirm && " plus delivery, which we'll confirm with you"}. Its prices hold until <strong className="text-[#18181b]">{validUntil}</strong>; the items aren&apos;t reserved,
+                so they&apos;re subject to availability. Print it or forward this link to whoever approves the purchase, then {deliveryToConfirm ? "contact us to order." : "accept it to pay."}
               </Text>
 
               <Section className="my-8 text-center">

@@ -173,6 +173,7 @@ export const getQuoteDetails = async (quoteId: string): Promise<DataResponse<Quo
           taxGhs: ghs(quote.taxGhs),
           totalGhs: ghs(quote.totalGhs),
         },
+        deliveryToConfirm: quote.deliveryToConfirm,
         order: quote.order,
       },
     }

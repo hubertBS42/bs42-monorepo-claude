@@ -16,7 +16,7 @@ export async function sendQuoteEmail(quoteId: string) {
     const [quote, settings] = await Promise.all([
       prisma.quote.findUnique({
         where: { id: quoteId },
-        select: { reference: true, customerName: true, customerEmail: true, totalGhs: true, validUntil: true, createdBy: { select: { name: true } } },
+        select: { reference: true, customerName: true, customerEmail: true, totalGhs: true, deliveryToConfirm: true, validUntil: true, createdBy: { select: { name: true } } },
       }),
       readAppSettings(),
     ])
@@ -37,6 +37,7 @@ export async function sendQuoteEmail(quoteId: string) {
         logoUrl: resolveDarkLogoUrl(settings),
         // A staff member's first name, for a quote made in the console
         preparedBy: quote.createdBy ? firstName(quote.createdBy.name) : null,
+        deliveryToConfirm: quote.deliveryToConfirm,
       }),
     })
   } catch (error) {

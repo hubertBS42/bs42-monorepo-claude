@@ -53,8 +53,9 @@ export interface Area {
 // The basket checked again (loadCart), its lines as an order would sell them, and their prices with delivery to the
 // area (or without delivery when there's no area yet). Throws CheckoutError for an empty basket, or an area with no
 // delivery or, when a line includes installation, none of that; and OrderItemError when a line can't be sold. An
-// approved trade account's discount (trade) comes off the goods, before tax.
-export async function priceCheckout(client: Client, sessionCartId: string, pricing: PricingContext, area: Area | null, trade: TradeTerms | null) {
+// approved trade account's discount (trade) comes off the goods, before tax. With deliveryMayWait (quotations), an area
+// is priced without delivery while no delivery fees are set at all (deliveryToConfirm), instead of refused.
+export async function priceCheckout(client: Client, sessionCartId: string, pricing: PricingContext, area: Area | null, trade: TradeTerms | null, deliveryMayWait = false) {
   const basket = await loadCart(client, sessionCartId, pricing, trade)
   if (!basket.lines.length) throw new CheckoutError("EMPTY_BASKET")
 
@@ -68,9 +69,12 @@ export async function priceCheckout(client: Client, sessionCartId: string, prici
   const discountGhs = goods.discountAmountGhs ?? new Prisma.Decimal(0)
 
   let quote: DeliveryQuote | null = null
+  let deliveryToConfirm = false
   if (area) {
-    quote = quoteDelivery(await loadDeliverySettings(client), area.region, area.town, goods.subtotalGhs.minus(discountGhs))
-    if (!quote) throw new CheckoutError("NO_DELIVERY")
+    const delivery = await loadDeliverySettings(client)
+    quote = quoteDelivery(delivery, area.region, area.town, goods.subtotalGhs.minus(discountGhs))
+    if (!quote && deliveryMayWait && delivery.rates.length === 0) deliveryToConfirm = true
+    else if (!quote) throw new CheckoutError("NO_DELIVERY")
     if (lines.some((line) => line.installationUnitGhs) && !installsIn(await loadInstallationAreas(client), area.region, area.town)) throw new CheckoutError("NO_INSTALLATION")
   }
   const priced = quote ? priceOrder({ ...input, shippingGhs: quote.feeGhs }) : goods
@@ -80,6 +84,7 @@ export async function priceCheckout(client: Client, sessionCartId: string, prici
     lines,
     priced,
     quote,
+    deliveryToConfirm,
     // What the summary shows, so the rows add up to the total: the items, installation and delivery each with their tax;
     // for a trade account, each before tax, the discount, then the tax
     summary: {

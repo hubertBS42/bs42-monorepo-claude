@@ -20,18 +20,21 @@ import { useRevalidateOnChange } from "@workspace/forms/use-revalidate-on-change
 
 // "Get a quote" under the basket's summary: who it's addressed to and where it would be delivered (the fee is part of
 // the quote), then the quote's page. A signed-out visitor is sent to sign in first, and back to the basket. `primary`
-// makes it the basket's main button, while online payments are off and there's no checkout.
+// makes it the basket's main button, while online payments are off and there's no checkout. `deliveryToConfirm`: no
+// delivery fees are set, so the quote leaves delivery out for staff to confirm.
 export function QuoteRequestDialog({
   signedIn,
   initial,
   areas,
   validityDays,
+  deliveryToConfirm,
   primary = false,
 }: {
   signedIn: boolean
   initial: QuoteRequestValues
   areas: DeliveryArea[]
   validityDays: number
+  deliveryToConfirm: boolean
   primary?: boolean
 }) {
   const [open, setOpen] = useState(false)
@@ -75,7 +78,9 @@ export function QuoteRequestDialog({
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Get a quotation</DialogTitle>
-          <DialogDescription>Prices hold for {validityDays} days. Items aren&apos;t reserved until you pay.</DialogDescription>
+          <DialogDescription>
+            Prices hold for {validityDays} days. Items aren&apos;t reserved until you pay.{deliveryToConfirm && " We'll confirm the delivery fee with you."}
+          </DialogDescription>
         </DialogHeader>
         {/* The dialog is portaled, but React events still bubble to any form it's rendered inside */}
         <form

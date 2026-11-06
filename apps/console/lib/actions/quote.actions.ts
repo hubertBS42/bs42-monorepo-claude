@@ -8,13 +8,13 @@ import { notifyNewOrder, notifyStockAlerts } from "@workspace/commerce/notificat
 import { sendOrderEmail } from "@workspace/commerce/order-emails"
 import { OrderItemError } from "@workspace/commerce/order-writes"
 import { sendQuoteEmail } from "@workspace/commerce/quote-emails"
-import { QuoteError } from "@workspace/commerce/quotes"
+import { QuoteError, type QuoteDelivery } from "@workspace/commerce/quotes"
 import { loadTradeTerms } from "@workspace/commerce/trade-accounts"
 import type { ActionResponse, DataResponse } from "@workspace/contracts"
-import { prisma } from "@workspace/db"
+import { prisma, readAppSettings } from "@workspace/db"
 import { Prisma } from "@workspace/db/client"
 import { requireSystemPermission } from "@/lib/auth-guard"
-import { createQuoteFormSchema, findQuoteCustomerSchema, previewQuoteSchema, quoteTargetSchema, searchQuotableItemsSchema } from "@/lib/schemas/quote.schemas"
+import { createQuoteFormSchema, findQuoteCustomerSchema, placeOrderFromQuoteSchema, previewQuoteSchema, quoteTargetSchema, searchQuotableItemsSchema } from "@/lib/schemas/quote.schemas"
 import { cancelStaffQuote, createStaffQuote, placeOrderFromQuote, priceStaffSale, searchQuotableItems, StaffQuoteError, type QuotableProduct } from "@/lib/staff-quotes"
 import type { QuoteCustomer, QuotePreview } from "@/types"
 
@@ -188,15 +188,23 @@ export async function createQuoteAction(input: z.input<typeof createQuoteFormSch
   }
 }
 
-// For a customer who pays by bank transfer: the order at the quote's prices, unpaid, for staff to record the payment
-export async function placeOrderFromQuoteAction(input: z.input<typeof quoteTargetSchema>): Promise<ActionResponse> {
+// For a customer who pays by bank transfer: the order at the quote's prices, unpaid, for staff to record the payment.
+// A quote whose delivery was to be confirmed needs deliveryGhs, the fee agreed with the customer.
+export async function placeOrderFromQuoteAction(input: z.input<typeof placeOrderFromQuoteSchema>): Promise<ActionResponse> {
   const session = await requireSystemPermission({ order: ["create"] })
 
   try {
-    const parsed = quoteTargetSchema.safeParse(input)
+    const parsed = placeOrderFromQuoteSchema.safeParse(input)
     if (!parsed.success) return invalidInput(parsed.error)
+    const { quoteId, deliveryGhs } = parsed.data
 
-    const { stockAlerts, ...order } = await prisma.$transaction((tx) => placeOrderFromQuote(tx, parsed.data.quoteId, session.user.id), TRANSACTION_OPTIONS)
+    let delivery: QuoteDelivery | null = null
+    if (deliveryGhs !== undefined) {
+      // Taxed as delivery is taxed now, at the quote's tax rate
+      const settings = await readAppSettings()
+      delivery = { feeGhs: new Prisma.Decimal(deliveryGhs), taxed: settings.taxEnabled && settings.taxShipping }
+    }
+    const { stockAlerts, ...order } = await prisma.$transaction((tx) => placeOrderFromQuote(tx, quoteId, session.user.id, delivery), TRANSACTION_OPTIONS)
     after(async () => {
       await sendOrderEmail(order.id, "CREATED")
       await notifyNewOrder(order.id, "platform")

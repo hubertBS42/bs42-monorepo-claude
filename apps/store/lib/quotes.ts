@@ -42,7 +42,8 @@ export async function createQuote(tx: Tx, sessionCartId: string, pricing: Pricin
     throw new QuoteError("TOO_MANY_QUOTES", [], `You already have ${MAX_OPEN_QUOTES} open quotations. Cancel one, or let it lapse, to make another.`)
   }
 
-  const { basket, lines, priced } = await priceCheckout(tx, sessionCartId, pricing, input, input.trade)
+  // While no delivery fees are set, the quote leaves delivery for staff to add when they place its order
+  const { basket, lines, priced, deliveryToConfirm } = await priceCheckout(tx, sessionCartId, pricing, input, input.trade, true)
   // loadCart moved, lowered or dropped lines: the customer hasn't seen this basket
   if (basket.notices.length) throw new CheckoutError("BASKET_CHANGED")
 
@@ -69,6 +70,7 @@ export async function createQuote(tx: Tx, sessionCartId: string, pricing: Pricin
       discountAmountGhs: priced.discountAmountGhs,
       discountReason: discount?.reason ?? null,
       shippingGhs: priced.shippingGhs,
+      deliveryToConfirm,
       installationGhs: priced.installationGhs,
       taxRate: priced.taxRate,
       taxGhs: priced.taxGhs,
@@ -110,7 +112,7 @@ export async function cancelQuote(client: Client, viewer: QuoteViewer, quoteId: 
 }
 
 // Places the order a quote describes, at its prices, and marks the quote accepted, in the caller's transaction. Only
-// its owner, while it's open and hasn't lapsed. Throws QuoteError, CheckoutError (TOO_MANY_UNPAID), or OrderItemError
+// its owner, while it's open and hasn't lapsed, and not one whose delivery is to be confirmed (DELIVERY_TO_CONFIRM). Throws QuoteError, CheckoutError (TOO_MANY_UNPAID), or OrderItemError
 // when another order took the last of something meanwhile.
 export async function acceptQuote(tx: Tx, quoteId: string, viewer: QuoteViewer, ip: string | null) {
   const quote = await lockOpenQuote(tx, quoteId, viewer)

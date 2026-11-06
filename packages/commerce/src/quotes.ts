@@ -1,7 +1,7 @@
 import "server-only"
 
 import type { prisma } from "@workspace/db"
-import type { Prisma } from "@workspace/db/client"
+import { Prisma } from "@workspace/db/client"
 import { type PaymentMethod, QuoteStatus, ShippingMethod } from "@workspace/db/enums"
 import { dayStart, formatDate } from "@workspace/utils/date"
 import { createOrder, OrderItemError, resolveOrderLines, type ResolvedLine } from "./order-writes"
@@ -20,6 +20,7 @@ const MESSAGES = {
   NOT_OPEN: "This quotation has already been accepted or cancelled.",
   EXPIRED: "This quotation has lapsed, so its prices no longer hold.",
   UNAVAILABLE: "Some of this quotation can't be supplied now.",
+  DELIVERY_TO_CONFIRM: "This quotation's delivery fee is still to be confirmed. Contact us and we'll place your order.",
 }
 
 export type QuoteErrorCode = keyof typeof MESSAGES
@@ -86,8 +87,12 @@ export async function lockOpenQuote(tx: Tx, quoteId: string, owner: QuoteViewer 
   return quote
 }
 
-// The quote's stored amounts, as createOrder takes them: the order charges what the quote said
-function quotedPrices(quote: QuoteForOrder): PricedOrder {
+// The quote's stored amounts, as createOrder takes them: the order charges what the quote said, plus the delivery staff
+// added to a quote whose delivery was to be confirmed
+function quotedPrices(quote: QuoteForOrder, delivery: QuoteDelivery | null): PricedOrder {
+  const shippingGhs = delivery?.feeGhs ?? quote.shippingGhs
+  // At the quote's tax rate, as priceOrder taxes shipping
+  const shippingTaxGhs = delivery?.taxed ? delivery.feeGhs.times(quote.taxRate).toDecimalPlaces(2, Prisma.Decimal.ROUND_HALF_UP) : new Prisma.Decimal(0)
   return {
     lines: quote.items.map((item) => ({
       unitPriceUsd: item.unitPriceUsd,
@@ -103,11 +108,11 @@ function quotedPrices(quote: QuoteForOrder): PricedOrder {
     subtotalUsd: quote.subtotalUsd,
     subtotalGhs: quote.subtotalGhs,
     discountAmountGhs: quote.discountAmountGhs,
-    shippingGhs: quote.shippingGhs,
+    shippingGhs,
     installationGhs: quote.installationGhs,
     taxRate: quote.taxRate,
-    taxGhs: quote.taxGhs,
-    totalGhs: quote.totalGhs,
+    taxGhs: quote.taxGhs.plus(shippingTaxGhs),
+    totalGhs: quote.totalGhs.plus(shippingGhs).plus(shippingTaxGhs),
   }
 }
 
@@ -149,12 +154,22 @@ export interface QuotedOrder {
   placedFromIp?: string | null
   // How the customer means to pay: online for the storefront, else what staff expect (they record the payment)
   paymentMethod: PaymentMethod
+  // For a quote whose delivery was to be confirmed (only staff place those): the fee they set
+  delivery?: QuoteDelivery | null
+}
+
+export interface QuoteDelivery {
+  feeGhs: Prisma.Decimal
+  // Whether tax applies to delivery now (Settings → Pricing → Tax)
+  taxed: boolean
 }
 
 // Places the order a locked quote describes (lockOpenQuote), at its prices and rate, and marks the quote accepted, in
-// the caller's transaction. Throws QuoteError (UNAVAILABLE) or OrderItemError when another order took the last of
-// something meanwhile.
+// the caller's transaction. Throws QuoteError (UNAVAILABLE, or DELIVERY_TO_CONFIRM without its fee) or OrderItemError
+// when another order took the last of something meanwhile.
 export async function placeQuotedOrder(tx: Tx, quote: QuoteForOrder, placed: QuotedOrder) {
+  const delivery = quote.deliveryToConfirm ? (placed.delivery ?? null) : null
+  if (quote.deliveryToConfirm && !delivery) throw new QuoteError("DELIVERY_TO_CONFIRM")
   const lines = await resolveQuotedLines(tx, quote)
   const order = await createOrder(tx, {
     createdById: placed.createdById,
@@ -169,7 +184,7 @@ export async function placeQuotedOrder(tx: Tx, quote: QuoteForOrder, placed: Quo
     trade: quote.tradeAccountId && quote.tradeCompanyName ? { accountId: quote.tradeAccountId, companyName: quote.tradeCompanyName, tin: quote.tradeTin ?? "" } : null,
     rate: { id: quote.exchangeRateId!, value: quote.exchangeRate },
     lines,
-    priced: quotedPrices(quote),
+    priced: quotedPrices(quote, delivery),
   })
   await tx.quote.update({ where: { id: quote.id }, data: { status: QuoteStatus.ACCEPTED, orderId: order.id } })
   return order
