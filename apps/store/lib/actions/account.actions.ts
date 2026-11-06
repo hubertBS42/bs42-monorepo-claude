@@ -1,10 +1,13 @@
 "use server"
 
+import { headers } from "next/headers"
+import { sendPasswordChangedEmail, storeAuth } from "@workspace/auth/store"
 import type { ActionResponse } from "@workspace/contracts"
 import { prisma } from "@workspace/db"
 import { z } from "zod"
 
 import { AddressError, makeDefaultAddress, removeAddress, saveAddress } from "@/lib/addresses"
+import { changePasswordSchema, profileSchema, type ChangePasswordValues, type ProfileValues } from "@/lib/schemas/account.schemas"
 import { addressSchema, type AddressValues } from "@/lib/schemas/address.schemas"
 import { getStoreSession } from "@/lib/session"
 
@@ -31,6 +34,55 @@ export async function setEmailPreferenceAction(input: z.input<typeof emailPrefer
     console.error("Could not save an email preference:", error)
     return { success: false, error: "We couldn't save that just now. Please try again." }
   }
+}
+
+// Account details: the name and phone. Through Better Auth, so the session's cached copy (the header's name) is
+// refreshed too. The email isn't taken: it can't change.
+export async function updateProfileAction(input: ProfileValues): Promise<ActionResponse> {
+  const session = await getStoreSession()
+  if (!session) return SIGNED_OUT
+
+  const parsed = profileSchema.safeParse(input)
+  if (!parsed.success) return { success: false, error: parsed.error.issues[0]?.message ?? "Check your details.", code: "INVALID_INPUT" }
+
+  try {
+    await storeAuth.api.updateUser({ body: { name: parsed.data.name, phone: parsed.data.phone || null }, headers: await headers() })
+    return { success: true }
+  } catch (error) {
+    console.error("Could not save a customer's details:", error)
+    return { success: false, error: "We couldn't save that just now. Please try again." }
+  }
+}
+
+// A new password, given the current one. Then every other device is signed out, and the customer is emailed. Not with
+// changePassword's revokeOtherSessions: it replaces this session too, and the session is shared with the console.
+export async function changePasswordAction(input: ChangePasswordValues): Promise<ActionResponse> {
+  const session = await getStoreSession()
+  if (!session) return SIGNED_OUT
+
+  const parsed = changePasswordSchema.safeParse(input)
+  if (!parsed.success) return { success: false, error: parsed.error.issues[0]?.message ?? "Check the passwords.", code: "INVALID_INPUT" }
+
+  const requestHeaders = await headers()
+  try {
+    await storeAuth.api.changePassword({ body: { currentPassword: parsed.data.currentPassword, newPassword: parsed.data.password, revokeOtherSessions: false }, headers: requestHeaders })
+  } catch (error) {
+    const code = (error as { body?: { code?: string } } | null)?.body?.code
+    if (code === "INVALID_PASSWORD") return { success: false, error: "Your current password is incorrect.", code: "INVALID_PASSWORD" }
+    // An account made with Google has no password to change
+    if (code === "CREDENTIAL_ACCOUNT_NOT_FOUND") return { success: false, error: "This account signs in with Google, so it has no password.", code: "NO_PASSWORD" }
+    console.error("Could not change a customer's password:", error)
+    return { success: false, error: "We couldn't change your password just now. Please try again." }
+  }
+
+  sendPasswordChangedEmail(session.user)
+  try {
+    await storeAuth.api.revokeOtherSessions({ headers: requestHeaders })
+  } catch (error) {
+    console.error("Could not sign out other devices after a password change:", error)
+    return { success: false, error: "Your password was changed, but your other devices may still be signed in.", code: "SESSIONS_NOT_REVOKED" }
+  }
+  return { success: true }
 }
 
 // Saved addresses. Each finds the address among the signed-in customer's own, so another account's id does nothing.

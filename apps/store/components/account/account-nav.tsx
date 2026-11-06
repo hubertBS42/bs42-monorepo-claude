@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Briefcase, FileText, Heart, Mail, MapPin, MessageSquareText, Package } from "lucide-react"
+import { Briefcase, FileText, Heart, Mail, MapPin, MessageSquareText, Package, UserRound } from "lucide-react"
 import { cn } from "@workspace/ui/lib/utils"
 
 // inMenu: also in the header's account menu, which keeps to the pages people come back to
@@ -13,6 +13,7 @@ export const ACCOUNT_LINKS = [
   { href: "/account/reviews", label: "Reviews", icon: MessageSquareText },
   { href: "/account/addresses", label: "Addresses", icon: MapPin },
   { href: "/account/trade", label: "Trade account", icon: Briefcase },
+  { href: "/account/details", label: "Account details", icon: UserRound },
   { href: "/account/email-preferences", label: "Email preferences", icon: Mail },
 ]
 

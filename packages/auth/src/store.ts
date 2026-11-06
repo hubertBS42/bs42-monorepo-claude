@@ -121,3 +121,14 @@ export const storeAuth = betterAuth({
 })
 
 export type StoreSession = typeof storeAuth.$Infer.Session
+
+// The notice a password reset sends, for a password changed from the account's page: so a change the customer didn't
+// make doesn't go unnoticed. Not awaited, as the others.
+export function sendPasswordChangedEmail(user: { email: string; name: string }) {
+  sendCustomerEmail((appName, logoUrl) => ({
+    to: user.email,
+    fromName: appName,
+    subject: "Your password has been updated!",
+    reactTemplate: PasswordUpdatedEmail({ name: user.name, appName, logoUrl }),
+  }))
+}
