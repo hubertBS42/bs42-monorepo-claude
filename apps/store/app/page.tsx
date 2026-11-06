@@ -1,5 +1,7 @@
 import { CategoryCarousel } from "@/components/home/category-carousel"
 import { CategoryGrid } from "@/components/home/category-grid"
+import { HowToOrder } from "@/components/home/how-to-order"
+import { TradeBand } from "@/components/home/trade-band"
 import { ProductCard } from "@/components/product-card"
 import { SearchForm } from "@/components/search-form"
 import { categoryHref, featuredCategories, getCategoryTree } from "@/lib/data/categories"
@@ -47,6 +49,14 @@ export default async function HomePage() {
         <CategoryGrid tiles={tiles} />
       </section>
 
+      {/* While there's no checkout (Settings' Online Payments off): how to order instead */}
+      {!settings.onlinePaymentsEnabled && (
+        <section className="mx-auto max-w-7xl px-4 pt-16 sm:pt-[6vw] lg:px-6">
+          <SectionTitle>How to order</SectionTitle>
+          <HowToOrder quoteValidityDays={settings.quoteValidityDays} phone={settings.contactPhone} whatsapp={settings.contactWhatsapp} />
+        </section>
+      )}
+
       {/* The old bs42.net's gap between sections: each had 2em above and below, 3vw from sm up */}
       {cards.length > 0 && (
         <section className="mx-auto max-w-7xl px-4 pt-16 sm:pt-[6vw] lg:px-6">
@@ -60,6 +70,10 @@ export default async function HomePage() {
           </ul>
         </section>
       )}
+
+      <section className="mx-auto max-w-7xl px-4 pt-16 sm:pt-[6vw] lg:px-6">
+        <TradeBand />
+      </section>
     </div>
   )
 }

@@ -3,6 +3,7 @@ import Link from "next/link"
 import { Briefcase, Check } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
 
+import { getAppSettings } from "@/lib/settings"
 import { TRADE_BENEFITS } from "@/lib/trade-benefits"
 
 export const metadata: Metadata = {
@@ -12,7 +13,9 @@ export const metadata: Metadata = {
 }
 
 // What a trade account is, for anyone; applying is on the account's own page (Account → Trade account), through sign-in
-export default function TradePage() {
+export default async function TradePage() {
+  const { onlinePaymentsEnabled } = await getAppSettings()
+
   return (
     <div className="mx-auto max-w-3xl px-4 pt-12 pb-16 lg:px-6">
       <Briefcase className="size-10 text-muted-foreground" aria-hidden />
@@ -31,7 +34,11 @@ export default function TradePage() {
       <Button render={<Link href="/account/trade" />} size="lg" className="mt-8">
         Apply for a trade account
       </Button>
-      <p className="mt-3 text-sm text-muted-foreground">You&apos;ll need to sign in or create an account first. You pay as everyone does, by mobile money or card.</p>
+      <p className="mt-3 text-sm text-muted-foreground">
+        You&apos;ll need to sign in or create an account first. You pay as everyone does,{" "}
+        {/* As the storefront takes payments now (Settings' Online Payments): online, or once we've confirmed the order */}
+        {onlinePaymentsEnabled ? "by mobile money or card." : "by bank transfer or Mobile Money once we've confirmed your order."}
+      </p>
     </div>
   )
 }
