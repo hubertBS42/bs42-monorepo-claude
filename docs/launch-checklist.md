@@ -82,7 +82,7 @@ AZURE_STORAGE_ACCOUNT_NAME=bs42shopstorage pnpm --filter @workspace/db db:legacy
 - [ ] `--by` is Daniel Chan, who entered the old system's orders: the old orders don't record who made them, so they're his, and quotations and purchase orders keep whoever made them on the old system (matched by email, else `--by`). He must have a console account in the store first.
 - [ ] The dry run reports every order's total matching the old system's ("totalMismatches": 0) and lists the old products that aren't in the catalogue (their lines keep their names on an archived "Item from the old site").
 - [ ] The import brings in the orders and quotations as history (walk-in sales without the shop's own email), the suppliers, the inventory orders as purchase orders with their files (into `bs42-private`), and the old stock counts as each listing's opening stock (draft listings for stocked products with no price). It sends no emails. Rehearsed on development on 2026-11-04 (909 orders, 72 quotations, 20 suppliers, 25 purchase orders, 278 listings' stock).
-- [ ] Before the import, correct the store's buy prices that are wrong (e.g. equal to the selling price; the Stock Value report lists stocked items without one): the old orders recorded no costs, so the import estimates each line's cost from the buy price at that moment, for the Profit & Margins report ("linesWithCost" in the report). Later changes to buy prices don't change them.
+- [ ] Wrong buy prices (equal to the selling price, or missing) can be corrected before or after the import: the old orders recorded no costs, so the import estimates each line's cost from the buy price at that moment, for the Profit & Margins report ("linesWithCost" in the report), and `db:reestimate-costs` works those estimates out again from buy prices corrected later (section 10, Afterwards).
 - [ ] Keep the export folder private (customers' details), out of the repository. `legacy-import-log.json` in it records what was written; `--undo` removes exactly that.
 - [ ] Then count a few listings against the shelves: the old counts are only as good as the old system's.
 
@@ -189,7 +189,6 @@ Production already runs at its App Service addresses; this is the switch from th
 
 **Before the day:**
 
-- [ ] Recommended: correct the store's wrong buy prices first (those equal to the selling price, and stocked items without one; the Stock Value report lists them). The import estimates each old order line's cost from the buy price as it runs, and those estimates don't change afterwards, so a wrong one shows as a 0% margin and a missing one as "Without a cost" in Profit & Margins for the old orders. New sales take the buy price at the time, so fix them soon after launch either way. Corrected after the import, `pnpm --filter @workspace/db db:reestimate-costs --dry-run` (then without `--dry-run`) works the old orders' estimates out again from them. The old prices are landed costs (shipping, duty and clearing included), as receiving a purchase order now sets them.
 - [x] Daniel Chan has a console account in the store (invited, accepted): every import step names him with `--by`.
 - [x] A real `OPEN_EXCHANGE_RATES_API_KEY` in the console's settings (section 2).
 - [ ] The live `PAYSTACK_SECRET_KEY`, waiting for Paystack's approval. Needed before Online Payments is turned on (step 7): with the test key, checkout is Paystack's test mode, where no real money is taken and a test card payment marks an order as paid.
@@ -213,5 +212,11 @@ Production already runs at its App Service addresses; this is the switch from th
 
 **Afterwards:**
 
+- [ ] Soon after the import, correct the store's wrong buy prices, then re-estimate the old orders' costs:
+  1. The draft listings the import made for stocked products with no price (the preview's 36 go with step 3's `--undo`, so fix this import's, not those).
+  2. The listings whose buy price equals the selling price, or has none (the Stock Value report lists stocked items without one). The old prices are landed costs (shipping, duty and clearing included), as receiving a purchase order now sets them; receiving one with "Update buy prices" on corrects its products by itself.
+  3. `pnpm --filter @workspace/db db:reestimate-costs --dry-run`, read what it will change, then the same without `--dry-run`.
+
+  The script only re-estimates the old site's order lines. A sale made after launch keeps the buy price it was made at, so a product sold before its buy price is fixed shows a 0% margin (or "Without a cost") on that sale in Profit & Margins for good: fix the products most likely to sell first.
 - [ ] Once the import has been checked, back up the old system's database, then stop its App Service (bs42-admin): its API answers without a sign-in and holds customers' details. Then stop the old storefront (bs42-client).
 - [ ] The next day, Settings → Pricing shows the rate the daily job fetched.
