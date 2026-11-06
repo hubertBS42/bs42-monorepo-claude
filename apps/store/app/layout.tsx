@@ -61,6 +61,7 @@ export default async function RootLayout({
             contact={settings}
             menu={menu}
             legal={legalLinks(legal)}
+            onlinePayments={settings.onlinePaymentsEnabled}
           />
           <CompareBar />
           <Toaster />

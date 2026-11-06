@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { Clock, Mail, MapPin, Phone } from "lucide-react"
+import { Clock, Mail, MapPin } from "lucide-react"
 import type { AppSettingsData } from "@workspace/contracts"
 import { formatPhoneNumber } from "@workspace/utils/phone"
 
@@ -10,7 +10,8 @@ import { StoreLogo } from "@/components/store-logo"
 import type { MenuItem } from "@/lib/menu"
 import { footerLinks } from "@/lib/site-links"
 
-export type FooterContact = Pick<AppSettingsData, "contactPhone" | "contactWhatsapp" | "contactEmail" | "contactAddress" | "contactPhone2" | "contactPhone2Label" | "contactHours">
+// The second phone (the UK number) is on the Contact us page only
+export type FooterContact = Pick<AppSettingsData, "contactPhone" | "contactWhatsapp" | "contactEmail" | "contactAddress" | "contactMapUrl" | "contactHours">
 
 export function SiteFooter({
   storeName,
@@ -20,6 +21,7 @@ export function SiteFooter({
   contact,
   menu,
   legal,
+  onlinePayments,
 }: {
   storeName: string
   storeDescription: string | null
@@ -28,14 +30,16 @@ export function SiteFooter({
   contact: FooterContact
   menu: MenuItem[]
   legal: LegalLinks
+  onlinePayments: boolean
 }) {
-  const hasContact = Object.values(contact).some(Boolean)
+  // The phone is in the "Need help?" line above the columns, so the column has the rest
+  const hasContact = Boolean(contact.contactWhatsapp || contact.contactEmail || contact.contactAddress || contact.contactHours)
 
   return (
     // Charcoal in both themes, as on the old bs42.net: `dark` gives what's inside the dark theme's colours (and the logo for
     // dark backgrounds), the promise strip above it keeps the brand colour
     <footer className="print:hidden">
-      <PromiseStrip />
+      <PromiseStrip onlinePayments={onlinePayments} />
       <div className="dark bg-neutral-800 text-neutral-300">
         {contact.contactPhone && (
           <div className="border-b border-neutral-700 px-4 py-4 text-center">
@@ -104,38 +108,21 @@ export function SiteFooter({
 // The footer's column headings: white Rajdhani capitals (display-font.css sets the font and case for every heading)
 const headingClass = "mb-4 text-base font-semibold text-white"
 
-// The contact details from Settings, each only when it's set
+// The contact details from Settings, each only when it's set; the phone is in the "Need help?" line
 function ContactList({ contact }: { contact: FooterContact }) {
   const linkClass = "flex items-start gap-2 transition-colors hover:text-white"
   const iconClass = "mt-0.5 size-4 shrink-0"
 
   return (
     <div>
-      <h2 className={headingClass}>Contact us</h2>
+      <h2 className={headingClass}>Get in touch</h2>
       <ul className="space-y-2.5 text-xs">
-        {contact.contactPhone && (
-          <li>
-            <a href={`tel:${contact.contactPhone}`} className={linkClass}>
-              <Phone className={iconClass} aria-hidden />
-              {formatPhoneNumber(contact.contactPhone)}
-            </a>
-          </li>
-        )}
-        {contact.contactPhone2 && (
-          <li>
-            <a href={`tel:${contact.contactPhone2}`} className={linkClass}>
-              <Phone className={iconClass} aria-hidden />
-              {formatPhoneNumber(contact.contactPhone2)}
-              {contact.contactPhone2Label && ` (${contact.contactPhone2Label})`}
-            </a>
-          </li>
-        )}
         {contact.contactWhatsapp && (
           <li>
             {/* wa.me takes the international number as digits only */}
             <a href={`https://wa.me/${contact.contactWhatsapp.replace(/\D/g, "")}`} target="_blank" rel="noopener noreferrer" className={linkClass}>
               <WhatsAppIcon className={iconClass} aria-hidden />
-              WhatsApp {formatPhoneNumber(contact.contactWhatsapp)}
+              Chat on WhatsApp
             </a>
           </li>
         )}
@@ -148,9 +135,19 @@ function ContactList({ contact }: { contact: FooterContact }) {
           </li>
         )}
         {contact.contactAddress && (
-          <li className="flex items-start gap-2">
-            <MapPin className={iconClass} aria-hidden />
-            <address className="whitespace-pre-line not-italic">{contact.contactAddress}</address>
+          <li>
+            {/* Directions when Settings has a map link, as on the Contact us page */}
+            {contact.contactMapUrl ? (
+              <a href={contact.contactMapUrl} target="_blank" rel="noopener noreferrer" className={linkClass}>
+                <MapPin className={iconClass} aria-hidden />
+                <address className="whitespace-pre-line not-italic">{contact.contactAddress}</address>
+              </a>
+            ) : (
+              <span className="flex items-start gap-2">
+                <MapPin className={iconClass} aria-hidden />
+                <address className="whitespace-pre-line not-italic">{contact.contactAddress}</address>
+              </span>
+            )}
           </li>
         )}
         {contact.contactHours && (
