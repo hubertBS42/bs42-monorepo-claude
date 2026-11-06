@@ -15,7 +15,7 @@ export default async function StoreDashboard({ storeId, period }: { storeId: str
   const [dashboard, recent] = await Promise.all([getStoreDashboard(storeId, period), getRecentStoreOrderDetails(storeId, RECENT_ORDERS)])
   if (!dashboard.success) throw new Error(dashboard.error)
   if (!recent.success) throw new Error(recent.error)
-  const { orders, lowStock, outOfStock, overduePurchaseOrders, sales, topSellers } = dashboard.data
+  const { orders, lowStock, outOfStock, overduePurchaseOrders, buyPricesToFix, sales, topSellers } = dashboard.data
 
   return (
     <div className="flex flex-col gap-4 md:gap-6">
@@ -31,6 +31,7 @@ export default async function StoreDashboard({ storeId, period }: { storeId: str
             { label: "Out of stock", hint: "Listings that can't be sold", count: outOfStock, href: "/store/listings?stock=out", urgent: true },
             { label: "Low on stock", hint: "At or under their low-stock threshold", count: lowStock, href: "/store/listings?stock=low" },
             { label: "Purchase orders overdue", hint: "Their expected delivery day has passed", count: overduePurchaseOrders, href: "/store/purchase-orders?overdue=true" },
+            { label: "Buy prices to fix", hint: "On sale, with a buy price missing or not below the sell price", count: buyPricesToFix, href: "/store/listings?buyPrice=toFix&visible=true" },
           ]}
         />
       </div>

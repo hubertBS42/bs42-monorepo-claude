@@ -394,12 +394,17 @@ export interface ProductFormData {
 // What a listings row's stock badge shows: any item sold out, else any at or below the low-stock threshold
 export const LISTING_STOCK_STATES = ["in", "low", "out", "untracked"] as const
 export type ListingStockState = (typeof LISTING_STOCK_STATES)[number]
+// A buy price the profit report can't use: missing, not below the sell price, or either ("toFix")
+export const LISTING_BUY_PRICE_STATES = ["toFix", "missing", "notBelow"] as const
+export type ListingBuyPriceState = (typeof LISTING_BUY_PRICE_STATES)[number]
 
 export interface ListingsParams extends PaginationParams {
   // Matches the product's name or SKU
   search?: string
   status?: Status
   stock?: ListingStockState
+  // On what's sold: the listing, or its variants on sale
+  buyPrice?: ListingBuyPriceState
   brandId?: string
   // Includes its subcategories
   categoryId?: string
@@ -808,6 +813,8 @@ export interface StoreDashboard {
   outOfStock: number
   // Open purchase orders whose expected day has passed
   overduePurchaseOrders: number
+  // Listings customers can buy whose buy price is missing or not below the sell price
+  buyPricesToFix: number
   sales: DashboardSalesTrend
   // The store's listings
   topSellers: DashboardTopSellers

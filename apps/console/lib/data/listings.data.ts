@@ -13,6 +13,7 @@ import { z } from "zod"
 import { getStoreRole } from "@/lib/auth-guard"
 import { getCategoryPaths, getSubtreeIds } from "@/lib/data/products.data"
 import { stockStatesSql } from "@/lib/stock-states"
+import { getListingIdsWithBuyPriceState } from "@/lib/buy-price-states"
 import { customerVisibleListingWhere, getVisibleCategoryIds, hiddenReason, variantOnSaleWhere } from "@workspace/commerce/visibility"
 import { getIncomingByListing } from "@/lib/data/purchase-orders.data"
 
@@ -83,7 +84,7 @@ export const getStoreListings = async (storeId: string, filters: ListingsParams 
       return { success: false, error: paginationError }
     }
 
-    const { search, status, stock, brandId, categoryId, hasVariants, condition, visible, featured, page = 1, pageSize = 10, sort, order } = filters
+    const { search, status, stock, buyPrice, brandId, categoryId, hasVariants, condition, visible, featured, page = 1, pageSize = 10, sort, order } = filters
 
     // Brand and category ids are uuid columns, so a malformed one (a hand-edited URL) would make Prisma throw: it matches nothing
     const isUuid = (value: string | undefined) => !value || z.uuid().safeParse(value).success
@@ -94,7 +95,7 @@ export const getStoreListings = async (storeId: string, filters: ListingsParams 
     // What customers can see, the storefront's rule, for the visible filter and the "Not on sale" note
     const visibleCategoryIds = getVisibleCategoryIds(categories)
     const visibleToCustomers = customerVisibleListingWhere(visibleCategoryIds)
-    const stockIds = stock ? await getListingIdsInStockState(storeId, stock) : null
+    const [stockIds, buyPriceIds] = await Promise.all([stock ? getListingIdsInStockState(storeId, stock) : null, buyPrice ? getListingIdsWithBuyPriceState(prisma, storeId, buyPrice) : null])
 
     const contains = search ? { contains: search, mode: "insensitive" as const } : undefined
     // AND, so filters on the same relation (product) don't overwrite each other
@@ -104,6 +105,7 @@ export const getStoreListings = async (storeId: string, filters: ListingsParams 
         ...(contains ? [{ product: { OR: [{ name: contains }, { sku: contains }, { variants: { some: { sku: contains } } }] } }] : []),
         ...(status ? [{ status }] : []),
         ...(stockIds ? [{ id: { in: stockIds } }] : []),
+        ...(buyPriceIds ? [{ id: { in: buyPriceIds } }] : []),
         ...(brandId ? [{ product: { brandId } }] : []),
         ...(categoryId ? [{ product: { categoryId: { in: getSubtreeIds(categories, categoryId) } } }] : []),
         ...(hasVariants !== undefined ? [{ product: { hasVariants } }] : []),

@@ -4,7 +4,7 @@ import { getEnumParam, getOrderParam, getPositiveIntegerParam, getSortParam, get
 import { requireActiveStoreMember } from "@/lib/auth-guard"
 import { getStoreListings, LISTING_SORT_FIELDS, MAX_LISTINGS_PAGE_SIZE } from "@/lib/data/listings.data"
 import { getProductFilterOptions } from "@/lib/data/products.data"
-import { LISTING_STOCK_STATES, type ListingsParams } from "@/types"
+import { LISTING_BUY_PRICE_STATES, LISTING_STOCK_STATES, type ListingsParams } from "@/types"
 import StoreAddButton from "@/components/store-add-button"
 import ListingsTable from "../_components/listings-table"
 
@@ -26,6 +26,7 @@ export default async function StoreListingsPage({ searchParams }: StoreListingsP
     search: getStringParam(params.search),
     status: getEnumParam(params.status, Object.values(Status)),
     stock: getEnumParam(params.stock, LISTING_STOCK_STATES),
+    buyPrice: getEnumParam(params.buyPrice, LISTING_BUY_PRICE_STATES),
     brandId: getStringParam(params.brandId),
     categoryId: getStringParam(params.categoryId),
     condition: getEnumParam(params.condition, Object.values(Condition)),

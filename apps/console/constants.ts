@@ -1,5 +1,5 @@
 import { Condition, Status } from "@workspace/db/enums"
-import { BreadcrumbConfig, StoreStatus, UserStatusFilter, type ListingStockState } from "./types"
+import { BreadcrumbConfig, StoreStatus, UserStatusFilter, type ListingStockState, type ListingBuyPriceState } from "./types"
 import { capitalizeWord } from "@workspace/utils/text"
 
 // Each page's trail, matched by pathname ([id] matches one segment). An href may hold the pathname's own [id], filled
@@ -660,4 +660,10 @@ export const LISTING_STOCK_OPTIONS: { label: string; value: ListingStockState }[
   { label: "Low stock", value: "low" },
   { label: "Out of stock", value: "out" },
   { label: "Not tracked", value: "untracked" },
+]
+
+export const LISTING_BUY_PRICE_OPTIONS: { label: string; value: ListingBuyPriceState }[] = [
+  { label: "Missing or not below sell price", value: "toFix" },
+  { label: "Missing", value: "missing" },
+  { label: "Not below sell price", value: "notBelow" },
 ]

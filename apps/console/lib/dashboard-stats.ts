@@ -19,6 +19,7 @@ import type {
 import { sumLines } from "./order-details"
 import { overduePurchaseOrderWhere } from "./purchase-order-status"
 import { countStockAlerts } from "./stock-states"
+import { countBuyPricesToFix } from "./buy-price-states"
 
 // The dashboard's numbers, apart from access checks (lib/data/dashboard.data.ts), so a script can run them in a
 // transaction against the database
@@ -205,10 +206,11 @@ export async function getStoreStats(tx: Tx, storeId: string, period: DashboardPe
   // and returns on the others are the platform's, and can't be split between the stores.
   const ownOrder = { orderItems: { some: { organizationId: storeId }, every: { organizationId: storeId } } }
 
-  const [orders, stock, overduePurchaseOrders, paidOrders, refunds, returns, sellerLines] = await Promise.all([
+  const [orders, stock, overduePurchaseOrders, buyPricesToFix, paidOrders, refunds, returns, sellerLines] = await Promise.all([
     countOrders(tx, withStoreItems),
     countStockAlerts(tx, storeId),
     tx.purchaseOrder.count({ where: { organizationId: storeId, ...overduePurchaseOrderWhere(formatDate(now, "yyyy-MM-dd")) } }),
+    countBuyPricesToFix(tx, storeId),
     tx.order.findMany({
       where: { ...withStoreItems, paidAt: { gte: from }, paymentStatus: paidStatuses },
       select: { paidAt: true, totalGhs: true, orderItems: { select: { organizationId: true, totalPriceGhs: true, discountGhs: true, taxGhs: true } } },
@@ -230,6 +232,7 @@ export async function getStoreStats(tx: Tx, storeId: string, period: DashboardPe
     lowStock: stock[0]?.low ?? 0,
     outOfStock: stock[0]?.out ?? 0,
     overduePurchaseOrders,
+    buyPricesToFix,
     sales: toSalesTrend(period, { payments, refunds: refunds.map((row) => ({ at: row.createdAt, amountGhs: row.amountGhs })), returns: returns.map((row) => ({ at: row.createdAt })) }, now),
     topSellers: toTopSellers(sellerLines, (line) => ({ id: line.storeListingId, href: `/store/listings/${line.storeListingId}/edit` })),
   }
