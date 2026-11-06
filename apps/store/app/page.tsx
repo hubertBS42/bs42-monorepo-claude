@@ -120,8 +120,8 @@ export default async function HomePage() {
           <SectionTitle>From the blog</SectionTitle>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {posts.slice(0, BLOG_POSTS).map((post, index) => (
-              // Two on the middle width's two columns, so the row stays even
-              <div key={post.slug} className={index === 2 ? "sm:max-lg:hidden" : undefined}>
+              // Two on the middle width's two columns, so the row stays even; a grid, so each card fills the row's height
+              <div key={post.slug} className={index === 2 ? "grid sm:max-lg:hidden" : "grid"}>
                 <BlogPostCard post={post} />
               </div>
             ))}
