@@ -1,9 +1,14 @@
+import Link from "next/link"
+import { ArrowRight } from "lucide-react"
+
+import { BlogPostCard } from "@/components/blog/blog-card"
 import { CategoryCarousel } from "@/components/home/category-carousel"
 import { CategoryGrid } from "@/components/home/category-grid"
 import { HowToOrder } from "@/components/home/how-to-order"
 import { TradeBand } from "@/components/home/trade-band"
 import { ProductCard } from "@/components/product-card"
 import { SearchForm } from "@/components/search-form"
+import { getBlogPosts } from "@/lib/data/blog"
 import { categoryHref, featuredCategories, getCategoryTree } from "@/lib/data/categories"
 import { loadProductCards } from "@/lib/data/product-cards"
 import { isInStock } from "@/lib/product-cards"
@@ -11,9 +16,18 @@ import { priceCards } from "@/lib/pricing"
 import { getAppSettings, getShelfPricing, getStoreName } from "@/lib/settings"
 
 const FEATURED_COUNT = 8
+// The newest posts, one row of cards on wide screens
+const BLOG_POSTS = 3
 
 export default async function HomePage() {
-  const [settings, storeName, tree, featured, pricing] = await Promise.all([getAppSettings(), getStoreName(), getCategoryTree(), loadProductCards({ featured: true }), getShelfPricing()])
+  const [settings, storeName, tree, featured, pricing, posts] = await Promise.all([
+    getAppSettings(),
+    getStoreName(),
+    getCategoryTree(),
+    loadProductCards({ featured: true }),
+    getShelfPricing(),
+    getBlogPosts(),
+  ])
   const slides = featuredCategories(tree).map((node) => ({ id: node.id, name: node.name, description: node.description, image: node.image, href: categoryHref(tree, node.id) }))
   const tiles = tree.roots.map((root) => ({
     id: root.id,
@@ -68,6 +82,26 @@ export default async function HomePage() {
               </li>
             ))}
           </ul>
+        </section>
+      )}
+
+      {posts.length > 0 && (
+        <section className="mx-auto max-w-7xl px-4 pt-16 sm:pt-[6vw] lg:px-6">
+          <SectionTitle>From the blog</SectionTitle>
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {posts.slice(0, BLOG_POSTS).map((post, index) => (
+              // Two on the middle width's two columns, so the row stays even
+              <div key={post.slug} className={index === 2 ? "sm:max-lg:hidden" : undefined}>
+                <BlogPostCard post={post} />
+              </div>
+            ))}
+          </div>
+          <div className="mt-6 flex justify-center">
+            <Link href="/blog" className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline">
+              All posts
+              <ArrowRight className="size-4" aria-hidden />
+            </Link>
+          </div>
         </section>
       )}
 
