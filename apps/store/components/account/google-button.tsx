@@ -13,7 +13,10 @@ export function GoogleButton({ redirectTo, label }: { redirectTo: string; label:
   async function signIn() {
     setIsRedirecting(true)
     setError(null)
-    const result = await storeAuthClient.signIn.social({ provider: "google", callbackURL: redirectTo, errorCallbackURL: "/sign-in?error=google" }).catch(() => null)
+    // When Google sends the customer back without signing them in, Better Auth adds ?error=<code> (BANNED_USER for a
+    // suspended account) to the error URL: the sign-in page explains it, then still goes where they were headed
+    const errorCallbackURL = `/sign-in?redirect=${encodeURIComponent(redirectTo)}`
+    const result = await storeAuthClient.signIn.social({ provider: "google", callbackURL: redirectTo, errorCallbackURL }).catch(() => null)
     // On success the browser is already on its way to Google
     if (!result || result.error) {
       setError("We couldn't reach Google. Please try again.")
