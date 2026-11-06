@@ -164,16 +164,23 @@
       @apply scroll-m-20 tracking-tight text-pretty;
     }
 
+    /* Space above each heading to set its section apart, less below so it stays with its text; sizes for reading
+       text (descriptions, posts, legal pages), under the page's own title */
     h1 {
-      @apply text-4xl font-extrabold;
+      @apply mt-10 mb-4 text-3xl font-extrabold;
     }
 
     h2 {
-      @apply text-3xl font-semibold;
+      @apply mt-8 mb-3 text-2xl font-semibold;
     }
 
     h3 {
-      @apply text-2xl font-semibold;
+      @apply mt-6 mb-2 text-xl font-semibold;
+    }
+
+    /* Paragraphs apart, as in a document (preflight takes their margins away) */
+    p {
+      @apply my-3;
     }
 
     /* List styles */
