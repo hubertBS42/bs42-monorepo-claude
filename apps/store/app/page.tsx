@@ -8,6 +8,7 @@ import { HowToOrder } from "@/components/home/how-to-order"
 import { TradeBand } from "@/components/home/trade-band"
 import { ProductCard } from "@/components/product-card"
 import { SearchForm } from "@/components/search-form"
+import { getBestSellerIds } from "@/lib/data/best-sellers"
 import { getBlogPosts } from "@/lib/data/blog"
 import { categoryHref, featuredCategories, getCategoryTree } from "@/lib/data/categories"
 import { loadProductCards } from "@/lib/data/product-cards"
@@ -16,17 +17,20 @@ import { priceCards } from "@/lib/pricing"
 import { getAppSettings, getShelfPricing, getStoreName } from "@/lib/settings"
 
 const FEATURED_COUNT = 8
+// One row on wide screens; the row shows only when it can fill it
+const BEST_SELLERS_COUNT = 4
 // The newest posts, one row of cards on wide screens
 const BLOG_POSTS = 3
 
 export default async function HomePage() {
-  const [settings, storeName, tree, featured, pricing, posts] = await Promise.all([
+  const [settings, storeName, tree, featured, pricing, posts, bestSellerIds] = await Promise.all([
     getAppSettings(),
     getStoreName(),
     getCategoryTree(),
     loadProductCards({ featured: true }),
     getShelfPricing(),
     getBlogPosts(),
+    getBestSellerIds(),
   ])
   const slides = featuredCategories(tree).map((node) => ({ id: node.id, name: node.name, description: node.description, image: node.image, href: categoryHref(tree, node.id) }))
   const tiles = tree.roots.map((root) => ({
@@ -39,6 +43,18 @@ export default async function HomePage() {
   }))
   // In stock first, then by name, so the homepage doesn't open on things nobody can buy
   const cards = priceCards([...featured].sort((a, b) => Number(isInStock(b.offers[0]!)) - Number(isInStock(a.offers[0]!)) || a.name.localeCompare(b.name)).slice(0, FEATURED_COUNT), pricing)
+
+  // In the order they sold, leaving out what's out of stock or already in Featured products just above
+  const shownIds = new Set(cards.map((card) => card.id))
+  const bestSellerCards = bestSellerIds.length ? await loadProductCards({ productIds: bestSellerIds }) : []
+  const byId = new Map(bestSellerCards.map((card) => [card.id, card]))
+  const bestSellers = priceCards(
+    bestSellerIds
+      .flatMap((id) => byId.get(id) ?? [])
+      .filter((card) => !shownIds.has(card.id) && isInStock(card.offers[0]!))
+      .slice(0, BEST_SELLERS_COUNT),
+    pricing
+  )
 
   return (
     <div className="pb-16">
@@ -78,6 +94,20 @@ export default async function HomePage() {
           <ul className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 xl:grid-cols-4">
             {cards.map((card) => (
               <li key={card.id}>
+                <ProductCard card={card} />
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {bestSellers.length === BEST_SELLERS_COUNT && (
+        <section className="mx-auto max-w-7xl px-4 pt-16 sm:pt-[6vw] lg:px-6">
+          <SectionTitle>Best sellers</SectionTitle>
+          <ul className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 xl:grid-cols-4">
+            {bestSellers.map((card, index) => (
+              // Three on the middle widths' three columns, so the row stays even
+              <li key={card.id} className={index === 3 ? "md:max-xl:hidden" : undefined}>
                 <ProductCard card={card} />
               </li>
             ))}
