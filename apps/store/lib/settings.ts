@@ -59,8 +59,10 @@ export interface LegalPages {
 export const getLegalPages = unstable_cache(
   async (): Promise<LegalPages> => {
     const row = await prisma.legalPages.findUnique({ where: { id: "singleton" } })
-    const page = (content: string | null | undefined, updatedAt: Date | null | undefined) => (content && updatedAt ? { content, updatedAt: updatedAt.toISOString() } : null)
-    return { terms: page(row?.termsOfService, row?.termsUpdatedAt), privacy: page(row?.privacyPolicy, row?.privacyUpdatedAt) }
+    // Only what's published: a draft is the console's until then
+    const page = (published: boolean | undefined, content: string | null | undefined, updatedAt: Date | null | undefined) =>
+      published && content && updatedAt ? { content, updatedAt: updatedAt.toISOString() } : null
+    return { terms: page(row?.termsPublished, row?.termsOfService, row?.termsUpdatedAt), privacy: page(row?.privacyPublished, row?.privacyPolicy, row?.privacyUpdatedAt) }
   },
   ["store-legal-pages"],
   { revalidate: REVALIDATE_SECONDS }

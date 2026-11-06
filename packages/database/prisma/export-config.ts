@@ -66,8 +66,10 @@ async function main() {
     legalPages: legal
       ? {
           termsOfService: legal.termsOfService,
+          termsPublished: legal.termsPublished,
           termsUpdatedAt: legal.termsUpdatedAt?.toISOString() ?? null,
           privacyPolicy: legal.privacyPolicy,
+          privacyPublished: legal.privacyPublished,
           privacyUpdatedAt: legal.privacyUpdatedAt?.toISOString() ?? null,
         }
       : null,

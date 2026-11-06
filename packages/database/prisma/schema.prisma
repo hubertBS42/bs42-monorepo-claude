@@ -264,8 +264,12 @@ model DeliverySettings {
 model LegalPages {
   id               String    @id @default("singleton")
   termsOfService   String?
+  // Customers see a page only while it's published (a CHECK in the migration: only with text); until then it's a draft
+  termsPublished   Boolean   @default(false)
+  // When the published text last changed (the page's "Last updated")
   termsUpdatedAt   DateTime?
   privacyPolicy    String?
+  privacyPublished Boolean   @default(false)
   privacyUpdatedAt DateTime?
   updatedAt        DateTime  @updatedAt
 

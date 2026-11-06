@@ -46,7 +46,11 @@ async function seedInstallationAreas() {
 async function seedLegalPages() {
   if (!config.legalPages) return "not in the file"
   if (await prisma.legalPages.findUnique({ where: { id: "singleton" }, select: { id: true } })) return "already set"
-  await prisma.legalPages.create({ data: { id: "singleton", ...config.legalPages } })
+  const { termsPublished, privacyPublished, ...pages } = config.legalPages
+  // A file from before publishing existed has no flags: its pages with text were live
+  await prisma.legalPages.create({
+    data: { id: "singleton", ...pages, termsPublished: termsPublished ?? !!pages.termsOfService, privacyPublished: privacyPublished ?? !!pages.privacyPolicy },
+  })
   return "set"
 }
 
