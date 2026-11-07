@@ -8,14 +8,17 @@ import { ActionResponse, DataResponse } from "@workspace/contracts"
 import { prisma } from "@workspace/db"
 import { Prisma } from "@workspace/db/client"
 import { OrganizationStatus, ShippingMethod, Status } from "@workspace/db/enums"
+import { invoiceUrl } from "@workspace/commerce/order-links"
 import { hasStorePermission, requireConsoleAccess } from "@/lib/auth-guard"
 import { getLatestExchangeRate, getPricingContext, type ExchangeRateInfo } from "@workspace/commerce/exchange-rates"
 import { notifyNewOrder, notifyStockAlerts } from "@workspace/commerce/notifications"
 import { sendOrderEmail } from "@workspace/commerce/order-emails"
 import { priceOrder, type PricedOrder } from "@workspace/commerce/pricing"
 import { cancelWithRefund, editPendingOrder, giveRefund, orderForUpdateSelect, recordOrderPayment, recordReturn, toReturnInput, updateOrderStatus, type Failure } from "@/lib/order-updates"
+import { completeCounterSale } from "@/lib/counter-sales"
 import {
   cancelAndRefundStoreOrderSchema,
+  completeCounterSaleSchema,
   createStoreOrderSchema,
   findOrderCustomerSchema,
   previewStoreOrderSchema,
@@ -262,6 +265,52 @@ export async function createStoreOrderAction(input: z.input<typeof createStoreOr
   }
 }
 
+// A sale at the counter, created, paid and completed at once. Every store role can ring one up, members too, though
+// recording a payment on another order needs order: update; discounts stay with owners and admins.
+export async function completeCounterSaleAction(input: z.input<typeof completeCounterSaleSchema>): Promise<DataResponse<{ id: string; reference: string; invoiceUrl: string }>> {
+  const session = await requireConsoleAccess()
+
+  try {
+    const parsed = completeCounterSaleSchema.safeParse(input)
+    if (!parsed.success) return invalidInput(parsed.error)
+    const data = parsed.data
+
+    const denied = await checkCreatePermissions(session.user.id, data.storeId, data.discountType)
+    if (denied) return denied
+
+    const result = await priceStoreOrder(data.storeId, { items: data.items, shippingGhs: 0, discountType: data.discountType, discountValue: data.discountValue })
+    if (!result.ok) return result.problem
+    // The customer has paid what the page showed
+    if (!result.priced.totalGhs.equals(data.expectedTotalGhs)) return { success: false, error: "The price changed. Check the new total, then complete the sale.", code: "PRICE_CHANGED" }
+
+    const { stockAlerts, ...order } = await prisma.$transaction(
+      (tx) =>
+        completeCounterSale(tx, {
+          createdById: session.user.id,
+          customer: { userId: null, name: data.customerName, email: data.customerEmail.toLowerCase() || null, phone: data.customerPhone || null },
+          paymentMethod: data.paymentMethod,
+          discount: result.discount && { ...result.discount, reason: data.discountReason },
+          rate: { id: result.rate.id, value: new Prisma.Decimal(result.rate.rate) },
+          lines: result.lines,
+          priced: result.priced,
+        }),
+      TRANSACTION_OPTIONS
+    )
+
+    // Only once the sale is saved: after() also runs when an action fails. The payment email is the customer's receipt.
+    after(async () => {
+      await sendOrderEmail(order.id, "PAYMENT_RECEIVED")
+      await notifyNewOrder(order.id, "store")
+      await notifyStockAlerts(stockAlerts)
+    })
+
+    return { success: true, data: { id: order.id, reference: order.reference, invoiceUrl: invoiceUrl(order.reference, order.id) } }
+  } catch (error) {
+    if (error instanceof OrderItemError) return itemError(error)
+    return { success: false, error: formatError(error) }
+  }
+}
+
 // An exact email or phone match only, so staff can't browse the platform's customers
 export async function findOrderCustomerAction(input: z.input<typeof findOrderCustomerSchema>): Promise<DataResponse<OrderCustomer | null>> {
   const session = await requireConsoleAccess()
@@ -311,7 +360,10 @@ export async function searchOrderableListingsAction(input: z.input<typeof search
         where: {
           organizationId: storeId,
           status: Status.PUBLISHED,
-          product: { status: Status.PUBLISHED, ...(contains && { OR: [{ name: contains }, { sku: contains }, { variants: { some: { sku: contains } } }] }) },
+          product: {
+            status: Status.PUBLISHED,
+            ...(contains && { OR: [{ name: contains }, { sku: contains }, { barcode: contains }, { variants: { some: { OR: [{ sku: contains }, { barcode: contains }] } } }] }),
+          },
         },
         orderBy: [{ product: { name: "asc" } }, { id: "asc" }],
         take: MAX_ORDERABLE_LISTINGS,

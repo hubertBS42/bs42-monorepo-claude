@@ -188,6 +188,13 @@ export const updateOrderNotesSchema = orderNotesFormSchema.extend(orderEditTarge
 // Ways a customer pays the platform for an order staff made: card payments go through the storefront's checkout
 export const STAFF_ORDER_PAYMENT_METHODS = [PaymentMethod.BANK_TRANSFER, PaymentMethod.MOBILE_MONEY, PaymentMethod.CASH] as const
 
+// A sale at the store's counter: the create wizard's fields, paid there and then, at the total the page showed
+export const completeCounterSaleSchema = createStoreOrderFormSchema.extend({
+  storeId: z.uuid("Invalid store ID"),
+  paymentMethod: z.enum(STAFF_ORDER_PAYMENT_METHODS, "Choose how the customer paid"),
+  expectedTotalGhs: z.string().regex(/^\d+(\.\d{1,2})?$/, "Invalid total"),
+})
+
 // The platform's create wizard (/orders/create): items from any store as the storefront sells them, with
 // installation, delivered. One schema for every step, which each check their own fields before moving on.
 export const createOrderFormSchema = z

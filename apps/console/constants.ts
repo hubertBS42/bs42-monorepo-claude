@@ -286,6 +286,13 @@ export const BREADCRUMB_DATA: BreadcrumbConfig[] = [
     ],
   },
   {
+    pathname: "/store/counter-sale",
+    segments: [
+      { text: "Dashboard", href: "/" },
+      { text: "Counter Sale", href: "#" },
+    ],
+  },
+  {
     pathname: "/store/orders",
     segments: [
       { text: "Dashboard", href: "/" },

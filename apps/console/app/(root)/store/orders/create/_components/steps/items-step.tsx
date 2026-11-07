@@ -95,7 +95,7 @@ export default function ItemsStep({ storeId, form, chosen, onChosenChange }: Ite
                 setSearch(e.target.value)
                 setIsSearching(true)
               }}
-              placeholder="Search by name or SKU"
+              placeholder="Search by name, SKU or barcode"
               aria-label="Search listings"
               className="pr-9 pl-9"
             />
