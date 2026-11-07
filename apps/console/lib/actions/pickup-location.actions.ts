@@ -34,6 +34,7 @@ export async function savePickupLocationAction(input: z.input<typeof savePickupL
       await prisma.pickupLocation.create({ data: { ...data, organizationId: storeId } })
     }
     revalidatePath("/store")
+    revalidatePath(`/stores/${storeId}/edit`)
     return { success: true }
   } catch (error) {
     return { success: false, error: formatError(error) }
@@ -50,6 +51,7 @@ export async function removePickupLocationAction(input: z.input<typeof removePic
 
     await prisma.pickupLocation.deleteMany({ where: { organizationId: parsed.data.storeId } })
     revalidatePath("/store")
+    revalidatePath(`/stores/${parsed.data.storeId}/edit`)
     return { success: true }
   } catch (error) {
     return { success: false, error: formatError(error) }

@@ -34,7 +34,7 @@ export default function AddStoreForm() {
   const onSubmit: SubmitHandler<z.infer<typeof addStoreFormSchema>> = async (data) => {
     form.clearErrors("root")
 
-    const { error: createOrgErr } = await consoleAuthClient.organization.create({
+    const { data: created, error: createOrgErr } = await consoleAuthClient.organization.create({
       name: data.name,
       slug: crypto.randomUUID(),
       logo: !data.logo ? undefined : data.logo,
@@ -50,10 +50,11 @@ export default function AddStoreForm() {
       })
     } else {
       setIsCreated(true)
-      router.push("/stores")
+      // Its edit page, for the pickup location the add form doesn't ask for
+      router.push(created ? `/stores/${created.id}/edit` : "/stores")
       toast.add({
         title: "Store created",
-        description: "You can now add members and products.",
+        description: "Add its pickup location below, then its members and products.",
         type: "success",
       })
     }
@@ -86,13 +87,7 @@ export default function AddStoreForm() {
   return (
     <form onSubmit={form.handleSubmit(onSubmit)}>
       <div className="grid gap-y-6">
-        <ResourceFormHeader
-          heading="Add Store"
-          description="Create a store with its own team, listings and orders."
-          backTo="/stores"
-          isPending={isBusy}
-          isDirty={form.formState.isDirty}
-        />
+        <ResourceFormHeader heading="Add Store" description="Create a store with its own team, listings and orders." backTo="/stores" isPending={isBusy} isDirty={form.formState.isDirty} />
 
         <div className="grid gap-8">
           <div className="grid items-start gap-4 lg:grid-cols-3">

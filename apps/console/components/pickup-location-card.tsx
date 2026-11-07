@@ -26,6 +26,8 @@ interface PickupLocationCardProps {
 }
 
 // Where customers collect this store's pickup orders. Without one, pickups from the store aren't offered to customers.
+// On Store Details and the platform's Edit Store page, where it sits inside the store's form: it saves on its own, so
+// Enter in its fields mustn't submit that form.
 export default function PickupLocationCard({ storeId, location }: PickupLocationCardProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
@@ -53,7 +55,11 @@ export default function PickupLocationCard({ storeId, location }: PickupLocation
   const remove = () => startTransition(async () => after(await removePickupLocationAction({ storeId }), "Pickup location removed"))
 
   return (
-    <Card>
+    <Card
+      onKeyDown={(e) => {
+        if (e.key === "Enter" && e.target instanceof HTMLInputElement) e.preventDefault()
+      }}
+    >
       <CardHeader>
         <CardTitle>Pickup location</CardTitle>
         <CardDescription>{location ? "Where customers collect this store's pickup orders." : "Customers can't collect from this store until it has one."}</CardDescription>

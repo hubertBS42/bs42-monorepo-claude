@@ -18,7 +18,8 @@ import ResourceFormFooter from "@/components/shared-form-footer"
 import { DangerZoneCard } from "@/components/danger-zone-card"
 import DeleteStore from "@/components/delete-store"
 
-export default function EditStoreForm({ store }: { store: Store }) {
+// pickupLocationCard: the store's pickup location, which saves on its own
+export default function EditStoreForm({ store, pickupLocationCard }: { store: Store; pickupLocationCard: React.ReactNode }) {
   const router = useRouter()
 
   // isSubmitting turns false as soon as onSubmit returns, while the redirect is still loading.
@@ -98,18 +99,12 @@ export default function EditStoreForm({ store }: { store: Store }) {
   return (
     <form onSubmit={form.handleSubmit(onSubmit)}>
       <div className="grid gap-y-6">
-        <ResourceFormHeader
-          heading="Edit Store"
-          description="Update the store's details and status."
-          backTo="/stores"
-          isPending={isBusy}
-          isDirty={form.formState.isDirty}
-        />
+        <ResourceFormHeader heading="Edit Store" description="Update the store's details and status." backTo="/stores" isPending={isBusy} isDirty={form.formState.isDirty} />
 
         <div className="grid gap-8">
           <div className="grid items-start gap-4 lg:grid-cols-3">
             {/* Left column */}
-            <div className="lg:col-span-2">
+            <div className="grid gap-4 lg:col-span-2">
               <Card>
                 <CardHeader>
                   <CardTitle>Store Details</CardTitle>
@@ -134,6 +129,7 @@ export default function EditStoreForm({ store }: { store: Store }) {
                   </FieldGroup>
                 </CardContent>
               </Card>
+              {pickupLocationCard}
             </div>
 
             {/* Right column */}
