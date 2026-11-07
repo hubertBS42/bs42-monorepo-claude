@@ -1,7 +1,7 @@
 import type { Metadata } from "next"
 import { redirect } from "next/navigation"
 import { organizationRoles } from "@workspace/auth/organization-permissions"
-import { OrderStatus, PaymentStatus } from "@workspace/db/enums"
+import { OrderStatus, PaymentMethod, PaymentStatus } from "@workspace/db/enums"
 import AddButton from "@/components/add-button"
 import { getEnumParam, getOrderParam, getPositiveIntegerParam, getSortParam, getStringParam } from "@workspace/utils/search-params"
 import { requireActiveStoreMember } from "@/lib/auth-guard"
@@ -28,6 +28,8 @@ export default async function StoreOrdersPage({ searchParams }: StoreOrdersPageP
     reference: getStringParam(params.reference),
     status: getEnumParam(params.status, Object.values(OrderStatus)),
     paymentStatus: getEnumParam(params.paymentStatus, Object.values(PaymentStatus)),
+    counterSale: params.counterSale === "true" ? true : params.counterSale === "false" ? false : undefined,
+    paidBy: getEnumParam(params.paidBy, Object.values(PaymentMethod)),
     page: getPositiveIntegerParam(params.page, 1),
     pageSize: getPositiveIntegerParam(params.pageSize, 10, MAX_STORE_ORDERS_PAGE_SIZE),
     sort: getSortParam(params.sort, STORE_ORDER_SORT_FIELDS),

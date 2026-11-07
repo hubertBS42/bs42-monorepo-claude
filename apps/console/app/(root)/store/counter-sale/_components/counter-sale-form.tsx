@@ -8,7 +8,7 @@ import { useForm, useWatch } from "react-hook-form"
 import { consoleAuthClient } from "@workspace/auth/console-client"
 import { PAYMENT_METHOD_LABELS } from "@workspace/commerce/order-status"
 import { DiscountType, PaymentMethod, ShippingMethod } from "@workspace/db/enums"
-import { NumberInputField, PhoneField, SelectField, TextInputField } from "@workspace/forms"
+import { NumberInputField, SelectField, TextInputField } from "@workspace/forms"
 import { useRevalidateOnChange } from "@workspace/forms/use-revalidate-on-change"
 import { Button, buttonVariants } from "@workspace/ui/components/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@workspace/ui/components/card"
@@ -21,9 +21,10 @@ import { formatCurrency } from "@workspace/utils/currency"
 import { useMemberRole } from "@/hooks/use-member-role"
 import { completeCounterSaleAction, previewStoreOrderAction } from "@/lib/actions/store-order.actions"
 import { createStoreOrderFormSchema, STAFF_ORDER_PAYMENT_METHODS } from "@/lib/schemas/order.schemas"
-import type { OrderPreview } from "@/types"
+import type { OrderPreview, QuoteCustomer } from "@/types"
 import type { ChosenItem, OrderFormInput, OrderFormOutput } from "../../orders/create/_components/create-order-form"
 import ItemsStep from "../../orders/create/_components/steps/items-step"
+import CustomerCard from "./customer-card"
 
 // The create-order form's fields, so the items list is the wizard's. A counter sale is always a pickup, with no fee.
 const DEFAULT_VALUES: OrderFormInput = {
@@ -70,6 +71,8 @@ export default function CounterSaleForm({ storeId }: { storeId: string }) {
   const [priced, setPriced] = useState<{ key: string; preview: OrderPreview | null; error: string | null } | null>(null)
   const [refreshKey, setRefreshKey] = useState(0)
   const [completed, setCompleted] = useState<CompletedSale | null>(null)
+  // The account found, whose trade discount applies unless an owner or admin sets another
+  const [customer, setCustomer] = useState<QuoteCustomer | null>(null)
   const { role, isLoading } = useMemberRole(storeId)
   const canDiscount = role !== null && consoleAuthClient.organization.checkRolePermission({ role, permissions: { order: ["update"] } })
 
@@ -81,7 +84,8 @@ export default function CounterSaleForm({ storeId }: { storeId: string }) {
 
   const itemsReady = items.length > 0 && items.every((item) => typeof item.quantity === "number" && item.quantity >= 1)
   const discountReady = discountType === "NONE" || (typeof discountValue === "number" && discountValue > 0)
-  const pricingKey = JSON.stringify({ items, discountType, discountValue, refreshKey })
+  const customerUserId = customer?.id ?? null
+  const pricingKey = JSON.stringify({ items, discountType, discountValue, customerUserId, refreshKey })
   // Only the answer for what's on the page now: anything older is out of date
   const preview = priced?.key === pricingKey ? priced.preview : null
   const previewError = priced?.key === pricingKey ? priced.error : null
@@ -94,6 +98,7 @@ export default function CounterSaleForm({ storeId }: { storeId: string }) {
     const timer = setTimeout(() => {
       previewStoreOrderAction({
         storeId,
+        customerUserId,
         items: items.map((item) => ({ listingId: item.listingId, listingVariantId: item.listingVariantId ?? null, quantity: Number(item.quantity) })),
         shippingGhs: 0,
         discountType,
@@ -119,6 +124,10 @@ export default function CounterSaleForm({ storeId }: { storeId: string }) {
       const response = await completeCounterSaleAction({ ...values, storeId, paymentMethod: paymentMethod as (typeof STAFF_ORDER_PAYMENT_METHODS)[number], expectedTotalGhs: preview.totalGhs })
       if (!response.success) {
         toast.add({ title: "Unable to complete the sale", description: response.error, type: "error" })
+        if (response.code === "CUSTOMER_NOT_FOUND") {
+          setCustomer(null)
+          form.setValue("customerUserId", null)
+        }
         // A new price, or stock that ran out: the items list and the total show it
         setRefreshKey((key) => key + 1)
         return
@@ -132,6 +141,7 @@ export default function CounterSaleForm({ storeId }: { storeId: string }) {
     setChosen({})
     setPaymentMethod(PaymentMethod.CASH)
     setPriced(null)
+    setCustomer(null)
     setCompleted(null)
   }
 
@@ -162,25 +172,11 @@ export default function CounterSaleForm({ storeId }: { storeId: string }) {
   return (
     // Not a form element: Enter in the search box or a quantity must never complete a sale
     <div className="grid gap-4">
-      <ItemsStep storeId={storeId} form={form} chosen={chosen} onChosenChange={setChosen} />
+      <ItemsStep storeId={storeId} form={form} chosen={chosen} onChosenChange={setChosen} compact />
 
       <div className="grid items-start gap-4 lg:grid-cols-2">
         <div className="grid gap-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Customer</CardTitle>
-              <CardDescription>Optional. With an email they&apos;re sent a receipt.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <FieldGroup>
-                <TextInputField control={form.control} label="Name" name="customerName" />
-                <div className="grid gap-5 sm:grid-cols-2">
-                  <TextInputField control={form.control} label="Email (optional)" name="customerEmail" type="email" />
-                  <PhoneField control={form.control} label="Phone (optional)" name="customerPhone" defaultCountry="GH" />
-                </div>
-              </FieldGroup>
-            </CardContent>
-          </Card>
+          <CustomerCard storeId={storeId} form={form} customer={customer} onCustomerChange={setCustomer} />
 
           {/* Members can't give discounts, so only owners and admins see this */}
           {isLoading ? (
@@ -190,7 +186,7 @@ export default function CounterSaleForm({ storeId }: { storeId: string }) {
               <Card>
                 <CardHeader>
                   <CardTitle>Discount</CardTitle>
-                  <CardDescription>Shared across the items and taken off before tax.</CardDescription>
+                  <CardDescription>{customer?.trade ? "Replaces their trade discount." : "Shared across the items and taken off before tax."}</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <FieldGroup>
@@ -226,7 +222,9 @@ export default function CounterSaleForm({ storeId }: { storeId: string }) {
             ) : preview ? (
               <div className="grid gap-1.5">
                 <TotalRow label="Subtotal" amount={ghs(preview.subtotalGhs)} />
-                {preview.discountAmountGhs && Number(preview.discountAmountGhs) > 0 && <TotalRow label="Discount" amount={`−${ghs(preview.discountAmountGhs)}`} />}
+                {preview.discountAmountGhs && Number(preview.discountAmountGhs) > 0 && (
+                  <TotalRow label={customer?.trade && discountType === "NONE" ? `Trade discount (${Number(customer.trade.percent)}%)` : "Discount"} amount={`−${ghs(preview.discountAmountGhs)}`} />
+                )}
                 <TotalRow label={Number(preview.taxRate) ? `Tax (${+(Number(preview.taxRate) * 100).toFixed(2)}%)` : "Tax"} amount={ghs(preview.taxGhs)} />
                 <Separator className="my-1" />
                 <TotalRow label="Total" amount={ghs(preview.totalGhs)} strong />

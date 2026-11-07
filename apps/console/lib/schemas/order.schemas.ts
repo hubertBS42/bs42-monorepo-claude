@@ -141,6 +141,8 @@ export const previewStoreOrderSchema = z.object({
   shippingGhs: decimalSchema,
   discountType: z.enum(["NONE", DiscountType.FIXED, DiscountType.PERCENTAGE]),
   discountValue: decimalSchema,
+  // A counter sale's customer, whose trade discount applies when no other is set
+  customerUserId: z.uuid().nullable().optional(),
 })
 
 export const findOrderCustomerSchema = z.object({

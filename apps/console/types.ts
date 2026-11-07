@@ -498,6 +498,8 @@ export interface StoreOrdersParams extends PaginationParams {
   reference?: string
   status?: OrderStatus
   paymentStatus?: PaymentStatus
+  counterSale?: boolean
+  paidBy?: PaymentMethod
 }
 
 // Amounts are GHS strings: Decimal can't be passed to client components

@@ -6,9 +6,11 @@ import { consoleAuth } from "@workspace/auth/console"
 import { headers } from "next/headers"
 import { prisma } from "@workspace/db"
 import { Prisma } from "@workspace/db/client"
+import { OrderStatus, PaymentStatus } from "@workspace/db/enums"
 import type { DataResponse } from "@workspace/contracts"
 import { getPaginationError } from "@workspace/utils/pagination"
 import { hasStorePermission } from "@/lib/auth-guard"
+import { COUNTER_SALE_NOTE } from "@/lib/counter-sales"
 import { orderDetailsInclude, sumLines, toOrderAfterSale, toOrderDetailsBase, toOrderTotals, type OrderWithDetails } from "@/lib/order-details"
 
 export const MAX_STORE_ORDERS_PAGE_SIZE = 100
@@ -36,13 +38,19 @@ export const getStoreOrders = async (storeId: string, filters: StoreOrdersParams
       return { success: false, error: paginationError }
     }
 
-    const { reference, status, paymentStatus, page = 1, pageSize = 10, sort, order } = filters
+    const { reference, status, paymentStatus, counterSale, paidBy, page = 1, pageSize = 10, sort, order } = filters
 
+    // A counter sale's history starts with this note. A note typed on a later status change can't be on PENDING.
+    const isCounterSale: Prisma.OrderWhereInput = { statusHistory: { some: { status: OrderStatus.PENDING, note: COUNTER_SALE_NOTE } } }
     const where: Prisma.OrderWhereInput = {
       orderItems: { some: { organizationId: storeId } },
       ...(reference && { reference: { contains: reference, mode: "insensitive" } }),
       ...(status && { status }),
       ...(paymentStatus && { paymentStatus }),
+      ...(counterSale === true && isCounterSale),
+      ...(counterSale === false && { NOT: isCounterSale }),
+      // Until it's paid an order's method is only what the customer meant to use, so paid orders only
+      ...(paidBy && { paymentMethod: paidBy, AND: [{ paymentStatus: { notIn: [PaymentStatus.PENDING, PaymentStatus.FAILED] } }] }),
     }
 
     const direction = order === "desc" ? "desc" : "asc"

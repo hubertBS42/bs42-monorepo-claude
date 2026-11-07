@@ -9,6 +9,7 @@ import { prisma } from "@workspace/db"
 import { Prisma } from "@workspace/db/client"
 import { OrganizationStatus, ShippingMethod, Status } from "@workspace/db/enums"
 import { invoiceUrl } from "@workspace/commerce/order-links"
+import { loadTradeTerms, tradeDiscount, type TradeTerms } from "@workspace/commerce/trade-accounts"
 import { hasStorePermission, requireConsoleAccess } from "@/lib/auth-guard"
 import { getLatestExchangeRate, getPricingContext, type ExchangeRateInfo } from "@workspace/commerce/exchange-rates"
 import { notifyNewOrder, notifyStockAlerts } from "@workspace/commerce/notifications"
@@ -32,7 +33,7 @@ import {
   updateStoreOrderStatusSchema,
 } from "@/lib/schemas/order.schemas"
 import { createOrder, OrderItemError, resolveOrderLines, type ResolvedLine } from "@workspace/commerce/order-writes"
-import type { OrderableListing, OrderCustomer, OrderPreview } from "@/types"
+import type { OrderableListing, OrderPreview, QuoteCustomer } from "@/types"
 
 // Every export here is a public endpoint, so every input is validated, and each one calls requireConsoleAccess
 // before its try block (its redirect throws, which the catch would swallow). A store manages only orders made up
@@ -124,8 +125,12 @@ type StorePricing = { ok: false; problem: Failure } | { ok: true; lines: Resolve
 const STORE_SUSPENDED: Failure = { success: false, error: "This store is suspended, so it can't take orders. Ask the platform's admins.", code: "STORE_SUSPENDED" }
 
 // Prices the lines at the store's prices, or returns why it can't. A suspended store sells nothing, in its own
-// workspace as on the storefront.
-async function priceStoreOrder(storeId: string, input: { items: z.output<typeof previewStoreOrderSchema>["items"]; shippingGhs: number } & DiscountInput): Promise<StorePricing> {
+// workspace as on the storefront. An approved trade account's discount applies when no other is set: it's the rate the
+// platform agreed, so it needs no permission, unlike a discount staff choose.
+async function priceStoreOrder(
+  storeId: string,
+  input: { items: z.output<typeof previewStoreOrderSchema>["items"]; shippingGhs: number; trade?: TradeTerms | null } & DiscountInput
+): Promise<StorePricing> {
   const store = await prisma.organization.findUnique({ where: { id: storeId }, select: { status: true } })
   if (store?.status !== OrganizationStatus.ACTIVE) return { ok: false, problem: STORE_SUSPENDED }
 
@@ -140,7 +145,7 @@ async function priceStoreOrder(storeId: string, input: { items: z.output<typeof 
     throw error
   }
 
-  const discount = toDiscount(input)
+  const discount = toDiscount(input) ?? (input.trade ? { type: "PERCENTAGE" as const, value: input.trade.percent } : null)
   const priced = priceOrder({
     lines,
     exchangeRate: new Prisma.Decimal(context.rate.rate),
@@ -192,12 +197,12 @@ export async function previewStoreOrderAction(input: z.input<typeof previewStore
   try {
     const parsed = previewStoreOrderSchema.safeParse(input)
     if (!parsed.success) return invalidInput(parsed.error)
-    const { storeId, ...rest } = parsed.data
+    const { storeId, customerUserId, ...rest } = parsed.data
 
     const denied = await checkCreatePermissions(session.user.id, storeId, rest.discountType)
     if (denied) return denied
 
-    const result = await priceStoreOrder(storeId, rest)
+    const result = await priceStoreOrder(storeId, { ...rest, trade: await loadTradeTerms(prisma, customerUserId ?? null) })
     if (!result.ok) return result.problem
     return { success: true, data: toPreview(result.lines, result.priced, result.rate) }
   } catch (error) {
@@ -278,7 +283,13 @@ export async function completeCounterSaleAction(input: z.input<typeof completeCo
     const denied = await checkCreatePermissions(session.user.id, data.storeId, data.discountType)
     if (denied) return denied
 
-    const result = await priceStoreOrder(data.storeId, { items: data.items, shippingGhs: 0, discountType: data.discountType, discountValue: data.discountValue })
+    // A customer found by lookup must still exist; their details are copied onto the sale
+    if (data.customerUserId && !(await prisma.user.findUnique({ where: { id: data.customerUserId }, select: { id: true } }))) {
+      return { success: false, error: "That customer's account no longer exists. Look them up again.", code: "CUSTOMER_NOT_FOUND" }
+    }
+
+    const trade = await loadTradeTerms(prisma, data.customerUserId)
+    const result = await priceStoreOrder(data.storeId, { items: data.items, shippingGhs: 0, discountType: data.discountType, discountValue: data.discountValue, trade })
     if (!result.ok) return result.problem
     // The customer has paid what the page showed
     if (!result.priced.totalGhs.equals(data.expectedTotalGhs)) return { success: false, error: "The price changed. Check the new total, then complete the sale.", code: "PRICE_CHANGED" }
@@ -287,9 +298,10 @@ export async function completeCounterSaleAction(input: z.input<typeof completeCo
       (tx) =>
         completeCounterSale(tx, {
           createdById: session.user.id,
-          customer: { userId: null, name: data.customerName, email: data.customerEmail.toLowerCase() || null, phone: data.customerPhone || null },
+          customer: { userId: data.customerUserId, name: data.customerName, email: data.customerEmail.toLowerCase() || null, phone: data.customerPhone || null },
           paymentMethod: data.paymentMethod,
-          discount: result.discount && { ...result.discount, reason: data.discountReason },
+          discount: result.discount && { ...result.discount, reason: data.discountType === "NONE" && trade ? tradeDiscount(trade).reason : data.discountReason },
+          trade: trade && { accountId: trade.accountId, companyName: trade.companyName, tin: trade.tin },
           rate: { id: result.rate.id, value: new Prisma.Decimal(result.rate.rate) },
           lines: result.lines,
           priced: result.priced,
@@ -312,7 +324,7 @@ export async function completeCounterSaleAction(input: z.input<typeof completeCo
 }
 
 // An exact email or phone match only, so staff can't browse the platform's customers
-export async function findOrderCustomerAction(input: z.input<typeof findOrderCustomerSchema>): Promise<DataResponse<OrderCustomer | null>> {
+export async function findOrderCustomerAction(input: z.input<typeof findOrderCustomerSchema>): Promise<DataResponse<QuoteCustomer | null>> {
   const session = await requireConsoleAccess()
 
   try {
@@ -337,7 +349,9 @@ export async function findOrderCustomerAction(input: z.input<typeof findOrderCus
       },
     })
 
-    return { success: true, data: customer }
+    if (!customer) return { success: true, data: null }
+    const trade = await loadTradeTerms(prisma, customer.id)
+    return { success: true, data: { ...customer, trade: trade && { percent: trade.percent.toString(), companyName: trade.companyName } } }
   } catch (error) {
     return { success: false, error: formatError(error) }
   }
