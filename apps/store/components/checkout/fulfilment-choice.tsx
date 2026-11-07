@@ -46,7 +46,7 @@ export function PickupAddress({ pickup }: { pickup: PickupLocationView }) {
     <div className="grid gap-0.5 rounded-lg bg-muted/50 p-3 text-sm">
       <p className="font-medium">{pickup.name}</p>
       <p className="whitespace-pre-line text-muted-foreground">{pickup.address}</p>
-      {pickup.hours && <p className="text-muted-foreground">{pickup.hours}</p>}
+      {pickup.hours && <p className="whitespace-pre-line text-muted-foreground">{pickup.hours}</p>}
       {pickup.mapUrl && (
         <a href={pickup.mapUrl} target="_blank" rel="noopener noreferrer" className="w-fit underline underline-offset-4 hover:text-foreground">
           Get directions

@@ -245,11 +245,13 @@ test("order emails link to the order's page when given one, and show no button w
 })
 
 test("a pickup's confirmed email says where to collect it, and a delivery's doesn't", async () => {
-  const pickup = { address: "1 Spintex Road, Accra", hours: "Mon-Fri 9-5", mapUrl: "https://maps.example/bs42" }
+  const pickup = { address: "1 Spintex Road, Accra", hours: "Mon-Fri 9-5\nSat 10-2", mapUrl: "https://maps.example/bs42" }
   const collected = await render(OrderConfirmed({ ...orderDetails, pickup }))
   assert.match(collected, /Where to collect it/)
   assert.match(collected, /1 Spintex Road, Accra/)
   assert.match(collected, /Get directions/)
+  // Each line of the hours on its own
+  assert.match(collected, />Mon-Fri 9-5<[\s\S]*>Sat 10-2</)
   assert.doesNotMatch(await render(OrderConfirmed({ ...orderDetails })), /Where to collect it/)
 })
 

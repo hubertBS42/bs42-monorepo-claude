@@ -72,7 +72,7 @@ export default function PickupLocationCard({ storeId, location }: PickupLocation
             <div className="grid gap-1 text-sm">
               <p className="font-medium">{location.name}</p>
               <p className="whitespace-pre-line text-muted-foreground">{location.address}</p>
-              {location.hours && <p className="text-muted-foreground">{location.hours}</p>}
+              {location.hours && <p className="whitespace-pre-line text-muted-foreground">{location.hours}</p>}
               {location.phone && <p className="text-muted-foreground">{formatPhoneNumber(location.phone)}</p>}
             </div>
           ) : (
@@ -87,10 +87,17 @@ export default function PickupLocationCard({ storeId, location }: PickupLocation
                 <PhoneField control={form.control} label="Phone (optional)" name="phone" defaultCountry="GH" disabled={isPending} />
               </div>
               <TextareaField control={form.control} label="Address" name="address" rows={2} maxLength={300} disabled={isPending} />
-              <div className="grid gap-5 sm:grid-cols-2">
-                <TextInputField control={form.control} label="Opening hours (optional)" name="hours" placeholder="Mon–Fri 9am–5pm, Sat 10am–2pm" maxLength={200} disabled={isPending} />
-                <TextInputField control={form.control} label="Map link (optional)" name="mapUrl" placeholder="https://maps.app.goo.gl/…" disabled={isPending} />
-              </div>
+              <TextareaField
+                control={form.control}
+                label="Opening hours (optional)"
+                name="hours"
+                placeholder={"Monday to Friday: 9am to 5:30pm\nSaturday: 10am to 2pm"}
+                rows={3}
+                maxLength={200}
+                showCount
+                disabled={isPending}
+              />
+              <TextInputField control={form.control} label="Map link (optional)" name="mapUrl" placeholder="https://maps.app.goo.gl/…" disabled={isPending} />
             </FieldGroup>
             <div className="flex flex-wrap justify-end gap-2">
               {location && (

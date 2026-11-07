@@ -296,8 +296,8 @@ export default async function OrderPage({ params, searchParams }: OrderPageProps
                 <div className="pt-2">
                   <p className="font-medium">{collected ? "Collected from" : "Collect from"}</p>
                   {pickup?.name && <p>{pickup.name}</p>}
-                  <p className="text-muted-foreground">{pickup?.address ?? "Our store. We'll tell you where and when."}</p>
-                  {!collected && pickup?.hours && <p className="text-muted-foreground">{pickup.hours}</p>}
+                  <p className="whitespace-pre-line text-muted-foreground">{pickup?.address ?? "Our store. We'll tell you where and when."}</p>
+                  {!collected && pickup?.hours && <p className="whitespace-pre-line text-muted-foreground">{pickup.hours}</p>}
                   {!collected && pickup?.phone && <p className="text-muted-foreground">{formatPhoneNumber(pickup.phone)}</p>}
                   {!collected && pickup?.mapUrl && (
                     <a href={pickup.mapUrl} target="_blank" rel="noopener noreferrer" className="underline underline-offset-4 hover:text-foreground">
