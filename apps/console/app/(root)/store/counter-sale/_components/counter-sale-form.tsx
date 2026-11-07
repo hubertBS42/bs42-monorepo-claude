@@ -172,7 +172,7 @@ export default function CounterSaleForm({ storeId }: { storeId: string }) {
   return (
     // Not a form element: Enter in the search box or a quantity must never complete a sale
     <div className="grid gap-4">
-      <ItemsStep storeId={storeId} form={form} chosen={chosen} onChosenChange={setChosen} compact />
+      <ItemsStep storeId={storeId} form={form} chosen={chosen} onChosenChange={setChosen} />
 
       <div className="grid items-start gap-4 lg:grid-cols-2">
         <div className="grid gap-4">

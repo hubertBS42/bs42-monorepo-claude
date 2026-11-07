@@ -23,13 +23,11 @@ interface ItemsStepProps {
   form: UseFormReturn<OrderFormInput, unknown, OrderFormOutput>
   chosen: Record<string, ChosenItem>
   onChosenChange: (chosen: Record<string, ChosenItem>) => void
-  // A shorter list, for a page with more below it
-  compact?: boolean
 }
 
 const ghs = (amount: string) => formatCurrency(amount, "GHS", "en-GH")
 
-export default function ItemsStep({ storeId, form, chosen, onChosenChange, compact = false }: ItemsStepProps) {
+export default function ItemsStep({ storeId, form, chosen, onChosenChange }: ItemsStepProps) {
   const { fields, append, remove } = useFieldArray({ control: form.control, name: "items" })
   const items = useWatch({ control: form.control, name: "items" })
   const [search, setSearch] = useState("")
@@ -112,7 +110,7 @@ export default function ItemsStep({ storeId, form, chosen, onChosenChange, compa
           ) : results.length === 0 ? (
             <EmptyState icon={SearchX} title={search ? "No matches" : "Nothing on sale"} description={search ? "No listing matches your search." : "This store has no listings on sale."} />
           ) : (
-            <ScrollArea className={cn("-mr-3 flex flex-col", compact ? "max-h-72" : "max-h-[60vh]")}>
+            <ScrollArea className="-mr-3 flex max-h-72 flex-col">
               <ul className={cn("grid gap-3 pr-3 transition-opacity", isSearching && "opacity-60")} aria-busy={isSearching}>
                 {results.map((listing) => (
                   <li key={listing.listingId} className="grid gap-2 rounded-lg border p-3">

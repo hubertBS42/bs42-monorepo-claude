@@ -300,7 +300,7 @@ The primitives are built on Base UI, not Radix. Use `render={<Button />}` instea
 
 - The style is `base-vega`. Blocks previewed on shadcn's site are usually the Radix (`new-york-v4`) versions, whose defaults differ: Radix's `ToggleGroup` takes `type="single"` and joins its items (`spacing` 0), Base UI's selects one by default (`multiple={false}`) and spaces them apart (`spacing` 2), so pass `spacing={0}` for the joined look. Fetch a block's `base-vega` source from `https://ui.shadcn.com/r/styles/base-vega/<name>.json`, and check its container-query breakpoints (`@[767px]/card`) against the column the block is put in.
 - `shadcn add` skips files that already exist (it did for `toggle.tsx` and `card.tsx`); compare those with the registry's current version when a new component depends on them.
-- A searchable list of items to add (the order and quote wizards' item steps, purchase orders, stock transfers) scrolls in shadcn's `ScrollArea` (`flex max-h-[60vh] flex-col`, so a short list keeps its own height), not the browser's scrollbar or a page that grows.
+- A searchable list of items to add (the order and quote wizards' item steps, purchase orders, stock transfers) scrolls in shadcn's `ScrollArea` (`flex max-h-[60vh] flex-col`, so a short list keeps its own height; the order and quote wizards' and Counter Sale's use `max-h-72`, 288px), not the browser's scrollbar or a page that grows.
 - Charts use shadcn's `chart` (Recharts 3.8.0). A chart component imports Recharts' parts itself, so `recharts` is a dependency of the console as well as `packages/ui`.
 
 ### Email

@@ -133,7 +133,7 @@ export default function ItemsStep<T extends StaffSaleFields, O>({ kind, form: wi
           ) : results.length === 0 ? (
             <EmptyState icon={SearchX} title={search ? "No matches" : "Nothing on sale"} description={search ? "No product on sale matches your search." : undefined} />
           ) : (
-            <ScrollArea className="-mr-3 flex max-h-[60vh] flex-col">
+            <ScrollArea className="-mr-3 flex max-h-72 flex-col">
               <ul className={cn("grid gap-3 pr-3 transition-opacity", isSearching && "opacity-60")} aria-busy={isSearching}>
                 {results.map((product) => (
                   <li key={product.productId} className="grid gap-2 rounded-lg border p-3">
