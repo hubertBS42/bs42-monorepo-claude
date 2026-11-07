@@ -85,7 +85,7 @@ export function SignUpForm({ redirectTo, googleEnabled, legal }: { redirectTo: s
 
   return (
     <>
-      <Card>
+      <Card data-wide>
         <CardHeader className="text-center">
           <CardTitle className="text-xl">Create your account</CardTitle>
           <CardDescription>Track your orders and check out faster</CardDescription>
