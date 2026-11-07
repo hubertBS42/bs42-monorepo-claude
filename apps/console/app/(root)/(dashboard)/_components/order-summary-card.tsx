@@ -192,11 +192,11 @@ export default function OrderSummaryCard({ order, position, count, onPrevious, o
       <CardFooter className="flex flex-row items-center border-t bg-muted/50 px-6 py-3">
         <div className="text-xs text-muted-foreground">{`Order ${position + 1} of the ${count} most recent`}</div>
         <div className="ml-auto flex items-center gap-1">
-          <Button size="icon-xs" variant="outline" onClick={onPrevious} disabled={position === 0}>
+          <Button size="icon-sm" variant="outline" onClick={onPrevious} disabled={position === 0}>
             <ChevronLeft />
             <span className="sr-only">Previous order</span>
           </Button>
-          <Button size="icon-xs" variant="outline" onClick={onNext} disabled={position === count - 1}>
+          <Button size="icon-sm" variant="outline" onClick={onNext} disabled={position === count - 1}>
             <ChevronRight />
             <span className="sr-only">Next order</span>
           </Button>
