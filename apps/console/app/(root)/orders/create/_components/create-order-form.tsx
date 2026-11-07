@@ -8,13 +8,13 @@ import { FieldPath, SubmitHandler, useForm, useWatch } from "react-hook-form"
 import { z } from "zod"
 import type { InstallationAreaRow } from "@workspace/commerce/installation-areas"
 import { PAYMENT_METHOD_LABELS } from "@workspace/commerce/order-status"
-import { PaymentMethod } from "@workspace/db/enums"
+import { PaymentMethod, ShippingMethod } from "@workspace/db/enums"
 import { Button, buttonVariants } from "@workspace/ui/components/button"
 import { Spinner } from "@workspace/ui/components/spinner"
 import { toast } from "@workspace/ui/components/toast"
 import { cn } from "@workspace/ui/lib/utils"
 import CustomerStep from "@/components/staff-sales/customer-step"
-import { unlinkCustomer } from "@/components/staff-sales/form"
+import { itemKey, unlinkCustomer } from "@/components/staff-sales/form"
 import ItemsStep from "@/components/staff-sales/items-step"
 import ReviewStep from "@/components/staff-sales/review-step"
 import { createOrderAction } from "@/lib/actions/order.actions"
@@ -30,7 +30,10 @@ export type CreateOrderOutput = z.output<typeof createOrderFormSchema>
 const STEPS: { title: string; fields: FieldPath<CreateOrderInput>[] }[] = [
   { title: "Customer", fields: ["customerName", "customerEmail", "customerPhone"] },
   { title: "Items", fields: ["items"] },
-  { title: "Delivery and payment", fields: ["shippingName", "shippingPhone", "shippingLine1", "shippingLine2", "shippingRegion", "shippingTown", "shippingGhs", "paymentMethod", "notes"] },
+  {
+    title: "Delivery and payment",
+    fields: ["shippingMethod", "shippingName", "shippingPhone", "shippingLine1", "shippingLine2", "shippingRegion", "shippingTown", "shippingGhs", "paymentMethod", "notes"],
+  },
   { title: "Review", fields: ["discountType", "discountValue", "discountReason"] },
 ]
 
@@ -61,6 +64,7 @@ export default function CreateOrderForm({ delivery, installationAreas }: CreateO
       customerEmail: "",
       customerPhone: "",
       items: [],
+      shippingMethod: ShippingMethod.DELIVERY,
       shippingName: "",
       shippingPhone: "",
       shippingLine1: "",
@@ -77,6 +81,10 @@ export default function CreateOrderForm({ delivery, installationAreas }: CreateO
   })
   useRevalidateOnChange(form)
   const paymentMethod = useWatch({ control: form.control, name: "paymentMethod" })
+  const shippingMethod = useWatch({ control: form.control, name: "shippingMethod" })
+  const items = useWatch({ control: form.control, name: "items" })
+  // Where the items come from: one store's can be picked up there
+  const storeNames = [...new Set(items.flatMap((item) => chosen[itemKey(item.listingId, item.listingVariantId ?? null)]?.storeName ?? []))]
 
   const isLast = step === STEPS.length - 1
 
@@ -105,7 +113,7 @@ export default function CreateOrderForm({ delivery, installationAreas }: CreateO
         // A line that went off sale, ran out or stopped offering installation, a town outside the installation areas,
         // or a customer whose account went: each is fixed on its step. New prices show on the review step.
         if (response.code === "ITEM_UNAVAILABLE" || response.code === "INSUFFICIENT_STOCK" || response.code === "NO_INSTALLATION") setStep(1)
-        if (response.code === "OUTSIDE_INSTALLATION_AREAS") setStep(2)
+        if (response.code === "OUTSIDE_INSTALLATION_AREAS" || response.code === "PICKUP_ONE_STORE") setStep(2)
         if (response.code === "CUSTOMER_NOT_FOUND") {
           setCustomer(null)
           unlinkCustomer(form)
@@ -155,7 +163,7 @@ export default function CreateOrderForm({ delivery, installationAreas }: CreateO
 
       {step === 0 && <CustomerStep kind="order" form={form} customer={customer} onCustomerChange={setCustomer} />}
       {step === 1 && <ItemsStep kind="order" form={form} chosen={chosen} onChosenChange={setChosen} />}
-      {step === 2 && <DeliveryStep form={form} customer={customer} delivery={delivery} installationAreas={installationAreas} />}
+      {step === 2 && <DeliveryStep form={form} customer={customer} delivery={delivery} installationAreas={installationAreas} storeNames={storeNames} />}
       {step === 3 && (
         <ReviewStep
           kind="order"
@@ -163,6 +171,7 @@ export default function CreateOrderForm({ delivery, installationAreas }: CreateO
           customer={customer}
           terms={`Paying by ${PAYMENT_METHOD_LABELS[paymentMethod].toLowerCase()}`}
           freeDeliveryFromGhs={delivery.freeDeliveryFromGhs}
+          pickupFrom={shippingMethod === ShippingMethod.PICKUP ? storeNames[0] : undefined}
           onPreviewChange={setPreview}
           refreshKey={refreshKey}
         />

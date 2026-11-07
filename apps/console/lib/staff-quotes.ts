@@ -24,6 +24,7 @@ type Client = typeof prisma | Tx
 const MESSAGES = {
   // The town, not the items: OrderItemError's NO_INSTALLATION is a product that stopped offering it
   OUTSIDE_INSTALLATION_AREAS: "We don't install in that town. Take installation off the items, or choose another address.",
+  PICKUP_ONE_STORE: "These items come from different stores, so the order can't be picked up. Choose delivery.",
   PRICE_CHANGED: "The prices changed since you reviewed the order. Check the new total, then create it again.",
   DISCOUNT_TOO_LARGE: "The discount is more than the items cost.",
   CUSTOMER_NOT_FOUND: "That customer's account no longer exists. Look them up again.",

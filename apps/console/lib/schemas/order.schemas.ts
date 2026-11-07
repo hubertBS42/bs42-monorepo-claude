@@ -196,6 +196,8 @@ export const createOrderFormSchema = z
     customerUserId: z.uuid().nullable(),
     ...customerFields,
     items: z.array(quoteItemInputSchema).min(1, "Add at least one item").max(50, "At most 50 lines in one order"),
+    // Pickup only for items all from one store, which only pricing the order can tell (createStaffOrder)
+    shippingMethod: z.enum(ShippingMethod),
     ...deliveryFields,
     // GHS, filled in from the delivery fees; staff can change it
     shippingGhs: decimalSchema,
@@ -205,7 +207,12 @@ export const createOrderFormSchema = z
   })
   .superRefine((data, ctx) => {
     checkDistinctItems(data.items, ctx)
-    checkDelivery(data, ctx)
+    if (data.shippingMethod === ShippingMethod.DELIVERY) checkDelivery(data, ctx)
+    else {
+      if (data.shippingGhs > 0) ctx.addIssue({ code: "custom", message: "A pickup has no shipping fee", path: ["shippingGhs"] })
+      // The installers go to an address
+      if (data.items.some((item) => item.installation)) ctx.addIssue({ code: "custom", message: "A pickup can't have installation", path: ["shippingMethod"] })
+    }
     checkDiscount(data, ctx)
   })
 

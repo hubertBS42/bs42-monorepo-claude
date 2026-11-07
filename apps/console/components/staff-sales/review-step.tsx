@@ -56,6 +56,8 @@ interface ReviewStepProps<T extends StaffSaleFields, O> {
   terms: ReactNode
   // Settings' free-delivery threshold, so the step can offer it when the order reaches it
   freeDeliveryFromGhs: string | null
+  // The store a pickup is collected from, for an order; without it the sale is delivered
+  pickupFrom?: string
   // Each new price, and null while it's being priced again, for a wizard that sends the total it showed
   onPreviewChange?: (preview: QuotePreview | null) => void
   // Changed by the wizard to price it again with nothing else changed (after a PRICE_CHANGED refusal)
@@ -66,7 +68,7 @@ interface ReviewStepProps<T extends StaffSaleFields, O> {
 const pesewas = (amount: string) => Math.round(Number(amount) * 100)
 
 // The prices, from the server, with the discount
-export default function ReviewStep<T extends StaffSaleFields, O>({ kind, form: wizardForm, customer, terms, freeDeliveryFromGhs, onPreviewChange, refreshKey = 0 }: ReviewStepProps<T, O>) {
+export default function ReviewStep<T extends StaffSaleFields, O>({ kind, form: wizardForm, customer, terms, freeDeliveryFromGhs, pickupFrom, onPreviewChange, refreshKey = 0 }: ReviewStepProps<T, O>) {
   const form = asStaffSaleForm(wizardForm)
   const copy = COPY[kind]
   const values = useWatch({ control: form.control })
@@ -168,7 +170,7 @@ export default function ReviewStep<T extends StaffSaleFields, O>({ kind, form: w
                 <TotalRow label="Subtotal" amount={ghs(preview.subtotalGhs)} />
                 {preview.discountAmountGhs && Number(preview.discountAmountGhs) > 0 && <TotalRow label="Discount" amount={`−${ghs(preview.discountAmountGhs)}`} />}
                 {Number(preview.installationGhs) > 0 && <TotalRow label="Installation" amount={ghs(preview.installationGhs)} />}
-                <TotalRow label="Delivery" amount={Number(preview.shippingGhs) > 0 ? ghs(preview.shippingGhs) : "Free"} />
+                {!pickupFrom && <TotalRow label="Delivery" amount={Number(preview.shippingGhs) > 0 ? ghs(preview.shippingGhs) : "Free"} />}
                 <TotalRow label={Number(preview.taxRate) ? `Tax (${+(Number(preview.taxRate) * 100).toFixed(2)}%)` : "Tax"} amount={ghs(preview.taxGhs)} />
                 <Separator className="my-1" />
                 <TotalRow label="Total" amount={ghs(preview.totalGhs)} strong />
@@ -192,8 +194,8 @@ export default function ReviewStep<T extends StaffSaleFields, O>({ kind, form: w
               <p className="text-muted-foreground">{[values.customerEmail, values.customerPhone && formatPhoneNumber(values.customerPhone)].filter(Boolean).join(" · ")}</p>
             </div>
             <div className="grid gap-1">
-              <p className="text-xs text-muted-foreground">Delivery</p>
-              <p className="font-medium">{address}</p>
+              <p className="text-xs text-muted-foreground">{pickupFrom ? "Pickup" : "Delivery"}</p>
+              <p className="font-medium">{pickupFrom ?? address}</p>
               <p className="text-muted-foreground">{terms}</p>
             </div>
           </div>

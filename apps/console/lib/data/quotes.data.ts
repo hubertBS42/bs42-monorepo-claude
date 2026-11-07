@@ -229,6 +229,7 @@ export const getQuoteCopy = async (quoteId: string): Promise<QuoteCopy | null> =
           priceGhs: null,
           stock: null,
           installationFeeGhs: item.installationUnitGhs?.toFixed(2) ?? null,
+          storeName: item.storeName,
         },
       ])
     ),

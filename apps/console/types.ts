@@ -1208,6 +1208,8 @@ export interface ChosenQuoteItem {
   stock: number | null
   // Installing one unit; null when the product doesn't offer it
   installationFeeGhs: string | null
+  // The store it comes from
+  storeName: string
 }
 
 // "Copy to a new quotation": the create form's starting values

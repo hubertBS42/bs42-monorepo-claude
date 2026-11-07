@@ -87,6 +87,7 @@ export default function ItemsStep<T extends StaffSaleFields, O>({ kind, form: wi
         priceGhs: row.priceGhs,
         stock: row.stock,
         installationFeeGhs: product.installationFeeGhs,
+        storeName: row.storeName,
       },
     })
     append({ listingId: row.listingId, listingVariantId: row.listingVariantId, quantity: 1, installation: false })

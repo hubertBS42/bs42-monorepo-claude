@@ -250,7 +250,7 @@ export async function cancelInstallationAction(input: z.input<typeof cancelInsta
 const TRANSACTION_OPTIONS = { maxWait: 10_000, timeout: 30_000 }
 
 // An order for a customer, made by the platform's staff: items from any store, as the storefront would sell them,
-// with installation where it's offered. It starts unpaid; staff record the payment when it arrives. The wizard's
+// with installation where it's offered, delivered or, from one store, picked up. It starts unpaid; staff record the payment when it arrives. The wizard's
 // other steps search, look the customer up and price through the quotation actions, which work the same way.
 export async function createOrderAction(input: z.input<typeof createOrderSchema>): Promise<DataResponse<{ id: string; reference: string }>> {
   const session = await requireSystemPermission({ order: ["create"] })
@@ -280,6 +280,7 @@ export async function createOrderAction(input: z.input<typeof createOrderSchema>
             name: data.customerName,
             email: data.customerEmail || null,
             phone: data.customerPhone || null,
+            shippingMethod: data.shippingMethod,
             recipientName: data.shippingName,
             recipientPhone: data.shippingPhone,
             line1: data.shippingLine1,
