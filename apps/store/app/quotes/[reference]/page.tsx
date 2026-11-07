@@ -5,7 +5,7 @@ import { notFound } from "next/navigation"
 import { isQuoteKey, orderHref, quoteHref } from "@workspace/commerce/order-links"
 import { prisma } from "@workspace/db"
 import { Prisma } from "@workspace/db/client"
-import { QuoteStatus } from "@workspace/db/enums"
+import { QuoteStatus, ShippingMethod } from "@workspace/db/enums"
 import { Badge } from "@workspace/ui/components/badge"
 import { Button } from "@workspace/ui/components/button"
 import { formatDate } from "@workspace/utils/date"
@@ -63,6 +63,7 @@ export default async function QuotePage({ params, searchParams }: QuotePageProps
   // validUntil is the start of the day after the last one its prices hold
   const lastDay = formatDate(new Date(quote.validUntil.getTime() - 1), "d MMMM yyyy")
   const discount = quote.discountAmountGhs?.gt(0) ? quote.discountAmountGhs : null
+  const isPickup = quote.shippingMethod === ShippingMethod.PICKUP
   const address = [quote.shippingLine1, quote.shippingLine2, quote.shippingTown, quote.shippingRegion].filter(Boolean).join(", ")
   const status = quote.status === QuoteStatus.ACCEPTED ? "Accepted" : quote.status === QuoteStatus.CANCELLED ? "Cancelled" : expired ? "Expired" : `Valid until ${lastDay}`
 
@@ -166,8 +167,8 @@ export default async function QuotePage({ params, searchParams }: QuotePageProps
             <p>{quote.customerPhone}</p>
           </div>
           <div className="space-y-0.5">
-            <h2 className="mb-1 text-xs font-semibold tracking-wide text-muted-foreground uppercase">Deliver to</h2>
-            <p>{address}</p>
+            <h2 className="mb-1 text-xs font-semibold tracking-wide text-muted-foreground uppercase">{isPickup ? "Collect from" : "Deliver to"}</h2>
+            <p>{isPickup ? (settings.contactAddress ?? "Our store") : address}</p>
           </div>
         </section>
 
@@ -205,7 +206,7 @@ export default async function QuotePage({ params, searchParams }: QuotePageProps
           <TotalRow label="Subtotal" amount={money(quote.subtotalGhs)} />
           {discount && <TotalRow label={quote.discountReason ?? "Discount"} amount={`−${money(discount)}`} />}
           {quote.installationGhs.gt(0) && <TotalRow label="Installation" amount={money(quote.installationGhs)} />}
-          <TotalRow label="Delivery" amount={quote.deliveryToConfirm ? "To be confirmed" : quote.shippingGhs.isZero() ? "Free" : money(quote.shippingGhs)} />
+          {!isPickup && <TotalRow label="Delivery" amount={quote.deliveryToConfirm ? "To be confirmed" : quote.shippingGhs.isZero() ? "Free" : money(quote.shippingGhs)} />}
           {quote.taxGhs.gt(0) && <TotalRow label={`Tax (${quote.taxRate.times(100).toNumber()}%)`} amount={money(quote.taxGhs)} />}
           <TotalRow label={quote.deliveryToConfirm ? "Total before delivery" : "Total"} amount={money(quote.totalGhs)} strong />
         </section>

@@ -24,6 +24,9 @@ export const updateStoreOrderStatusSchema = orderStatusFormSchema.extend({
   currentStatus: z.enum(OrderStatus),
 })
 
+export const markOrderReadySchema = z.object({ orderId: z.uuid("Invalid order ID") })
+export const markStoreOrderReadySchema = markOrderReadySchema.extend({ storeId: z.uuid("Invalid store ID") })
+
 export const recordStorePaymentSchema = z.object({
   storeId: z.uuid("Invalid store ID"),
   orderId: z.uuid("Invalid order ID"),

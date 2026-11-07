@@ -119,7 +119,7 @@ export default async function InvoicePage({ params, searchParams }: InvoicePageP
           </div>
           <div className="space-y-0.5">
             <h2 className="mb-1 text-xs font-semibold tracking-wide text-muted-foreground uppercase">{order.shippingMethod === ShippingMethod.PICKUP ? "Collection" : "Deliver to"}</h2>
-            <p>{order.shippingMethod === ShippingMethod.PICKUP ? "Collected from the store" : address}</p>
+            <p>{order.shippingMethod === ShippingMethod.PICKUP ? (settings.contactAddress ?? "Collected from the store") : address}</p>
           </div>
         </section>
 
@@ -157,7 +157,7 @@ export default async function InvoicePage({ params, searchParams }: InvoicePageP
           <TotalRow label="Subtotal" amount={money(order.subtotalGhs)} />
           {discount && <TotalRow label={order.discountReason ?? "Discount"} amount={`−${money(discount)}`} />}
           {order.installationGhs.gt(0) && <TotalRow label="Installation" amount={money(order.installationGhs)} />}
-          <TotalRow label="Delivery" amount={order.shippingGhs.isZero() ? "Free" : money(order.shippingGhs)} />
+          {order.shippingMethod !== ShippingMethod.PICKUP && <TotalRow label="Delivery" amount={order.shippingGhs.isZero() ? "Free" : money(order.shippingGhs)} />}
           {order.taxGhs.gt(0) && <TotalRow label={`Tax (${order.taxRate.times(100).toNumber()}%)`} amount={money(order.taxGhs)} />}
           <TotalRow label="Total" amount={money(order.totalGhs)} strong />
         </section>

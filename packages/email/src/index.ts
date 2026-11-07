@@ -18,6 +18,7 @@ export {
   sendOrderCancelledEmail,
   sendOrderUnpaidCancelledEmail,
   sendOrderConfirmedEmail,
+  sendOrderReadyForCollectionEmail,
   sendOrderPaymentReceivedEmail,
   sendOrderRefundedEmail,
   sendOrderReturnedEmail,
@@ -25,5 +26,6 @@ export {
   sendOrderInstallationBookedEmail,
 } from "./order-notifications.js"
 export type { BaseOrderEmail, OrderConfirmationEmail } from "./order-notifications.js"
+export type { PickupLocation } from "./templates/order/components/pickup-details.js"
 export type { ReturnedItem } from "./templates/order/order-returned.js"
 export type { ReviewRequestItem } from "./templates/order/order-review-request.js"

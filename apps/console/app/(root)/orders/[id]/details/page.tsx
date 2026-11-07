@@ -28,6 +28,7 @@ import { InvoiceButton } from "@/components/orders/invoice-button"
 import RecordPayment from "@/components/orders/record-payment"
 import OrderRefunds from "@/components/orders/refund-order"
 import RecordReturn from "@/components/orders/return-order"
+import ReadyForCollection from "@/components/orders/ready-for-collection"
 import UpdateOrderStatus from "@/components/orders/update-order-status"
 import { requireSystemPermission } from "@/lib/auth-guard"
 import { getOrderDetails } from "@/lib/data/orders.data"
@@ -150,7 +151,7 @@ export default async function OrderDetailsPage({ params }: OrderDetailsPageProps
               <CardTitle>Status</CardTitle>
               <CardDescription>{`Currently ${ORDER_STATUS_LABELS[order.status].toLowerCase()}.`}</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="grid gap-4">
               {/* Keyed by status, so the form starts afresh with the new next steps after a change */}
               <UpdateOrderStatus
                 key={order.status}
@@ -158,6 +159,7 @@ export default async function OrderDetailsPage({ params }: OrderDetailsPageProps
                 order={{ id: order.id, status: order.status, paymentStatus: order.paymentStatus, shippingMethod: order.shippingMethod }}
                 isMultiStore={order.isMultiStore}
               />
+              <ReadyForCollection storeId={null} order={order} isMultiStore={order.isMultiStore} />
             </CardContent>
           </Card>
 

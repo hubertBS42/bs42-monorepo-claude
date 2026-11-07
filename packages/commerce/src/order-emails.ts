@@ -8,6 +8,7 @@ import {
   sendOrderCancelledEmail,
   sendOrderConfirmationEmail,
   sendOrderConfirmedEmail,
+  sendOrderReadyForCollectionEmail,
   sendOrderDeliveredEmail,
   sendOrderInstallationBookedEmail,
   sendOrderPaymentReceivedEmail,
@@ -17,6 +18,7 @@ import {
   sendOrderShippedEmail,
   sendOrderUnpaidCancelledEmail,
   type BaseOrderEmail,
+  type PickupLocation,
   type OrderConfirmationEmail,
   type ReturnedItem,
   type ReviewRequestItem,
@@ -34,6 +36,7 @@ import { unreviewedOrderProducts } from "./reviews"
 export type OrderEmailEvent =
   | "CREATED"
   | "INSTALLATION_BOOKED"
+  | "READY_FOR_COLLECTION"
   | "PAYMENT_RECEIVED"
   | "REFUNDED"
   | "RETURNED"
@@ -73,7 +76,7 @@ export type OrderForEmail = Prisma.OrderGetPayload<{ select: typeof orderEmailSe
 
 export type OrderEmail =
   | { kind: "CREATED"; data: OrderConfirmationEmail }
-  | { kind: "CONFIRMED" | "DELIVERED"; data: BaseOrderEmail & { note: string | null } }
+  | { kind: "CONFIRMED" | "DELIVERED"; data: BaseOrderEmail & { note: string | null; pickup?: PickupLocation | null } }
   | { kind: "PAYMENT_RECEIVED"; data: BaseOrderEmail & { amountGhs: number; paymentMethod: string } }
   | { kind: "REFUNDED"; data: BaseOrderEmail & { refundReason: string; refundAmountGhs: number } }
   | { kind: "RETURNED"; data: BaseOrderEmail & { items: ReturnedItem[]; returnReason: string; refundAmountGhs: number | null } }
@@ -82,6 +85,7 @@ export type OrderEmail =
   | { kind: "UNPAID_CANCELLED"; data: BaseOrderEmail & { paymentMinutes: number; url: string } }
   | { kind: "REVIEW_REQUEST"; data: BaseOrderEmail & { items: ReviewRequestItem[] } }
   | { kind: "INSTALLATION_BOOKED"; data: BaseOrderEmail & { date: string; note: string | null } }
+  | { kind: "READY_FOR_COLLECTION"; data: BaseOrderEmail & { paid: boolean; pickup: PickupLocation | null } }
 
 // The stored amounts as they are, for display: nothing here recalculates them
 const amount = (value: Prisma.Decimal) => Number(value.toFixed(2))
@@ -92,6 +96,8 @@ const amount = (value: Prisma.Decimal) => Number(value.toFixed(2))
 // products to ask for reviews of. A new order adds Settings' bank details, for one paid by bank transfer.
 export interface OrderEmailExtra {
   bankTransferDetails?: string | null
+  // Settings' address, which a pickup order's first emails say to collect from
+  pickupLocation?: PickupLocation | null
   refundAmountGhs?: string | null
   returnedItems?: ReturnedItem[]
   orderUrl?: string
@@ -106,13 +112,14 @@ export function buildOrderEmail(
   event: OrderEmailEvent,
   note: string | null,
   brand: { appName: string; logoUrl: string | null },
-  { refundAmountGhs = null, returnedItems = [], orderUrl, paymentMinutes, reviewItems = [], bankTransferDetails = null }: OrderEmailExtra = {}
+  { refundAmountGhs = null, returnedItems = [], orderUrl, paymentMinutes, reviewItems = [], bankTransferDetails = null, pickupLocation = null }: OrderEmailExtra = {}
 ): OrderEmail | null {
   // Walk-in customers may give no email; an account can turn order emails off
   if (!order.customerEmail || order.user?.getOrderEmails === false) return null
 
   const base: BaseOrderEmail = { to: order.customerEmail, customerName: order.customerName, reference: order.reference, appName: brand.appName, logoUrl: brand.logoUrl, orderUrl }
   const isDelivery = order.shippingMethod === ShippingMethod.DELIVERY
+  const pickup = isDelivery ? null : pickupLocation
   const address = [order.shippingLine1, order.shippingLine2, order.shippingTown, order.shippingRegion].filter(Boolean).join(", ")
 
   switch (event) {
@@ -143,6 +150,7 @@ export function buildOrderEmail(
           paymentMethod: PAYMENT_METHOD_LABELS[order.paymentMethod],
           paid: hasBeenPaid(order.paymentStatus),
           bankTransfer: awaitsBankTransfer(order) ? { details: bankTransferDetails } : null,
+          pickup,
         },
       }
     case "REFUNDED":
@@ -155,7 +163,7 @@ export function buildOrderEmail(
     case "PAYMENT_RECEIVED":
       return { kind: "PAYMENT_RECEIVED", data: { ...base, amountGhs: amount(order.totalGhs), paymentMethod: PAYMENT_METHOD_LABELS[order.paymentMethod] } }
     case OrderStatus.CONFIRMED:
-      return { kind: "CONFIRMED", data: { ...base, note } }
+      return { kind: "CONFIRMED", data: { ...base, note, pickup } }
     case OrderStatus.SHIPPED:
       return isDelivery ? { kind: "SHIPPED", data: { ...base, shippingAddress: address, note } } : null
     case OrderStatus.DELIVERED:
@@ -166,6 +174,8 @@ export function buildOrderEmail(
     case "INSTALLATION_BOOKED":
       // A @db.Date comes back as midnight UTC, which formatDate's zone (Accra's) reads as the same day
       return order.installationDate ? { kind: "INSTALLATION_BOOKED", data: { ...base, date: formatDate(order.installationDate, "EEEE d MMMM"), note } } : null
+    case "READY_FOR_COLLECTION":
+      return isDelivery ? null : { kind: "READY_FOR_COLLECTION", data: { ...base, paid: hasBeenPaid(order.paymentStatus), pickup } }
     case OrderStatus.COMPLETED:
       // Nothing left to review, nothing to ask
       return reviewItems.length > 0 ? { kind: "REVIEW_REQUEST", data: { ...base, items: reviewItems } } : null
@@ -198,6 +208,8 @@ function deliver(email: OrderEmail) {
       return sendOrderReviewRequestEmail(email.data)
     case "INSTALLATION_BOOKED":
       return sendOrderInstallationBookedEmail(email.data)
+    case "READY_FOR_COLLECTION":
+      return sendOrderReadyForCollectionEmail(email.data)
   }
 }
 
@@ -217,6 +229,7 @@ export async function sendOrderEmail(orderId: string, event: OrderEmailEvent, no
     }
 
     if (event === "CREATED") extra = { ...extra, bankTransferDetails: settings.bankTransferDetails }
+    if (settings.contactAddress) extra = { ...extra, pickupLocation: { address: settings.contactAddress, hours: settings.contactHours, mapUrl: settings.contactMapUrl } }
 
     // Signed, so a guest opens it without an account: its progress and its invoice
     extra = { orderUrl: signedOrderUrl(order.reference, orderId), ...extra }

@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import { OrderStatus, PaymentStatus } from "@workspace/db/enums"
+import { OrderStatus, PaymentStatus, PaymentMethod } from "@workspace/db/enums"
 import { getDayParam, getEnumParam, getOrderParam, getPositiveIntegerParam, getSortParam, getStringParam } from "@workspace/utils/search-params"
 import AddButton from "@/components/add-button"
 import { requireSystemPermission } from "@/lib/auth-guard"
@@ -31,6 +31,8 @@ export default async function OrdersPage({ searchParams }: OrdersPageProps) {
     multiStore: getEnumParam(params.multiStore, ["true", "false"]),
     returned: getEnumParam(params.returned, ["true", "false"]),
     trade: getEnumParam(params.trade, ["true", "false"]),
+    counterSale: getEnumParam(params.counterSale, ["true", "false"]),
+    paidBy: getEnumParam(params.paidBy, Object.values(PaymentMethod)),
     placedStart: getDayParam(params.placedStart),
     placedEnd: getDayParam(params.placedEnd),
     page: getPositiveIntegerParam(params.page, 1),

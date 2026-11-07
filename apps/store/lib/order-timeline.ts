@@ -16,6 +16,7 @@ export interface TimelineOrder {
   paidAt: Date | null
   status: OrderStatus
   shippingMethod: ShippingMethod
+  readyForCollectionAt: Date | null
   statusHistory: { id: string; status: OrderStatus; note: string | null; createdAt: Date }[]
   refunds: { id: string; amountGhs: string; reason: string; createdAt: Date; isForReturn: boolean }[]
   returns: { id: string; reason: string; createdAt: Date; refundAmountGhs: string | null }[]
@@ -65,6 +66,8 @@ export function orderTimeline(order: TimelineOrder, formatAmount: (amount: strin
     reached.add(milestone)
     done.push({ key: entry.id, title: milestoneTitle(milestone, pickup), at: entry.createdAt, note: entry.note })
   }
+
+  if (order.readyForCollectionAt) done.push({ key: "ready", title: "Ready for collection", at: order.readyForCollectionAt, note: null })
 
   // A return's refund shows with the return
   for (const refund of order.refunds) {

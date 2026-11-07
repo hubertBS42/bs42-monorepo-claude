@@ -1,6 +1,6 @@
 import z from "zod"
 import { GEODATA } from "@workspace/contracts"
-import { DiscountType } from "@workspace/db/enums"
+import { DiscountType, ShippingMethod } from "@workspace/db/enums"
 import { isPossiblePhoneNumber } from "@workspace/utils/phone"
 import { decimalSchema } from "@/lib/schemas/product.schemas"
 
@@ -44,7 +44,9 @@ export const createQuoteFormSchema = z
       .min(1, "Enter the customer's phone number")
       .refine((value) => isPossiblePhoneNumber(value), "Invalid phone number"),
     items: z.array(quoteItemInputSchema).min(1, "Add at least one item").max(50, "At most 50 lines in one quotation"),
-    shippingLine1: z.string().trim().min(1, "Enter the address").max(300),
+    // Pickup only for items all from one store, which only pricing it can tell (createStaffQuote)
+    shippingMethod: z.enum(ShippingMethod),
+    shippingLine1: z.string().trim().max(300),
     shippingLine2: z.string().trim().max(300),
     shippingRegion: z.string(),
     shippingTown: z.string(),
@@ -63,9 +65,16 @@ export const createQuoteFormSchema = z
       keys.add(key)
     })
 
-    const region = GEODATA.find((item) => item.name === data.shippingRegion)
-    if (!region) ctx.addIssue({ code: "custom", message: "Choose a region", path: ["shippingRegion"] })
-    else if (!region.towns.includes(data.shippingTown)) ctx.addIssue({ code: "custom", message: "Choose a town in the region", path: ["shippingTown"] })
+    if (data.shippingMethod === ShippingMethod.DELIVERY) {
+      if (!data.shippingLine1) ctx.addIssue({ code: "custom", message: "Enter the address", path: ["shippingLine1"] })
+      const region = GEODATA.find((item) => item.name === data.shippingRegion)
+      if (!region) ctx.addIssue({ code: "custom", message: "Choose a region", path: ["shippingRegion"] })
+      else if (!region.towns.includes(data.shippingTown)) ctx.addIssue({ code: "custom", message: "Choose a town in the region", path: ["shippingTown"] })
+    } else {
+      if (data.shippingGhs > 0) ctx.addIssue({ code: "custom", message: "A pickup has no delivery fee", path: ["shippingGhs"] })
+      // The installers go to an address
+      if (data.items.some((item) => item.installation)) ctx.addIssue({ code: "custom", message: "A pickup can't have installation", path: ["shippingMethod"] })
+    }
 
     if (data.discountType !== "NONE") {
       if (data.discountValue <= 0) ctx.addIssue({ code: "custom", message: "Enter the discount", path: ["discountValue"] })

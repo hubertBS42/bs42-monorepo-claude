@@ -4,7 +4,7 @@ import { after } from "next/server"
 import type { ActionResponse } from "@workspace/contracts"
 import { prisma } from "@workspace/db"
 import { Prisma } from "@workspace/db/client"
-import { InstallationStatus, OrderStatus, PaymentStatus, type PaymentMethod } from "@workspace/db/enums"
+import { InstallationStatus, OrderStatus, PaymentStatus, ShippingMethod, type PaymentMethod } from "@workspace/db/enums"
 import { notifyRefund } from "@workspace/commerce/notifications"
 import { sendOrderEmail, statusEmailEvent } from "@workspace/commerce/order-emails"
 import { cancelAndRefundOrder, recordOrderReturn, refundOrder, RefundError, type RefundInput, type ReturnInput } from "./order-refunds"
@@ -37,6 +37,8 @@ export const orderForUpdateSelect = {
     },
   },
 } satisfies Prisma.OrderSelect
+
+const READY_STATUSES: OrderStatus[] = [OrderStatus.CONFIRMED, OrderStatus.PROCESSING]
 
 export type OrderForUpdate = Prisma.OrderGetPayload<{ select: typeof orderForUpdateSelect }>
 
@@ -93,6 +95,19 @@ export async function recordOrderPayment(
   // Only once the payment is saved: after() also runs when an action fails
   after(() => sendOrderEmail(orderId, "PAYMENT_RECEIVED"))
 
+  return { success: true }
+}
+
+// Tells the customer a pickup order can be collected, once: from confirmed until it's collected
+export async function markReadyForCollection(orderId: string): Promise<ActionResponse> {
+  const { count } = await prisma.order.updateMany({
+    where: { id: orderId, shippingMethod: ShippingMethod.PICKUP, readyForCollectionAt: null, status: { in: READY_STATUSES } },
+    data: { readyForCollectionAt: new Date() },
+  })
+  if (count === 0) return { success: false, error: "This order can't be marked ready now. Refresh the page.", code: "READY_CHANGED" }
+
+  // Only once it's saved: after() also runs when an action fails
+  after(() => sendOrderEmail(orderId, "READY_FOR_COLLECTION"))
   return { success: true }
 }
 

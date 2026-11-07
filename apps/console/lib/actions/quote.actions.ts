@@ -166,6 +166,7 @@ export async function createQuoteAction(input: z.input<typeof createQuoteFormSch
             name: data.customerName,
             email: data.customerEmail,
             phone: data.customerPhone,
+            shippingMethod: data.shippingMethod,
             line1: data.shippingLine1,
             line2: data.shippingLine2,
             region: data.shippingRegion,

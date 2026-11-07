@@ -172,6 +172,7 @@ export function toOrderDetailsBase(order: OrderWithDetails, lines: LineRow[], sh
     paymentMethod: order.paymentMethod,
     paidAt: order.paidAt,
     shippingMethod: order.shippingMethod,
+    readyForCollectionAt: order.readyForCollectionAt,
     customer: { name: order.customerName, email: order.customerEmail, phone: order.customerPhone, isRegistered: !!order.userId },
     shipping:
       order.shippingMethod === "DELIVERY"

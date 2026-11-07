@@ -1,5 +1,6 @@
 import { Section, Text } from "react-email"
 import { OrderLayout } from "./components/order-layout.js"
+import { PickupDetails, type PickupLocation } from "./components/pickup-details.js"
 
 interface OrderConfirmedProps {
   customerName: string
@@ -10,9 +11,11 @@ interface OrderConfirmedProps {
   logoUrl?: string | null
   /** The order's page on the storefront, with its progress and invoice */
   orderUrl?: string | null
+  /** A pickup order: where to collect it */
+  pickup?: PickupLocation | null
 }
 
-export const OrderConfirmed = ({ customerName, reference, note, appName, logoUrl, orderUrl }: OrderConfirmedProps) => {
+export const OrderConfirmed = ({ customerName, reference, note, appName, logoUrl, orderUrl, pickup }: OrderConfirmedProps) => {
   return (
     <OrderLayout preview={`Your order ${reference} has been confirmed`} heading="Order Confirmed" appName={appName} logoUrl={logoUrl} orderUrl={orderUrl}>
       <Text className="mt-0 text-sm leading-relaxed text-[#71717a]">Hi {customerName},</Text>
@@ -25,6 +28,8 @@ export const OrderConfirmed = ({ customerName, reference, note, appName, logoUrl
           <Text className="m-0 text-sm text-gray-500">Note: {note}</Text>
         </Section>
       )}
+
+      {pickup && <PickupDetails location={pickup} />}
 
       <Text className="mt-6 text-sm text-gray-500">We will be in touch when it&apos;s ready.</Text>
     </OrderLayout>

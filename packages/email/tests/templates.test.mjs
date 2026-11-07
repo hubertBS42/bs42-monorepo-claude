@@ -7,6 +7,7 @@ import { OrderConfirmed } from "../dist/src/templates/order/order-confirmed.js"
 import { OrderCancelled } from "../dist/src/templates/order/order-cancelled.js"
 import { OrderDelivered } from "../dist/src/templates/order/order-delivered.js"
 import { OrderInstallationBooked } from "../dist/src/templates/order/order-installation-booked.js"
+import { OrderReadyForCollection } from "../dist/src/templates/order/order-ready-for-collection.js"
 import { OrderPaymentReceived } from "../dist/src/templates/order/order-payment-received.js"
 import { OrderRefunded } from "../dist/src/templates/order/order-refunded.js"
 import { OrderReturned } from "../dist/src/templates/order/order-returned.js"
@@ -241,4 +242,22 @@ test("order emails link to the order's page when given one, and show no button w
   assert.ok(withLink.includes("View your order"))
   const without = await render(OrderShipped({ ...orderDetails, shippingAddress: "123 Example Street" }))
   assert.ok(!without.includes("View your order"))
+})
+
+test("a pickup's confirmed email says where to collect it, and a delivery's doesn't", async () => {
+  const pickup = { address: "1 Spintex Road, Accra", hours: "Mon-Fri 9-5", mapUrl: "https://maps.example/bs42" }
+  const collected = await render(OrderConfirmed({ ...orderDetails, pickup }))
+  assert.match(collected, /Where to collect it/)
+  assert.match(collected, /1 Spintex Road, Accra/)
+  assert.match(collected, /Get directions/)
+  assert.doesNotMatch(await render(OrderConfirmed({ ...orderDetails })), /Where to collect it/)
+})
+
+test("a ready for collection email says where to go, and asks for payment only when it's due", async () => {
+  const pickup = { address: "1 Spintex Road, Accra", hours: null, mapUrl: null }
+  const unpaid = await render(OrderReadyForCollection({ ...orderDetails, paid: false, pickup }))
+  assert.match(unpaid, /ready to collect/)
+  assert.match(unpaid, /1 Spintex Road, Accra/)
+  assert.match(unpaid, /Payment is due/)
+  assert.doesNotMatch(await render(OrderReadyForCollection({ ...orderDetails, paid: true, pickup })), /Payment is due/)
 })

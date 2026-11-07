@@ -25,6 +25,7 @@ import {
   updateInstallation,
   updateOrderStatus,
   type Failure,
+  markReadyForCollection,
 } from "@/lib/order-updates"
 import {
   cancelAndRefundOrderSchema,
@@ -38,6 +39,7 @@ import {
   updateOrderDeliverySchema,
   updateOrderNotesSchema,
   updateOrderStatusSchema,
+  markOrderReadySchema,
 } from "@/lib/schemas/order.schemas"
 import { createStaffOrder } from "@/lib/staff-orders"
 import { StaffQuoteError } from "@/lib/staff-quotes"
@@ -110,6 +112,18 @@ export async function updateOrderCustomerAction(input: z.input<typeof updateOrde
       customerEmail: customerEmail.toLowerCase() || null,
       customerPhone: customerPhone || null,
     })
+  } catch (error) {
+    return { success: false, error: formatError(error) }
+  }
+}
+
+export async function markOrderReadyAction(input: z.input<typeof markOrderReadySchema>): Promise<ActionResponse> {
+  await requireSystemPermission({ order: ["update"] })
+
+  try {
+    const parsed = markOrderReadySchema.safeParse(input)
+    if (!parsed.success) return invalidInput(parsed.error)
+    return await markReadyForCollection(parsed.data.orderId)
   } catch (error) {
     return { success: false, error: formatError(error) }
   }

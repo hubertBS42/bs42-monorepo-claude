@@ -1,6 +1,7 @@
 import { Section, Text } from "react-email"
 import { OrderLayout } from "./components/order-layout.js"
 import { OrderSummary, type OrderSummaryItem } from "./components/order-summary.js"
+import { PickupDetails, type PickupLocation } from "./components/pickup-details.js"
 
 interface OrderConfirmationProps {
   customerName: string
@@ -22,6 +23,8 @@ interface OrderConfirmationProps {
   paid?: boolean
   /** An unpaid order the customer pays by bank transfer: where to send it (Settings), or null when none are set */
   bankTransfer?: { details: string | null } | null
+  /** A pickup order: where to collect it */
+  pickup?: PickupLocation | null
   appName: string
   /** Absolute https URL of the uploaded logo. When missing, the app name is shown as text instead. */
   logoUrl?: string | null
@@ -47,6 +50,7 @@ export const OrderConfirmation = ({
   paymentMethod,
   paid = false,
   bankTransfer = null,
+  pickup = null,
   appName,
   logoUrl,
   orderUrl,
@@ -77,9 +81,11 @@ export const OrderConfirmation = ({
         <Text className="m-0 text-sm text-gray-500">Method: {shippingMethod === "PICKUP" ? "Store Pickup" : "Delivery"}</Text>
         {shippingAddress && <Text className="m-0 text-sm text-gray-500">Address: {shippingAddress}</Text>}
         <Text className="m-0 text-sm text-gray-500">
-          Payment: {paymentMethod} ({paid ? "paid" : bankTransfer ? "awaiting payment" : "due on delivery"})
+          Payment: {paymentMethod} ({paid ? "paid" : bankTransfer ? "awaiting payment" : shippingMethod === "PICKUP" ? "due on collection" : "due on delivery"})
         </Text>
       </Section>
+
+      {pickup && <PickupDetails location={pickup} />}
 
       {bankTransfer && (
         <Section className="mt-6 rounded-md bg-gray-50 p-4">

@@ -6,7 +6,7 @@ import { loadTradeTerms } from "@workspace/commerce/trade-accounts"
 import type { prisma } from "@workspace/db"
 import { Prisma } from "@workspace/db/client"
 import { ShippingMethod, type PaymentMethod } from "@workspace/db/enums"
-import { priceStaffSale, StaffQuoteError, type StaffSalePricingInput } from "./staff-quotes"
+import { checkPickupLines, priceStaffSale, StaffQuoteError, type StaffSalePricingInput } from "./staff-quotes"
 
 // Orders the platform's staff make for a customer (/orders/create): items from any store, each at the offer the
 // storefront would sell, with installation where it's offered, priced and checked as a staff quotation is
@@ -44,7 +44,7 @@ export async function createStaffOrder(tx: Tx, pricing: PricingContext, input: N
   const trade = await loadTradeTerms(tx, input.customerUserId)
   const { lines, priced } = await priceStaffSale(tx, pricing, input)
   const isPickup = input.shippingMethod === ShippingMethod.PICKUP
-  if (isPickup && new Set(lines.map((line) => line.storeId)).size > 1) throw new StaffQuoteError("PICKUP_ONE_STORE")
+  checkPickupLines(input.shippingMethod, lines)
   // A new day's rate, a store's new price or a change to tax since the review step
   if (!priced.totalGhs.equals(input.expectedTotalGhs)) throw new StaffQuoteError("PRICE_CHANGED")
 

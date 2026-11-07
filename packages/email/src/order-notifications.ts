@@ -1,6 +1,8 @@
 import { sendEmail } from "./mailer.js"
 import { OrderConfirmation } from "./templates/order/order-confirmation.js"
+import type { PickupLocation } from "./templates/order/components/pickup-details.js"
 import { OrderConfirmed } from "./templates/order/order-confirmed.js"
+import { OrderReadyForCollection } from "./templates/order/order-ready-for-collection.js"
 import { OrderShipped } from "./templates/order/order-shipped.js"
 import { OrderDelivered } from "./templates/order/order-delivered.js"
 import { OrderCancelled } from "./templates/order/order-cancelled.js"
@@ -42,6 +44,8 @@ export interface OrderConfirmationEmail extends BaseOrderEmail {
   paid?: boolean
   // An unpaid order the customer pays by bank transfer: where to send it, or null when Settings has none
   bankTransfer?: { details: string | null } | null
+  // A pickup order: where to collect it
+  pickup?: PickupLocation | null
 }
 
 export async function sendOrderConfirmationEmail(data: OrderConfirmationEmail) {
@@ -67,6 +71,7 @@ export async function sendOrderConfirmationEmail(data: OrderConfirmationEmail) {
       paymentMethod: data.paymentMethod,
       paid: data.paid,
       bankTransfer: data.bankTransfer,
+      pickup: data.pickup,
       appName: data.appName,
       logoUrl: data.logoUrl,
       orderUrl: data.orderUrl,
@@ -74,7 +79,7 @@ export async function sendOrderConfirmationEmail(data: OrderConfirmationEmail) {
   })
 }
 
-export async function sendOrderConfirmedEmail(data: BaseOrderEmail & { note?: string | null }) {
+export async function sendOrderConfirmedEmail(data: BaseOrderEmail & { note?: string | null; pickup?: PickupLocation | null }) {
   return sendEmail({
     to: data.to,
     fromName: data.appName,
@@ -86,11 +91,29 @@ export async function sendOrderConfirmedEmail(data: BaseOrderEmail & { note?: st
       appName: data.appName,
       logoUrl: data.logoUrl,
       orderUrl: data.orderUrl,
+      pickup: data.pickup,
     }),
   })
 }
 
 // date is the booked day as the customer reads it ("Friday 23 October"); note is what staff told them with it
+export async function sendOrderReadyForCollectionEmail(data: BaseOrderEmail & { paid: boolean; pickup?: PickupLocation | null }) {
+  return sendEmail({
+    to: data.to,
+    fromName: data.appName,
+    subject: `Ready for collection — ${data.reference}`,
+    reactTemplate: OrderReadyForCollection({
+      customerName: data.customerName,
+      reference: data.reference,
+      paid: data.paid,
+      pickup: data.pickup,
+      appName: data.appName,
+      logoUrl: data.logoUrl,
+      orderUrl: data.orderUrl,
+    }),
+  })
+}
+
 export async function sendOrderInstallationBookedEmail(data: BaseOrderEmail & { date: string; note?: string | null }) {
   return sendEmail({
     to: data.to,

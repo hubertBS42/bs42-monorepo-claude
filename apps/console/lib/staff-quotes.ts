@@ -10,7 +10,7 @@ import { loadTradeTerms } from "@workspace/commerce/trade-accounts"
 import { customerVisibleListingWhere, loadVisibleCategoryIds, variantOnSaleWhere } from "@workspace/commerce/visibility"
 import type { prisma } from "@workspace/db"
 import { Prisma } from "@workspace/db/client"
-import { PaymentMethod, QuoteStatus } from "@workspace/db/enums"
+import { PaymentMethod, QuoteStatus, ShippingMethod } from "@workspace/db/enums"
 import { OPEN_PURCHASE_ORDER_STATUSES } from "./purchase-order-status"
 
 // Quotations staff make in the console (the shared rules are in @workspace/commerce/quotes): finding what to quote
@@ -221,12 +221,18 @@ export async function priceStaffSale(client: Client, pricing: PricingContext, in
   return { lines, priced }
 }
 
+// A pickup is from one store, the one all its items come from
+export function checkPickupLines(shippingMethod: ShippingMethod, lines: { storeId: string }[]) {
+  if (shippingMethod === ShippingMethod.PICKUP && new Set(lines.map((line) => line.storeId)).size > 1) throw new StaffQuoteError("PICKUP_ONE_STORE")
+}
+
 export interface NewStaffQuote extends StaffSalePricingInput {
   // The customer's account, when staff found them by email or phone
   customerUserId: string | null
   name: string
   email: string
   phone: string
+  shippingMethod: ShippingMethod
   line1: string
   line2: string
   validityDays: number
@@ -240,6 +246,8 @@ export async function createStaffQuote(tx: Tx, pricing: PricingContext, input: N
   if (input.customerUserId && !(await tx.user.findUnique({ where: { id: input.customerUserId }, select: { id: true } }))) throw new StaffQuoteError("CUSTOMER_NOT_FOUND")
   const trade = await loadTradeTerms(tx, input.customerUserId)
   const { lines, priced } = await priceStaffSale(tx, pricing, input)
+  checkPickupLines(input.shippingMethod, lines)
+  const isPickup = input.shippingMethod === ShippingMethod.PICKUP
 
   return tx.quote.create({
     data: {
@@ -250,10 +258,11 @@ export async function createStaffQuote(tx: Tx, pricing: PricingContext, input: N
       customerName: input.name,
       customerEmail: input.email.toLowerCase(),
       customerPhone: input.phone,
-      shippingLine1: input.line1,
-      shippingLine2: input.line2 || null,
-      shippingRegion: input.region,
-      shippingTown: input.town,
+      shippingMethod: input.shippingMethod,
+      shippingLine1: isPickup ? "" : input.line1,
+      shippingLine2: isPickup ? null : input.line2 || null,
+      shippingRegion: isPickup ? "" : input.region,
+      shippingTown: isPickup ? "" : input.town,
       tradeAccountId: trade?.accountId ?? null,
       tradeCompanyName: trade?.companyName ?? null,
       tradeTin: trade?.tin ?? null,

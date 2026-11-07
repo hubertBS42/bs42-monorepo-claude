@@ -88,6 +88,7 @@ export default async function OrderPage({ params, searchParams }: OrderPageProps
       paymentMethod: true,
       paidAt: true,
       shippingMethod: true,
+      readyForCollectionAt: true,
       createdById: true,
       createdAt: true,
       customerName: true,
@@ -125,6 +126,8 @@ export default async function OrderPage({ params, searchParams }: OrderPageProps
   const method = PAYMENT_METHOD_LABELS[order.paymentMethod].toLowerCase()
   // Where to send it, from Settings (null details when none are set)
   const settings = await getAppSettings()
+  const isPickup = order.shippingMethod === ShippingMethod.PICKUP
+  const collected = order.status === OrderStatus.DELIVERED || order.status === OrderStatus.COMPLETED
   const bankTransfer = awaitsBankTransfer(order) && order.status !== OrderStatus.CANCELLED ? { details: settings.bankTransferDetails } : null
   const cancelled = order.status === OrderStatus.CANCELLED
   // A paid order's heading follows its delivery
@@ -260,7 +263,7 @@ export default async function OrderPage({ params, searchParams }: OrderPageProps
             <div className="space-y-2">
               <Row label="Subtotal" value={formatGhs(order.subtotalGhs.toFixed(2))} />
               {discount && <Row label="Discount" value={`−${formatGhs(discount.toFixed(2))}`} />}
-              <Row label="Delivery" value={order.shippingGhs.isZero() ? "Free" : formatGhs(order.shippingGhs.toFixed(2))} />
+              {!isPickup && <Row label="Delivery" value={order.shippingGhs.isZero() ? "Free" : formatGhs(order.shippingGhs.toFixed(2))} />}
               {order.installationGhs.gt(0) && <Row label="Installation" value={formatGhs(order.installationGhs.toFixed(2))} />}
               {order.taxGhs.gt(0) && <Row label="Tax" value={formatGhs(order.taxGhs.toFixed(2))} />}
             </div>
@@ -273,12 +276,24 @@ export default async function OrderPage({ params, searchParams }: OrderPageProps
           <ProgressCard steps={timeline} />
           <Card>
             <CardHeader>
-              <CardTitle>{order.shippingMethod === ShippingMethod.PICKUP ? "Collection" : "Delivery"}</CardTitle>
+              <CardTitle>{isPickup ? "Collection" : "Delivery"}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-1 text-sm">
               <p className="font-medium">{order.customerName}</p>
-              <p className="text-muted-foreground">{address || "You collect it from the store."}</p>
+              {!isPickup && <p className="text-muted-foreground">{address}</p>}
               {order.customerPhone && <p className="text-muted-foreground">{order.customerPhone}</p>}
+              {isPickup && (
+                <div className="pt-2">
+                  <p className="font-medium">{collected ? "Collected from" : "Collect from"}</p>
+                  <p className="text-muted-foreground">{settings.contactAddress ?? "Our store. We'll tell you where and when."}</p>
+                  {!collected && settings.contactHours && <p className="text-muted-foreground">{settings.contactHours}</p>}
+                  {!collected && settings.contactMapUrl && (
+                    <a href={settings.contactMapUrl} target="_blank" rel="noopener noreferrer" className="underline underline-offset-4 hover:text-foreground">
+                      Get directions
+                    </a>
+                  )}
+                </div>
+              )}
             </CardContent>
           </Card>
           <Card>

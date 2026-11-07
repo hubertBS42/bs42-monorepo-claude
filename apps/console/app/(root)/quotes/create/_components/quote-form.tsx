@@ -7,6 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { FieldPath, SubmitHandler, useForm, useWatch } from "react-hook-form"
 import { z } from "zod"
 import type { InstallationAreaRow } from "@workspace/commerce/installation-areas"
+import { ShippingMethod } from "@workspace/db/enums"
 import { Button, buttonVariants } from "@workspace/ui/components/button"
 import { Spinner } from "@workspace/ui/components/spinner"
 import { toast } from "@workspace/ui/components/toast"
@@ -16,7 +17,7 @@ import type { DeliverySettingsView } from "@/lib/data/delivery.data"
 import { createQuoteFormSchema } from "@/lib/schemas/quote.schemas"
 import type { ChosenQuoteItem, QuoteCopy, QuoteCustomer } from "@/types"
 import CustomerStep from "@/components/staff-sales/customer-step"
-import { unlinkCustomer } from "@/components/staff-sales/form"
+import { itemKey, unlinkCustomer } from "@/components/staff-sales/form"
 import ItemsStep from "@/components/staff-sales/items-step"
 import ReviewStep from "@/components/staff-sales/review-step"
 import DeliveryStep from "./steps/delivery-step"
@@ -28,7 +29,7 @@ export type QuoteFormOutput = z.output<typeof createQuoteFormSchema>
 const STEPS: { title: string; fields: FieldPath<QuoteFormInput>[] }[] = [
   { title: "Customer", fields: ["customerName", "customerEmail", "customerPhone"] },
   { title: "Items", fields: ["items"] },
-  { title: "Delivery and terms", fields: ["shippingLine1", "shippingLine2", "shippingRegion", "shippingTown", "shippingGhs", "validityDays", "notes"] },
+  { title: "Delivery and terms", fields: ["shippingMethod", "shippingLine1", "shippingLine2", "shippingRegion", "shippingTown", "shippingGhs", "validityDays", "notes"] },
   { title: "Review", fields: ["discountType", "discountValue", "discountReason"] },
 ]
 
@@ -60,6 +61,7 @@ export default function QuoteForm({ delivery, installationAreas, validityDays, c
           customerEmail: "",
           customerPhone: "",
           items: [],
+          shippingMethod: ShippingMethod.DELIVERY,
           shippingLine1: "",
           shippingLine2: "",
           shippingRegion: "",
@@ -76,6 +78,10 @@ export default function QuoteForm({ delivery, installationAreas, validityDays, c
 
   const isLast = step === STEPS.length - 1
   const validity = useWatch({ control: form.control, name: "validityDays" })
+  const shippingMethod = useWatch({ control: form.control, name: "shippingMethod" })
+  const items = useWatch({ control: form.control, name: "items" })
+  // Where the items come from: one store's can be picked up there
+  const storeNames = [...new Set(items.flatMap((item) => chosen[itemKey(item.listingId, item.listingVariantId ?? null)]?.storeName ?? []))]
 
   // Each step checks only its own fields before moving on
   const goNext = async () => {
@@ -91,7 +97,7 @@ export default function QuoteForm({ delivery, installationAreas, validityDays, c
         // A line that went off sale or stopped offering installation, a town outside the installation areas, or a
         // customer whose account went: each is fixed on its step
         if (response.code === "ITEM_UNAVAILABLE" || response.code === "NO_INSTALLATION") setStep(1)
-        if (response.code === "OUTSIDE_INSTALLATION_AREAS") setStep(2)
+        if (response.code === "OUTSIDE_INSTALLATION_AREAS" || response.code === "PICKUP_ONE_STORE") setStep(2)
         if (response.code === "CUSTOMER_NOT_FOUND") {
           setCustomer(null)
           unlinkCustomer(form)
@@ -140,9 +146,16 @@ export default function QuoteForm({ delivery, installationAreas, validityDays, c
 
       {step === 0 && <CustomerStep kind="quote" form={form} customer={customer} onCustomerChange={setCustomer} />}
       {step === 1 && <ItemsStep kind="quote" form={form} chosen={chosen} onChosenChange={setChosen} />}
-      {step === 2 && <DeliveryStep form={form} customer={customer} delivery={delivery} installationAreas={installationAreas} />}
+      {step === 2 && <DeliveryStep form={form} customer={customer} delivery={delivery} installationAreas={installationAreas} storeNames={storeNames} />}
       {step === 3 && (
-        <ReviewStep kind="quote" form={form} customer={customer} terms={`Prices hold for ${validity} ${validity === 1 ? "day" : "days"}`} freeDeliveryFromGhs={delivery.freeDeliveryFromGhs} />
+        <ReviewStep
+          kind="quote"
+          form={form}
+          customer={customer}
+          terms={`Prices hold for ${validity} ${validity === 1 ? "day" : "days"}`}
+          freeDeliveryFromGhs={delivery.freeDeliveryFromGhs}
+          pickupFrom={shippingMethod === ShippingMethod.PICKUP ? storeNames[0] : undefined}
+        />
       )}
 
       <div className="flex flex-wrap items-center justify-between gap-2">

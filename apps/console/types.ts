@@ -534,6 +534,10 @@ export interface OrdersParams extends PaginationParams {
   returned?: "true" | "false"
   // "true": only orders placed by a trade account; "false": only orders without
   trade?: "true" | "false"
+  // "true": only counter sales; "false": everything else
+  counterSale?: "true" | "false"
+  // Paid orders that were paid this way
+  paidBy?: PaymentMethod
   // Plain yyyy-MM-dd days in the app's time zone, both inclusive
   placedStart?: string
   placedEnd?: string
@@ -616,6 +620,8 @@ export interface OrderTimelineEntry {
 // What the store's and the platform's order pages both show
 interface OrderDetailsBase {
   id: string
+  // When staff said a pickup order is ready
+  readyForCollectionAt: Date | null
   reference: string
   status: OrderStatus
   paymentStatus: PaymentStatus
@@ -1225,6 +1231,7 @@ export interface QuoteCopy {
     customerPhone: string
     items: { listingId: string; listingVariantId: string | null; quantity: number; installation: boolean }[]
     shippingLine1: string
+    shippingMethod: ShippingMethod
     shippingLine2: string
     shippingRegion: string
     shippingTown: string
@@ -1242,6 +1249,8 @@ export interface QuoteCopy {
 // A quotation as its console page shows it
 export interface QuoteDetails {
   id: string
+  // Collected from the store its items come from, rather than delivered
+  isPickup: boolean
   reference: string
   // The storefront's quotation page, signed so staff can open it
   url: string

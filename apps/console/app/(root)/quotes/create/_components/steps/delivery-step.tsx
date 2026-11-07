@@ -1,11 +1,13 @@
 "use client"
 
-import type { UseFormReturn } from "react-hook-form"
+import { useWatch, type UseFormReturn } from "react-hook-form"
 import type { InstallationAreaRow } from "@workspace/commerce/installation-areas"
+import { ShippingMethod } from "@workspace/db/enums"
 import { NumberInputField, TextareaField } from "@workspace/forms"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@workspace/ui/components/card"
 import { FieldGroup } from "@workspace/ui/components/field"
 import DeliveryAddressCard from "@/components/staff-sales/delivery-address-card"
+import PickupChoice from "@/components/staff-sales/pickup-choice"
 import type { DeliverySettingsView } from "@/lib/data/delivery.data"
 import { MAX_QUOTE_VALIDITY_DAYS } from "@/lib/schemas/quote.schemas"
 import type { QuoteCustomer } from "@/types"
@@ -18,14 +20,18 @@ interface DeliveryStepProps {
   // The platform's delivery fees (Settings → Delivery) and installation areas (also Settings → Delivery)
   delivery: DeliverySettingsView
   installationAreas: InstallationAreaRow[]
+  // The stores the items come from: one store's can be picked up there
+  storeNames: string[]
 }
 
-export default function DeliveryStep({ form, customer, delivery, installationAreas }: DeliveryStepProps) {
+export default function DeliveryStep({ form, customer, delivery, installationAreas, storeNames }: DeliveryStepProps) {
+  const method = useWatch({ control: form.control, name: "shippingMethod" })
+
   return (
     <div className="grid items-start gap-4 lg:grid-cols-3">
-      <DeliveryAddressCard kind="quote" form={form} customer={customer} delivery={delivery} installationAreas={installationAreas} />
+      <PickupChoice form={form} delivery={delivery} storeNames={storeNames} />
 
-      <Card>
+      <Card className="lg:row-span-2">
         <CardHeader>
           <CardTitle>Terms</CardTitle>
           <CardDescription>Printed on the quotation.</CardDescription>
@@ -37,6 +43,8 @@ export default function DeliveryStep({ form, customer, delivery, installationAre
           </FieldGroup>
         </CardContent>
       </Card>
+
+      {method === ShippingMethod.DELIVERY && <DeliveryAddressCard kind="quote" form={form} customer={customer} delivery={delivery} installationAreas={installationAreas} />}
     </div>
   )
 }

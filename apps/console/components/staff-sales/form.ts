@@ -1,4 +1,5 @@
 import type { UseFormReturn } from "react-hook-form"
+import type { ShippingMethod } from "@workspace/db/enums"
 import type { QuoteCustomer } from "@/types"
 
 // What the platform's two create wizards share: a quotation (/quotes/create) and an order (/orders/create) are both
@@ -13,6 +14,7 @@ export interface StaffSaleFields {
   customerEmail: string
   customerPhone: string
   items: { listingId: string; listingVariantId: string | null; quantity: number; installation: boolean }[]
+  shippingMethod: ShippingMethod
   shippingLine1: string
   shippingLine2: string
   shippingRegion: string

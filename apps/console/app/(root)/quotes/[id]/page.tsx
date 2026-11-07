@@ -110,7 +110,7 @@ export default async function QuotePage({ params }: QuotePageProps) {
               <TotalRow label="Subtotal" amount={ghs(totals.subtotalGhs)} />
               {totals.discountAmountGhs && <TotalRow label={totals.discountReason ?? "Discount"} amount={`−${ghs(totals.discountAmountGhs)}`} />}
               {Number(totals.installationGhs) > 0 && <TotalRow label="Installation" amount={ghs(totals.installationGhs)} />}
-              <TotalRow label="Delivery" amount={quote.deliveryToConfirm ? "To be confirmed" : Number(totals.shippingGhs) > 0 ? ghs(totals.shippingGhs) : "Free"} />
+              {!quote.isPickup && <TotalRow label="Delivery" amount={quote.deliveryToConfirm ? "To be confirmed" : Number(totals.shippingGhs) > 0 ? ghs(totals.shippingGhs) : "Free"} />}
               <TotalRow label={Number(totals.taxRate) ? `Tax (${+(Number(totals.taxRate) * 100).toFixed(2)}%)` : "Tax"} amount={ghs(totals.taxGhs)} />
               <Separator className="my-1" />
               <TotalRow label={quote.deliveryToConfirm ? "Total before delivery" : "Total"} amount={ghs(totals.totalGhs)} strong />
@@ -154,7 +154,7 @@ export default async function QuotePage({ params }: QuotePageProps) {
               {quote.trade && <Detail label="Company">{quote.trade.tin ? `${quote.trade.companyName} (TIN ${quote.trade.tin})` : quote.trade.companyName}</Detail>}
               <Detail label="Email">{quote.customer.email}</Detail>
               <Detail label="Phone">{formatPhoneNumber(quote.customer.phone)}</Detail>
-              <Detail label="Deliver to">{quote.address}</Detail>
+              <Detail label={quote.isPickup ? "Pickup from" : "Deliver to"}>{quote.isPickup ? quote.lines[0]?.storeName : quote.address}</Detail>
             </CardContent>
           </Card>
 

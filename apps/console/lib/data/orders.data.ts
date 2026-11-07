@@ -1,5 +1,6 @@
 import "server-only"
 
+import { counterSaleWhere, paidByWhere } from "@/lib/counter-sales"
 import type { OrderDetails, OrdersData, OrdersParams } from "@/types"
 import { formatError } from "@workspace/auth/format-error"
 import { consoleAuth } from "@workspace/auth/console"
@@ -48,7 +49,7 @@ export const getOrders = async (filters: OrdersParams = {}): Promise<DataRespons
       return { success: false, error: paginationError }
     }
 
-    const { reference, customer, storeId, status, paymentStatus, multiStore, returned, trade, placedStart, placedEnd, page = 1, pageSize = 10, sort, order } = filters
+    const { reference, customer, storeId, status, paymentStatus, multiStore, returned, trade, counterSale, paidBy, placedStart, placedEnd, page = 1, pageSize = 10, sort, order } = filters
 
     // The store id is a uuid column, so a malformed one (a hand-edited URL) would make Prisma throw: it matches nothing
     if (storeId && !z.uuid().safeParse(storeId).success) return { success: true, data: { data: [], total: 0, page, pageSize, totalPages: 0 } }
@@ -69,6 +70,10 @@ export const getOrders = async (filters: OrdersParams = {}): Promise<DataRespons
       ...(multiStore && { id: multiStore === "true" ? { in: multiStoreIds } : { notIn: multiStoreIds } }),
       ...(returned && { returns: returned === "true" ? { some: {} } : { none: {} } }),
       ...(trade && { tradeCompanyName: trade === "true" ? { not: null } : null }),
+      ...(counterSale === "true" && counterSaleWhere),
+      ...(counterSale === "false" && { NOT: counterSaleWhere }),
+      // In its own AND, as the payment filter above sets paymentStatus too
+      ...(paidBy && { AND: [paidByWhere(paidBy)] }),
       ...((placedStart || placedEnd) && {
         createdAt: {
           ...(placedStart && { gte: dayStart(placedStart) }),

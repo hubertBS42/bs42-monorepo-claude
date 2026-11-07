@@ -15,13 +15,25 @@ import { getLatestExchangeRate, getPricingContext, type ExchangeRateInfo } from 
 import { notifyNewOrder, notifyStockAlerts } from "@workspace/commerce/notifications"
 import { sendOrderEmail } from "@workspace/commerce/order-emails"
 import { priceOrder, type PricedOrder } from "@workspace/commerce/pricing"
-import { cancelWithRefund, editPendingOrder, giveRefund, orderForUpdateSelect, recordOrderPayment, recordReturn, toReturnInput, updateOrderStatus, type Failure } from "@/lib/order-updates"
+import {
+  cancelWithRefund,
+  editPendingOrder,
+  giveRefund,
+  markReadyForCollection,
+  orderForUpdateSelect,
+  recordOrderPayment,
+  recordReturn,
+  toReturnInput,
+  updateOrderStatus,
+  type Failure,
+} from "@/lib/order-updates"
 import { completeCounterSale } from "@/lib/counter-sales"
 import {
   cancelAndRefundStoreOrderSchema,
   completeCounterSaleSchema,
   createStoreOrderSchema,
   findOrderCustomerSchema,
+  markStoreOrderReadySchema,
   previewStoreOrderSchema,
   recordStorePaymentSchema,
   refundStoreOrderSchema,
@@ -73,6 +85,25 @@ export async function updateStoreOrderStatusAction(input: z.input<typeof updateS
     if (problem) return problem
 
     return await updateOrderStatus(order, { ...change, orderId, changedById: session.user.id }, PAID_ORDER)
+  } catch (error) {
+    return { success: false, error: formatError(error) }
+  }
+}
+
+export async function markStoreOrderReadyAction(input: z.input<typeof markStoreOrderReadySchema>): Promise<ActionResponse> {
+  const session = await requireConsoleAccess()
+
+  try {
+    const parsed = markStoreOrderReadySchema.safeParse(input)
+    if (!parsed.success) return invalidInput(parsed.error)
+    const { storeId, orderId } = parsed.data
+
+    if (!(await hasStorePermission(session.user.id, storeId, { order: ["update"] }))) return FORBIDDEN
+
+    const { problem } = await loadManageableOrder(orderId, storeId)
+    if (problem) return problem
+
+    return await markReadyForCollection(orderId)
   } catch (error) {
     return { success: false, error: formatError(error) }
   }

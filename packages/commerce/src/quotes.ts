@@ -176,9 +176,12 @@ export async function placeQuotedOrder(tx: Tx, quote: QuoteForOrder, placed: Quo
     placedFromIp: placed.placedFromIp ?? null,
     statusNote: `Placed from quotation ${quote.reference}`,
     customer: { userId: placed.userId, name: quote.customerName, email: quote.customerEmail, phone: quote.customerPhone },
-    shippingMethod: ShippingMethod.DELIVERY,
+    shippingMethod: quote.shippingMethod,
     paymentMethod: placed.paymentMethod,
-    shipping: { name: quote.customerName, phone: quote.customerPhone, line1: quote.shippingLine1, line2: quote.shippingLine2, region: quote.shippingRegion, town: quote.shippingTown },
+    shipping:
+      quote.shippingMethod === ShippingMethod.PICKUP
+        ? null
+        : { name: quote.customerName, phone: quote.customerPhone, line1: quote.shippingLine1, line2: quote.shippingLine2, region: quote.shippingRegion, town: quote.shippingTown },
     notes: null,
     discount: quote.discountType && quote.discountValue ? { type: quote.discountType, value: quote.discountValue, reason: quote.discountReason ?? "Discount" } : null,
     trade: quote.tradeAccountId && quote.tradeCompanyName ? { accountId: quote.tradeAccountId, companyName: quote.tradeCompanyName, tin: quote.tradeTin ?? "" } : null,

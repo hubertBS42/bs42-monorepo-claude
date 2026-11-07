@@ -10,7 +10,7 @@ import { loadTradeTerms } from "@workspace/commerce/trade-accounts"
 import type { DataResponse } from "@workspace/contracts"
 import { prisma } from "@workspace/db"
 import type { Prisma } from "@workspace/db/client"
-import { QuoteStatus } from "@workspace/db/enums"
+import { QuoteStatus, ShippingMethod } from "@workspace/db/enums"
 import { dayStart } from "@workspace/utils/date"
 import { getPaginationError } from "@workspace/utils/pagination"
 
@@ -149,6 +149,7 @@ export const getQuoteDetails = async (quoteId: string): Promise<DataResponse<Quo
         createdBy: quote.createdBy && (quote.createdBy.name || quote.createdBy.email),
         customer: { name: quote.customerName, email: quote.customerEmail, phone: quote.customerPhone, hasAccount: owner },
         trade: quote.tradeCompanyName ? { companyName: quote.tradeCompanyName, tin: quote.tradeTin } : null,
+        isPickup: quote.shippingMethod === ShippingMethod.PICKUP,
         address: [quote.shippingLine1, quote.shippingLine2, quote.shippingTown, quote.shippingRegion].filter(Boolean).join(", "),
         notes: quote.notes,
         exchangeRate: quote.exchangeRate.toString(),
@@ -210,6 +211,7 @@ export const getQuoteCopy = async (quoteId: string): Promise<QuoteCopy | null> =
       customerEmail: quote.customerEmail,
       customerPhone: quote.customerPhone,
       items: items.map((item) => ({ listingId: item.storeListingId!, listingVariantId: item.storeListingVariantId, quantity: item.quantity, installation: !!item.installationUnitGhs })),
+      shippingMethod: quote.shippingMethod,
       shippingLine1: quote.shippingLine1,
       shippingLine2: quote.shippingLine2 ?? "",
       shippingRegion: quote.shippingRegion,

@@ -2,6 +2,7 @@ import "server-only"
 
 import { changeOrderStatus, createOrder, type NewOrder } from "@workspace/commerce/order-writes"
 import type { prisma } from "@workspace/db"
+import type { Prisma } from "@workspace/db/client"
 import { OrderStatus, PaymentStatus, ShippingMethod, type PaymentMethod } from "@workspace/db/enums"
 
 // A sale at the store's counter: the customer has paid and leaves with the goods, so it's created, paid and completed
@@ -12,6 +13,12 @@ import { OrderStatus, PaymentStatus, ShippingMethod, type PaymentMethod } from "
 type Tx = Parameters<Parameters<typeof prisma.$transaction>[0]>[0]
 
 export const COUNTER_SALE_NOTE = "Counter sale"
+
+// A counter sale's history starts with its note. A note typed on a later status change can't be on PENDING.
+export const counterSaleWhere: Prisma.OrderWhereInput = { statusHistory: { some: { status: OrderStatus.PENDING, note: COUNTER_SALE_NOTE } } }
+
+// Paid orders only: until it's paid an order's method is only what the customer meant to use
+export const paidByWhere = (method: PaymentMethod): Prisma.OrderWhereInput => ({ paymentMethod: method, paymentStatus: { notIn: [PaymentStatus.PENDING, PaymentStatus.FAILED] } })
 
 export type NewCounterSale = Omit<NewOrder, "statusNote" | "shippingMethod" | "shipping" | "paymentMethod" | "notes"> & { createdById: string; paymentMethod: PaymentMethod }
 
