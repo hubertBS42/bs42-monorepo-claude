@@ -21,6 +21,8 @@ import type { SearchParams } from "@/lib/catalogue-filters"
 import { formatGhs } from "@/lib/money"
 import { orderTimeline, type TimelineStep } from "@/lib/order-timeline"
 import { getAppSettings } from "@/lib/settings"
+import { formatPhoneNumber } from "@workspace/utils/phone"
+import { orderPickupLocation } from "@workspace/commerce/pickup-locations"
 import { getStoreSession } from "@/lib/session"
 
 export const metadata: Metadata = { title: "Your order", robots: { index: false } }
@@ -89,6 +91,11 @@ export default async function OrderPage({ params, searchParams }: OrderPageProps
       paidAt: true,
       shippingMethod: true,
       readyForCollectionAt: true,
+      pickupName: true,
+      pickupAddress: true,
+      pickupHours: true,
+      pickupPhone: true,
+      pickupMapUrl: true,
       createdById: true,
       createdAt: true,
       customerName: true,
@@ -128,6 +135,9 @@ export default async function OrderPage({ params, searchParams }: OrderPageProps
   const settings = await getAppSettings()
   const isPickup = order.shippingMethod === ShippingMethod.PICKUP
   const collected = order.status === OrderStatus.DELIVERED || order.status === OrderStatus.COMPLETED
+  // Where its store said to collect it, else Settings' address (an order made where the store had no location)
+  const pickup =
+    orderPickupLocation(order) ?? (settings.contactAddress ? { name: "", address: settings.contactAddress, hours: settings.contactHours, phone: null, mapUrl: settings.contactMapUrl } : null)
   const bankTransfer = awaitsBankTransfer(order) && order.status !== OrderStatus.CANCELLED ? { details: settings.bankTransferDetails } : null
   const cancelled = order.status === OrderStatus.CANCELLED
   // A paid order's heading follows its delivery
@@ -285,10 +295,12 @@ export default async function OrderPage({ params, searchParams }: OrderPageProps
               {isPickup && (
                 <div className="pt-2">
                   <p className="font-medium">{collected ? "Collected from" : "Collect from"}</p>
-                  <p className="text-muted-foreground">{settings.contactAddress ?? "Our store. We'll tell you where and when."}</p>
-                  {!collected && settings.contactHours && <p className="text-muted-foreground">{settings.contactHours}</p>}
-                  {!collected && settings.contactMapUrl && (
-                    <a href={settings.contactMapUrl} target="_blank" rel="noopener noreferrer" className="underline underline-offset-4 hover:text-foreground">
+                  {pickup?.name && <p>{pickup.name}</p>}
+                  <p className="text-muted-foreground">{pickup?.address ?? "Our store. We'll tell you where and when."}</p>
+                  {!collected && pickup?.hours && <p className="text-muted-foreground">{pickup.hours}</p>}
+                  {!collected && pickup?.phone && <p className="text-muted-foreground">{formatPhoneNumber(pickup.phone)}</p>}
+                  {!collected && pickup?.mapUrl && (
+                    <a href={pickup.mapUrl} target="_blank" rel="noopener noreferrer" className="underline underline-offset-4 hover:text-foreground">
                       Get directions
                     </a>
                   )}

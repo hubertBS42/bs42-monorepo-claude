@@ -20,16 +20,17 @@ interface DeliveryStepProps {
   // The platform's delivery fees (Settings → Delivery) and installation areas (also Settings → Delivery)
   delivery: DeliverySettingsView
   installationAreas: InstallationAreaRow[]
-  // The stores the items come from: one store's can be picked up there
-  storeNames: string[]
+  // The stores the items come from: one store's can be picked up at its pickup location
+  stores: { id: string; name: string }[]
+  pickupLocations: Record<string, string>
 }
 
-export default function DeliveryStep({ form, customer, delivery, installationAreas, storeNames }: DeliveryStepProps) {
+export default function DeliveryStep({ form, customer, delivery, installationAreas, stores, pickupLocations }: DeliveryStepProps) {
   const method = useWatch({ control: form.control, name: "shippingMethod" })
 
   return (
     <div className="grid items-start gap-4 lg:grid-cols-3">
-      <PickupChoice form={form} delivery={delivery} storeNames={storeNames} />
+      <PickupChoice form={form} delivery={delivery} stores={stores} pickupLocations={pickupLocations} />
 
       <Card className="lg:row-span-2">
         <CardHeader>

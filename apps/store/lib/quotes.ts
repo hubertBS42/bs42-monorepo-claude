@@ -5,9 +5,9 @@ import { lockOpenQuote, nextQuoteReference, openQuoteWhere, placeQuotedOrder, Qu
 import { tradeDiscount, type TradeTerms } from "@workspace/commerce/trade-accounts"
 import type { prisma } from "@workspace/db"
 import { Prisma } from "@workspace/db/client"
-import { PaymentMethod, QuoteStatus } from "@workspace/db/enums"
+import { PaymentMethod, QuoteStatus, ShippingMethod } from "@workspace/db/enums"
 
-import { CheckoutError, checkUnpaidLimits, priceCheckout } from "./checkout"
+import { CheckoutError, checkUnpaidLimits, PICKUP, priceCheckout } from "./checkout"
 
 // The storefront's side of quotations (the shared rules are in @workspace/commerce/quotes): making one from the basket,
 // priced as checkout would price it, and cancelling or accepting one the customer owns. In its own module, with
@@ -23,7 +23,8 @@ export const MAX_OPEN_QUOTES = 5
 export interface NewQuote {
   userId: string
   email: string
-  // Who it's addressed to, and the delivery the order would make
+  // Who it's addressed to, and the delivery the order would make, or collection (no address)
+  method: "DELIVERY" | "PICKUP"
   name: string
   phone: string
   line1: string
@@ -43,7 +44,8 @@ export async function createQuote(tx: Tx, sessionCartId: string, pricing: Pricin
   }
 
   // While no delivery fees are set, the quote leaves delivery for staff to add when they place its order
-  const { basket, lines, priced, deliveryToConfirm } = await priceCheckout(tx, sessionCartId, pricing, input, input.trade, true)
+  const isPickup = input.method === PICKUP
+  const { basket, lines, priced, deliveryToConfirm } = await priceCheckout(tx, sessionCartId, pricing, isPickup ? PICKUP : input, input.trade, true)
   // loadCart moved, lowered or dropped lines: the customer hasn't seen this basket
   if (basket.notices.length) throw new CheckoutError("BASKET_CHANGED")
 
@@ -55,10 +57,11 @@ export async function createQuote(tx: Tx, sessionCartId: string, pricing: Pricin
       customerName: input.name,
       customerEmail: input.email.toLowerCase(),
       customerPhone: input.phone,
-      shippingLine1: input.line1,
-      shippingLine2: input.line2 || null,
-      shippingRegion: input.region,
-      shippingTown: input.town,
+      shippingMethod: isPickup ? ShippingMethod.PICKUP : ShippingMethod.DELIVERY,
+      shippingLine1: isPickup ? "" : input.line1,
+      shippingLine2: isPickup ? null : input.line2 || null,
+      shippingRegion: isPickup ? "" : input.region,
+      shippingTown: isPickup ? "" : input.town,
       tradeAccountId: input.trade?.accountId ?? null,
       tradeCompanyName: input.trade?.companyName ?? null,
       tradeTin: input.trade?.tin ?? null,

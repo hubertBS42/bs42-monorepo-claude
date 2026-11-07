@@ -1217,6 +1217,7 @@ export interface ChosenQuoteItem {
   // Installing one unit; null when the product doesn't offer it
   installationFeeGhs: string | null
   // The store it comes from
+  storeId: string
   storeName: string
 }
 

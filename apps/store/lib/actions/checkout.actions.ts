@@ -1,5 +1,6 @@
 "use server"
 
+import type { z } from "zod"
 import { after } from "next/server"
 import { formatError } from "@workspace/auth/format-error"
 import { getPricingContext } from "@workspace/commerce/exchange-rates"
@@ -12,9 +13,9 @@ import { isOrderKey } from "@workspace/commerce/order-links"
 
 import { rememberAddress } from "@/lib/addresses"
 import { readCartId } from "@/lib/cart-cookie"
-import { CheckoutError, placeOrder, priceCheckout, type CheckoutSummary } from "@/lib/checkout"
+import { CheckoutError, PICKUP, placeOrder, priceCheckout, type CheckoutSummary } from "@/lib/checkout"
 import { onlinePaymentsOpen, PAYMENTS_OFF, paymentRedirect, startPayment, visitorIp } from "@/lib/payments"
-import { areaSchema, placeOrderSchema } from "@/lib/schemas/checkout.schemas"
+import { fulfilmentSchema, placeOrderSchema } from "@/lib/schemas/checkout.schemas"
 import { getStoreSession, getTradeTerms } from "@/lib/session"
 
 // Checkout's actions. Anyone can call them: the basket cookie is the key to a basket, and the order link's key to an
@@ -31,15 +32,15 @@ function failure(error: unknown) {
 }
 
 // The summary for delivery to an area, as the page shows it while the customer fills the address in
-export async function quoteCheckoutAction(area: { region: string; town: string }): Promise<DataResponse<CheckoutSummary>> {
+export async function quoteCheckoutAction(fulfilment: z.input<typeof fulfilmentSchema>): Promise<DataResponse<CheckoutSummary>> {
   try {
-    const parsed = areaSchema.safeParse(area)
+    const parsed = fulfilmentSchema.safeParse(fulfilment)
     if (!parsed.success) return { success: false, error: "Choose a region and town.", code: "INVALID_INPUT" }
 
     const [cartId, pricing, trade] = await Promise.all([readCartId(), getPricingContext(), getTradeTerms()])
     if (!cartId) return EMPTY_BASKET
     if (!pricing) return NO_RATE
-    const { basket, summary } = await priceCheckout(prisma, cartId, pricing, parsed.data, trade)
+    const { basket, summary } = await priceCheckout(prisma, cartId, pricing, parsed.data.method === PICKUP ? PICKUP : parsed.data, trade)
     // The basket was changed to match the stores (and saved so): the page's lines are out of date
     if (basket.notices.length) return { success: false, error: basket.notices.join(" "), code: "BASKET_CHANGED" }
     return { success: true, data: summary }
@@ -65,7 +66,7 @@ export async function placeOrderAction(input: unknown): Promise<DataResponse<{ r
     // Stock went down now, not when the order is paid. The customer's and staff's order emails wait for the payment.
     after(() => notifyStockAlerts(stockAlerts))
     // "Save this address": once the order stands, and never in its way
-    if (session && parsed.data.saveAddress) {
+    if (session && parsed.data.saveAddress && parsed.data.method === "DELIVERY") {
       const { name, phone, line1, line2, region, town } = parsed.data
       after(() => rememberAddress(session.user.id, { name, phone, line1, line2, region, town }))
     }

@@ -19,6 +19,8 @@ import { Skeleton } from "@workspace/ui/components/skeleton"
 import { Spinner } from "@workspace/ui/components/spinner"
 import { toast } from "@workspace/ui/components/toast"
 
+import type { PickupLocationView } from "@workspace/commerce/pickup-locations"
+import { FulfilmentChoice, PickupAddress } from "@/components/checkout/fulfilment-choice"
 import { LegalConsent, type LegalLinks } from "@/components/legal-consent"
 import { placeOrderAction, quoteCheckoutAction } from "@/lib/actions/checkout.actions"
 import type { CartLine } from "@/lib/cart"
@@ -60,8 +62,8 @@ const NEW_ADDRESS = "new"
 const addressLabel = (address: SavedAddressOption) => `${address.line1}, ${address.town}${address.deliverable ? "" : " (we don't deliver there yet)"}`
 
 // The form's starting values: the account's details, and its default address when it can be delivered to
-function startingValues(account: CheckoutAccount | null, savedCount: number, start: SavedAddressOption | undefined): CheckoutFormValues {
-  const blank = { name: account?.name ?? "", email: account?.email ?? "", phone: account?.phone ?? "", line1: "", line2: "", region: "", town: "", notes: "" }
+function startingValues(account: CheckoutAccount | null, savedCount: number, start: SavedAddressOption | undefined, method: "DELIVERY" | "PICKUP"): CheckoutFormValues {
+  const blank = { method, name: account?.name ?? "", email: account?.email ?? "", phone: account?.phone ?? "", line1: "", line2: "", region: "", town: "", notes: "" }
   // Kept for next time by default when the account has no address of its own yet
   const saveAddress = !!account && savedCount === 0
   if (!start) return { ...blank, saveAddress }
@@ -86,8 +88,11 @@ export function CheckoutForm({
   savedAddresses,
   legal,
   installationAreas,
+  pickup,
 }: {
   lines: CartLine[]
+  // Where the basket can be collected, when it can
+  pickup: PickupLocationView | null
   areas: DeliveryArea[]
   // Where installers work ("Greater Accra and Adum"), when a line includes installation
   installationAreas: string | null
@@ -107,7 +112,10 @@ export function CheckoutForm({
 
   const startAddress = savedAddresses.find((address) => address.isDefault && address.deliverable)
   const [addressChoice, setAddressChoice] = useState(startAddress?.id ?? NEW_ADDRESS)
-  const form = useForm<CheckoutFormValues>({ resolver: zodResolver(checkoutFormSchema), defaultValues: startingValues(account, savedAddresses.length, startAddress) })
+  const form = useForm<CheckoutFormValues>({
+    resolver: zodResolver(checkoutFormSchema),
+    defaultValues: startingValues(account, savedAddresses.length, startAddress, pickup && areas.length === 0 ? "PICKUP" : "DELIVERY"),
+  })
   useRevalidateOnChange(form)
 
   // Choosing a saved address fills the delivery in from it; "A new address" empties it for typing
@@ -127,18 +135,21 @@ export function CheckoutForm({
 
   const region = useWatch({ control: form.control, name: "region" })
   const town = useWatch({ control: form.control, name: "town" })
+  const method = useWatch({ control: form.control, name: "method" })
+  const isPickup = !!pickup && method === "PICKUP"
   const regionOptions = useMemo(() => areas.map((area) => ({ label: area.region, value: area.region })), [areas])
   const townOptions = useMemo(() => (areas.find((area) => area.region === region)?.towns ?? []).map((name) => ({ label: name, value: name })), [areas, region])
 
   // The delivery fee, and so the total, follow the town. Only the answer for the town chosen last counts: an earlier
   // quote can answer after a later one.
   const [quotedFor, setQuotedFor] = useState<string | null>(null)
-  const areaKey = region && town ? `${region}|${town}` : null
+  // Collection is priced once, delivery per town
+  const areaKey = isPickup ? "PICKUP" : region && town ? `${region}|${town}` : null
   // The town chosen now, read when a quote answers
   const isCurrentArea = useCallback(
     (key: string) => {
-      const { region: currentRegion, town: currentTown } = form.getValues()
-      return `${currentRegion}|${currentTown}` === key
+      const { method: currentMethod, region: currentRegion, town: currentTown } = form.getValues()
+      return (currentMethod === "PICKUP" ? "PICKUP" : `${currentRegion}|${currentTown}`) === key
     },
     [form]
   )
@@ -147,14 +158,15 @@ export function CheckoutForm({
     (key: string) =>
       startQuote(async () => {
         const [quoteRegion, quoteTown] = key.split("|") as [string, string]
-        let result = await quoteCheckoutAction({ region: quoteRegion, town: quoteTown })
+        const fulfilment = key === "PICKUP" ? { method: "PICKUP" as const } : { method: "DELIVERY" as const, region: quoteRegion, town: quoteTown }
+        let result = await quoteCheckoutAction(fulfilment)
         if (!isCurrentArea(key)) return
 
         if (!result.success && result.code === "BASKET_CHANGED") {
           // Saved as it is now, so the reloaded page shows it, and pricing it again gives the real total
           toast.add({ title: "Your basket has changed", description: result.error, type: "warning" })
           router.refresh()
-          result = await quoteCheckoutAction({ region: quoteRegion, town: quoteTown })
+          result = await quoteCheckoutAction(fulfilment)
           if (!isCurrentArea(key)) return
         }
 
@@ -174,7 +186,7 @@ export function CheckoutForm({
   useEffect(() => {
     if (areaKey) quote(areaKey)
   }, [areaKey, quote])
-  const quoted = !!areaKey && quotedFor === areaKey && summary.deliveryGhs !== null
+  const quoted = !!areaKey && quotedFor === areaKey && (summary.deliveryGhs !== null || summary.collection)
   // A town is chosen and its fee is on the way
   const quoting = isQuoting && !!areaKey
   const loadingAmount = (
@@ -187,7 +199,7 @@ export function CheckoutForm({
   const onSubmit = (values: CheckoutFormValues) =>
     startTransition(async () => {
       // The switch shows only for a new address
-      const saveAddress = addressChoice === NEW_ADDRESS && !!values.saveAddress
+      const saveAddress = !isPickup && addressChoice === NEW_ADDRESS && !!values.saveAddress
       const result = await placeOrderAction({ ...values, saveAddress, expectedTotalGhs: summary.totalGhs })
       if (!result.success) {
         toast.add({ title: "Your order wasn't placed", description: result.error, type: "error" })
@@ -205,7 +217,8 @@ export function CheckoutForm({
     })
 
   const busy = isPending || isQuoting
-  const noDelivery = areas.length === 0
+  // Nothing to deliver to and nowhere to collect from
+  const noDelivery = areas.length === 0 && !pickup
 
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-8 lg:grid-cols-[1fr_24rem] lg:items-start" noValidate>
@@ -226,14 +239,32 @@ export function CheckoutForm({
 
         <Card>
           <CardHeader>
-            <CardTitle>Delivery address</CardTitle>
+            <CardTitle>{pickup ? "Delivery or collection" : "Delivery address"}</CardTitle>
             <CardDescription>
               We deliver to the towns listed. The fee depends on the town.
               {installationAreas && ` We install in ${installationAreas}.`}
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4 sm:grid-cols-2">
-            {noDelivery ? (
+            {pickup && (
+              <div className="sm:col-span-2">
+                <FulfilmentChoice
+                  value={isPickup ? "PICKUP" : "DELIVERY"}
+                  onChange={(next) => {
+                    form.setValue("method", next)
+                    form.clearErrors()
+                    setAreaError(null)
+                  }}
+                  pickup={pickup}
+                  disabled={isPending}
+                />
+              </div>
+            )}
+            {isPickup && pickup ? (
+              <div className="sm:col-span-2">
+                <PickupAddress pickup={pickup} />
+              </div>
+            ) : areas.length === 0 ? (
               <p className="text-sm text-muted-foreground sm:col-span-2">We're not taking deliveries yet. Please check back soon.</p>
             ) : (
               <>
@@ -333,11 +364,15 @@ export function CheckoutForm({
             <SummaryRow label={summary.trade ? "Items, ex. tax" : "Items"} value={formatGhs(summary.itemsGhs)} />
             {summary.trade && summary.discountGhs && <SummaryRow label={`Trade discount (${Number(summary.trade.percent)}%)`} value={`−${formatGhs(summary.discountGhs)}`} />}
             {summary.installationGhs && <SummaryRow label="Installation" value={formatGhs(summary.installationGhs)} />}
-            <SummaryRow
-              label="Delivery"
-              value={quoting ? loadingAmount : !areaKey ? "Choose your town" : !quoted ? (areaError ? "Not available" : "—") : summary.freeDelivery ? "Free" : formatGhs(summary.deliveryGhs!)}
-              muted={!quoted}
-            />
+            {isPickup ? (
+              <SummaryRow label="Collection" value="Free" />
+            ) : (
+              <SummaryRow
+                label="Delivery"
+                value={quoting ? loadingAmount : !areaKey ? "Choose your town" : !quoted ? (areaError ? "Not available" : "—") : summary.freeDelivery ? "Free" : formatGhs(summary.deliveryGhs!)}
+                muted={!quoted}
+              />
+            )}
             {summary.taxGhs && <SummaryRow label={summary.trade ? "Tax" : "Includes tax"} value={formatGhs(summary.taxGhs)} muted={!summary.trade} />}
           </div>
           <Separator />

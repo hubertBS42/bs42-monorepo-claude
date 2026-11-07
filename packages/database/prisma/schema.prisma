@@ -819,6 +819,13 @@ model Order {
   installationHistory  OrderInstallationHistory[]
   // When "Find an order" last emailed this order's link, so its customer can't be sent it over and over
   orderLinkSentAt      DateTime?
+  // Where a pickup is collected, copied from its store's pickup location when the order was made (null for one made
+  // where the store had none), so the order keeps the place it was given
+  pickupName           String?
+  pickupAddress        String?
+  pickupHours          String?
+  pickupPhone          String?
+  pickupMapUrl         String?
   // A pickup order staff said is ready: the customer is emailed once
   readyForCollectionAt DateTime?
 
@@ -1539,6 +1546,7 @@ model Organization {
   quoteItems      QuoteItem[]
   suppliers       Supplier[]
   purchaseOrders  PurchaseOrder[]
+  pickupLocation  PickupLocation?
   productRequests ProductRequest[]
   transfersOut    StockTransfer[]    @relation("StockTransferFrom")
   transfersIn     StockTransfer[]    @relation("StockTransferTo")
@@ -1789,4 +1797,22 @@ model Notification {
 
   @@index([userId, createdAt])
   @@map("notification")
+}
+
+// Where a store's pickup orders are collected, as customers see it: a branch's name, address and hours. One per store
+// (stores are the business's branches); without one, pickups from the store aren't offered to customers.
+model PickupLocation {
+  id             String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String       @unique @db.Uuid
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  // Customer-facing, e.g. "BS42 Accra": customers never see the store's own name
+  name           String
+  address        String
+  hours          String?
+  phone          String?
+  mapUrl         String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@map("pickup_location")
 }

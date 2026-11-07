@@ -50,6 +50,8 @@ export default async function InvoicePage({ params, searchParams }: InvoicePageP
       paymentMethod: true,
       paidAt: true,
       shippingMethod: true,
+      pickupName: true,
+      pickupAddress: true,
       customerName: true,
       customerEmail: true,
       customerPhone: true,
@@ -119,7 +121,9 @@ export default async function InvoicePage({ params, searchParams }: InvoicePageP
           </div>
           <div className="space-y-0.5">
             <h2 className="mb-1 text-xs font-semibold tracking-wide text-muted-foreground uppercase">{order.shippingMethod === ShippingMethod.PICKUP ? "Collection" : "Deliver to"}</h2>
-            <p>{order.shippingMethod === ShippingMethod.PICKUP ? (settings.contactAddress ?? "Collected from the store") : address}</p>
+            <p>
+              {order.shippingMethod === ShippingMethod.PICKUP ? [order.pickupName, order.pickupAddress ?? settings.contactAddress].filter(Boolean).join(", ") || "Collected from the store" : address}
+            </p>
           </div>
         </section>
 

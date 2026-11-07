@@ -1,8 +1,9 @@
 import { z } from "zod"
 
-import { addressFields, checkArea } from "./address.schemas"
+import { checkFulfilment, fulfilmentFields } from "./address.schemas"
 
-// Making a quotation: who it's addressed to, and the delivery the order would make (its fee is part of the quote)
-export const quoteRequestSchema = z.object(addressFields).superRefine(checkArea)
+// Making a quotation: who it's addressed to, and the delivery the order would make (its fee is part of the quote), or
+// collection from the store
+export const quoteRequestSchema = z.object(fulfilmentFields).superRefine(checkFulfilment)
 
 export type QuoteRequestValues = z.input<typeof quoteRequestSchema>

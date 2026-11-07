@@ -14,6 +14,7 @@ import { loadCart } from "@/lib/cart"
 import { readCartId } from "@/lib/cart-cookie"
 import { formatGhs } from "@/lib/money"
 import { describeInstallationAreas } from "@workspace/commerce/installation-areas"
+import { basketPickupLocation } from "@/lib/checkout"
 import { QuoteRequestDialog } from "@/components/quotes/quote-request-dialog"
 import { getSavedAddresses } from "@/lib/addresses"
 import { allAreas, getDeliveryAreas } from "@/lib/delivery-areas"
@@ -23,21 +24,21 @@ import { EmptyState } from "@workspace/ui/components/empty-state"
 
 export const metadata: Metadata = { title: "Basket", robots: { index: false } }
 
-async function quoteRequestProps() {
-  const [session, delivery, settings] = await Promise.all([getStoreSession(), getDeliveryAreas(), getAppSettings()])
+async function quoteRequestProps(lines: { listingId: string; withInstallation: boolean }[]) {
+  const [session, delivery, settings, pickup] = await Promise.all([getStoreSession(), getDeliveryAreas(), getAppSettings(), basketPickupLocation(prisma, lines)])
   // With no delivery fees set, any town can be quoted for, with delivery to be confirmed
   const deliveryToConfirm = !delivery.feesSet
   const areas = deliveryToConfirm ? allAreas() : delivery.areas
   const deliversTo = deliveryToConfirm ? () => true : delivery.deliversTo
-  const blank = { name: "", phone: "", line1: "", line2: "", region: "", town: "" }
-  if (!session) return { signedIn: false, initial: blank, areas, deliveryToConfirm, validityDays: settings.quoteValidityDays }
+  const blank = { method: "DELIVERY" as const, name: "", phone: "", line1: "", line2: "", region: "", town: "" }
+  if (!session) return { signedIn: false, initial: blank, areas, deliveryToConfirm, pickup, validityDays: settings.quoteValidityDays }
 
   const [user, addresses] = await Promise.all([prisma.user.findUnique({ where: { id: session.user.id }, select: { name: true, phone: true } }), getSavedAddresses(session.user.id)])
   const address = addresses.find((saved) => deliversTo(saved.region, saved.town))
   const initial = address
-    ? { name: address.name, phone: address.phone, line1: address.line1, line2: address.line2 ?? "", region: address.region, town: address.town }
+    ? { method: "DELIVERY" as const, name: address.name, phone: address.phone, line1: address.line1, line2: address.line2 ?? "", region: address.region, town: address.town }
     : { ...blank, name: user?.name ?? session.user.name, phone: user?.phone ?? "" }
-  return { signedIn: true, initial, areas, deliveryToConfirm, validityDays: settings.quoteValidityDays }
+  return { signedIn: true, initial, areas, deliveryToConfirm, pickup, validityDays: settings.quoteValidityDays }
 }
 
 export default async function BasketPage() {
@@ -55,7 +56,7 @@ export default async function BasketPage() {
   const toFreeDelivery = shortBeforeTax && pricing?.tax && !trade ? shortBeforeTax.times(pricing.tax.rate.plus(1)).toDecimalPlaces(2, Prisma.Decimal.ROUND_UP) : shortBeforeTax
 
   // "Get a quote", filled in from the account and its default address (when it's delivered to)
-  const quote = basket?.totals ? await quoteRequestProps() : null
+  const quote = basket?.totals ? await quoteRequestProps(lines) : null
   const deliveryNote = onlinePaymentsEnabled ? "Worked out at checkout" : quote?.deliveryToConfirm ? "Confirmed with you" : "Worked out in your quote"
 
   // Under the summary, trade account or not

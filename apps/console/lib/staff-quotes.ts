@@ -25,6 +25,7 @@ const MESSAGES = {
   // The town, not the items: OrderItemError's NO_INSTALLATION is a product that stopped offering it
   OUTSIDE_INSTALLATION_AREAS: "We don't install in that town. Take installation off the items, or choose another address.",
   PICKUP_ONE_STORE: "These items come from different stores, so the order can't be picked up. Choose delivery.",
+  NO_PICKUP_LOCATION: "That store has no pickup location. Add one in its Store Details, or choose delivery.",
   PRICE_CHANGED: "The prices changed since you reviewed the order. Check the new total, then create it again.",
   DISCOUNT_TOO_LARGE: "The discount is more than the items cost.",
   CUSTOMER_NOT_FOUND: "That customer's account no longer exists. Look them up again.",
@@ -56,6 +57,7 @@ export interface QuotableRow {
   stock: number | null
   // Still to come on the store's open purchase orders
   incoming: number
+  storeId: string
   storeName: string
 }
 
@@ -98,6 +100,7 @@ export async function searchQuotableItems(client: Client, pricing: PricingContex
       sellPrice: true,
       stock: true,
       trackInventory: true,
+      organizationId: true,
       organization: { select: { name: true } },
       product: { select: { id: true, name: true, sku: true, images: true, hasVariants: true, brand: { select: { name: true } } } },
       storeListingVariants: {
@@ -137,7 +140,7 @@ export async function searchQuotableItems(client: Client, pricing: PricingContex
       variant.candidates.push(candidate)
       entry.variants.set(key, variant)
     }
-    const store = { storeName: listing.organization.name, listingId: listing.id }
+    const store = { storeId: listing.organizationId, storeName: listing.organization.name, listingId: listing.id }
 
     if (!product.hasVariants) {
       add("", 0, {
@@ -221,9 +224,12 @@ export async function priceStaffSale(client: Client, pricing: PricingContext, in
   return { lines, priced }
 }
 
-// A pickup is from one store, the one all its items come from
-export function checkPickupLines(shippingMethod: ShippingMethod, lines: { storeId: string }[]) {
-  if (shippingMethod === ShippingMethod.PICKUP && new Set(lines.map((line) => line.storeId)).size > 1) throw new StaffQuoteError("PICKUP_ONE_STORE")
+// A pickup is from one store, the one all its items come from, at its pickup location: customers must be told where
+export async function checkPickupLines(client: Client, shippingMethod: ShippingMethod, lines: { storeId: string }[]) {
+  if (shippingMethod !== ShippingMethod.PICKUP) return
+  const storeIds = new Set(lines.map((line) => line.storeId))
+  if (storeIds.size > 1) throw new StaffQuoteError("PICKUP_ONE_STORE")
+  if (!(await client.pickupLocation.findUnique({ where: { organizationId: [...storeIds][0] }, select: { id: true } }))) throw new StaffQuoteError("NO_PICKUP_LOCATION")
 }
 
 export interface NewStaffQuote extends StaffSalePricingInput {
@@ -246,7 +252,7 @@ export async function createStaffQuote(tx: Tx, pricing: PricingContext, input: N
   if (input.customerUserId && !(await tx.user.findUnique({ where: { id: input.customerUserId }, select: { id: true } }))) throw new StaffQuoteError("CUSTOMER_NOT_FOUND")
   const trade = await loadTradeTerms(tx, input.customerUserId)
   const { lines, priced } = await priceStaffSale(tx, pricing, input)
-  checkPickupLines(input.shippingMethod, lines)
+  await checkPickupLines(tx, input.shippingMethod, lines)
   const isPickup = input.shippingMethod === ShippingMethod.PICKUP
 
   return tx.quote.create({

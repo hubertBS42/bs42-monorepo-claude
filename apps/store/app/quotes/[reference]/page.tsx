@@ -3,6 +3,7 @@ import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
 import { notFound } from "next/navigation"
 import { isQuoteKey, orderHref, quoteHref } from "@workspace/commerce/order-links"
+import { pickupLocationForStores } from "@workspace/commerce/pickup-locations"
 import { prisma } from "@workspace/db"
 import { Prisma } from "@workspace/db/client"
 import { QuoteStatus, ShippingMethod } from "@workspace/db/enums"
@@ -64,6 +65,13 @@ export default async function QuotePage({ params, searchParams }: QuotePageProps
   const lastDay = formatDate(new Date(quote.validUntil.getTime() - 1), "d MMMM yyyy")
   const discount = quote.discountAmountGhs?.gt(0) ? quote.discountAmountGhs : null
   const isPickup = quote.shippingMethod === ShippingMethod.PICKUP
+  // Where it would be collected: its store's pickup location now
+  const pickup = isPickup
+    ? await pickupLocationForStores(
+        prisma,
+        quote.items.map((item) => item.organizationId)
+      )
+    : null
   const address = [quote.shippingLine1, quote.shippingLine2, quote.shippingTown, quote.shippingRegion].filter(Boolean).join(", ")
   const status = quote.status === QuoteStatus.ACCEPTED ? "Accepted" : quote.status === QuoteStatus.CANCELLED ? "Cancelled" : expired ? "Expired" : `Valid until ${lastDay}`
 
@@ -168,7 +176,7 @@ export default async function QuotePage({ params, searchParams }: QuotePageProps
           </div>
           <div className="space-y-0.5">
             <h2 className="mb-1 text-xs font-semibold tracking-wide text-muted-foreground uppercase">{isPickup ? "Collect from" : "Deliver to"}</h2>
-            <p>{isPickup ? (settings.contactAddress ?? "Our store") : address}</p>
+            <p>{isPickup ? [pickup?.name, pickup?.address ?? settings.contactAddress].filter(Boolean).join(", ") || "Our store" : address}</p>
           </div>
         </section>
 

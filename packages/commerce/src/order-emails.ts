@@ -4,6 +4,7 @@ import { authURLs } from "@workspace/auth/constants"
 import { prisma, readAppSettings, resolveDarkLogoUrl, resolveStoreName } from "@workspace/db"
 import { Prisma } from "@workspace/db/client"
 import { OrderStatus, ShippingMethod } from "@workspace/db/enums"
+import { orderPickupLocation } from "./pickup-locations"
 import {
   sendOrderCancelledEmail,
   sendOrderConfirmationEmail,
@@ -52,6 +53,11 @@ const orderEmailSelect = {
   customerName: true,
   customerEmail: true,
   shippingMethod: true,
+  pickupName: true,
+  pickupAddress: true,
+  pickupHours: true,
+  pickupPhone: true,
+  pickupMapUrl: true,
   shippingLine1: true,
   shippingLine2: true,
   shippingTown: true,
@@ -96,7 +102,7 @@ const amount = (value: Prisma.Decimal) => Number(value.toFixed(2))
 // products to ask for reviews of. A new order adds Settings' bank details, for one paid by bank transfer.
 export interface OrderEmailExtra {
   bankTransferDetails?: string | null
-  // Settings' address, which a pickup order's first emails say to collect from
+  // Where a pickup order is collected, which its first emails and the ready email say
   pickupLocation?: PickupLocation | null
   refundAmountGhs?: string | null
   returnedItems?: ReturnedItem[]
@@ -229,7 +235,10 @@ export async function sendOrderEmail(orderId: string, event: OrderEmailEvent, no
     }
 
     if (event === "CREATED") extra = { ...extra, bankTransferDetails: settings.bankTransferDetails }
-    if (settings.contactAddress) extra = { ...extra, pickupLocation: { address: settings.contactAddress, hours: settings.contactHours, mapUrl: settings.contactMapUrl } }
+    // Where its store said to collect it, else Settings' address for an order made where the store had no location
+    const location = orderPickupLocation(order)
+    if (location) extra = { ...extra, pickupLocation: location }
+    else if (settings.contactAddress) extra = { ...extra, pickupLocation: { address: settings.contactAddress, hours: settings.contactHours, mapUrl: settings.contactMapUrl } }
 
     // Signed, so a guest opens it without an account: its progress and its invoice
     extra = { orderUrl: signedOrderUrl(order.reference, orderId), ...extra }

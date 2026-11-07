@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@work
 import CreateOrderForm from "./_components/create-order-form"
 import { requireSystemPermission } from "@/lib/auth-guard"
 import { getDeliverySettings } from "@/lib/data/delivery.data"
+import { getPickupLocationNames } from "@/lib/data/pickup-locations.data"
 import { getInstallationAreas } from "@/lib/data/installation.data"
 
 export const metadata: Metadata = {
@@ -16,7 +17,7 @@ export default async function CreateOrderPage() {
   await requireSystemPermission({ order: ["create"] })
 
   // The actions check the rate again when pricing; this only saves filling in a form that can't be sent
-  const [rate, delivery, installation] = await Promise.all([getLatestExchangeRate(), getDeliverySettings(), getInstallationAreas()])
+  const [rate, delivery, installation, pickupLocations] = await Promise.all([getLatestExchangeRate(), getDeliverySettings(), getInstallationAreas(), getPickupLocationNames()])
 
   return (
     <div className="flex flex-col gap-y-6">
@@ -40,7 +41,7 @@ export default async function CreateOrderPage() {
           </CardContent>
         </Card>
       ) : (
-        <CreateOrderForm delivery={delivery} installationAreas={installation.areas} />
+        <CreateOrderForm delivery={delivery} installationAreas={installation.areas} pickupLocations={pickupLocations} />
       )}
     </div>
   )

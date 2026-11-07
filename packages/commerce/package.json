@@ -40,6 +40,7 @@
     "./pricing": "./src/pricing.ts",
     "./quote-emails": "./src/quote-emails.ts",
     "./quotes": "./src/quotes.ts",
+    "./pickup-locations": "./src/pickup-locations.ts",
     "./reviews": "./src/reviews.ts",
     "./stock-movements": "./src/stock-movements.ts",
     "./trade-account-status": "./src/trade-account-status.ts",

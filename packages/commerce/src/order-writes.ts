@@ -6,6 +6,7 @@ import { InstallationStatus, OrderStatus, PaymentMethod, PaymentStatus, Shipping
 import { formatDate } from "@workspace/utils/date"
 import { loadInstallationFees } from "./installation"
 import type { StockAlert } from "./notifications"
+import { pickupLocationForStores } from "./pickup-locations"
 import type { PricedOrder } from "./pricing"
 import { addStock, recordStockMovements } from "./stock-movements"
 import { hiddenReason, loadVisibleCategoryIds } from "./visibility"
@@ -232,6 +233,15 @@ export async function createOrder(tx: Tx, order: NewOrder) {
   const [{ nextval }] = await tx.$queryRaw<[{ nextval: bigint }]>`SELECT nextval('order_reference_seq')`
   const reference = `BS42-${formatDate(new Date(), "yyyyMMdd")}-${String(nextval).padStart(5, "0")}`
 
+  // A pickup keeps the place it's collected from, as its store has it now
+  const pickup =
+    order.shippingMethod === ShippingMethod.PICKUP
+      ? await pickupLocationForStores(
+          tx,
+          order.lines.map((line) => line.storeId)
+        )
+      : null
+
   const { priced } = order
   const created = await tx.order.create({
     data: {
@@ -248,6 +258,11 @@ export async function createOrder(tx: Tx, order: NewOrder) {
       shippingLine2: order.shipping?.line2 ?? null,
       shippingRegion: order.shipping?.region ?? null,
       shippingTown: order.shipping?.town ?? null,
+      pickupName: pickup?.name ?? null,
+      pickupAddress: pickup?.address ?? null,
+      pickupHours: pickup?.hours ?? null,
+      pickupPhone: pickup?.phone ?? null,
+      pickupMapUrl: pickup?.mapUrl ?? null,
       status: OrderStatus.PENDING,
       subtotalUsd: priced.subtotalUsd,
       subtotalGhs: priced.subtotalGhs,

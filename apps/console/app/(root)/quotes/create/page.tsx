@@ -9,6 +9,7 @@ import QuoteForm from "./_components/quote-form"
 import { getAppSettings } from "@/lib/app-settings"
 import { requireSystemPermission } from "@/lib/auth-guard"
 import { getDeliverySettings } from "@/lib/data/delivery.data"
+import { getPickupLocationNames } from "@/lib/data/pickup-locations.data"
 import { getInstallationAreas } from "@/lib/data/installation.data"
 import { getQuoteCopy } from "@/lib/data/quotes.data"
 
@@ -26,12 +27,13 @@ export default async function CreateQuotePage({ searchParams }: CreateQuotePageP
   const from = getStringParam((await searchParams).from)
 
   // The actions check the rate again when pricing; this only saves filling in a form that can't be sent
-  const [rate, delivery, installation, settings, copy] = await Promise.all([
+  const [rate, delivery, installation, settings, copy, pickupLocations] = await Promise.all([
     getLatestExchangeRate(),
     getDeliverySettings(),
     getInstallationAreas(),
     getAppSettings(),
     from && z.uuid().safeParse(from).success ? getQuoteCopy(from) : null,
+    getPickupLocationNames(),
   ])
 
   return (
@@ -60,7 +62,7 @@ export default async function CreateQuotePage({ searchParams }: CreateQuotePageP
           </CardContent>
         </Card>
       ) : (
-        <QuoteForm delivery={delivery} installationAreas={installation.areas} validityDays={settings.quoteValidityDays} copy={copy} />
+        <QuoteForm delivery={delivery} installationAreas={installation.areas} validityDays={settings.quoteValidityDays} copy={copy} pickupLocations={pickupLocations} />
       )}
     </div>
   )

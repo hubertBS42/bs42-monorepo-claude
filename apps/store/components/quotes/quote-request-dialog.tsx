@@ -13,7 +13,9 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { FieldError } from "@workspace/ui/components/field"
 import { Spinner } from "@workspace/ui/components/spinner"
 
+import type { PickupLocationView } from "@workspace/commerce/pickup-locations"
 import type { DeliveryArea } from "@/components/checkout/checkout-form"
+import { FulfilmentChoice, PickupAddress } from "@/components/checkout/fulfilment-choice"
 import { createQuoteAction } from "@/lib/actions/quote.actions"
 import { quoteRequestSchema, type QuoteRequestValues } from "@/lib/schemas/quote.schemas"
 import { useRevalidateOnChange } from "@workspace/forms/use-revalidate-on-change"
@@ -28,6 +30,7 @@ export function QuoteRequestDialog({
   areas,
   validityDays,
   deliveryToConfirm,
+  pickup,
   primary = false,
 }: {
   signedIn: boolean
@@ -35,12 +38,16 @@ export function QuoteRequestDialog({
   areas: DeliveryArea[]
   validityDays: number
   deliveryToConfirm: boolean
+  // Where the basket can be collected, when it can
+  pickup: PickupLocationView | null
   primary?: boolean
 }) {
   const [open, setOpen] = useState(false)
   const form = useForm<QuoteRequestValues>({ resolver: zodResolver(quoteRequestSchema), defaultValues: initial })
   useRevalidateOnChange(form)
   const region = useWatch({ control: form.control, name: "region" })
+  const method = useWatch({ control: form.control, name: "method" })
+  const isPickup = !!pickup && method === "PICKUP"
   const regionOptions = useMemo(() => areas.map((area) => ({ label: area.region, value: area.region })), [areas])
   const townOptions = useMemo(() => (areas.find((area) => area.region === region)?.towns ?? []).map((name) => ({ label: name, value: name })), [areas, region])
   const { isSubmitting } = form.formState
@@ -79,7 +86,7 @@ export function QuoteRequestDialog({
         <DialogHeader>
           <DialogTitle>Get a quotation</DialogTitle>
           <DialogDescription>
-            Prices hold for {validityDays} days. Items aren&apos;t reserved until you pay.{deliveryToConfirm && " We'll confirm the delivery fee with you."}
+            Prices hold for {validityDays} days. Items aren&apos;t reserved until you pay.{deliveryToConfirm && !isPickup && " We'll confirm the delivery fee with you."}
           </DialogDescription>
         </DialogHeader>
         {/* The dialog is portaled, but React events still bubble to any form it's rendered inside */}
@@ -91,26 +98,54 @@ export function QuoteRequestDialog({
           className="grid gap-4 sm:grid-cols-2"
           noValidate
         >
+          {pickup && (
+            <div className="sm:col-span-2">
+              <FulfilmentChoice
+                value={isPickup ? "PICKUP" : "DELIVERY"}
+                onChange={(next) => {
+                  form.setValue("method", next)
+                  form.clearErrors()
+                }}
+                pickup={pickup}
+                disabled={isSubmitting}
+              />
+            </div>
+          )}
           <TextInputField control={form.control} name="name" label="Addressed to" autoComplete="name" disabled={isSubmitting} />
           <PhoneField control={form.control} name="phone" label="Phone" defaultCountry="GH" disabled={isSubmitting} />
-          <div className="sm:col-span-2">
-            <TextInputField control={form.control} name="line1" label="Delivery address" placeholder="House number and street, or a landmark" autoComplete="address-line1" disabled={isSubmitting} />
-          </div>
-          <div className="sm:col-span-2">
-            <TextInputField control={form.control} name="line2" label="More details (optional)" autoComplete="address-line2" disabled={isSubmitting} />
-          </div>
-          <ComboboxField
-            control={form.control}
-            name="region"
-            label="Region"
-            options={regionOptions}
-            placeholder="Select a region"
-            disabled={isSubmitting}
-            onValueChange={(next) => {
-              if (next !== region) form.setValue("town", "")
-            }}
-          />
-          <ComboboxField control={form.control} name="town" label="Town" options={townOptions} placeholder="Select a town" disabled={isSubmitting || !region} />
+          {isPickup && pickup ? (
+            <div className="sm:col-span-2">
+              <PickupAddress pickup={pickup} />
+            </div>
+          ) : (
+            <>
+              <div className="sm:col-span-2">
+                <TextInputField
+                  control={form.control}
+                  name="line1"
+                  label="Delivery address"
+                  placeholder="House number and street, or a landmark"
+                  autoComplete="address-line1"
+                  disabled={isSubmitting}
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <TextInputField control={form.control} name="line2" label="More details (optional)" autoComplete="address-line2" disabled={isSubmitting} />
+              </div>
+              <ComboboxField
+                control={form.control}
+                name="region"
+                label="Region"
+                options={regionOptions}
+                placeholder="Select a region"
+                disabled={isSubmitting}
+                onValueChange={(next) => {
+                  if (next !== region) form.setValue("town", "")
+                }}
+              />
+              <ComboboxField control={form.control} name="town" label="Town" options={townOptions} placeholder="Select a town" disabled={isSubmitting || !region} />
+            </>
+          )}
           {form.formState.errors.root && (
             <div className="sm:col-span-2">
               <FieldError errors={[form.formState.errors.root]} />

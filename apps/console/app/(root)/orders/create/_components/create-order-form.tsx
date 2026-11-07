@@ -41,9 +41,11 @@ interface CreateOrderFormProps {
   // The platform's delivery fees and installation areas, which the delivery step fills in from and warns against
   delivery: DeliverySettingsView
   installationAreas: InstallationAreaRow[]
+  // Each store's pickup location name, by store id
+  pickupLocations: Record<string, string>
 }
 
-export default function CreateOrderForm({ delivery, installationAreas }: CreateOrderFormProps) {
+export default function CreateOrderForm({ delivery, installationAreas, pickupLocations }: CreateOrderFormProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [step, setStep] = useState(0)
@@ -84,7 +86,9 @@ export default function CreateOrderForm({ delivery, installationAreas }: CreateO
   const shippingMethod = useWatch({ control: form.control, name: "shippingMethod" })
   const items = useWatch({ control: form.control, name: "items" })
   // Where the items come from: one store's can be picked up there
-  const storeNames = [...new Set(items.flatMap((item) => chosen[itemKey(item.listingId, item.listingVariantId ?? null)]?.storeName ?? []))]
+  const stores = [
+    ...new Map(items.flatMap((item) => chosen[itemKey(item.listingId, item.listingVariantId ?? null)] ?? []).map((info) => [info.storeId, { id: info.storeId, name: info.storeName }])).values(),
+  ]
 
   const isLast = step === STEPS.length - 1
 
@@ -113,7 +117,7 @@ export default function CreateOrderForm({ delivery, installationAreas }: CreateO
         // A line that went off sale, ran out or stopped offering installation, a town outside the installation areas,
         // or a customer whose account went: each is fixed on its step. New prices show on the review step.
         if (response.code === "ITEM_UNAVAILABLE" || response.code === "INSUFFICIENT_STOCK" || response.code === "NO_INSTALLATION") setStep(1)
-        if (response.code === "OUTSIDE_INSTALLATION_AREAS" || response.code === "PICKUP_ONE_STORE") setStep(2)
+        if (response.code === "OUTSIDE_INSTALLATION_AREAS" || response.code === "PICKUP_ONE_STORE" || response.code === "NO_PICKUP_LOCATION") setStep(2)
         if (response.code === "CUSTOMER_NOT_FOUND") {
           setCustomer(null)
           unlinkCustomer(form)
@@ -163,7 +167,7 @@ export default function CreateOrderForm({ delivery, installationAreas }: CreateO
 
       {step === 0 && <CustomerStep kind="order" form={form} customer={customer} onCustomerChange={setCustomer} />}
       {step === 1 && <ItemsStep kind="order" form={form} chosen={chosen} onChosenChange={setChosen} />}
-      {step === 2 && <DeliveryStep form={form} customer={customer} delivery={delivery} installationAreas={installationAreas} storeNames={storeNames} />}
+      {step === 2 && <DeliveryStep form={form} customer={customer} delivery={delivery} installationAreas={installationAreas} stores={stores} pickupLocations={pickupLocations} />}
       {step === 3 && (
         <ReviewStep
           kind="order"
@@ -171,7 +175,7 @@ export default function CreateOrderForm({ delivery, installationAreas }: CreateO
           customer={customer}
           terms={`Paying by ${PAYMENT_METHOD_LABELS[paymentMethod].toLowerCase()}`}
           freeDeliveryFromGhs={delivery.freeDeliveryFromGhs}
-          pickupFrom={shippingMethod === ShippingMethod.PICKUP ? storeNames[0] : undefined}
+          pickupFrom={shippingMethod === ShippingMethod.PICKUP && stores[0] ? pickupLocations[stores[0].id] : undefined}
           onPreviewChange={setPreview}
           refreshKey={refreshKey}
         />

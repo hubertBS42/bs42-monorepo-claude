@@ -44,7 +44,7 @@ export async function createStaffOrder(tx: Tx, pricing: PricingContext, input: N
   const trade = await loadTradeTerms(tx, input.customerUserId)
   const { lines, priced } = await priceStaffSale(tx, pricing, input)
   const isPickup = input.shippingMethod === ShippingMethod.PICKUP
-  checkPickupLines(input.shippingMethod, lines)
+  await checkPickupLines(tx, input.shippingMethod, lines)
   // A new day's rate, a store's new price or a change to tax since the review step
   if (!priced.totalGhs.equals(input.expectedTotalGhs)) throw new StaffQuoteError("PRICE_CHANGED")
 

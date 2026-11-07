@@ -37,13 +37,15 @@ interface QuoteFormProps {
   // The platform's delivery fees and installation areas, which the delivery step fills in from and warns against
   delivery: DeliverySettingsView
   installationAreas: InstallationAreaRow[]
+  // Each store's pickup location name, by store id
+  pickupLocations: Record<string, string>
   // Settings' default validity
   validityDays: number
   // "Copy to a new quotation": the quote's details to start from
   copy: QuoteCopy | null
 }
 
-export default function QuoteForm({ delivery, installationAreas, validityDays, copy }: QuoteFormProps) {
+export default function QuoteForm({ delivery, installationAreas, validityDays, copy, pickupLocations }: QuoteFormProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [step, setStep] = useState(0)
@@ -81,7 +83,9 @@ export default function QuoteForm({ delivery, installationAreas, validityDays, c
   const shippingMethod = useWatch({ control: form.control, name: "shippingMethod" })
   const items = useWatch({ control: form.control, name: "items" })
   // Where the items come from: one store's can be picked up there
-  const storeNames = [...new Set(items.flatMap((item) => chosen[itemKey(item.listingId, item.listingVariantId ?? null)]?.storeName ?? []))]
+  const stores = [
+    ...new Map(items.flatMap((item) => chosen[itemKey(item.listingId, item.listingVariantId ?? null)] ?? []).map((info) => [info.storeId, { id: info.storeId, name: info.storeName }])).values(),
+  ]
 
   // Each step checks only its own fields before moving on
   const goNext = async () => {
@@ -97,7 +101,7 @@ export default function QuoteForm({ delivery, installationAreas, validityDays, c
         // A line that went off sale or stopped offering installation, a town outside the installation areas, or a
         // customer whose account went: each is fixed on its step
         if (response.code === "ITEM_UNAVAILABLE" || response.code === "NO_INSTALLATION") setStep(1)
-        if (response.code === "OUTSIDE_INSTALLATION_AREAS" || response.code === "PICKUP_ONE_STORE") setStep(2)
+        if (response.code === "OUTSIDE_INSTALLATION_AREAS" || response.code === "PICKUP_ONE_STORE" || response.code === "NO_PICKUP_LOCATION") setStep(2)
         if (response.code === "CUSTOMER_NOT_FOUND") {
           setCustomer(null)
           unlinkCustomer(form)
@@ -146,7 +150,7 @@ export default function QuoteForm({ delivery, installationAreas, validityDays, c
 
       {step === 0 && <CustomerStep kind="quote" form={form} customer={customer} onCustomerChange={setCustomer} />}
       {step === 1 && <ItemsStep kind="quote" form={form} chosen={chosen} onChosenChange={setChosen} />}
-      {step === 2 && <DeliveryStep form={form} customer={customer} delivery={delivery} installationAreas={installationAreas} storeNames={storeNames} />}
+      {step === 2 && <DeliveryStep form={form} customer={customer} delivery={delivery} installationAreas={installationAreas} stores={stores} pickupLocations={pickupLocations} />}
       {step === 3 && (
         <ReviewStep
           kind="quote"
@@ -154,7 +158,7 @@ export default function QuoteForm({ delivery, installationAreas, validityDays, c
           customer={customer}
           terms={`Prices hold for ${validity} ${validity === 1 ? "day" : "days"}`}
           freeDeliveryFromGhs={delivery.freeDeliveryFromGhs}
-          pickupFrom={shippingMethod === ShippingMethod.PICKUP ? storeNames[0] : undefined}
+          pickupFrom={shippingMethod === ShippingMethod.PICKUP && stores[0] ? pickupLocations[stores[0].id] : undefined}
         />
       )}
 

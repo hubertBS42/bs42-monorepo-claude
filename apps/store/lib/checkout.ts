@@ -5,6 +5,7 @@ import type { PricingContext } from "@workspace/commerce/exchange-rates"
 import { loadInstallationAreas } from "@workspace/commerce/installation"
 import { installsIn } from "@workspace/commerce/installation-areas"
 import { createOrder, resolveOrderLines } from "@workspace/commerce/order-writes"
+import { pickupLocationForStores, type PickupLocationView } from "@workspace/commerce/pickup-locations"
 import { priceOrder } from "@workspace/commerce/pricing"
 import { loadTradeTerms, tradeDiscount, type TradeTerms } from "@workspace/commerce/trade-accounts"
 import type { prisma } from "@workspace/db"
@@ -20,7 +21,7 @@ import { clearCart, loadCart, sumInstallation } from "./cart"
 type Tx = Parameters<Parameters<typeof prisma.$transaction>[0]>[0]
 type Client = typeof prisma | Tx
 
-export type CheckoutErrorCode = "EMPTY_BASKET" | "BASKET_CHANGED" | "PRICE_CHANGED" | "NO_DELIVERY" | "NO_INSTALLATION" | "TOO_MANY_UNPAID"
+export type CheckoutErrorCode = "EMPTY_BASKET" | "BASKET_CHANGED" | "PRICE_CHANGED" | "NO_DELIVERY" | "NO_INSTALLATION" | "NO_PICKUP" | "TOO_MANY_UNPAID"
 
 const MESSAGES: Record<CheckoutErrorCode, string> = {
   EMPTY_BASKET: "Your basket is empty.",
@@ -28,6 +29,7 @@ const MESSAGES: Record<CheckoutErrorCode, string> = {
   PRICE_CHANGED: "Your order's total has changed. Please check it before placing your order.",
   NO_DELIVERY: "We don't deliver to that town yet.",
   NO_INSTALLATION: "We don't install in that town yet. Take installation off in your basket, or choose another address.",
+  NO_PICKUP: "This basket can't be collected. Please choose delivery.",
   TOO_MANY_UNPAID: "You already have orders waiting for payment. Please pay for one of them, or wait for it to lapse, before placing another.",
 }
 
@@ -50,12 +52,27 @@ export interface Area {
   town: string
 }
 
+// Collected from the store's pickup location, rather than delivered to an area
+export const PICKUP = "PICKUP" as const
+
+// Where the basket can be collected: its items all from one store with a pickup location, none to be installed (the
+// installers go to an address). The basket and checkout offer collection only then; priceCheckout checks it again.
+export async function basketPickupLocation(client: Client, lines: { listingId: string; withInstallation: boolean }[]): Promise<PickupLocationView | null> {
+  if (!lines.length || lines.some((line) => line.withInstallation)) return null
+  const listings = await client.storeListing.findMany({ where: { id: { in: lines.map((line) => line.listingId) } }, select: { organizationId: true } })
+  return pickupLocationForStores(
+    client,
+    listings.map((listing) => listing.organizationId)
+  )
+}
+
 // The basket checked again (loadCart), its lines as an order would sell them, and their prices with delivery to the
 // area (or without delivery when there's no area yet). Throws CheckoutError for an empty basket, or an area with no
 // delivery or, when a line includes installation, none of that; and OrderItemError when a line can't be sold. An
 // approved trade account's discount (trade) comes off the goods, before tax. With deliveryMayWait (quotations), an area
 // is priced without delivery while no delivery fees are set at all (deliveryToConfirm), instead of refused.
-export async function priceCheckout(client: Client, sessionCartId: string, pricing: PricingContext, area: Area | null, trade: TradeTerms | null, deliveryMayWait = false) {
+// For collection (PICKUP) there's no delivery fee, and a basket that can't be collected throws NO_PICKUP.
+export async function priceCheckout(client: Client, sessionCartId: string, pricing: PricingContext, area: Area | typeof PICKUP | null, trade: TradeTerms | null, deliveryMayWait = false) {
   const basket = await loadCart(client, sessionCartId, pricing, trade)
   if (!basket.lines.length) throw new CheckoutError("EMPTY_BASKET")
 
@@ -70,7 +87,11 @@ export async function priceCheckout(client: Client, sessionCartId: string, prici
 
   let quote: DeliveryQuote | null = null
   let deliveryToConfirm = false
-  if (area) {
+  let pickup: PickupLocationView | null = null
+  if (area === PICKUP) {
+    pickup = await basketPickupLocation(client, basket.lines)
+    if (!pickup) throw new CheckoutError("NO_PICKUP")
+  } else if (area) {
     const delivery = await loadDeliverySettings(client)
     quote = quoteDelivery(delivery, area.region, area.town, goods.subtotalGhs.minus(discountGhs))
     if (!quote && deliveryMayWait && delivery.rates.length === 0) deliveryToConfirm = true
@@ -85,6 +106,7 @@ export async function priceCheckout(client: Client, sessionCartId: string, prici
     priced,
     quote,
     deliveryToConfirm,
+    pickup,
     // What the summary shows, so the rows add up to the total: the items, installation and delivery each with their tax;
     // for a trade account, each before tax, the discount, then the tax
     summary: {
@@ -94,6 +116,8 @@ export async function priceCheckout(client: Client, sessionCartId: string, prici
       installationGhs: !goods.installationGhs.gt(0) ? null : trade ? goods.installationGhs.toFixed(2) : sumInstallation(goods.lines).toFixed(2),
       deliveryGhs: !quote ? null : trade ? priced.shippingGhs.toFixed(2) : priced.shippingGhs.plus(priced.taxGhs).minus(goods.taxGhs).toFixed(2),
       freeDelivery: quote?.isFree ?? false,
+      // Collected, so there's no delivery row
+      collection: !!pickup,
       taxGhs: pricing.tax ? priced.taxGhs.toFixed(2) : null,
       totalGhs: priced.totalGhs.toFixed(2),
     },
@@ -103,6 +127,7 @@ export async function priceCheckout(client: Client, sessionCartId: string, prici
 export type CheckoutSummary = Awaited<ReturnType<typeof priceCheckout>>["summary"]
 
 export interface PlaceOrderInput extends Area {
+  method: "DELIVERY" | "PICKUP"
   name: string
   email: string
   phone: string
@@ -140,7 +165,8 @@ export async function placeOrder(tx: Tx, sessionCartId: string, pricing: Pricing
 
   // The account's terms as they are now, not as the page saw them: a suspension stops the discount (PRICE_CHANGED)
   const trade = await loadTradeTerms(tx, input.userId)
-  const { basket, lines, priced } = await priceCheckout(tx, sessionCartId, pricing, input, trade)
+  const isPickup = input.method === PICKUP
+  const { basket, lines, priced } = await priceCheckout(tx, sessionCartId, pricing, isPickup ? PICKUP : input, trade)
   // loadCart moved, lowered or dropped lines: the customer hasn't seen this basket
   if (basket.notices.length) throw new CheckoutError("BASKET_CHANGED")
   if (!priced.totalGhs.eq(input.expectedTotalGhs)) throw new CheckoutError("PRICE_CHANGED")
@@ -150,9 +176,9 @@ export async function placeOrder(tx: Tx, sessionCartId: string, pricing: Pricing
     placedFromIp: input.ip,
     statusNote: "Placed on the storefront",
     customer: { userId: input.userId, name: input.name, email, phone: input.phone },
-    shippingMethod: ShippingMethod.DELIVERY,
+    shippingMethod: isPickup ? ShippingMethod.PICKUP : ShippingMethod.DELIVERY,
     paymentMethod: PaymentMethod.CARD,
-    shipping: { name: input.name, phone: input.phone, line1: input.line1, line2: input.line2 || null, region: input.region, town: input.town },
+    shipping: isPickup ? null : { name: input.name, phone: input.phone, line1: input.line1, line2: input.line2 || null, region: input.region, town: input.town },
     notes: input.notes || null,
     discount: trade && tradeDiscount(trade),
     trade: trade && { accountId: trade.accountId, companyName: trade.companyName, tin: trade.tin },
