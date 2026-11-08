@@ -7,16 +7,13 @@ import { SearchForm } from "@/components/search-form"
 import type { SearchParams } from "@/lib/catalogue-filters"
 import { loadProductCards } from "@/lib/data/product-cards"
 import { priceCards } from "@/lib/pricing"
+import { MAX_SEARCH_LENGTH, MIN_SEARCH_LENGTH } from "@/lib/search-suggestions"
 import { getShelfPricing } from "@/lib/settings"
 import { EmptyState } from "@workspace/ui/components/empty-state"
 
 interface SearchPageProps {
   searchParams: Promise<SearchParams>
 }
-
-// Shorter searches match too much to be useful
-const MIN_SEARCH_LENGTH = 2
-const MAX_SEARCH_LENGTH = 100
 
 const searchTerm = (params: SearchParams) => getStringParam(params.q)?.trim().slice(0, MAX_SEARCH_LENGTH) ?? ""
 

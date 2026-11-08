@@ -9,8 +9,8 @@ import { PurchaseOrderStatus, SpecType } from "@workspace/db/enums"
 import { pickOffers, type Offer, type ProductCardData, type SpecValue, type StockState } from "@/lib/product-cards"
 
 // Which products a page lists: a category's (with the categories under it), a brand's, a search's, those a store
-// features (the homepage), one product (its page), or a wish list's
-export type ProductScope = { categoryIds: string[] } | { brandId: string } | { search: string } | { featured: true } | { slug: string } | { productIds: string[] }
+// features (the homepage), one product (its page), or a wish list's, or everything on sale
+export type ProductScope = { categoryIds: string[] } | { brandId: string } | { search: string } | { featured: true } | { slug: string } | { productIds: string[] } | { all: true }
 
 const OPEN_PURCHASE_ORDER = [PurchaseOrderStatus.ORDERED, PurchaseOrderStatus.PARTIALLY_RECEIVED]
 
@@ -151,6 +151,7 @@ async function scopeWhere(scope: ProductScope, visible: Prisma.StoreListingWhere
   if ("brandId" in scope) return { product: { brandId: scope.brandId } }
   if ("slug" in scope) return { product: { slug: scope.slug } }
   if ("productIds" in scope) return { productId: { in: scope.productIds } }
+  if ("all" in scope) return {}
   if ("featured" in scope) return { product: { storeListings: { some: { AND: [visible, { isFeatured: true }] } } } }
   // As the console's products search: the name, SKU or barcode, including the variants'
   return { productId: { in: await productIdsMatching(scope.search, { barcodes: true }) } }

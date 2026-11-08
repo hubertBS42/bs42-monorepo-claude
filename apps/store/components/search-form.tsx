@@ -3,6 +3,8 @@ import { Search } from "lucide-react"
 import { Input } from "@workspace/ui/components/input"
 import { cn } from "@workspace/ui/lib/utils"
 
+export const searchInputClass = "h-11 rounded-full border-transparent bg-muted pl-10 shadow-none focus-visible:bg-background"
+
 // Searches by name, SKU or barcode on /search
 export function SearchForm({ defaultValue, className }: { defaultValue?: string; className?: string }) {
   return (
@@ -14,7 +16,7 @@ export function SearchForm({ defaultValue, className }: { defaultValue?: string;
         defaultValue={defaultValue}
         placeholder="Search products, SKUs or barcodes"
         aria-label="Search products"
-        className="h-11 rounded-full border-transparent bg-muted pl-10 shadow-none focus-visible:bg-background"
+        className={searchInputClass}
       />
     </Form>
   )

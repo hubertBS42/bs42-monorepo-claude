@@ -5,7 +5,7 @@ import { AccountButton } from "@/components/account/account-button"
 import { BasketButton } from "@/components/basket/basket-button"
 import { CategoryMenu } from "@/components/category-menu"
 import { MobileMenu } from "@/components/mobile-menu"
-import { SearchForm } from "@/components/search-form"
+import { HeaderSearch } from "@/components/header-search"
 import { StoreLogo } from "@/components/store-logo"
 import { TopBar } from "@/components/top-bar"
 import { WishListButton } from "@/components/wish-list/wish-list-button"
@@ -37,7 +37,7 @@ export function SiteHeader({
               <StoreLogo storeName={storeName} logoUrl={logoUrl} logoDarkUrl={logoDarkUrl} />
             </Link>
           </div>
-          <SearchForm className="hidden w-full max-w-xl md:block" />
+          <HeaderSearch className="hidden max-w-xl md:block" />
           <div className="flex flex-1 items-center justify-end gap-1">
             <ThemeToggle />
             <AccountButton />
@@ -47,7 +47,7 @@ export function SiteHeader({
           </div>
         </div>
         <div className="px-4 pb-3 md:hidden">
-          <SearchForm />
+          <HeaderSearch />
         </div>
         <div className="hidden border-t lg:block">
           <div className="mx-auto max-w-7xl px-4 lg:px-6">
