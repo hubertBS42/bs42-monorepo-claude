@@ -9,6 +9,7 @@ import { ComboboxField, NumberInputField, PhoneField, SelectField, TextareaField
 import { Button } from "@workspace/ui/components/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@workspace/ui/components/card"
 import { FieldGroup } from "@workspace/ui/components/field"
+import { cn } from "@workspace/ui/lib/utils"
 import type { OrderCustomer } from "@/types"
 import type { DeliverySettingsView } from "@/lib/data/delivery.data"
 import type { OrderFormInput, OrderFormOutput } from "../create-order-form"
@@ -64,7 +65,8 @@ export default function DeliveryStep({ form, customer, delivery }: DeliveryStepP
   }
 
   return (
-    <div className="grid items-start gap-4 lg:grid-cols-3">
+    // A pickup's card is short: it stretches to the notes beside it. A delivery's address makes it the taller one.
+    <div className={cn("grid gap-4 lg:grid-cols-3", isDelivery && "items-start")}>
       <Card className="lg:col-span-2">
         <CardHeader>
           <CardTitle>Delivery</CardTitle>

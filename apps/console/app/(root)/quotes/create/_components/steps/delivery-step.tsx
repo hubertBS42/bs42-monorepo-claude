@@ -6,6 +6,7 @@ import { ShippingMethod } from "@workspace/db/enums"
 import { NumberInputField, TextareaField } from "@workspace/forms"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@workspace/ui/components/card"
 import { FieldGroup } from "@workspace/ui/components/field"
+import { cn } from "@workspace/ui/lib/utils"
 import DeliveryAddressCard from "@/components/staff-sales/delivery-address-card"
 import PickupChoice from "@/components/staff-sales/pickup-choice"
 import type { DeliverySettingsView } from "@/lib/data/delivery.data"
@@ -29,10 +30,11 @@ export default function DeliveryStep({ form, customer, delivery, installationAre
   const method = useWatch({ control: form.control, name: "shippingMethod" })
 
   return (
-    <div className="grid items-start gap-4 lg:grid-cols-3">
+    // For a pickup there's no address card: the method card and this one sit in one row, the same height
+    <div className={cn("grid gap-4 lg:grid-cols-3", method === ShippingMethod.DELIVERY && "items-start")}>
       <PickupChoice form={form} delivery={delivery} stores={stores} pickupLocations={pickupLocations} />
 
-      <Card className="lg:row-span-2">
+      <Card className={cn(method === ShippingMethod.DELIVERY && "lg:row-span-2")}>
         <CardHeader>
           <CardTitle>Terms</CardTitle>
           <CardDescription>Printed on the quotation.</CardDescription>

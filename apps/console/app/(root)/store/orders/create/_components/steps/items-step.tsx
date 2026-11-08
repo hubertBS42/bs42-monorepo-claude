@@ -1,7 +1,7 @@
 "use client"
 /* eslint-disable @next/next/no-img-element -- next/image would need the storage host in images.remotePatterns */
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useFieldArray, useWatch, type UseFormReturn } from "react-hook-form"
 import { Package, Search, SearchX, Trash2 } from "lucide-react"
 import { NumberInputField } from "@workspace/forms"
@@ -78,8 +78,20 @@ export default function ItemsStep({ storeId, form, chosen, onChosenChange }: Ite
 
   const itemsError = form.formState.errors.items?.message ?? form.formState.errors.items?.root?.message
 
+  // A newly added line scrolls into view within the order's list (not the page: on a phone the cards are stacked)
+  const orderListRef = useRef<HTMLDivElement>(null)
+  const lineCount = fields.length
+  const lastCount = useRef(lineCount)
+  useEffect(() => {
+    if (lineCount > lastCount.current) {
+      const viewport = orderListRef.current?.querySelector<HTMLElement>("[data-slot=scroll-area-viewport]")
+      viewport?.scrollTo({ top: viewport.scrollHeight, behavior: "smooth" })
+    }
+    lastCount.current = lineCount
+  }, [lineCount])
+
   return (
-    <div className="grid items-start gap-4 lg:grid-cols-2">
+    <div className="grid gap-4 lg:grid-cols-2">
       <Card>
         <CardHeader>
           <CardTitle>The store&apos;s listings</CardTitle>
@@ -151,47 +163,60 @@ export default function ItemsStep({ storeId, form, chosen, onChosenChange }: Ite
           <CardTitle>In this order</CardTitle>
           <CardDescription>Set how many of each.</CardDescription>
         </CardHeader>
-        <CardContent className="grid gap-2">
-          {fields.length === 0 && <EmptyState icon={Package} title="No items yet" description="Add items from the store's listings." />}
+        <CardContent className="flex flex-1 flex-col gap-2">
+          {fields.length === 0 && (
+            <div className="flex flex-1 items-center justify-center">
+              <EmptyState icon={Package} title="No items yet" description="Add items from the store's listings." />
+            </div>
+          )}
           {fields.length > 0 && (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Item</TableHead>
-                  <TableHead className="w-28">Qty</TableHead>
-                  <TableHead className="w-10" />
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {fields.map((field, index) => {
-                  const info = chosen[itemKey(field.listingId, field.listingVariantId)]
-                  const quantity = items?.[index]?.quantity
-                  const overStock = info?.stock != null && typeof quantity === "number" && quantity > info.stock
-                  return (
-                    <TableRow key={field.id}>
-                      <TableCell className="whitespace-normal">
-                        <div className="grid">
-                          <span>{info?.label ?? "Item"}</span>
-                          <span className="text-xs text-muted-foreground">{[info?.priceGhs && `${ghs(info.priceGhs)} each`, info?.sku].filter(Boolean).join(" · ")}</span>
-                          {overStock && <span className="text-xs text-destructive">{`Only ${info?.stock} in stock`}</span>}
-                        </div>
-                      </TableCell>
-                      <TableCell className="align-top">
-                        {/* A width of its own, or a long item name squeezes it to nothing on a phone */}
-                        <div className="w-20 sm:w-24">
-                          <NumberInputField control={form.control} name={`items.${index}.quantity`} min={1} max={999} aria-label={`Quantity of ${info?.label ?? "item"}`} />
-                        </div>
-                      </TableCell>
-                      <TableCell className="align-top">
-                        <Button type="button" variant="ghost" size="icon-sm" aria-label={`Remove ${info?.label ?? "item"}`} onClick={() => remove(index)}>
-                          <Trash2 className="size-4" />
-                        </Button>
-                      </TableCell>
+            // Scrolls like the list beside it, so the two cards stay the same height (on wide screens it fills the card, which the
+            // list beside it sizes); the header stays in view
+            <ScrollArea
+              ref={orderListRef}
+              className="-mr-3 flex max-h-72 flex-col lg:max-h-none lg:min-h-0 lg:flex-1 lg:basis-0 [&_[data-slot=table-container]]:overflow-visible [&_thead]:sticky [&_thead]:top-0 [&_thead]:z-10 [&_thead]:bg-card"
+            >
+              <div className="pr-3">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Item</TableHead>
+                      <TableHead className="w-28">Qty</TableHead>
+                      <TableHead className="w-10" />
                     </TableRow>
-                  )
-                })}
-              </TableBody>
-            </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {fields.map((field, index) => {
+                      const info = chosen[itemKey(field.listingId, field.listingVariantId)]
+                      const quantity = items?.[index]?.quantity
+                      const overStock = info?.stock != null && typeof quantity === "number" && quantity > info.stock
+                      return (
+                        <TableRow key={field.id}>
+                          <TableCell className="whitespace-normal">
+                            <div className="grid">
+                              <span>{info?.label ?? "Item"}</span>
+                              <span className="text-xs text-muted-foreground">{[info?.priceGhs && `${ghs(info.priceGhs)} each`, info?.sku].filter(Boolean).join(" · ")}</span>
+                              {overStock && <span className="text-xs text-destructive">{`Only ${info?.stock} in stock`}</span>}
+                            </div>
+                          </TableCell>
+                          <TableCell className="align-top">
+                            {/* A width of its own, or a long item name squeezes it to nothing on a phone */}
+                            <div className="w-20 sm:w-24">
+                              <NumberInputField control={form.control} name={`items.${index}.quantity`} min={1} max={999} aria-label={`Quantity of ${info?.label ?? "item"}`} />
+                            </div>
+                          </TableCell>
+                          <TableCell className="align-top">
+                            <Button type="button" variant="ghost" size="icon-sm" aria-label={`Remove ${info?.label ?? "item"}`} onClick={() => remove(index)}>
+                              <Trash2 className="size-4" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      )
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            </ScrollArea>
           )}
           {itemsError && <p className="text-sm text-destructive">{itemsError}</p>}
         </CardContent>
