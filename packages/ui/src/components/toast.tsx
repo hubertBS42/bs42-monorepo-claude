@@ -74,7 +74,7 @@ function ToastTitle({ className, ...props }: ToastPrimitive.Title.Props) {
   return (
     <ToastPrimitive.Title
       data-slot="toast-title"
-      className={cn("text-sm font-medium", className)}
+      className={cn("font-sans text-sm font-medium normal-case", className)}
       {...props}
     />
   )
@@ -184,14 +184,22 @@ function ToastList() {
 
   return toasts.map((toastItem) => (
     <Toast key={toastItem.id} toast={toastItem}>
-      <ToastContent>
-        <ToastIcon type={toastItem.type} />
-        <div className="flex min-w-0 flex-1 flex-col gap-1">
-          <ToastTitle />
-          <ToastDescription />
+      {/* With an action, the button goes under the text, which keeps the width */}
+      <ToastContent
+        className={cn(
+          toastItem.actionProps &&
+            "grid grid-cols-[minmax(0,1fr)_auto] items-start"
+        )}
+      >
+        <div className="flex min-w-0 flex-1 items-center gap-3">
+          <ToastIcon type={toastItem.type} />
+          <div className="flex min-w-0 flex-1 flex-col gap-1">
+            <ToastTitle />
+            <ToastDescription />
+          </div>
         </div>
-        <ToastAction />
-        <ToastClose />
+        <ToastAction className="col-start-1 row-start-2 justify-self-start" />
+        <ToastClose className="col-start-2 row-start-1" />
       </ToastContent>
     </Toast>
   ))
