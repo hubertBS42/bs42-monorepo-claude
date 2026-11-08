@@ -66,8 +66,8 @@ export default function EditOrderDialog<T extends FieldValues>({ storeId, label,
     >
       <DialogTrigger
         render={
-          <Button type="button" variant="ghost" size="sm" className="justify-self-start">
-            <Pencil className="size-3.5" />
+          <Button type="button" variant="outline">
+            <Pencil data-icon="inline-start" />
             {label}
           </Button>
         }

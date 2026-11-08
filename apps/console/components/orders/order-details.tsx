@@ -217,7 +217,7 @@ export function OrderCustomerCard({ customer, shipping, actions, trade, tradeHre
         ) : (
           <Detail label="Pickup">{pickupName ? `The customer collects it from ${pickupName}.` : "The customer collects the order from the store."}</Detail>
         )}
-        {actions && <div className="flex flex-wrap gap-1">{actions}</div>}
+        {actions && <div className="grid gap-2">{actions}</div>}
       </CardContent>
     </Card>
   )
@@ -232,7 +232,7 @@ export function OrderNotesCard({ notes, actions }: { notes: string | null; actio
         <CardTitle>Notes</CardTitle>
         <CardDescription>For staff, not the customer.</CardDescription>
       </CardHeader>
-      <CardContent className="grid gap-2">
+      <CardContent className="grid gap-4">
         {notes ? <p className="text-sm whitespace-pre-line">{notes}</p> : <p className="text-sm text-muted-foreground">No notes.</p>}
         {actions}
       </CardContent>
