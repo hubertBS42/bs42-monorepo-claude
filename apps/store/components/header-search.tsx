@@ -135,7 +135,7 @@ export function HeaderSearch({ className }: { className?: string }) {
                       </span>
                       {/* On phones an old price goes under the price, so the name keeps its room */}
                       <span className="shrink-0 text-right max-sm:max-w-32 [&_p]:justify-end">
-                        <OfferPrice offer={item.offer} />
+                        <OfferPrice offer={item.offer} size="xs" />
                       </span>
                     </Link>
                   </li>
