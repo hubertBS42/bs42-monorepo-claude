@@ -12,6 +12,7 @@ import { Button } from "@workspace/ui/components/button"
 import { formatDate } from "@workspace/utils/date"
 import { getStringParam } from "@workspace/utils/search-params"
 
+import { DocumentLogo } from "@/components/orders/document-logo"
 import { PrintButton } from "@/components/orders/print-button"
 import { AcceptQuoteButton, CancelQuoteButton, QuoteToBasketButton } from "@/components/quotes/quote-actions"
 import { signInHref } from "@/lib/auth-redirect"
@@ -149,12 +150,7 @@ export default async function QuotePage({ params, searchParams }: QuotePageProps
         {/* One row on phones too: the logo shrinks to make room for the reference */}
         <header className="flex items-start justify-between gap-4 sm:gap-6">
           <div className="min-w-0">
-            {settings.logoUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element -- our own blob storage, not set up for next/image
-              <img src={settings.logoUrl} alt={storeName} className="h-auto max-h-7 w-auto max-w-full sm:max-h-10" />
-            ) : (
-              <p className="text-lg font-bold">{storeName}</p>
-            )}
+            <DocumentLogo storeName={storeName} logoUrl={settings.logoUrl} logoDarkUrl={settings.logoDarkUrl} />
           </div>
           <div className="shrink-0 text-right">
             <h1 className="text-xl font-bold tracking-tight sm:text-2xl">Quotation</h1>
