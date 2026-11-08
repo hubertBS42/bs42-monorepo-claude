@@ -19,8 +19,8 @@ import { Skeleton } from "@workspace/ui/components/skeleton"
 import { Spinner } from "@workspace/ui/components/spinner"
 import { toast } from "@workspace/ui/components/toast"
 
-import type { PickupLocationView } from "@workspace/commerce/pickup-locations"
-import { FulfilmentChoice, PickupAddress } from "@/components/checkout/fulfilment-choice"
+import type { PickupOption } from "@workspace/commerce/pickup-locations"
+import { FulfilmentChoice, PickupAddress, rememberedLocation } from "@/components/checkout/fulfilment-choice"
 import { LegalConsent, type LegalLinks } from "@/components/legal-consent"
 import { placeOrderAction, quoteCheckoutAction } from "@/lib/actions/checkout.actions"
 import type { CartLine } from "@/lib/cart"
@@ -62,8 +62,19 @@ const NEW_ADDRESS = "new"
 const addressLabel = (address: SavedAddressOption) => `${address.line1}, ${address.town}${address.deliverable ? "" : " (we don't deliver there yet)"}`
 
 // The form's starting values: the account's details, and its default address when it can be delivered to
-function startingValues(account: CheckoutAccount | null, savedCount: number, start: SavedAddressOption | undefined, method: "DELIVERY" | "PICKUP"): CheckoutFormValues {
-  const blank = { method, name: account?.name ?? "", email: account?.email ?? "", phone: account?.phone ?? "", line1: "", line2: "", region: "", town: "", notes: "" }
+function startingValues(account: CheckoutAccount | null, savedCount: number, start: SavedAddressOption | undefined, pickupLocationId: string | null): CheckoutFormValues {
+  const blank = {
+    method: pickupLocationId ? ("PICKUP" as const) : ("DELIVERY" as const),
+    pickupLocationId: pickupLocationId ?? "",
+    name: account?.name ?? "",
+    email: account?.email ?? "",
+    phone: account?.phone ?? "",
+    line1: "",
+    line2: "",
+    region: "",
+    town: "",
+    notes: "",
+  }
   // Kept for next time by default when the account has no address of its own yet
   const saveAddress = !!account && savedCount === 0
   if (!start) return { ...blank, saveAddress }
@@ -88,11 +99,11 @@ export function CheckoutForm({
   savedAddresses,
   legal,
   installationAreas,
-  pickup,
+  pickupOptions,
 }: {
   lines: CartLine[]
-  // Where the basket can be collected, when it can
-  pickup: PickupLocationView | null
+  // Where the basket can be collected, if anywhere
+  pickupOptions: PickupOption[]
   areas: DeliveryArea[]
   // Where installers work ("Greater Accra and Adum"), when a line includes installation
   installationAreas: string | null
@@ -114,7 +125,7 @@ export function CheckoutForm({
   const [addressChoice, setAddressChoice] = useState(startAddress?.id ?? NEW_ADDRESS)
   const form = useForm<CheckoutFormValues>({
     resolver: zodResolver(checkoutFormSchema),
-    defaultValues: startingValues(account, savedAddresses.length, startAddress, pickup && areas.length === 0 ? "PICKUP" : "DELIVERY"),
+    defaultValues: startingValues(account, savedAddresses.length, startAddress, areas.length === 0 ? (pickupOptions[0]?.id ?? null) : null),
   })
   useRevalidateOnChange(form)
 
@@ -136,7 +147,18 @@ export function CheckoutForm({
   const region = useWatch({ control: form.control, name: "region" })
   const town = useWatch({ control: form.control, name: "town" })
   const method = useWatch({ control: form.control, name: "method" })
-  const isPickup = !!pickup && method === "PICKUP"
+  const pickupLocationId = useWatch({ control: form.control, name: "pickupLocationId" })
+  const pickup = method === "PICKUP" ? pickupOptions.find((option) => option.id === pickupLocationId) : undefined
+  const isPickup = !!pickup
+
+  // The location chosen last time in this browser, once the page is showing (storage is the browser's)
+  useEffect(() => {
+    const remembered = rememberedLocation(pickupOptions)
+    if (remembered && form.getValues("method") === "DELIVERY" && !form.getValues("town")) {
+      form.setValue("method", "PICKUP")
+      form.setValue("pickupLocationId", remembered)
+    }
+  }, [pickupOptions, form])
   const regionOptions = useMemo(() => areas.map((area) => ({ label: area.region, value: area.region })), [areas])
   const townOptions = useMemo(() => (areas.find((area) => area.region === region)?.towns ?? []).map((name) => ({ label: name, value: name })), [areas, region])
 
@@ -144,12 +166,12 @@ export function CheckoutForm({
   // quote can answer after a later one.
   const [quotedFor, setQuotedFor] = useState<string | null>(null)
   // Collection is priced once, delivery per town
-  const areaKey = isPickup ? "PICKUP" : region && town ? `${region}|${town}` : null
+  const areaKey = pickup ? `PICKUP|${pickup.id}` : region && town ? `${region}|${town}` : null
   // The town chosen now, read when a quote answers
   const isCurrentArea = useCallback(
     (key: string) => {
-      const { method: currentMethod, region: currentRegion, town: currentTown } = form.getValues()
-      return (currentMethod === "PICKUP" ? "PICKUP" : `${currentRegion}|${currentTown}`) === key
+      const current = form.getValues()
+      return (current.method === "PICKUP" ? `PICKUP|${current.pickupLocationId}` : `${current.region}|${current.town}`) === key
     },
     [form]
   )
@@ -158,7 +180,8 @@ export function CheckoutForm({
     (key: string) =>
       startQuote(async () => {
         const [quoteRegion, quoteTown] = key.split("|") as [string, string]
-        const fulfilment = key === "PICKUP" ? { method: "PICKUP" as const } : { method: "DELIVERY" as const, region: quoteRegion, town: quoteTown }
+        // "PICKUP|<location id>" or "<region>|<town>"
+        const fulfilment = quoteRegion === "PICKUP" ? { method: "PICKUP" as const, pickupLocationId: quoteTown } : { method: "DELIVERY" as const, region: quoteRegion, town: quoteTown }
         let result = await quoteCheckoutAction(fulfilment)
         if (!isCurrentArea(key)) return
 
@@ -218,7 +241,7 @@ export function CheckoutForm({
 
   const busy = isPending || isQuoting
   // Nothing to deliver to and nowhere to collect from
-  const noDelivery = areas.length === 0 && !pickup
+  const noDelivery = areas.length === 0 && pickupOptions.length === 0
 
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-8 lg:grid-cols-[1fr_24rem] lg:items-start" noValidate>
@@ -239,28 +262,29 @@ export function CheckoutForm({
 
         <Card>
           <CardHeader>
-            <CardTitle>{pickup ? "Delivery or collection" : "Delivery address"}</CardTitle>
+            <CardTitle>{pickupOptions.length ? "Delivery or collection" : "Delivery address"}</CardTitle>
             <CardDescription>
               We deliver to the towns listed. The fee depends on the town.
               {installationAreas && ` We install in ${installationAreas}.`}
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4 sm:grid-cols-2">
-            {pickup && (
+            {pickupOptions.length > 0 && (
               <div className="sm:col-span-2">
                 <FulfilmentChoice
-                  value={isPickup ? "PICKUP" : "DELIVERY"}
+                  value={pickup ? { method: "PICKUP", pickupLocationId: pickup.id } : { method: "DELIVERY" }}
                   onChange={(next) => {
-                    form.setValue("method", next)
+                    form.setValue("method", next.method)
+                    form.setValue("pickupLocationId", next.method === "PICKUP" ? next.pickupLocationId : "")
                     form.clearErrors()
                     setAreaError(null)
                   }}
-                  pickup={pickup}
+                  options={pickupOptions}
                   disabled={isPending}
                 />
               </div>
             )}
-            {isPickup && pickup ? (
+            {pickup ? (
               <div className="sm:col-span-2">
                 <PickupAddress pickup={pickup} />
               </div>

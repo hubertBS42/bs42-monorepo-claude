@@ -13,7 +13,7 @@ import { type CheckoutAccount, CheckoutForm, type SavedAddressOption } from "@/c
 import { legalLinks } from "@/components/legal-consent"
 import { getSavedAddresses } from "@/lib/addresses"
 import { readCartId } from "@/lib/cart-cookie"
-import { CheckoutError, priceCheckout, basketPickupLocation } from "@/lib/checkout"
+import { CheckoutError, priceCheckout, basketPickupOptions } from "@/lib/checkout"
 import { getDeliveryAreas } from "@/lib/delivery-areas"
 import { getStoreSession, getTradeTerms } from "@/lib/session"
 import { getAppSettings, getInstallationAreas, getLegalPages } from "@/lib/settings"
@@ -40,7 +40,7 @@ export default async function CheckoutPage() {
   if (!checkout) redirect("/basket")
 
   // Only the towns there's a delivery fee for (a town's own, or its region's), and where it can be collected
-  const [{ areas, deliversTo }, pickup] = await Promise.all([getDeliveryAreas(), basketPickupLocation(prisma, checkout.basket.lines)])
+  const [{ areas, deliversTo }, pickupOptions] = await Promise.all([getDeliveryAreas(), basketPickupOptions(prisma, checkout.basket.lines)])
 
   // Signed in: the account's details and saved addresses fill the form in
   let account: CheckoutAccount | null = null
@@ -80,7 +80,7 @@ export default async function CheckoutPage() {
         account={account}
         savedAddresses={savedAddresses}
         legal={legalLinks(legal)}
-        pickup={pickup}
+        pickupOptions={pickupOptions}
         installationAreas={checkout.basket.lines.some((line) => line.withInstallation) ? describeInstallationAreas(installationAreas) : null}
       />
     </div>

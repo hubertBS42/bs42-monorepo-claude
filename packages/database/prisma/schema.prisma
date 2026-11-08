@@ -826,6 +826,9 @@ model Order {
   pickupHours          String?
   pickupPhone          String?
   pickupMapUrl         String?
+  // The location it's collected from; the copy above stays if the location is removed
+  pickupLocationId     String?                    @db.Uuid
+  pickupLocation       PickupLocation?            @relation(fields: [pickupLocationId], references: [id], onDelete: SetNull)
   // A pickup order staff said is ready: the customer is emailed once
   readyForCollectionAt DateTime?
 
@@ -852,6 +855,7 @@ model Order {
   @@index([placedFromIp])
   @@index([tradeAccountId])
   @@index([paymentRecordedById])
+  @@index([pickupLocationId])
   @@index([exchangeRateId])
   @@index([status])
   @@map("order")
@@ -883,65 +887,69 @@ enum QuoteStatus {
 }
 
 model Quote {
-  id                String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id                String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   // QT-20261022-00012, numbered by quote_reference_seq (see its migration)
-  reference         String         @unique
+  reference         String          @unique
   // The account that made it on the storefront. A quote staff made has none: it belongs to whichever account has its
   // email, verified (quoteOwnerWhere in @workspace/commerce/quotes).
-  userId            String?        @db.Uuid
-  user              User?          @relation("QuoteUser", fields: [userId], references: [id], onDelete: SetNull)
+  userId            String?         @db.Uuid
+  user              User?           @relation("QuoteUser", fields: [userId], references: [id], onDelete: SetNull)
   // The staff member who made it in the console; null for one the customer made from their basket
-  createdById       String?        @db.Uuid
-  createdBy         User?          @relation("QuoteCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  createdById       String?         @db.Uuid
+  createdBy         User?           @relation("QuoteCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
   // Printed on the quote for the customer, e.g. lead times; staff-made quotes only
   notes             String?
   // Who it's addressed to, and the delivery the order would make. Only staff make a pickup quote, whose address is empty.
   customerName      String
   customerEmail     String
   customerPhone     String
-  shippingMethod    ShippingMethod @default(DELIVERY)
+  shippingMethod    ShippingMethod  @default(DELIVERY)
+  // A pickup quote's location, which its order is collected from
+  pickupLocationId  String?         @db.Uuid
+  pickupLocation    PickupLocation? @relation(fields: [pickupLocationId], references: [id], onDelete: SetNull)
   shippingLine1     String
   shippingLine2     String?
   shippingRegion    String
   shippingTown      String
   // Made by an approved trade account: its discount is the quote's, and the company's details are printed on it
-  tradeAccountId    String?        @db.Uuid
-  tradeAccount      TradeAccount?  @relation(fields: [tradeAccountId], references: [id], onDelete: SetNull)
+  tradeAccountId    String?         @db.Uuid
+  tradeAccount      TradeAccount?   @relation(fields: [tradeAccountId], references: [id], onDelete: SetNull)
   tradeCompanyName  String?
   tradeTin          String?
-  status            QuoteStatus    @default(OPEN)
+  status            QuoteStatus     @default(OPEN)
   validUntil        DateTime
   // The amounts, as Order's: totalGhs = subtotalGhs - discountAmountGhs + shippingGhs + installationGhs + taxGhs
-  subtotalUsd       Decimal        @db.Decimal(12, 2)
-  subtotalGhs       Decimal        @db.Decimal(12, 2)
+  subtotalUsd       Decimal         @db.Decimal(12, 2)
+  subtotalGhs       Decimal         @db.Decimal(12, 2)
   discountType      DiscountType?
-  discountValue     Decimal?       @db.Decimal(12, 2)
-  discountAmountGhs Decimal?       @db.Decimal(12, 2)
+  discountValue     Decimal?        @db.Decimal(12, 2)
+  discountAmountGhs Decimal?        @db.Decimal(12, 2)
   discountReason    String?
-  shippingGhs       Decimal        @db.Decimal(12, 2)
+  shippingGhs       Decimal         @db.Decimal(12, 2)
   // Made while no delivery fees were set (Settings → Delivery): its amounts leave delivery out (shippingGhs 0), staff
   // add the fee when they place its order, and the customer can't accept it online
-  deliveryToConfirm Boolean        @default(false)
-  installationGhs   Decimal        @default(0) @db.Decimal(12, 2)
-  taxRate           Decimal        @db.Decimal(5, 4)
-  taxGhs            Decimal        @db.Decimal(12, 2)
-  totalGhs          Decimal        @db.Decimal(12, 2)
+  deliveryToConfirm Boolean         @default(false)
+  installationGhs   Decimal         @default(0) @db.Decimal(12, 2)
+  taxRate           Decimal         @db.Decimal(5, 4)
+  taxGhs            Decimal         @db.Decimal(12, 2)
+  totalGhs          Decimal         @db.Decimal(12, 2)
   // The rate it was priced at; Restrict keeps the row, and its rate can't change while a quote uses it (RATE_IN_USE)
-  exchangeRate      Decimal        @db.Decimal(12, 6)
-  exchangeRateId    String?        @db.Uuid
-  rateSource        ExchangeRate?  @relation(fields: [exchangeRateId], references: [id], onDelete: Restrict)
+  exchangeRate      Decimal         @db.Decimal(12, 6)
+  exchangeRateId    String?         @db.Uuid
+  rateSource        ExchangeRate?   @relation(fields: [exchangeRateId], references: [id], onDelete: Restrict)
   // The order accepting it placed
-  orderId           String?        @unique @db.Uuid
-  order             Order?         @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  orderId           String?         @unique @db.Uuid
+  order             Order?          @relation(fields: [orderId], references: [id], onDelete: SetNull)
   items             QuoteItem[]
-  createdAt         DateTime       @default(now())
-  updatedAt         DateTime       @updatedAt
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
 
   @@index([userId])
   @@index([createdById])
   @@index([status])
   @@index([tradeAccountId])
   @@index([exchangeRateId])
+  @@index([pickupLocationId])
   @@map("quote")
 }
 
@@ -1813,6 +1821,8 @@ model PickupLocation {
   mapUrl         String?
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
+  orders         Order[]
+  quotes         Quote[]
 
   @@map("pickup_location")
 }

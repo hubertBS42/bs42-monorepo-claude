@@ -263,6 +263,7 @@ export async function createOrder(tx: Tx, order: NewOrder) {
       pickupHours: pickup?.hours ?? null,
       pickupPhone: pickup?.phone ?? null,
       pickupMapUrl: pickup?.mapUrl ?? null,
+      pickupLocationId: pickup?.id ?? null,
       status: OrderStatus.PENDING,
       subtotalUsd: priced.subtotalUsd,
       subtotalGhs: priced.subtotalGhs,

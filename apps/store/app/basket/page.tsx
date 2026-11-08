@@ -14,7 +14,7 @@ import { loadCart } from "@/lib/cart"
 import { readCartId } from "@/lib/cart-cookie"
 import { formatGhs } from "@/lib/money"
 import { describeInstallationAreas } from "@workspace/commerce/installation-areas"
-import { basketPickupLocation } from "@/lib/checkout"
+import { basketPickupOptions } from "@/lib/checkout"
 import { QuoteRequestDialog } from "@/components/quotes/quote-request-dialog"
 import { getSavedAddresses } from "@/lib/addresses"
 import { allAreas, getDeliveryAreas } from "@/lib/delivery-areas"
@@ -24,21 +24,21 @@ import { EmptyState } from "@workspace/ui/components/empty-state"
 
 export const metadata: Metadata = { title: "Basket", robots: { index: false } }
 
-async function quoteRequestProps(lines: { listingId: string; withInstallation: boolean }[]) {
-  const [session, delivery, settings, pickup] = await Promise.all([getStoreSession(), getDeliveryAreas(), getAppSettings(), basketPickupLocation(prisma, lines)])
+async function quoteRequestProps(lines: { listingId: string; listingVariantId: string | null; quantity: number; withInstallation: boolean }[]) {
+  const [session, delivery, settings, pickupOptions] = await Promise.all([getStoreSession(), getDeliveryAreas(), getAppSettings(), basketPickupOptions(prisma, lines)])
   // With no delivery fees set, any town can be quoted for, with delivery to be confirmed
   const deliveryToConfirm = !delivery.feesSet
   const areas = deliveryToConfirm ? allAreas() : delivery.areas
   const deliversTo = deliveryToConfirm ? () => true : delivery.deliversTo
-  const blank = { method: "DELIVERY" as const, name: "", phone: "", line1: "", line2: "", region: "", town: "" }
-  if (!session) return { signedIn: false, initial: blank, areas, deliveryToConfirm, pickup, validityDays: settings.quoteValidityDays }
+  const blank = { method: "DELIVERY" as const, pickupLocationId: "", name: "", phone: "", line1: "", line2: "", region: "", town: "" }
+  if (!session) return { signedIn: false, initial: blank, areas, deliveryToConfirm, pickupOptions, validityDays: settings.quoteValidityDays }
 
   const [user, addresses] = await Promise.all([prisma.user.findUnique({ where: { id: session.user.id }, select: { name: true, phone: true } }), getSavedAddresses(session.user.id)])
   const address = addresses.find((saved) => deliversTo(saved.region, saved.town))
   const initial = address
-    ? { method: "DELIVERY" as const, name: address.name, phone: address.phone, line1: address.line1, line2: address.line2 ?? "", region: address.region, town: address.town }
+    ? { method: "DELIVERY" as const, pickupLocationId: "", name: address.name, phone: address.phone, line1: address.line1, line2: address.line2 ?? "", region: address.region, town: address.town }
     : { ...blank, name: user?.name ?? session.user.name, phone: user?.phone ?? "" }
-  return { signedIn: true, initial, areas, deliveryToConfirm, pickup, validityDays: settings.quoteValidityDays }
+  return { signedIn: true, initial, areas, deliveryToConfirm, pickupOptions, validityDays: settings.quoteValidityDays }
 }
 
 export default async function BasketPage() {

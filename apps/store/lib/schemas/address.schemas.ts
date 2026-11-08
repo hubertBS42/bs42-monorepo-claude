@@ -21,6 +21,8 @@ export const addressFields = {
 // only checked, for a delivery. Its name and phone are the customer's either way.
 export const fulfilmentFields = {
   method: z.enum(["DELIVERY", "PICKUP"]),
+  // The location chosen, for collection
+  pickupLocationId: z.string(),
   name: addressFields.name,
   phone: addressFields.phone,
   line1: z.string().trim().max(300),
@@ -29,8 +31,11 @@ export const fulfilmentFields = {
   town: z.string(),
 }
 
-export function checkFulfilment(data: { method: "DELIVERY" | "PICKUP"; line1: string; region: string; town: string }, ctx: z.RefinementCtx) {
-  if (data.method === "PICKUP") return
+export function checkFulfilment(data: { method: "DELIVERY" | "PICKUP"; pickupLocationId: string; line1: string; region: string; town: string }, ctx: z.RefinementCtx) {
+  if (data.method === "PICKUP") {
+    if (!z.uuid().safeParse(data.pickupLocationId).success) ctx.addIssue({ code: "custom", message: "Choose where to collect it", path: ["pickupLocationId"] })
+    return
+  }
   if (!data.line1) ctx.addIssue({ code: "custom", message: "Enter the address", path: ["line1"] })
   if (!data.region) ctx.addIssue({ code: "custom", message: "Choose a region", path: ["region"] })
   else if (!data.town) ctx.addIssue({ code: "custom", message: "Choose a town", path: ["town"] })

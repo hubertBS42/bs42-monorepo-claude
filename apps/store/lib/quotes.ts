@@ -7,7 +7,7 @@ import type { prisma } from "@workspace/db"
 import { Prisma } from "@workspace/db/client"
 import { PaymentMethod, QuoteStatus, ShippingMethod } from "@workspace/db/enums"
 
-import { CheckoutError, checkUnpaidLimits, PICKUP, priceCheckout } from "./checkout"
+import { CheckoutError, checkUnpaidLimits, priceCheckout } from "./checkout"
 
 // The storefront's side of quotations (the shared rules are in @workspace/commerce/quotes): making one from the basket,
 // priced as checkout would price it, and cancelling or accepting one the customer owns. In its own module, with
@@ -25,6 +25,7 @@ export interface NewQuote {
   email: string
   // Who it's addressed to, and the delivery the order would make, or collection (no address)
   method: "DELIVERY" | "PICKUP"
+  pickupLocationId: string
   name: string
   phone: string
   line1: string
@@ -44,8 +45,8 @@ export async function createQuote(tx: Tx, sessionCartId: string, pricing: Pricin
   }
 
   // While no delivery fees are set, the quote leaves delivery for staff to add when they place its order
-  const isPickup = input.method === PICKUP
-  const { basket, lines, priced, deliveryToConfirm } = await priceCheckout(tx, sessionCartId, pricing, isPickup ? PICKUP : input, input.trade, true)
+  const isPickup = input.method === "PICKUP"
+  const { basket, lines, priced, deliveryToConfirm, pickup } = await priceCheckout(tx, sessionCartId, pricing, isPickup ? { pickupLocationId: input.pickupLocationId } : input, input.trade, true)
   // loadCart moved, lowered or dropped lines: the customer hasn't seen this basket
   if (basket.notices.length) throw new CheckoutError("BASKET_CHANGED")
 
@@ -58,6 +59,7 @@ export async function createQuote(tx: Tx, sessionCartId: string, pricing: Pricin
       customerEmail: input.email.toLowerCase(),
       customerPhone: input.phone,
       shippingMethod: isPickup ? ShippingMethod.PICKUP : ShippingMethod.DELIVERY,
+      pickupLocationId: pickup?.id ?? null,
       shippingLine1: isPickup ? "" : input.line1,
       shippingLine2: isPickup ? null : input.line2 || null,
       shippingRegion: isPickup ? "" : input.region,

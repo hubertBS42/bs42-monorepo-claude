@@ -23,5 +23,5 @@ export const placeOrderSchema = checkoutFormSchema.and(z.object({ expectedTotalG
 // What the summary is priced for: delivery to a town, or collection
 export const fulfilmentSchema = z.discriminatedUnion("method", [
   z.object({ method: z.literal("DELIVERY"), region: z.string().min(1), town: z.string().min(1) }),
-  z.object({ method: z.literal("PICKUP") }),
+  z.object({ method: z.literal("PICKUP"), pickupLocationId: z.uuid() }),
 ])

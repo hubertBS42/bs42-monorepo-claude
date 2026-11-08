@@ -13,7 +13,7 @@ import { isOrderKey } from "@workspace/commerce/order-links"
 
 import { rememberAddress } from "@/lib/addresses"
 import { readCartId } from "@/lib/cart-cookie"
-import { CheckoutError, PICKUP, placeOrder, priceCheckout, type CheckoutSummary } from "@/lib/checkout"
+import { CheckoutError, placeOrder, priceCheckout, type CheckoutSummary } from "@/lib/checkout"
 import { onlinePaymentsOpen, PAYMENTS_OFF, paymentRedirect, startPayment, visitorIp } from "@/lib/payments"
 import { fulfilmentSchema, placeOrderSchema } from "@/lib/schemas/checkout.schemas"
 import { getStoreSession, getTradeTerms } from "@/lib/session"
@@ -40,7 +40,7 @@ export async function quoteCheckoutAction(fulfilment: z.input<typeof fulfilmentS
     const [cartId, pricing, trade] = await Promise.all([readCartId(), getPricingContext(), getTradeTerms()])
     if (!cartId) return EMPTY_BASKET
     if (!pricing) return NO_RATE
-    const { basket, summary } = await priceCheckout(prisma, cartId, pricing, parsed.data.method === PICKUP ? PICKUP : parsed.data, trade)
+    const { basket, summary } = await priceCheckout(prisma, cartId, pricing, parsed.data.method === "PICKUP" ? { pickupLocationId: parsed.data.pickupLocationId } : parsed.data, trade)
     // The basket was changed to match the stores (and saved so): the page's lines are out of date
     if (basket.notices.length) return { success: false, error: basket.notices.join(" "), code: "BASKET_CHANGED" }
     return { success: true, data: summary }

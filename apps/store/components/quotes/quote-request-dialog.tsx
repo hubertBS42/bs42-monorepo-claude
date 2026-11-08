@@ -13,9 +13,9 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { FieldError } from "@workspace/ui/components/field"
 import { Spinner } from "@workspace/ui/components/spinner"
 
-import type { PickupLocationView } from "@workspace/commerce/pickup-locations"
+import type { PickupOption } from "@workspace/commerce/pickup-locations"
 import type { DeliveryArea } from "@/components/checkout/checkout-form"
-import { FulfilmentChoice, PickupAddress } from "@/components/checkout/fulfilment-choice"
+import { FulfilmentChoice, PickupAddress, rememberedLocation } from "@/components/checkout/fulfilment-choice"
 import { createQuoteAction } from "@/lib/actions/quote.actions"
 import { quoteRequestSchema, type QuoteRequestValues } from "@/lib/schemas/quote.schemas"
 import { useRevalidateOnChange } from "@workspace/forms/use-revalidate-on-change"
@@ -30,7 +30,7 @@ export function QuoteRequestDialog({
   areas,
   validityDays,
   deliveryToConfirm,
-  pickup,
+  pickupOptions,
   primary = false,
 }: {
   signedIn: boolean
@@ -38,8 +38,8 @@ export function QuoteRequestDialog({
   areas: DeliveryArea[]
   validityDays: number
   deliveryToConfirm: boolean
-  // Where the basket can be collected, when it can
-  pickup: PickupLocationView | null
+  // Where the basket can be collected, if anywhere
+  pickupOptions: PickupOption[]
   primary?: boolean
 }) {
   const [open, setOpen] = useState(false)
@@ -47,7 +47,9 @@ export function QuoteRequestDialog({
   useRevalidateOnChange(form)
   const region = useWatch({ control: form.control, name: "region" })
   const method = useWatch({ control: form.control, name: "method" })
-  const isPickup = !!pickup && method === "PICKUP"
+  const pickupLocationId = useWatch({ control: form.control, name: "pickupLocationId" })
+  const pickup = method === "PICKUP" ? pickupOptions.find((option) => option.id === pickupLocationId) : undefined
+  const isPickup = !!pickup
   const regionOptions = useMemo(() => areas.map((area) => ({ label: area.region, value: area.region })), [areas])
   const townOptions = useMemo(() => (areas.find((area) => area.region === region)?.towns ?? []).map((name) => ({ label: name, value: name })), [areas, region])
   const { isSubmitting } = form.formState
@@ -73,7 +75,18 @@ export function QuoteRequestDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        // The location chosen last time, when the basket can still be collected there
+        const remembered = next && form.getValues("method") === "DELIVERY" ? rememberedLocation(pickupOptions) : null
+        if (remembered) {
+          form.setValue("method", "PICKUP")
+          form.setValue("pickupLocationId", remembered)
+        }
+        setOpen(next)
+      }}
+    >
       <DialogTrigger
         render={
           <Button variant={primary ? "default" : "outline"} size={primary ? "lg" : "default"} className="w-full">
@@ -98,22 +111,23 @@ export function QuoteRequestDialog({
           className="grid gap-4 sm:grid-cols-2"
           noValidate
         >
-          {pickup && (
+          {pickupOptions.length > 0 && (
             <div className="sm:col-span-2">
               <FulfilmentChoice
-                value={isPickup ? "PICKUP" : "DELIVERY"}
+                value={pickup ? { method: "PICKUP", pickupLocationId: pickup.id } : { method: "DELIVERY" }}
                 onChange={(next) => {
-                  form.setValue("method", next)
+                  form.setValue("method", next.method)
+                  form.setValue("pickupLocationId", next.method === "PICKUP" ? next.pickupLocationId : "")
                   form.clearErrors()
                 }}
-                pickup={pickup}
+                options={pickupOptions}
                 disabled={isSubmitting}
               />
             </div>
           )}
           <TextInputField control={form.control} name="name" label="Addressed to" autoComplete="name" disabled={isSubmitting} />
           <PhoneField control={form.control} name="phone" label="Phone" defaultCountry="GH" disabled={isSubmitting} />
-          {isPickup && pickup ? (
+          {pickup ? (
             <div className="sm:col-span-2">
               <PickupAddress pickup={pickup} />
             </div>
