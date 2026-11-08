@@ -81,7 +81,7 @@ export function EditOrderDelivery({
   return (
     <EditOrderDialog
       storeId={storeId}
-      label="Edit delivery address"
+      label="Edit address"
       title="Edit delivery address"
       description="The delivery fee doesn't change."
       schema={orderDeliveryFormSchema}

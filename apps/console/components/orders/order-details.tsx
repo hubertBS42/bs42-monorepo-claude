@@ -21,7 +21,7 @@ export const ghs = (amount: string) => formatCurrency(amount, "GHS", "en-GH")
 export const Detail = ({ label, children }: { label: string; children: ReactNode }) => (
   <div className="grid gap-1">
     <p className="text-xs text-muted-foreground">{label}</p>
-    <div className="text-sm font-medium">{children}</div>
+    <div className="text-sm font-medium wrap-anywhere">{children}</div>
   </div>
 )
 
