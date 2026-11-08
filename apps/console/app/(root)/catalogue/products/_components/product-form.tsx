@@ -209,12 +209,14 @@ const ProductForm = ({ brands, categoryOptions, disabledCategoryIds, specFields,
     })
   }, [variantOptions, form])
 
-  // Editing the options after generating leaves variants that no longer match them, which the schema would reject on save
+  // Editing the options after generating leaves variants that no longer match them, which the schema would reject on
+  // save, or a new value no variant has. A combination with no variant is fine: not every product comes in every one.
   const isStale = useMemo(() => {
     if (variants.length === 0) return false
     const expected = new Set(combinations.map(attributesKey))
-    return expected.size !== variants.length || variants.some((variant) => !expected.has(attributesKey(variant.attributes)))
-  }, [combinations, variants])
+    if (variants.some((variant) => !expected.has(attributesKey(variant.attributes)))) return true
+    return variantOptions.some((option) => option.values.some(({ value }) => value.trim() && !variants.some((variant) => variant.attributes[option.name] === value)))
+  }, [combinations, variants, variantOptions])
 
   const brandOptions = useMemo(() => brands.map((brand) => ({ label: brand.name, value: brand.id })), [brands])
 
