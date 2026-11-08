@@ -3,6 +3,7 @@ import { ORDER_STATUS_LABELS, PAYMENT_METHOD_LABELS, PAYMENT_STATUS_LABELS } fro
 
 export const orderFilters: FilterConfig[] = [
   { key: "reference", label: "Reference", type: "text", placeholder: "Search reference" },
+  { key: "customer", label: "Customer", type: "text", placeholder: "Name, email or phone" },
   {
     key: "status",
     label: "Status",
@@ -34,4 +35,35 @@ export const orderFilters: FilterConfig[] = [
       { label: "Other orders", value: "false" },
     ],
   },
+  {
+    key: "multiStore",
+    label: "Shared orders",
+    type: "boolean",
+    placeholder: "Any",
+    options: [
+      { label: "Shared with other stores", value: "true" },
+      { label: "Only this store", value: "false" },
+    ],
+  },
+  {
+    key: "returned",
+    label: "Returns",
+    type: "boolean",
+    placeholder: "Any",
+    options: [
+      { label: "Items returned", value: "true" },
+      { label: "Nothing returned", value: "false" },
+    ],
+  },
+  {
+    key: "trade",
+    label: "Trade",
+    type: "boolean",
+    placeholder: "Any",
+    options: [
+      { label: "Trade orders", value: "true" },
+      { label: "Not trade", value: "false" },
+    ],
+  },
+  { key: "placed", label: "Placed", type: "dateRange" },
 ]

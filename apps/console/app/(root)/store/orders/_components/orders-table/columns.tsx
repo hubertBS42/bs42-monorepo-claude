@@ -15,6 +15,12 @@ export const columns: ColumnDef<StoreOrderListItem, unknown>[] = [
   {
     accessorKey: "customerName",
     header: () => <ColumnHeader title="Customer" />,
+    cell: ({ row }) => (
+      <div className="grid gap-y-0.5">
+        <span>{row.original.customerName}</span>
+        {row.original.tradeCompanyName && <span className="text-xs text-muted-foreground">{`Trade: ${row.original.tradeCompanyName}`}</span>}
+      </div>
+    ),
   },
   {
     accessorKey: "status",
@@ -22,6 +28,7 @@ export const columns: ColumnDef<StoreOrderListItem, unknown>[] = [
     cell: ({ row }) => (
       <div className="flex flex-wrap gap-1">
         <OrderStatusBadge status={row.original.status} />
+        {row.original.returned && <Badge variant="secondary">{row.original.returned}</Badge>}
         {row.original.isMultiStore && <Badge variant="outline">With other stores</Badge>}
       </div>
     ),
@@ -39,6 +46,7 @@ export const columns: ColumnDef<StoreOrderListItem, unknown>[] = [
         <span>{formatCurrency(row.original.totalGhs, "GHS", "en-GH")}</span>
         {/* Shipping and other stores' items aren't this store's */}
         {row.original.isMultiStore && <span className="text-[11px] text-muted-foreground">This store&apos;s items</span>}
+        {row.original.refundedGhs && <span className="text-xs text-muted-foreground">{`${formatCurrency(row.original.refundedGhs, "GHS", "en-GH")} refunded`}</span>}
       </div>
     ),
   },

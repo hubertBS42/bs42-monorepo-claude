@@ -499,10 +499,16 @@ export interface ListingFormData {
 
 export interface StoreOrdersParams extends PaginationParams {
   reference?: string
+  customer?: string
   status?: OrderStatus
   paymentStatus?: PaymentStatus
   counterSale?: boolean
   paidBy?: PaymentMethod
+  multiStore?: "true" | "false"
+  returned?: "true" | "false"
+  trade?: "true" | "false"
+  placedStart?: string
+  placedEnd?: string
 }
 
 // Amounts are GHS strings: Decimal can't be passed to client components
@@ -510,13 +516,18 @@ export interface StoreOrderListItem {
   id: string
   reference: string
   customerName: string
+  tradeCompanyName: string | null
   status: OrderStatus
   paymentStatus: PaymentStatus
   shippingMethod: ShippingMethod
   // The order's total when all its items are this store's; otherwise only this store's lines, after their
   // share of the discount and with their tax
   totalGhs: string
+  // What's been refunded, only when all the order's items are this store's
+  refundedGhs: string | null
   itemCount: number
+  // "Returned" or "Partly returned", from this store's own lines; null when none came back
+  returned: string | null
   // Some items are other stores': the platform manages the order, and this store only sees its own lines
   isMultiStore: boolean
   createdAt: Date

@@ -7,7 +7,10 @@ import { headers } from "next/headers"
 import { prisma } from "@workspace/db"
 import { Prisma } from "@workspace/db/client"
 import type { DataResponse } from "@workspace/contracts"
+import { returnLabel } from "@workspace/commerce/order-status"
+import { dayStart } from "@workspace/utils/date"
 import { getPaginationError } from "@workspace/utils/pagination"
+import { toPhoneSearch } from "@workspace/utils/phone"
 import { hasStorePermission } from "@/lib/auth-guard"
 import { counterSaleWhere, paidByWhere } from "@/lib/counter-sales"
 import { orderDetailsInclude, sumLines, toOrderAfterSale, toOrderDetailsBase, toOrderTotals, type OrderWithDetails } from "@/lib/order-details"
@@ -37,17 +40,38 @@ export const getStoreOrders = async (storeId: string, filters: StoreOrdersParams
       return { success: false, error: paginationError }
     }
 
-    const { reference, status, paymentStatus, counterSale, paidBy, page = 1, pageSize = 10, sort, order } = filters
+    const { reference, customer, status, paymentStatus, counterSale, paidBy, multiStore, returned, trade, placedStart, placedEnd, page = 1, pageSize = 10, sort, order } = filters
+
+    const contains = (value: string) => ({ contains: value, mode: "insensitive" as const })
+    // Phones are stored in international form, so a local "0244…" is searched as "+233244…" too
+    const phoneSearch = customer ? toPhoneSearch(customer) : null
+    // On an order shared with other stores, only this store's own lines count as its returns
+    const ownReturnedLine = { organizationId: storeId, returns: { some: {} } }
 
     const where: Prisma.OrderWhereInput = {
       orderItems: { some: { organizationId: storeId } },
-      ...(reference && { reference: { contains: reference, mode: "insensitive" } }),
+      ...(reference && { reference: contains(reference) }),
+      ...(customer && {
+        OR: [{ customerName: contains(customer) }, { customerEmail: contains(customer) }, { customerPhone: contains(customer) }, ...(phoneSearch ? [{ customerPhone: contains(phoneSearch) }] : [])],
+      }),
       ...(status && { status }),
       ...(paymentStatus && { paymentStatus }),
       ...(counterSale === true && counterSaleWhere),
       ...(counterSale === false && { NOT: counterSaleWhere }),
-      // In its own AND, as the payment filter above sets paymentStatus too
-      ...(paidBy && { AND: [paidByWhere(paidBy)] }),
+      ...(trade && { tradeCompanyName: trade === "true" ? { not: null } : null }),
+      ...((placedStart || placedEnd) && {
+        createdAt: {
+          ...(placedStart && { gte: dayStart(placedStart) }),
+          // The end day is included, so up to the start of the next one
+          ...(placedEnd && { lt: dayStart(placedEnd, 1) }),
+        },
+      }),
+      // In an AND, as these set fields used above: paymentStatus and orderItems
+      AND: [
+        ...(paidBy ? [paidByWhere(paidBy)] : []),
+        ...(multiStore ? [{ orderItems: multiStore === "true" ? { some: { organizationId: { not: storeId } } } : { every: { organizationId: storeId } } }] : []),
+        ...(returned ? [{ orderItems: returned === "true" ? { some: ownReturnedLine } : { none: ownReturnedLine } }] : []),
+      ],
     }
 
     const direction = order === "desc" ? "desc" : "asc"
@@ -64,12 +88,14 @@ export const getStoreOrders = async (storeId: string, filters: StoreOrdersParams
           id: true,
           reference: true,
           customerName: true,
+          tradeCompanyName: true,
           status: true,
           paymentStatus: true,
           shippingMethod: true,
           totalGhs: true,
           createdAt: true,
-          orderItems: { select: { organizationId: true, quantity: true, totalPriceGhs: true, discountGhs: true, taxGhs: true } },
+          refunds: { select: { amountGhs: true } },
+          orderItems: { select: { organizationId: true, quantity: true, totalPriceGhs: true, discountGhs: true, taxGhs: true, returns: { select: { quantity: true } } } },
         },
       }),
       prisma.order.count({ where }),
@@ -78,13 +104,17 @@ export const getStoreOrders = async (storeId: string, filters: StoreOrdersParams
     return {
       success: true,
       data: {
-        data: orders.map(({ orderItems, totalGhs, ...order }) => {
+        data: orders.map(({ orderItems, totalGhs, refunds, ...order }) => {
           const ownLines = orderItems.filter((line) => line.organizationId === storeId)
           const isMultiStore = ownLines.length < orderItems.length
+          const itemCount = ownLines.reduce((sum, line) => sum + line.quantity, 0)
+          const returned = ownLines.reduce((sum, line) => sum + line.returns.reduce((total, row) => total + row.quantity, 0), 0)
           return {
             ...order,
             totalGhs: (isMultiStore ? sumLines(ownLines) : totalGhs).toString(),
-            itemCount: ownLines.reduce((sum, line) => sum + line.quantity, 0),
+            refundedGhs: !isMultiStore && refunds.length ? refunds.reduce((sum, row) => sum.plus(row.amountGhs), new Prisma.Decimal(0)).toFixed(2) : null,
+            itemCount,
+            returned: returnLabel(itemCount, returned),
             isMultiStore,
           }
         }),
