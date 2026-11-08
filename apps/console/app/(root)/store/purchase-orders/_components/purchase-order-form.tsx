@@ -9,7 +9,7 @@ import { useFieldArray, useForm, useWatch, type SubmitHandler } from "react-hook
 import type { z } from "zod"
 import { Package, Search, SearchX, Trash2 } from "lucide-react"
 import { Currency, PurchaseOrderStatus } from "@workspace/db/enums"
-import { DateField, NumberInputField, SelectField, TextareaField } from "@workspace/forms"
+import { ComboboxField, DateField, NumberInputField, SelectField, TextareaField } from "@workspace/forms"
 import { Button } from "@workspace/ui/components/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@workspace/ui/components/card"
 import { FieldGroup } from "@workspace/ui/components/field"
@@ -221,11 +221,71 @@ export default function PurchaseOrderForm({ storeId, suppliers, rate, order, sug
             <div className="grid auto-rows-max gap-4 lg:col-span-2">
               <Card>
                 <CardHeader>
+                  <CardTitle>Add items</CardTitle>
+                  <CardDescription>New lines start at their last buy price.</CardDescription>
+                </CardHeader>
+                <CardContent className="grid gap-4">
+                  <div className="relative">
+                    <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+                    <Input type="search" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search by name or SKU" aria-label="Search listings" className="pl-9" />
+                  </div>
+
+                  {searchError && <p className="text-sm text-destructive">{searchError}</p>}
+                  {results === null ? (
+                    <div className="flex justify-center py-6">
+                      <Spinner />
+                    </div>
+                  ) : results.length === 0 ? (
+                    <EmptyState icon={SearchX} title={search ? "No matches" : "No listings yet"} description={search ? "No listing matches your search." : "This store has no listings to order."} />
+                  ) : (
+                    <ScrollArea className="-mr-3 flex max-h-72 flex-col">
+                      <ul className="grid gap-3 pr-3 md:grid-cols-2">
+                        {results.map((listing) => (
+                          <li key={listing.listingId} className="grid content-start gap-2 rounded-lg border p-3">
+                            <div className="flex items-center gap-3">
+                              <div className="size-10 shrink-0 overflow-hidden rounded bg-muted">{listing.image && <img alt="" src={listing.image} className="size-full object-cover" />}</div>
+                              <div className="grid">
+                                <span className="font-medium">{listing.productName}</span>
+                                <span className="text-xs text-muted-foreground">{listing.brandName}</span>
+                              </div>
+                            </div>
+                            {listing.rows.map((row) => {
+                              const isAdded = added.has(lineKey(listing.listingId, row.listingVariantId))
+                              return (
+                                <div key={row.listingVariantId ?? "listing"} className="flex items-center justify-between gap-2 text-sm">
+                                  <div className="grid">
+                                    {row.variantDescription && <span>{row.variantDescription}</span>}
+                                    <span className="text-xs text-muted-foreground">
+                                      {[
+                                        row.stock === null ? "Stock not tracked" : `${row.stock} in stock`,
+                                        row.incoming ? `${row.incoming} incoming` : null,
+                                        row.buyPriceUsd ? `last cost ${formatCurrency(row.buyPriceUsd, "USD", "en-US")}` : null,
+                                      ]
+                                        .filter(Boolean)
+                                        .join(" · ")}
+                                    </span>
+                                  </div>
+                                  <Button type="button" size="sm" variant="outline" onClick={() => addRow(listing, row)} disabled={isAdded || isBusy}>
+                                    {isAdded ? "Added" : "Add"}
+                                  </Button>
+                                </div>
+                              )
+                            })}
+                          </li>
+                        ))}
+                      </ul>
+                    </ScrollArea>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
                   <CardTitle>Items</CardTitle>
                   <CardDescription>{`How many of each, at the supplier's price in ${currency}.`}</CardDescription>
                 </CardHeader>
                 <CardContent className="grid gap-4">
-                  {fields.length === 0 && <EmptyState icon={Package} title="No items yet" description="Add items from the store's listings below." />}
+                  {fields.length === 0 && <EmptyState icon={Package} title="No items yet" description="Add items from the store's listings above." />}
                   {fields.length > 0 && (
                     <Table>
                       <TableHeader>
@@ -294,66 +354,6 @@ export default function PurchaseOrderForm({ storeId, suppliers, rate, order, sug
                   {linesError && <p className="text-sm text-destructive">{linesError}</p>}
                 </CardContent>
               </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Add items</CardTitle>
-                  <CardDescription>New lines start at their last buy price.</CardDescription>
-                </CardHeader>
-                <CardContent className="grid gap-4">
-                  <div className="relative">
-                    <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
-                    <Input type="search" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search by name or SKU" aria-label="Search listings" className="pl-9" />
-                  </div>
-
-                  {searchError && <p className="text-sm text-destructive">{searchError}</p>}
-                  {results === null ? (
-                    <div className="flex justify-center py-6">
-                      <Spinner />
-                    </div>
-                  ) : results.length === 0 ? (
-                    <EmptyState icon={SearchX} title={search ? "No matches" : "No listings yet"} description={search ? "No listing matches your search." : "This store has no listings to order."} />
-                  ) : (
-                    <ScrollArea className="-mr-3 flex max-h-[60vh] flex-col">
-                      <ul className="grid gap-3 pr-3 md:grid-cols-2">
-                        {results.map((listing) => (
-                          <li key={listing.listingId} className="grid content-start gap-2 rounded-lg border p-3">
-                            <div className="flex items-center gap-3">
-                              <div className="size-10 shrink-0 overflow-hidden rounded bg-muted">{listing.image && <img alt="" src={listing.image} className="size-full object-cover" />}</div>
-                              <div className="grid">
-                                <span className="font-medium">{listing.productName}</span>
-                                <span className="text-xs text-muted-foreground">{listing.brandName}</span>
-                              </div>
-                            </div>
-                            {listing.rows.map((row) => {
-                              const isAdded = added.has(lineKey(listing.listingId, row.listingVariantId))
-                              return (
-                                <div key={row.listingVariantId ?? "listing"} className="flex items-center justify-between gap-2 text-sm">
-                                  <div className="grid">
-                                    {row.variantDescription && <span>{row.variantDescription}</span>}
-                                    <span className="text-xs text-muted-foreground">
-                                      {[
-                                        row.stock === null ? "Stock not tracked" : `${row.stock} in stock`,
-                                        row.incoming ? `${row.incoming} incoming` : null,
-                                        row.buyPriceUsd ? `last cost ${formatCurrency(row.buyPriceUsd, "USD", "en-US")}` : null,
-                                      ]
-                                        .filter(Boolean)
-                                        .join(" · ")}
-                                    </span>
-                                  </div>
-                                  <Button type="button" size="sm" variant="outline" onClick={() => addRow(listing, row)} disabled={isAdded || isBusy}>
-                                    {isAdded ? "Added" : "Add"}
-                                  </Button>
-                                </div>
-                              )
-                            })}
-                          </li>
-                        ))}
-                      </ul>
-                    </ScrollArea>
-                  )}
-                </CardContent>
-              </Card>
             </div>
 
             {/* Right column */}
@@ -365,10 +365,11 @@ export default function PurchaseOrderForm({ storeId, suppliers, rate, order, sug
                 </CardHeader>
                 <CardContent className="grid gap-2">
                   {suppliers.length ? (
-                    <SelectField
+                    <ComboboxField
                       control={form.control}
                       name="supplierId"
                       placeholder="Choose a supplier"
+                      emptyMessage="No suppliers found."
                       options={suppliers.map((supplier) => ({ value: supplier.id, label: supplier.name }))}
                       disabled={isBusy || !isDraft}
                       aria-label="Supplier"

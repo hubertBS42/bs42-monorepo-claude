@@ -45,6 +45,8 @@ interface ComboboxFieldProps<T extends FieldValues> {
   emptyMessage?: string
   modal?: boolean
   onValueChange?: (value: string) => void
+  // For a field whose visible label is elsewhere, such as its card's title
+  "aria-label"?: string
 }
 
 const ComboboxField = <T extends FieldValues>({
@@ -61,6 +63,7 @@ const ComboboxField = <T extends FieldValues>({
   emptyMessage = "No options found.",
   modal = false,
   onValueChange,
+  "aria-label": ariaLabel,
 }: ComboboxFieldProps<T>) => {
   const generatedId = React.useId()
   const inputId =
@@ -117,6 +120,7 @@ const ComboboxField = <T extends FieldValues>({
                 placeholder={placeholder}
                 autoComplete={autoComplete}
                 disabled={disabled}
+                aria-label={ariaLabel}
                 aria-invalid={fieldState.invalid}
                 aria-describedby={describedBy}
                 onBlur={field.onBlur}
