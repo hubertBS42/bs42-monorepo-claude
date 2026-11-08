@@ -109,9 +109,9 @@ export default function ItemsStep({ storeId, form, chosen, onChosenChange }: Ite
               }}
               placeholder="Search by name, SKU or barcode"
               aria-label="Search listings"
-              className="pr-9 pl-9"
+              className="pr-3 pl-9 [&::-webkit-search-cancel-button]:ml-6"
             />
-            {isSearching && <Spinner className="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground" aria-label="Searching" />}
+            {isSearching && <Spinner className="absolute top-1/2 right-8 -translate-y-1/2 text-muted-foreground" aria-label="Searching" />}
           </div>
 
           {searchError && <p className="text-sm text-destructive">{searchError}</p>}
