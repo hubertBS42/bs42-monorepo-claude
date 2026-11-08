@@ -800,3 +800,71 @@ export async function notifyStockTransfer(transferId: string) {
     console.error(`Stock transfer notification for ${transferId} failed:`, error)
   }
 }
+
+// A pickup order's items sent to the branch it's collected at (CollectionTransfer), or arrived there: the collecting
+// branch hears they're coming, the sending branch that they arrived. Under each owner's and admin's order switch.
+export async function notifyCollectionTransfer(transferId: string, event: "sent" | "received", byUserId: string | null) {
+  try {
+    const settings = await readAppSettings()
+    const transfer = await prisma.collectionTransfer.findUnique({
+      where: { id: transferId },
+      select: {
+        fromStoreId: true,
+        fromStore: { select: { name: true } },
+        order: {
+          select: {
+            id: true,
+            reference: true,
+            pickupLocation: { select: { name: true, organizationId: true } },
+            orderItems: { select: { organizationId: true, productName: true, variantDescription: true, quantity: true } },
+          },
+        },
+      },
+    })
+    const location = transfer?.order.pickupLocation
+    if (!transfer || !location) return
+    const lines = transfer.order.orderItems.filter((line) => line.organizationId === transfer.fromStoreId)
+    const details = [
+      { label: "Order", value: transfer.order.reference },
+      ...lines.map((line) => ({ label: line.variantDescription ? `${line.productName} (${line.variantDescription})` : line.productName, value: `× ${line.quantity}` })),
+    ]
+    const path = `/store/orders/${transfer.order.id}/details`
+    if (event === "sent") {
+      await toStoreTeam(
+        settings,
+        location.organizationId,
+        "notifyOrders",
+        NotificationKind.TRANSFER,
+        {
+          subject: `Items on their way for ${transfer.order.reference}`,
+          preview: `From ${transfer.fromStore.name}, for collection at ${location.name}`,
+          heading: "Items on their way for collection",
+          intro: `${transfer.fromStore.name} sent items for an order collected at ${location.name}. Mark them received when they arrive.`,
+          details,
+        },
+        { label: "View the order", path },
+        "collection items sent",
+        byUserId
+      )
+      return
+    }
+    await toStoreTeam(
+      settings,
+      transfer.fromStoreId,
+      "notifyOrders",
+      NotificationKind.TRANSFER,
+      {
+        subject: `${location.name} received the items for ${transfer.order.reference}`,
+        preview: "They're ready to hand over",
+        heading: "Items arrived for collection",
+        intro: `${location.name} received the items you sent for ${transfer.order.reference}.`,
+        details,
+      },
+      { label: "View the order", path },
+      "collection items received",
+      byUserId
+    )
+  } catch (error) {
+    console.error(`Collection transfer notification for ${transferId} failed:`, error)
+  }
+}

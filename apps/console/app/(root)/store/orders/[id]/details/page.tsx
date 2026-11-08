@@ -28,6 +28,7 @@ import { InvoiceButton } from "@/components/orders/invoice-button"
 import RecordPayment from "@/components/orders/record-payment"
 import OrderRefunds from "@/components/orders/refund-order"
 import RecordReturn from "@/components/orders/return-order"
+import CollectionCard from "@/components/orders/collection-card"
 import ReadyForCollection from "@/components/orders/ready-for-collection"
 import UpdateOrderStatus from "@/components/orders/update-order-status"
 import { requireActiveStoreMember } from "@/lib/auth-guard"
@@ -161,6 +162,8 @@ export default async function StoreOrderDetailsPage({ params }: OrderDetailsPage
             </CardContent>
           </Card>
 
+          {order.collection && <CollectionCard order={order} collection={order.collection} />}
+
           <Card>
             <CardHeader>
               <CardTitle>Payment</CardTitle>
@@ -204,6 +207,7 @@ export default async function StoreOrderDetailsPage({ params }: OrderDetailsPage
           )}
 
           <OrderCustomerCard
+            pickupName={order.pickupName}
             customer={order.customer}
             shipping={order.shipping}
             trade={order.trade}

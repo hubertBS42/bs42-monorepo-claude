@@ -16,8 +16,8 @@ export interface PickupLocationView {
 
 export const pickupLocationSelect = { name: true, address: true, hours: true, phone: true, mapUrl: true } as const
 
-// A location a customer can choose
-export type PickupOption = PickupLocationView & { id: string }
+// A location a customer can choose; readyInDays is how long items brought from other branches take (0: none are)
+export type PickupOption = PickupLocationView & { id: string; readyInDays?: number }
 
 // The location a pickup of these stores' items is collected from: only items all from one store, which has one
 export async function pickupLocationForStores(client: Client, storeIds: (string | null)[]): Promise<PickupOption | null> {
@@ -33,25 +33,37 @@ export interface PickupLine {
   installation: boolean
 }
 
-// Where a basket can be collected, and how: each location whose own store sells everything in it, on sale and in
-// stock for the quantity, with the lines as that store's listings (the same product and variant). Collecting there
-// sells that store's stock at its prices, whichever store the basket held each line at. Nothing installed: the
-// installers go to an address. Bringing items from another branch to the location comes later.
+// Where a basket can be collected, and how. A location can take each line from its own store, on sale and in stock
+// (the same product and variant, at that store's listing, so its stock and prices), or else from the store the basket
+// holds the line at, when that store supplies the location (PickupSupplier) and has the stock: that line stays as it
+// is, and is brought over, so the option is ready in the longest of those lead times. Nothing installed: the
+// installers go to an address.
 export async function pickupOptions(client: Client, lines: PickupLine[]): Promise<{ location: PickupOption; lines: PickupLine[] }[]> {
   if (!lines.length || lines.some((line) => line.installation)) return []
-  const locations = await client.pickupLocation.findMany({ orderBy: { name: "asc" }, select: { id: true, organizationId: true, ...pickupLocationSelect } })
+  const locations = await client.pickupLocation.findMany({
+    orderBy: { name: "asc" },
+    select: { id: true, organizationId: true, ...pickupLocationSelect, suppliers: { select: { organizationId: true, leadDays: true } } },
+  })
   if (!locations.length) return []
 
-  // What each line is: its product and its catalogue variant. One query after another: a transaction has one connection.
-  const listings = await client.storeListing.findMany({ where: { id: { in: lines.map((line) => line.listingId) } }, select: { id: true, productId: true } })
-  const variants = await client.storeListingVariant.findMany({ where: { id: { in: lines.flatMap((line) => line.listingVariantId ?? []) } }, select: { id: true, variantId: true } })
+  // What each line is, where the basket holds it and how much is there. One query after another: a transaction has one
+  // connection.
+  const listings = await client.storeListing.findMany({
+    where: { id: { in: lines.map((line) => line.listingId) } },
+    select: { id: true, productId: true, organizationId: true, stock: true, trackInventory: true },
+  })
+  const variants = await client.storeListingVariant.findMany({
+    where: { id: { in: lines.flatMap((line) => line.listingVariantId ?? []) } },
+    select: { id: true, variantId: true, stock: true, trackInventory: true },
+  })
   const visibleCategoryIds = await loadVisibleCategoryIds(client)
-  const productOf = new Map(listings.map((listing) => [listing.id, listing.productId]))
-  const variantOf = new Map(variants.map((variant) => [variant.id, variant.variantId]))
+  const listingOf = new Map(listings.map((listing) => [listing.id, listing]))
+  const variantOf = new Map(variants.map((variant) => [variant.id, variant]))
   const productIds = [...new Set(listings.map((listing) => listing.productId))]
+  const enough = (row: { stock: number; trackInventory: boolean } | undefined, quantity: number) => !!row && (!row.trackInventory || row.stock >= quantity)
 
   const options: { location: PickupOption; lines: PickupLine[] }[] = []
-  for (const { organizationId, ...location } of locations) {
+  for (const { organizationId, suppliers, ...location } of locations) {
     const offered = await client.storeListing.findMany({
       where: { AND: [customerVisibleListingWhere(visibleCategoryIds), { organizationId, productId: { in: productIds } }] },
       select: {
@@ -62,22 +74,36 @@ export async function pickupOptions(client: Client, lines: PickupLine[]): Promis
         storeListingVariants: { where: variantOnSaleWhere, select: { id: true, variantId: true, stock: true, trackInventory: true } },
       },
     })
+    const leadDays = new Map(suppliers.map((supplier) => [supplier.organizationId, supplier.leadDays]))
     const mapped: PickupLine[] = []
+    let readyInDays = 0
     for (const line of lines) {
-      const listing = offered.find((candidate) => candidate.productId === productOf.get(line.listingId))
-      if (!listing) break
-      if (line.listingVariantId) {
-        const variant = listing.storeListingVariants.find((candidate) => candidate.variantId === variantOf.get(line.listingVariantId!))
-        if (!variant || (variant.trackInventory && variant.stock < line.quantity)) break
-        mapped.push({ ...line, listingId: listing.id, listingVariantId: variant.id })
-      } else {
-        if (listing.trackInventory && listing.stock < line.quantity) break
-        mapped.push({ ...line, listingId: listing.id, listingVariantId: null })
+      const held = listingOf.get(line.listingId)
+      const heldVariant = line.listingVariantId ? variantOf.get(line.listingVariantId) : undefined
+      // The location's own store first: ready without waiting
+      const own = offered.find((candidate) => candidate.productId === held?.productId)
+      const ownVariant = heldVariant && own?.storeListingVariants.find((candidate) => candidate.variantId === heldVariant.variantId)
+      if (own && (line.listingVariantId ? enough(ownVariant, line.quantity) : enough(own, line.quantity))) {
+        mapped.push({ ...line, listingId: own.id, listingVariantId: ownVariant?.id ?? null })
+        continue
       }
+      // Else brought from the store the basket holds it at, when that store supplies the location
+      const days = held && leadDays.get(held.organizationId)
+      if (days && (line.listingVariantId ? enough(heldVariant, line.quantity) : enough(held, line.quantity))) {
+        mapped.push(line)
+        readyInDays = Math.max(readyInDays, days)
+        continue
+      }
+      break
     }
-    if (mapped.length === lines.length) options.push({ location, lines: mapped })
+    if (mapped.length === lines.length) options.push({ location: { ...location, readyInDays }, lines: mapped })
   }
   return options
+}
+
+// The location by id, for an order a customer chose it for
+export function loadPickupLocation(client: Client, id: string): Promise<PickupOption | null> {
+  return client.pickupLocation.findUnique({ where: { id }, select: { id: true, ...pickupLocationSelect } })
 }
 
 // An order's copy of its location, or null when it has none

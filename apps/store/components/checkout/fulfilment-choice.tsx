@@ -56,7 +56,7 @@ export function FulfilmentChoice({ value, onChange, options, disabled }: { value
             onChange({ method: "PICKUP", pickupLocationId: option.id })
           },
           `Collect from ${option.name}`,
-          "Free",
+          option.readyInDays ? `Free · ready in about ${option.readyInDays} ${option.readyInDays === 1 ? "day" : "days"}` : "Free",
           MapPin
         )
       )}
@@ -65,10 +65,11 @@ export function FulfilmentChoice({ value, onChange, options, disabled }: { value
 }
 
 // Where to collect it, under the choice
-export function PickupAddress({ pickup }: { pickup: PickupLocationView }) {
+export function PickupAddress({ pickup }: { pickup: PickupLocationView & { readyInDays?: number } }) {
   return (
     <div className="grid gap-0.5 rounded-lg bg-muted/50 p-3 text-sm">
       <p className="font-medium">{pickup.name}</p>
+      {!!pickup.readyInDays && <p>{`Some items come from another branch: ready in about ${pickup.readyInDays} ${pickup.readyInDays === 1 ? "day" : "days"}. We'll email you.`}</p>}
       <p className="whitespace-pre-line text-muted-foreground">{pickup.address}</p>
       {pickup.hours && <p className="whitespace-pre-line text-muted-foreground">{pickup.hours}</p>}
       {pickup.mapUrl && (

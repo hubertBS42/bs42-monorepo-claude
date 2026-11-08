@@ -5,7 +5,8 @@ import { formatDate } from "@workspace/utils/date"
 import { capitalizeWord } from "@workspace/utils/text"
 import { requireActiveStoreMember } from "@/lib/auth-guard"
 import { getStoreById } from "@/lib/data/stores.data"
-import { getStorePickupLocation } from "@/lib/data/pickup-locations.data"
+import { getPickupSuppliers, getStorePickupLocation } from "@/lib/data/pickup-locations.data"
+import PickupSuppliersCard from "@/components/pickup-suppliers-card"
 import PickupLocationCard from "@/components/pickup-location-card"
 import StoreActions from "../_components/store-actions"
 
@@ -16,7 +17,7 @@ export const metadata: Metadata = {
 const StoreOverviewPage = async () => {
   const { storeId } = await requireActiveStoreMember()
 
-  const [response, pickupLocation] = await Promise.all([getStoreById(storeId), getStorePickupLocation(storeId)])
+  const [response, pickupLocation, suppliers] = await Promise.all([getStoreById(storeId), getStorePickupLocation(storeId), getPickupSuppliers(storeId)])
   if (!response.success) throw new Error(response.error)
   const store = response.data
 
@@ -58,6 +59,7 @@ const StoreOverviewPage = async () => {
         </Card>
 
         <PickupLocationCard storeId={storeId} location={pickupLocation} />
+        {suppliers && <PickupSuppliersCard storeId={storeId} groupName={suppliers.groupName} branches={suppliers.branches} />}
 
         <StoreActions store={store} />
       </div>

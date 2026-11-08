@@ -14,7 +14,14 @@ import { markStoreOrderReadyAction } from "@/lib/actions/store-order.actions"
 interface ReadyForCollectionProps {
   // The store whose page this is, or null on the platform's pages
   storeId: string | null
-  order: { id: string; status: OrderStatus; shippingMethod: ShippingMethod; readyForCollectionAt: Date | null; customer: { email: string | null } }
+  order: {
+    id: string
+    status: OrderStatus
+    shippingMethod: ShippingMethod
+    readyForCollectionAt: Date | null
+    customer: { email: string | null }
+    collection: { rows: { transfer: { status: string } | null }[] } | null
+  }
   // Other stores' items too: on a store's page, the platform manages the order
   isMultiStore: boolean
 }
@@ -30,6 +37,8 @@ export default function ReadyForCollection({ storeId, order, isMultiStore }: Rea
 
   const canBeReady = order.status === OrderStatus.CONFIRMED || order.status === OrderStatus.PROCESSING
   if (isLoading || !canUpdate || !canBeReady || (storeId && isMultiStore)) return null
+  // Items from other branches arrive first
+  if (order.collection?.rows.some((row) => row.transfer?.status !== "RECEIVED")) return <p className="text-sm text-muted-foreground">Ready for collection once the items from other branches arrive.</p>
 
   const mark = () => {
     startTransition(async () => {

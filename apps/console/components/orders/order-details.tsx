@@ -181,9 +181,11 @@ interface OrderCustomerCardProps {
   // Placed by a trade account; tradeHref links to the account on the platform's pages
   trade?: { companyName: string; tin: string | null } | null
   tradeHref?: string | null
+  // A pickup's location, as the order copied it; null when it has none
+  pickupName?: string | null
 }
 
-export function OrderCustomerCard({ customer, shipping, actions, trade, tradeHref }: OrderCustomerCardProps) {
+export function OrderCustomerCard({ customer, shipping, actions, trade, tradeHref, pickupName }: OrderCustomerCardProps) {
   return (
     <Card>
       <CardHeader>
@@ -213,7 +215,7 @@ export function OrderCustomerCard({ customer, shipping, actions, trade, tradeHre
             <Detail label="Address">{[shipping.line1, shipping.line2, shipping.town, shipping.region].filter(Boolean).join(", ") || "—"}</Detail>
           </>
         ) : (
-          <Detail label="Pickup">The customer collects the order from the store.</Detail>
+          <Detail label="Pickup">{pickupName ? `The customer collects it from ${pickupName}.` : "The customer collects the order from the store."}</Detail>
         )}
         {actions && <div className="flex flex-wrap gap-1">{actions}</div>}
       </CardContent>

@@ -8,6 +8,7 @@ import { InstallationStatus, OrderStatus, PaymentStatus, ShippingMethod, type Pa
 import { notifyRefund } from "@workspace/commerce/notifications"
 import { sendOrderEmail, statusEmailEvent } from "@workspace/commerce/order-emails"
 import { cancelAndRefundOrder, recordOrderReturn, refundOrder, RefundError, type RefundInput, type ReturnInput } from "./order-refunds"
+import { allAtCollectingBranch } from "./collection-transfers"
 import { cancelInstallation, changeInstallation, InstallationError, type InstallationChange } from "./order-installation"
 import { hasBeenPaid, isPaid, nextOrderStatuses } from "@workspace/commerce/order-status"
 import { changeOrderStatus, StatusChangedError } from "@workspace/commerce/order-writes"
@@ -100,6 +101,8 @@ export async function recordOrderPayment(
 
 // Tells the customer a pickup order can be collected, once: from confirmed until it's collected
 export async function markReadyForCollection(orderId: string): Promise<ActionResponse> {
+  // Items from other branches must have arrived first
+  if (!(await allAtCollectingBranch(prisma, orderId))) return { success: false, error: "Some items haven't arrived at the collecting branch yet.", code: "NOT_ARRIVED" }
   const { count } = await prisma.order.updateMany({
     where: { id: orderId, shippingMethod: ShippingMethod.PICKUP, readyForCollectionAt: null, status: { in: READY_STATUSES } },
     data: { readyForCollectionAt: new Date() },

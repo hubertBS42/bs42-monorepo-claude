@@ -175,6 +175,7 @@ export async function placeQuotedOrder(tx: Tx, quote: QuoteForOrder, placed: Quo
     createdById: placed.createdById,
     placedFromIp: placed.placedFromIp ?? null,
     statusNote: `Placed from quotation ${quote.reference}`,
+    pickupLocationId: quote.pickupLocationId,
     customer: { userId: placed.userId, name: quote.customerName, email: quote.customerEmail, phone: quote.customerPhone },
     shippingMethod: quote.shippingMethod,
     paymentMethod: placed.paymentMethod,

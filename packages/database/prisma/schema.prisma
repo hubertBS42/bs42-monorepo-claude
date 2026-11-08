@@ -235,6 +235,9 @@ model User {
   platformAlertSettings   PlatformAlertSetting[]
   productRequests         ProductRequest[]       @relation("ProductRequestRequestedBy")
   transfersSent           StockTransfer[]        @relation("StockTransferSentBy")
+  collectionsSent         CollectionTransfer[]   @relation("CollectionTransferSentBy")
+  collectionsReceived     CollectionTransfer[]   @relation("CollectionTransferReceivedBy")
+  collectionsCancelled    CollectionTransfer[]   @relation("CollectionTransferCancelledBy")
   transfersReceived       StockTransfer[]        @relation("StockTransferReceivedBy")
   transfersCancelled      StockTransfer[]        @relation("StockTransferCancelledBy")
   productRequestsReviewed ProductRequest[]       @relation("ProductRequestReviewedBy")
@@ -649,6 +652,7 @@ model StoreListing {
   purchaseOrderItems   PurchaseOrderItem[]
   transfersOut         StockTransferItem[]   @relation("StockTransferItemFrom")
   transfersIn          StockTransferItem[]   @relation("StockTransferItemTo")
+  heldOrderItems       OrderItem[]           @relation("OrderItemHeld")
   stockMovements       StockMovement[]
 
   trackInventory    Boolean @default(true)
@@ -690,6 +694,7 @@ model StoreListingVariant {
   purchaseOrderItems PurchaseOrderItem[]
   transfersOut       StockTransferItem[] @relation("StockTransferItemFrom")
   transfersIn        StockTransferItem[] @relation("StockTransferItemTo")
+  heldOrderItems     OrderItem[]         @relation("OrderItemHeld")
   stockMovements     StockMovement[]
   status             Status              @default(DRAFT)
   createdAt          DateTime            @default(now())
@@ -811,6 +816,7 @@ model Order {
   tradeAccount         TradeAccount?              @relation(fields: [tradeAccountId], references: [id], onDelete: SetNull)
   // The quotation it was placed from, if any
   quote                Quote?
+  collectionTransfers  CollectionTransfer[]
   tradeCompanyName     String?
   tradeTin             String?
   // Null for an order without installation. installationDate is the booked day; installationHistory says who did what.
@@ -1148,6 +1154,12 @@ model OrderItem {
 
   storeListingVariantId String?              @db.Uuid
   storeListingVariant   StoreListingVariant? @relation(fields: [storeListingVariantId], references: [id], onDelete: Restrict)
+  // Where its units are now, when they were brought to the collecting branch and that branch lists the product: a
+  // cancellation or a restocked return puts them back there (collection-transfers.ts)
+  heldListingId         String?              @db.Uuid
+  heldListing           StoreListing?        @relation("OrderItemHeld", fields: [heldListingId], references: [id], onDelete: SetNull)
+  heldListingVariantId  String?              @db.Uuid
+  heldListingVariant    StoreListingVariant? @relation("OrderItemHeld", fields: [heldListingVariantId], references: [id], onDelete: SetNull)
 
   quantity    Int
   // Whether the sale took stock off its listing (or variant), which tracked it then. A cancellation or a restocking
@@ -1195,6 +1207,8 @@ model OrderItem {
   returns OrderReturnItem[]
   reviews Review[]
 
+  @@index([heldListingId])
+  @@index([heldListingVariantId])
   @@index([orderId])
   @@index([organizationId])
   @@index([storeListingId])
@@ -1539,13 +1553,13 @@ model Verification {
 }
 
 model Organization {
-  id              String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id              String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name            String
   slug            String
   logo            String?
-  status          OrganizationStatus @default(ACTIVE)
-  createdAt       DateTime           @default(now())
-  updatedAt       DateTime           @updatedAt
+  status          OrganizationStatus   @default(ACTIVE)
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
   metadata        String?
   members         Member[]
   invitations     Invitation[]
@@ -1556,9 +1570,11 @@ model Organization {
   purchaseOrders  PurchaseOrder[]
   pickupLocation  PickupLocation?
   branchOf        BranchMembership?
+  suppliesPickups PickupSupplier[]
   productRequests ProductRequest[]
-  transfersOut    StockTransfer[]    @relation("StockTransferFrom")
-  transfersIn     StockTransfer[]    @relation("StockTransferTo")
+  transfersOut    StockTransfer[]      @relation("StockTransferFrom")
+  transfersIn     StockTransfer[]      @relation("StockTransferTo")
+  collectionsSent CollectionTransfer[] @relation("CollectionTransferFrom")
 
   @@unique([slug])
   @@map("organization")
@@ -1811,19 +1827,20 @@ model Notification {
 // Where a store's pickup orders are collected, as customers see it: a branch's name, address and hours. One per store
 // (stores are the business's branches); without one, pickups from the store aren't offered to customers.
 model PickupLocation {
-  id             String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  organizationId String       @unique @db.Uuid
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  id             String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String           @unique @db.Uuid
+  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   // Customer-facing, e.g. "BS42 Accra": customers never see the store's own name
   name           String
   address        String
   hours          String?
   phone          String?
   mapUrl         String?
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
   orders         Order[]
   quotes         Quote[]
+  suppliers      PickupSupplier[]
 
   @@map("pickup_location")
 }
@@ -1850,4 +1867,50 @@ model BranchMembership {
 
   @@index([groupId])
   @@map("branch_membership")
+}
+
+// A branch whose stock can be brought to another branch's pickup location for collection, and how many days that takes
+// (customers see "Ready in about N days"). Only branches in the location's store's group (setPickupSuppliersAction).
+model PickupSupplier {
+  pickupLocationId String         @db.Uuid
+  pickupLocation   PickupLocation @relation(fields: [pickupLocationId], references: [id], onDelete: Cascade)
+  organizationId   String         @db.Uuid
+  organization     Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  // 1 to 60, a CHECK in the migration
+  leadDays         Int
+
+  @@id([pickupLocationId, organizationId])
+  @@index([organizationId])
+  @@map("pickup_supplier")
+}
+
+enum CollectionTransferStatus {
+  SENT
+  RECEIVED
+  CANCELLED
+}
+
+// A pickup order's items sent from the branch that sold them to the branch it's collected at (Order.pickupLocation):
+// every line of that store's on the order. Stock doesn't change: the order already holds it. The order can be marked
+// ready once each other store's items have arrived. Cancelled when sent by mistake, before it arrives.
+model CollectionTransfer {
+  id            String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orderId       String                   @db.Uuid
+  order         Order                    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  fromStoreId   String                   @db.Uuid
+  fromStore     Organization             @relation("CollectionTransferFrom", fields: [fromStoreId], references: [id], onDelete: Restrict)
+  status        CollectionTransferStatus @default(SENT)
+  sentById      String?                  @db.Uuid
+  sentBy        User?                    @relation("CollectionTransferSentBy", fields: [sentById], references: [id], onDelete: SetNull)
+  sentAt        DateTime                 @default(now())
+  receivedById  String?                  @db.Uuid
+  receivedBy    User?                    @relation("CollectionTransferReceivedBy", fields: [receivedById], references: [id], onDelete: SetNull)
+  receivedAt    DateTime?
+  cancelledById String?                  @db.Uuid
+  cancelledBy   User?                    @relation("CollectionTransferCancelledBy", fields: [cancelledById], references: [id], onDelete: SetNull)
+  cancelledAt   DateTime?
+
+  @@index([orderId])
+  @@index([fromStoreId])
+  @@map("collection_transfer")
 }

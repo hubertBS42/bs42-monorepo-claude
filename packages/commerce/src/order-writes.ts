@@ -6,7 +6,7 @@ import { InstallationStatus, OrderStatus, PaymentMethod, PaymentStatus, Shipping
 import { formatDate } from "@workspace/utils/date"
 import { loadInstallationFees } from "./installation"
 import type { StockAlert } from "./notifications"
-import { pickupLocationForStores } from "./pickup-locations"
+import { loadPickupLocation, pickupLocationForStores } from "./pickup-locations"
 import type { PricedOrder } from "./pricing"
 import { addStock, recordStockMovements } from "./stock-movements"
 import { hiddenReason, loadVisibleCategoryIds } from "./visibility"
@@ -188,6 +188,8 @@ export interface NewOrder {
   statusNote: string
   customer: { userId: string | null; name: string; email: string | null; phone: string | null }
   shippingMethod: ShippingMethod
+  // A pickup's location, when one was chosen; without it, its items' one store's location
+  pickupLocationId?: string | null
   // How the customer means to pay; staff record how they did. A storefront order pays online, and its payment sets
   // card or mobile money (online-payments.ts). Cash when left out.
   paymentMethod?: PaymentMethod
@@ -233,14 +235,16 @@ export async function createOrder(tx: Tx, order: NewOrder) {
   const [{ nextval }] = await tx.$queryRaw<[{ nextval: bigint }]>`SELECT nextval('order_reference_seq')`
   const reference = `BS42-${formatDate(new Date(), "yyyyMMdd")}-${String(nextval).padStart(5, "0")}`
 
-  // A pickup keeps the place it's collected from, as its store has it now
+  // A pickup keeps the place it's collected from as it is now: the one the customer chose, else its items' one store's
   const pickup =
-    order.shippingMethod === ShippingMethod.PICKUP
-      ? await pickupLocationForStores(
-          tx,
-          order.lines.map((line) => line.storeId)
-        )
-      : null
+    order.shippingMethod !== ShippingMethod.PICKUP
+      ? null
+      : order.pickupLocationId
+        ? await loadPickupLocation(tx, order.pickupLocationId)
+        : await pickupLocationForStores(
+            tx,
+            order.lines.map((line) => line.storeId)
+          )
 
   const { priced } = order
   const created = await tx.order.create({
@@ -370,11 +374,16 @@ export async function changeOrderStatus(tx: Tx, { orderId, from, to, note, chang
     if (cancelled) await tx.orderInstallationHistory.create({ data: { orderId, status: InstallationStatus.CANCELLED, note: "The order was cancelled", changedById } })
   }
 
-  // Stock was reserved when the order was made, for the rows that tracked it then, so a cancellation puts it back
+  // Stock was reserved when the order was made, for the rows that tracked it then, so a cancellation puts it back:
+  // where the units are now, for lines brought to a collecting branch that lists them (heldListingId)
   if (to === OrderStatus.CANCELLED) {
-    for (const item of items) {
+    const heldSelect = { quantity: true, storeListingId: true, storeListingVariantId: true, tracksStock: true, heldListingId: true, heldListingVariantId: true } as const
+    const anyHeld = await tx.orderItem.count({ where: { orderId, heldListingId: { not: null } } })
+    const lines = anyHeld ? await tx.orderItem.findMany({ where: { orderId }, select: heldSelect }) : items.map((item) => ({ ...item, heldListingId: null, heldListingVariantId: null }))
+    for (const item of lines) {
       if (!item.tracksStock) continue
-      await addStock(tx, { listingId: item.storeListingId, listingVariantId: item.storeListingVariantId }, item.quantity, {
+      const row = item.heldListingId ? { listingId: item.heldListingId, listingVariantId: item.heldListingVariantId } : { listingId: item.storeListingId, listingVariantId: item.storeListingVariantId }
+      await addStock(tx, row, item.quantity, {
         reason: StockMovementReason.CANCELLATION,
         createdById: changedById,
         orderId,

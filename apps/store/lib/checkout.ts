@@ -171,7 +171,7 @@ export async function placeOrder(tx: Tx, sessionCartId: string, pricing: Pricing
   // The account's terms as they are now, not as the page saw them: a suspension stops the discount (PRICE_CHANGED)
   const trade = await loadTradeTerms(tx, input.userId)
   const collect = input.method === "PICKUP"
-  const { basket, lines, priced } = await priceCheckout(tx, sessionCartId, pricing, collect ? { pickupLocationId: input.pickupLocationId } : input, trade)
+  const { basket, lines, priced, pickup } = await priceCheckout(tx, sessionCartId, pricing, collect ? { pickupLocationId: input.pickupLocationId } : input, trade)
   // loadCart moved, lowered or dropped lines: the customer hasn't seen this basket
   if (basket.notices.length) throw new CheckoutError("BASKET_CHANGED")
   if (!priced.totalGhs.eq(input.expectedTotalGhs)) throw new CheckoutError("PRICE_CHANGED")
@@ -180,6 +180,7 @@ export async function placeOrder(tx: Tx, sessionCartId: string, pricing: Pricing
     createdById: null,
     placedFromIp: input.ip,
     statusNote: "Placed on the storefront",
+    pickupLocationId: pickup?.id ?? null,
     customer: { userId: input.userId, name: input.name, email, phone: input.phone },
     shippingMethod: collect ? ShippingMethod.PICKUP : ShippingMethod.DELIVERY,
     paymentMethod: PaymentMethod.CARD,

@@ -1,6 +1,6 @@
 import "server-only"
 
-import type { OrderAfterSale, OrderLine, OrderReturnEntry, OrderTimelineEntry, OrderTotals, ReturnableLine } from "@/types"
+import type { OrderAfterSale, OrderLine, OrderReturnEntry, OrderTimelineEntry, OrderTotals, ReturnableLine, OrderCollection } from "@/types"
 import { Prisma } from "@workspace/db/client"
 import { formatCurrency } from "@workspace/utils/currency"
 import { returnedUnitsAmount } from "@workspace/commerce/pricing"
@@ -37,6 +37,8 @@ export const orderDetailsInclude = {
   paymentRecordedBy: { select: { name: true } },
   paymentAttempts: { orderBy: { createdAt: "desc" } },
   quote: { select: { id: true, reference: true } },
+  pickupLocation: { select: { name: true, organizationId: true } },
+  collectionTransfers: { where: { status: { not: "CANCELLED" } }, orderBy: { sentAt: "desc" }, select: { id: true, fromStoreId: true, status: true, sentAt: true, receivedAt: true } },
 } satisfies Prisma.OrderInclude
 
 export type OrderWithDetails = Prisma.OrderGetPayload<{ include: typeof orderDetailsInclude }>
@@ -162,6 +164,29 @@ export function toOrderTimeline(order: OrderWithDetails, showAmounts: boolean, l
   ].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
 }
 
+// A pickup collected at a branch that didn't sell all of it: the other stores whose items are brought there, each with
+// its delivery (collection-transfers.ts). Every store's, whichever store's page this is: they're for moving goods.
+function toCollection(order: OrderWithDetails): OrderCollection | null {
+  const location = order.pickupLocation
+  if (order.shippingMethod !== "PICKUP" || !location) return null
+  const stores = new Map<string, { storeId: string; storeName: string; units: number }>()
+  for (const line of order.orderItems) {
+    if (line.organizationId === location.organizationId) continue
+    const row = stores.get(line.organizationId) ?? { storeId: line.organizationId, storeName: line.storeName, units: 0 }
+    row.units += line.quantity
+    stores.set(line.organizationId, row)
+  }
+  if (!stores.size) return null
+  return {
+    locationName: location.name,
+    locationStoreId: location.organizationId,
+    rows: [...stores.values()].map((row) => {
+      const transfer = order.collectionTransfers.find((item) => item.fromStoreId === row.storeId)
+      return { ...row, transfer: transfer ? { id: transfer.id, status: transfer.status, sentAt: transfer.sentAt, receivedAt: transfer.receivedAt } : null }
+    }),
+  }
+}
+
 // The fields both pages show, given the lines the viewer may see; storeId as for toOrderLine
 export function toOrderDetailsBase(order: OrderWithDetails, lines: LineRow[], showAmounts: boolean, storeId: string | null) {
   return {
@@ -173,6 +198,8 @@ export function toOrderDetailsBase(order: OrderWithDetails, lines: LineRow[], sh
     paidAt: order.paidAt,
     shippingMethod: order.shippingMethod,
     readyForCollectionAt: order.readyForCollectionAt,
+    pickupName: order.pickupName,
+    collection: toCollection(order),
     customer: { name: order.customerName, email: order.customerEmail, phone: order.customerPhone, isRegistered: !!order.userId },
     shipping:
       order.shippingMethod === "DELIVERY"

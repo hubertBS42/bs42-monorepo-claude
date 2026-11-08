@@ -1,6 +1,7 @@
 import { PaginationParams, PaginatedResult } from "@workspace/contracts"
 import { Brand, Category, Organization, Prisma, User } from "@workspace/db/client"
 import {
+  CollectionTransferStatus,
   Condition,
   Currency,
   DiscountType,
@@ -619,11 +620,27 @@ export interface OrderTimelineEntry {
   createdAt: Date
 }
 
+// A pickup order's items from other branches, on their way to the branch it's collected at
+export interface OrderCollection {
+  locationName: string
+  locationStoreId: string
+  rows: {
+    storeId: string
+    storeName: string
+    units: number
+    transfer: { id: string; status: CollectionTransferStatus; sentAt: Date; receivedAt: Date | null } | null
+  }[]
+}
+
 // What the store's and the platform's order pages both show
 interface OrderDetailsBase {
   id: string
   // When staff said a pickup order is ready
   readyForCollectionAt: Date | null
+  // Where a pickup is collected, as the order copied it
+  pickupName: string | null
+  // Items from other branches brought to the collecting one; null when there are none
+  collection: OrderCollection | null
   reference: string
   status: OrderStatus
   paymentStatus: PaymentStatus

@@ -186,7 +186,10 @@ export async function recordOrderReturn(tx: Tx, input: ReturnInput) {
 
   for (const { line, quantity, restocked } of returning) {
     if (!restocked) continue
-    await addStock(tx, { listingId: line.storeListingId, listingVariantId: line.storeListingVariantId }, quantity, {
+    // Back where the units are: the collecting branch's listing, for a line brought there that it lists
+    const held = await tx.orderItem.findUnique({ where: { id: line.id }, select: { heldListingId: true, heldListingVariantId: true } })
+    const row = held?.heldListingId ? { listingId: held.heldListingId, listingVariantId: held.heldListingVariantId } : { listingId: line.storeListingId, listingVariantId: line.storeListingVariantId }
+    await addStock(tx, row, quantity, {
       reason: StockMovementReason.RETURN,
       createdById: input.recordedById,
       orderId: input.orderId,
