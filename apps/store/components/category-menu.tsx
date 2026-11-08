@@ -31,11 +31,11 @@ export function CategoryMenu({ items }: { items: MenuItem[] }) {
                 <div className="grid w-[min(48rem,calc(100vw-2rem))] grid-cols-2 gap-x-6 gap-y-4 p-5 md:grid-cols-3">
                   {item.children.map((child) => (
                     <div key={child.href} className="flex flex-col">
-                      <NavigationMenuLink render={<Link href={child.href} />} className="px-2 py-1.5 font-semibold">
+                      <NavigationMenuLink closeOnClick render={<Link href={child.href} />} className="px-2 py-1.5 font-semibold">
                         {child.name}
                       </NavigationMenuLink>
                       {child.children.map((grandchild) => (
-                        <NavigationMenuLink key={grandchild.href} render={<Link href={grandchild.href} />} className="px-2 py-1 text-muted-foreground hover:text-foreground">
+                        <NavigationMenuLink closeOnClick key={grandchild.href} render={<Link href={grandchild.href} />} className="px-2 py-1 text-muted-foreground hover:text-foreground">
                           {grandchild.name}
                         </NavigationMenuLink>
                       ))}
@@ -43,7 +43,7 @@ export function CategoryMenu({ items }: { items: MenuItem[] }) {
                   ))}
                 </div>
                 <div className="border-t bg-muted/50 px-5 py-3">
-                  <NavigationMenuLink render={<Link href={item.href} />} className="inline-flex w-fit px-2 py-1 font-semibold">
+                  <NavigationMenuLink closeOnClick render={<Link href={item.href} />} className="inline-flex w-fit px-2 py-1 font-semibold">
                     Shop all {item.name}
                     <ArrowRight />
                   </NavigationMenuLink>
