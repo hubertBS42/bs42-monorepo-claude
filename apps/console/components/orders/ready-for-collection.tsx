@@ -3,7 +3,8 @@
 import { useTransition } from "react"
 import { useRouter } from "next/navigation"
 import { OrderStatus, ShippingMethod } from "@workspace/db/enums"
-import { Button } from "@workspace/ui/components/button"
+import Link from "next/link"
+import { Button, buttonVariants } from "@workspace/ui/components/button"
 import { Spinner } from "@workspace/ui/components/spinner"
 import { toast } from "@workspace/ui/components/toast"
 import { formatDate } from "@workspace/utils/date"
@@ -21,6 +22,8 @@ interface ReadyForCollectionProps {
     readyForCollectionAt: Date | null
     customer: { email: string | null }
     collection: { rows: { transfer: { status: string } | null }[] } | null
+    // The store whose branch it's collected at
+    pickupLocationStoreId: string | null
   }
   // Other stores' items too: on a store's page, the platform manages the order
   isMultiStore: boolean
@@ -33,6 +36,15 @@ export default function ReadyForCollection({ storeId, order, isMultiStore }: Rea
   const { canUpdate, isLoading } = useCanUpdateOrders(storeId)
 
   if (order.shippingMethod !== ShippingMethod.PICKUP) return null
+  const isOpen = order.status === OrderStatus.PENDING || order.status === OrderStatus.CONFIRMED || order.status === OrderStatus.PROCESSING
+  // Someone who can't change orders here (a member at the counter) hands it over from Collections, at its branch
+  if (!isLoading && !canUpdate) {
+    return isOpen && storeId && order.pickupLocationStoreId === storeId ? (
+      <Link href={`/store/collections/${order.id}`} className={buttonVariants({ variant: "outline", className: "justify-self-start" })}>
+        Hand over in Collections
+      </Link>
+    ) : null
+  }
   if (order.readyForCollectionAt) return <p className="text-sm text-muted-foreground">{`Ready for collection since ${formatDate(order.readyForCollectionAt, "MMM d, yyyy, h:mm a")}.`}</p>
 
   const canBeReady = order.status === OrderStatus.CONFIRMED || order.status === OrderStatus.PROCESSING

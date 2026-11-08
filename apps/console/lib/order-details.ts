@@ -199,6 +199,7 @@ export function toOrderDetailsBase(order: OrderWithDetails, lines: LineRow[], sh
     shippingMethod: order.shippingMethod,
     readyForCollectionAt: order.readyForCollectionAt,
     pickupName: order.pickupName,
+    pickupLocationStoreId: order.pickupLocation?.organizationId ?? null,
     collection: toCollection(order),
     customer: { name: order.customerName, email: order.customerEmail, phone: order.customerPhone, isRegistered: !!order.userId },
     shipping:

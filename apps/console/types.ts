@@ -669,6 +669,8 @@ interface OrderDetailsBase {
   readyForCollectionAt: Date | null
   // Where a pickup is collected, as the order copied it
   pickupName: string | null
+  // The store whose branch it's collected at, for its Collections page
+  pickupLocationStoreId: string | null
   // Items from other branches brought to the collecting one; null when there are none
   collection: OrderCollection | null
   reference: string
