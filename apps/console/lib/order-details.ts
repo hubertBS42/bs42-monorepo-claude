@@ -166,7 +166,7 @@ export function toOrderTimeline(order: OrderWithDetails, showAmounts: boolean, l
 
 // A pickup collected at a branch that didn't sell all of it: the other stores whose items are brought there, each with
 // its delivery (collection-transfers.ts). Every store's, whichever store's page this is: they're for moving goods.
-function toCollection(order: OrderWithDetails): OrderCollection | null {
+export function toCollection(order: OrderWithDetails): OrderCollection | null {
   const location = order.pickupLocation
   if (order.shippingMethod !== "PICKUP" || !location) return null
   const stores = new Map<string, { storeId: string; storeName: string; units: number }>()

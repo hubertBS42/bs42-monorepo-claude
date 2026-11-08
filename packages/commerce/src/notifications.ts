@@ -842,7 +842,7 @@ export async function notifyCollectionTransfer(transferId: string, event: "sent"
           intro: `${transfer.fromStore.name} sent items for an order collected at ${location.name}. Mark them received when they arrive.`,
           details,
         },
-        { label: "View the order", path },
+        { label: "View the order", path: `/store/collections/${transfer.order.id}` },
         "collection items sent",
         byUserId
       )

@@ -1,7 +1,8 @@
 import "server-only"
 
 import type { prisma } from "@workspace/db"
-import { CollectionTransferStatus, OrderStatus, ShippingMethod } from "@workspace/db/enums"
+import { CollectionTransferStatus, OrderStatus, PaymentStatus, ShippingMethod, type PaymentMethod } from "@workspace/db/enums"
+import { changeOrderStatus } from "@workspace/commerce/order-writes"
 
 // Bringing a pickup order's items to the branch it's collected at, from the branches that sold them: a store sends all
 // its lines on the order at once, the collecting branch receives them, and the order can be marked ready once every
@@ -20,6 +21,9 @@ const MESSAGES = {
   ALREADY_SENT: "These items have already been sent. Refresh the page.",
   NOT_ON_THE_WAY: "These items aren't on their way any more. Refresh the page.",
   NOT_ARRIVED: "Some items haven't arrived at the collecting branch yet.",
+  NOT_HERE: "This order isn't collected at this branch.",
+  NOT_HANDOVER: "This order can't be handed over now: it must be confirmed and not yet collected. Refresh the page.",
+  PAYMENT_NEEDED: "This order hasn't been paid: choose how the customer paid.",
 }
 
 export class CollectionError extends Error {
@@ -106,4 +110,34 @@ export async function allAtCollectingBranch(client: Client, orderId: string) {
   if (!order?.pickupLocation) return true
   const arrived = new Set([order.pickupLocation.organizationId, ...order.collectionTransfers.map((transfer) => transfer.fromStoreId)])
   return order.orderItems.every((line) => arrived.has(line.organizationId))
+}
+
+// The customer collected it at the branch: recorded paid now, if it wasn't, then collected (DELIVERED, a pickup's
+// "Collected"; through processing first if it wasn't there yet), with everything at the branch. Returns whether a
+// payment was recorded, for its email.
+export async function handOver(tx: Tx, { orderId, storeId, userId, paymentMethod }: { orderId: string; storeId: string; userId: string; paymentMethod: PaymentMethod | null }) {
+  await tx.$queryRaw`SELECT 1 FROM "order" WHERE "id" = ${orderId}::uuid FOR UPDATE`
+  const order = await tx.order.findUnique({
+    where: { id: orderId },
+    select: {
+      status: true,
+      shippingMethod: true,
+      paymentStatus: true,
+      pickupLocation: { select: { organizationId: true } },
+      orderItems: { select: { quantity: true, storeListingId: true, storeListingVariantId: true, tracksStock: true } },
+    },
+  })
+  if (!order || order.shippingMethod !== ShippingMethod.PICKUP || order.pickupLocation?.organizationId !== storeId) throw new CollectionError("NOT_HERE")
+  if (order.status !== OrderStatus.CONFIRMED && order.status !== OrderStatus.PROCESSING) throw new CollectionError("NOT_HANDOVER")
+  if (!(await allAtCollectingBranch(tx, orderId))) throw new CollectionError("NOT_ARRIVED")
+
+  const unpaid = order.paymentStatus === PaymentStatus.PENDING || order.paymentStatus === PaymentStatus.FAILED
+  if (unpaid) {
+    if (!paymentMethod) throw new CollectionError("PAYMENT_NEEDED")
+    await tx.order.update({ where: { id: orderId }, data: { paymentStatus: PaymentStatus.PAID, paymentMethod, paidAt: new Date(), paymentRecordedById: userId } })
+  }
+  const step = { orderId, note: null, changedById: userId, items: order.orderItems }
+  if (order.status === OrderStatus.CONFIRMED) await changeOrderStatus(tx, { ...step, from: OrderStatus.CONFIRMED, to: OrderStatus.PROCESSING })
+  await changeOrderStatus(tx, { ...step, from: OrderStatus.PROCESSING, to: OrderStatus.DELIVERED, note: "Collected" })
+  return { paymentRecorded: unpaid }
 }

@@ -7,7 +7,10 @@ import { hasSystemPermission } from "@workspace/auth/system-permissions"
 import type { ActionResponse } from "@workspace/contracts"
 import { prisma } from "@workspace/db"
 import { hasStorePermission, requireConsoleAccess } from "@/lib/auth-guard"
-import { cancelCollectionSend, CollectionError, receiveForCollection, sendForCollection } from "@/lib/collection-transfers"
+import { cancelCollectionSend, CollectionError, handOver, receiveForCollection, sendForCollection } from "@/lib/collection-transfers"
+import { markReadyForCollection } from "@/lib/order-updates"
+import { sendOrderEmail } from "@workspace/commerce/order-emails"
+import { STAFF_ORDER_PAYMENT_METHODS } from "@/lib/schemas/order.schemas"
 import { notifyCollectionTransfer } from "@workspace/commerce/notifications"
 
 // Bringing a pickup order's items to its collecting branch (collection-transfers.ts), from both order pages. The
@@ -72,6 +75,42 @@ export async function cancelCollectionSendAction(input: z.input<typeof transferI
     if (!stores) return { success: false, error: "That delivery wasn't found.", code: "NOT_FOUND" }
     if (!platformMay(session.user.role) && !(await hasStorePermission(session.user.id, stores.fromStoreId, { order: ["update"] }))) return FORBIDDEN
     await prisma.$transaction((tx) => cancelCollectionSend(tx, { transferId: parsed.data.transferId, userId: session.user.id }))
+    return { success: true }
+  } catch (error) {
+    return failure(error)
+  }
+}
+
+// The collecting branch's own page (/store/collections): any role there tells the customer it's ready, and hands it over
+const atBranch = z.object({ storeId: z.uuid(), orderId: z.uuid() })
+const handOverSchema = atBranch.extend({ paymentMethod: z.enum(STAFF_ORDER_PAYMENT_METHODS).nullable() })
+
+async function collectingHere(userId: string, storeId: string, orderId: string) {
+  if (!(await hasStorePermission(userId, storeId, { order: ["read"] }))) return false
+  return !!(await prisma.order.findFirst({ where: { id: orderId, pickupLocation: { organizationId: storeId } }, select: { id: true } }))
+}
+
+export async function markCollectionReadyAction(input: z.input<typeof atBranch>): Promise<ActionResponse> {
+  const session = await requireConsoleAccess()
+  try {
+    const parsed = atBranch.safeParse(input)
+    if (!parsed.success) return { success: false, error: "Invalid input", code: "INVALID" }
+    if (!(await collectingHere(session.user.id, parsed.data.storeId, parsed.data.orderId))) return FORBIDDEN
+    return await markReadyForCollection(parsed.data.orderId)
+  } catch (error) {
+    return failure(error)
+  }
+}
+
+export async function handOverAction(input: z.input<typeof handOverSchema>): Promise<ActionResponse> {
+  const session = await requireConsoleAccess()
+  try {
+    const parsed = handOverSchema.safeParse(input)
+    if (!parsed.success) return { success: false, error: "Invalid input", code: "INVALID" }
+    const { storeId, orderId, paymentMethod } = parsed.data
+    if (!(await collectingHere(session.user.id, storeId, orderId))) return FORBIDDEN
+    const { paymentRecorded } = await prisma.$transaction((tx) => handOver(tx, { orderId, storeId, userId: session.user.id, paymentMethod }))
+    if (paymentRecorded) after(() => sendOrderEmail(orderId, "PAYMENT_RECEIVED"))
     return { success: true }
   } catch (error) {
     return failure(error)

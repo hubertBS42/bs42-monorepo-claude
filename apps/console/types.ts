@@ -620,6 +620,36 @@ export interface OrderTimelineEntry {
   createdAt: Date
 }
 
+// An order customers collect at a store's branch, as its Collections page lists it
+export interface CollectionListItem {
+  id: string
+  reference: string
+  customerName: string
+  status: OrderStatus
+  paymentStatus: PaymentStatus
+  createdAt: Date
+  itemCount: number
+  // Items still coming from other branches, all here, the customer told it's ready, or collected
+  state: "coming" | "here" | "ready" | "collected"
+}
+
+export interface CollectionDetails {
+  id: string
+  reference: string
+  status: OrderStatus
+  paymentStatus: PaymentStatus
+  // What the customer owes, or paid; the branch takes it when it hasn't been paid
+  totalGhs: string
+  createdAt: Date
+  readyForCollectionAt: Date | null
+  customer: { name: string; email: string | null; phone: string | null }
+  notes: string | null
+  // Every line: storeName is another branch's, null for this one's
+  lines: { id: string; label: string; sku: string | null; quantity: number; storeName: string | null }[]
+  collection: OrderCollection | null
+  state: CollectionListItem["state"]
+}
+
 // A pickup order's items from other branches, on their way to the branch it's collected at
 export interface OrderCollection {
   locationName: string
