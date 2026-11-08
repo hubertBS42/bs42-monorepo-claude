@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { PAYMENT_METHOD_LABELS } from "@workspace/commerce/order-status"
 import { Button } from "@workspace/ui/components/button"
 import { Spinner } from "@workspace/ui/components/spinner"
+import { ToggleGroup, ToggleGroupItem } from "@workspace/ui/components/toggle-group"
 import { toast } from "@workspace/ui/components/toast"
 import { formatCurrency } from "@workspace/utils/currency"
 import { handOverAction, markCollectionReadyAction } from "@/lib/actions/collection.actions"
@@ -35,34 +36,36 @@ export default function HandOver({ storeId, order }: { storeId: string; order: C
   return (
     <div className="grid gap-4">
       {order.state === "here" && (
-        <Button
-          type="button"
-          variant="outline"
-          className="justify-self-start"
-          onClick={() => run(() => markCollectionReadyAction({ storeId, orderId: order.id }), "Customer told it's ready")}
-          disabled={isPending}
-        >
+        <Button type="button" variant="outline" onClick={() => run(() => markCollectionReadyAction({ storeId, orderId: order.id }), "Customer told it's ready")} disabled={isPending}>
           Tell the customer it&apos;s ready
         </Button>
       )}
       {unpaid && (
         <div className="grid gap-2">
           <p className="text-sm">{`To pay on collection: ${formatCurrency(order.totalGhs, "GHS", "en-GH")}`}</p>
-          <div className="flex flex-wrap gap-2" role="group" aria-label="Paid by">
+          {/* Stacked: the card sits in the page's narrow column. Pressing the chosen one again keeps it */}
+          <ToggleGroup
+            multiple={false}
+            value={[method]}
+            onValueChange={(value) => {
+              const chosen = STAFF_ORDER_PAYMENT_METHODS.find((option) => option === value[0])
+              if (chosen) setMethod(chosen)
+            }}
+            variant="outline"
+            spacing={0}
+            orientation="vertical"
+            aria-label="Paid by"
+            className="w-full"
+          >
             {STAFF_ORDER_PAYMENT_METHODS.map((option) => (
-              <Button key={option} type="button" size="sm" variant={method === option ? "default" : "outline"} aria-pressed={method === option} onClick={() => setMethod(option)}>
+              <ToggleGroupItem key={option} value={option}>
                 {PAYMENT_METHOD_LABELS[option]}
-              </Button>
+              </ToggleGroupItem>
             ))}
-          </div>
+          </ToggleGroup>
         </div>
       )}
-      <Button
-        type="button"
-        className="justify-self-start"
-        onClick={() => run(() => handOverAction({ storeId, orderId: order.id, paymentMethod: unpaid ? method : null }), "Handed over")}
-        disabled={isPending}
-      >
+      <Button type="button" onClick={() => run(() => handOverAction({ storeId, orderId: order.id, paymentMethod: unpaid ? method : null }), "Handed over")} disabled={isPending}>
         {isPending && <Spinner data-icon="inline-start" />}
         {unpaid ? "Take payment and hand over" : "Hand over"}
       </Button>

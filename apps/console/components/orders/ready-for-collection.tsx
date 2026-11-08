@@ -40,7 +40,7 @@ export default function ReadyForCollection({ storeId, order, isMultiStore }: Rea
   // Someone who can't change orders here (a member at the counter) hands it over from Collections, at its branch
   if (!isLoading && !canUpdate) {
     return isOpen && storeId && order.pickupLocationStoreId === storeId ? (
-      <Link href={`/store/collections/${order.id}`} className={buttonVariants({ variant: "outline", className: "justify-self-start" })}>
+      <Link href={`/store/collections/${order.id}`} className={buttonVariants({ variant: "outline" })}>
         Hand over in Collections
       </Link>
     ) : null
@@ -65,7 +65,7 @@ export default function ReadyForCollection({ storeId, order, isMultiStore }: Rea
   }
 
   return (
-    <Button type="button" variant="outline" className="justify-self-start" onClick={mark} disabled={isPending}>
+    <Button type="button" variant="outline" onClick={mark} disabled={isPending}>
       {isPending ? <Spinner /> : "Mark ready for collection"}
     </Button>
   )

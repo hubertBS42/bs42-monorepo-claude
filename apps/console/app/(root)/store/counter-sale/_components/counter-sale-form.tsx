@@ -16,6 +16,7 @@ import { FieldGroup } from "@workspace/ui/components/field"
 import { Separator } from "@workspace/ui/components/separator"
 import { Skeleton } from "@workspace/ui/components/skeleton"
 import { Spinner } from "@workspace/ui/components/spinner"
+import { ToggleGroup, ToggleGroupItem } from "@workspace/ui/components/toggle-group"
 import { toast } from "@workspace/ui/components/toast"
 import { formatCurrency } from "@workspace/utils/currency"
 import { useMemberRole } from "@/hooks/use-member-role"
@@ -239,13 +240,25 @@ export default function CounterSaleForm({ storeId }: { storeId: string }) {
 
             <div className="grid gap-2">
               <p className="text-sm font-medium">Paid by</p>
-              <div className="flex flex-wrap gap-2" role="group" aria-label="Paid by">
+              {/* A choice, not an action: "Complete sale" is the card's only button. Pressing the chosen one again keeps it */}
+              <ToggleGroup
+                multiple={false}
+                value={[paymentMethod]}
+                onValueChange={(value) => {
+                  const chosen = STAFF_ORDER_PAYMENT_METHODS.find((method) => method === value[0])
+                  if (chosen) setPaymentMethod(chosen)
+                }}
+                variant="outline"
+                spacing={0}
+                aria-label="Paid by"
+                className="w-full *:flex-1"
+              >
                 {STAFF_ORDER_PAYMENT_METHODS.map((method) => (
-                  <Button key={method} type="button" variant={paymentMethod === method ? "default" : "outline"} aria-pressed={paymentMethod === method} onClick={() => setPaymentMethod(method)}>
+                  <ToggleGroupItem key={method} value={method}>
                     {PAYMENT_METHOD_LABELS[method]}
-                  </Button>
+                  </ToggleGroupItem>
                 ))}
-              </div>
+              </ToggleGroup>
             </div>
 
             {/* Not until the total it will go through at is showing */}
