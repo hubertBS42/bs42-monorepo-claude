@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { Package } from "lucide-react"
 import { Badge } from "@workspace/ui/components/badge"
+import { SaleBadge } from "@/components/sale-badge"
 import { cn } from "@workspace/ui/lib/utils"
 
 import { AddToBasketButton } from "@/components/basket/add-to-basket"
@@ -49,7 +50,7 @@ export function ProductCard({ card, variantId, onWishListChange }: { card: Price
           <Package className="size-14 text-muted-foreground/40" aria-hidden />
         )}
         <div className="absolute top-2 left-2 flex flex-col gap-1">
-          {offer.price?.wasGhs && <Badge variant="destructive">Sale</Badge>}
+          {offer.price?.wasGhs && <SaleBadge />}
           {card.condition !== "NEW" && <Badge variant="secondary">{CONDITION_LABELS[card.condition]}</Badge>}
         </div>
         <WishListHeart item={{ productId: card.id, variantId: offer.variantId }} label={label} onChange={onWishListChange} className="absolute top-2 right-2 z-10" />

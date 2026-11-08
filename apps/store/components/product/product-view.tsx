@@ -4,6 +4,7 @@ import { useState } from "react"
 import Link from "next/link"
 import { Building2, FileText, MessageCircle, Package, ShieldCheck, Truck, Wrench } from "lucide-react"
 import { Badge } from "@workspace/ui/components/badge"
+import { SaleBadge } from "@/components/sale-badge"
 import { Checkbox } from "@workspace/ui/components/checkbox"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@workspace/ui/components/tabs"
 import { cn } from "@workspace/ui/lib/utils"
@@ -140,7 +141,7 @@ export function ProductView({
               </a>
             )}
             <div className="flex flex-wrap items-center gap-2">
-              {offer.price?.wasGhs && <Badge variant="destructive">Sale</Badge>}
+              {offer.price?.wasGhs && <SaleBadge />}
               {card.condition !== "NEW" && <Badge variant="secondary">{CONDITION_LABELS[card.condition]}</Badge>}
               {facts.sku && <span className="text-sm text-muted-foreground">SKU {facts.sku}</span>}
             </div>
