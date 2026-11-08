@@ -1,5 +1,6 @@
 import "server-only"
 
+import { branchGroupName, branchPrices } from "@/lib/branch-prices"
 import type { ListableProduct, ListingFormData, ListingsData, ListingsParams, ListingStockState, ListingVariantRow } from "@/types"
 import { formatError } from "@workspace/auth/format-error"
 import { consoleAuth } from "@workspace/auth/console"
@@ -298,24 +299,31 @@ export const getNewListingFormData = async (storeId: string, productId: string):
     if (existing) return { success: false, error: "This store already lists this product.", code: "ALREADY_LISTED" }
 
     const variants = product.hasVariants ? product.variants.map((variant) => toVariantRow(variant, false)) : []
+    // Another branch's prices, when one sells it: the listing will take them
+    const [group, branchGroup] = await Promise.all([branchPrices(prisma, storeId, productId), branchGroupName(prisma, storeId)])
+    const groupVariantPrice = (variantId: string) => {
+      const price = group?.variants.get(variantId)
+      return price == null ? null : Number(price)
+    }
 
     return {
       success: true,
       data: {
         product: await toFormProduct(product),
         variants,
+        branchGroup,
         values: {
-          // The catalogue's prices are the starting point
-          sellPrice: product.baseSellPrice.toNumber(),
+          // The catalogue's prices are the starting point, or the branch group's
+          sellPrice: group ? Number(group.sellPrice) : product.baseSellPrice.toNumber(),
           buyPrice: product.baseBuyPrice.isZero() ? null : product.baseBuyPrice.toNumber(),
-          compareAtPrice: null,
+          compareAtPrice: group?.compareAtPrice != null ? Number(group.compareAtPrice) : null,
           stock: 0,
           lowStockThreshold: 5,
           trackInventory: true,
           isFeatured: false,
           status: Status.DRAFT,
           // The listing's status decides what customers see, so variants start published at the listing's price
-          variants: variants.map(({ variantId }) => ({ variantId, sellPrice: null, stock: 0, status: Status.PUBLISHED })),
+          variants: variants.map(({ variantId }) => ({ variantId, sellPrice: groupVariantPrice(variantId), stock: 0, status: Status.PUBLISHED })),
         },
         hasOrders: false,
       },
@@ -380,6 +388,7 @@ export const getListingFormData = async (storeId: string, listingId: string): Pr
               : { variantId, sellPrice: null, stock: 0, status: Status.PUBLISHED }
           }),
         },
+        branchGroup: await branchGroupName(prisma, storeId),
         hasOrders: !!ordered || listing._count.purchaseOrderItems > 0 || listing._count.transfersOut > 0 || listing._count.transfersIn > 0,
       },
     }

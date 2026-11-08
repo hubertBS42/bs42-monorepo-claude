@@ -19,7 +19,7 @@ import { DangerZoneCard } from "@/components/danger-zone-card"
 import DeleteStore from "@/components/delete-store"
 
 // pickupLocationCard: the store's pickup location, which saves on its own
-export default function EditStoreForm({ store, pickupLocationCard }: { store: Store; pickupLocationCard: React.ReactNode }) {
+export default function EditStoreForm({ store, pickupLocationCard, branchGroupCard }: { store: Store; pickupLocationCard: React.ReactNode; branchGroupCard: React.ReactNode }) {
   const router = useRouter()
 
   // isSubmitting turns false as soon as onSubmit returns, while the redirect is still loading.
@@ -143,6 +143,7 @@ export default function EditStoreForm({ store, pickupLocationCard }: { store: St
                   <SelectField control={form.control} name="status" disabled={isBusy} options={STORE_STATUS_OPTIONS} aria-label="Status" />
                 </CardContent>
               </Card>
+              {branchGroupCard}
             </div>
           </div>
 

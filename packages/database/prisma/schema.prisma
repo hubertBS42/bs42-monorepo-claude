@@ -1555,6 +1555,7 @@ model Organization {
   suppliers       Supplier[]
   purchaseOrders  PurchaseOrder[]
   pickupLocation  PickupLocation?
+  branchOf        BranchMembership?
   productRequests ProductRequest[]
   transfersOut    StockTransfer[]    @relation("StockTransferFrom")
   transfersIn     StockTransfer[]    @relation("StockTransferTo")
@@ -1825,4 +1826,28 @@ model PickupLocation {
   quotes         Quote[]
 
   @@map("pickup_location")
+}
+
+// Stores that are branches of one business: they keep the same sell and compare-at prices (branch-prices.ts), and
+// later supply each other's pickup locations. A store in no group is independent, e.g. another business selling here.
+// Set by platform admins on Edit Store.
+model BranchGroup {
+  id        String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name      String             @unique
+  createdAt DateTime           @default(now())
+  stores    BranchMembership[]
+
+  @@map("branch_group")
+}
+
+// A store's group, at most one
+model BranchMembership {
+  organizationId String       @id @db.Uuid
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  groupId        String       @db.Uuid
+  group          BranchGroup  @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+
+  @@index([groupId])
+  @@map("branch_membership")
 }

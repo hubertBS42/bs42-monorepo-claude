@@ -1,4 +1,5 @@
 "use server"
+import { branchPrices } from "@/lib/branch-prices"
 import { z } from "zod"
 import { prisma } from "@workspace/db"
 import { Prisma } from "@workspace/db/client"
@@ -75,14 +76,17 @@ export async function createListingAction(input: z.input<typeof createListingSch
 
     // The listing with its variants, and the stock history's first entries: their initial stock
     await prisma.$transaction(async (tx) => {
+      // A branch group's stores sell at the same prices: a product another branch sells starts at its prices
+      const group = await branchPrices(tx, storeId, productId)
+      const variantPrice = (variant: (typeof variants)[number]) => (group?.variants.has(variant.variantId) ? group.variants.get(variant.variantId)! : (variant.sellPrice ?? null))
       const listing = await tx.storeListing.create({
         select: { id: true, stock: true, storeListingVariants: { select: { id: true, stock: true } } },
         data: {
           organizationId: storeId,
           productId,
-          sellPrice,
+          sellPrice: group?.sellPrice ?? sellPrice,
           buyPrice: buyPrice ?? null,
-          compareAtPrice: compareAtPrice ?? null,
+          compareAtPrice: group ? group.compareAtPrice : (compareAtPrice ?? null),
           stock,
           lowStockThreshold,
           trackInventory,
@@ -91,7 +95,7 @@ export async function createListingAction(input: z.input<typeof createListingSch
           storeListingVariants: {
             create: variants.map((variant) => ({
               variantId: variant.variantId,
-              sellPrice: variant.sellPrice ?? null,
+              sellPrice: variantPrice(variant),
               stock: variant.stock,
               status: variant.status,
               // Tracking and the alert are set on the listing and apply to its variants

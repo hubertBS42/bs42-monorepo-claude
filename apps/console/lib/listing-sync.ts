@@ -6,6 +6,7 @@ import { StockMovementReason } from "@workspace/db/enums"
 import type { z } from "zod"
 import type { updateListingSchema } from "./schemas/listing.schemas"
 import { recordStockMovement, type StockMovementSource } from "@workspace/commerce/stock-movements"
+import { syncBranchPrices } from "./branch-prices"
 import type { ListingSnapshot, StockChangedResponse } from "../types"
 
 // Updating a listing in place, in its own module (like product-sync.ts) so the logic can be tested against the
@@ -28,6 +29,8 @@ export class StockChangedError extends Error {
 }
 
 const savedListingSelect = {
+  organizationId: true,
+  productId: true,
   sellPrice: true,
   buyPrice: true,
   compareAtPrice: true,
@@ -147,5 +150,21 @@ export async function syncListing(tx: Tx, { id, original, variants, stock, buyPr
       })
       if (stockChanged) await recordStockMovement(tx, { listingId: id, listingVariantId: row.id }, variant.stock - row.stock, variant.stock, byHand)
     }
+  }
+
+  // New prices go to the store's other branches (a branch group's stores sell at the same prices)
+  const pricesChanged =
+    !sameAmount(saved.sellPrice, fields.sellPrice) ||
+    !sameAmount(saved.compareAtPrice, compareAtPrice) ||
+    variants.some((variant) => {
+      const row = savedVariants.get(variant.variantId)
+      return !row || !sameAmount(row.sellPrice, variant.sellPrice)
+    })
+  if (pricesChanged) {
+    await syncBranchPrices(tx, saved.organizationId, saved.productId, {
+      sellPrice: fields.sellPrice,
+      compareAtPrice: compareAtPrice ?? null,
+      variants: new Map(variants.map((variant) => [variant.variantId, variant.sellPrice ?? null])),
+    })
   }
 }

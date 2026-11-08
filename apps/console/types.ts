@@ -492,6 +492,8 @@ export interface ListingFormData {
   values: ListingSnapshot
   // Order lines restrict deleting a listing, so an ordered one can only be archived
   hasOrders: boolean
+  // The store's branch group, whose other branches keep the same prices; null when it's in none
+  branchGroup: string | null
 }
 
 export interface StoreOrdersParams extends PaginationParams {

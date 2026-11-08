@@ -167,7 +167,9 @@ const ListingForm = ({ storeId, data, storefrontLink }: ListingFormProps) => {
               <Card>
                 <CardHeader>
                   <CardTitle>Pricing</CardTitle>
-                  <CardDescription>In USD. Customers pay in GHS at the day&apos;s rate.</CardDescription>
+                  <CardDescription>
+                    {data.branchGroup ? `In USD. Sell and compare-at prices are the same at all ${data.branchGroup} branches.` : "In USD. Customers pay in GHS at the day's rate."}
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="grid gap-5 sm:grid-cols-3">
