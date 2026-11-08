@@ -1,5 +1,5 @@
-import { WizardPageSkeleton } from "@/components/page-skeletons"
+import { CounterSaleSkeleton } from "@/components/page-skeletons"
 
 export default function Loading() {
-  return <WizardPageSkeleton />
+  return <CounterSaleSkeleton />
 }

@@ -233,6 +233,41 @@ export function WizardPageSkeleton() {
   )
 }
 
+// Counter Sale: no steps, the items cards side by side, then the customer and the payment (the total, "Paid by" as
+// one full-width toggle, and "Complete sale")
+export function CounterSaleSkeleton() {
+  return (
+    <Page kind="counter-sale">
+      <PageHeaderSkeleton />
+      <div className="grid gap-4 lg:grid-cols-2">
+        <CardSkeleton fields={1} lines={4} />
+        <CardSkeleton lines={4} />
+      </div>
+      <div className="grid items-start gap-4 lg:grid-cols-2">
+        <CardSkeleton fields={3} />
+        <CardFrame>
+          <div className="grid gap-2 px-6">
+            <Skeleton className="h-5 w-36" />
+            <Skeleton className="h-4 w-56 max-w-full" />
+          </div>
+          <div className="grid gap-4 px-6">
+            <div className="grid gap-1.5">
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-5 w-full" />
+            </div>
+            <div className="grid gap-2">
+              <Skeleton className="h-4 w-16" />
+              <Skeleton className="h-9 w-full" />
+            </div>
+            <Skeleton className="h-10 w-full" />
+          </div>
+        </CardFrame>
+      </div>
+    </Page>
+  )
+}
+
 // A page of link cards (the catalogue)
 export function HubPageSkeleton() {
   return (
