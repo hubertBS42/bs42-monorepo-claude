@@ -107,15 +107,15 @@ export default function DeliveryAddressCard<T extends StaffSaleFields, O>({
             />
             <ComboboxField control={form.control} label="Town" name="shippingTown" options={townOptions} placeholder="Select a town" disabled={!region} />
           </div>
-          <div className="max-w-56">
+          <div className="grid gap-5 sm:grid-cols-2">
             <NumberInputField control={form.control} label="Delivery fee" name="shippingGhs" step={0.01} min={0} prependText="GH₵" />
+            {region && (
+              <p className="text-sm text-muted-foreground sm:self-end sm:pb-2">
+                {rate ? `The delivery fee for ${rate.town ?? region} is GH₵${rate.feeGhs}.` : `No fee is set for ${town || region}.`}
+                {delivery.freeDeliveryFromGhs !== null && ` Free from GH₵${delivery.freeDeliveryFromGhs} after discount.`}
+              </p>
+            )}
           </div>
-          {region && (
-            <p className="text-sm text-muted-foreground">
-              {rate ? `The delivery fee for ${rate.town ?? region} is GH₵${rate.feeGhs}.` : `No fee is set for ${town || region}.`}
-              {delivery.freeDeliveryFromGhs !== null && ` Free from GH₵${delivery.freeDeliveryFromGhs} after discount.`}
-            </p>
-          )}
           {noInstallation && <p className="text-sm text-destructive">{`We don't install in ${town}. Take installation off the items, or choose another address.`}</p>}
         </FieldGroup>
       </CardContent>

@@ -123,7 +123,7 @@ export default function ReviewStep({ storeId, form }: { storeId: string; form: U
               <div className="ml-auto grid w-full max-w-xs gap-1.5">
                 <TotalRow label="Subtotal" amount={ghs(preview.subtotalGhs)} />
                 {preview.discountAmountGhs && Number(preview.discountAmountGhs) > 0 && <TotalRow label="Discount" amount={`−${ghs(preview.discountAmountGhs)}`} />}
-                <TotalRow label="Shipping" amount={ghs(preview.shippingGhs)} />
+                {isDelivery && <TotalRow label="Delivery" amount={Number(preview.shippingGhs) > 0 ? ghs(preview.shippingGhs) : "Free"} />}
                 <TotalRow label={Number(preview.taxRate) ? `Tax (${+(Number(preview.taxRate) * 100).toFixed(2)}%)` : "Tax"} amount={ghs(preview.taxGhs)} />
                 <Separator className="my-1" />
                 <TotalRow label="Total" amount={ghs(preview.totalGhs)} strong />
