@@ -2,23 +2,20 @@
 
 import { useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
-import { PAYMENT_METHOD_LABELS } from "@workspace/commerce/order-status"
 import { Button } from "@workspace/ui/components/button"
 import { Spinner } from "@workspace/ui/components/spinner"
-import { ToggleGroup, ToggleGroupItem } from "@workspace/ui/components/toggle-group"
 import { toast } from "@workspace/ui/components/toast"
 import { formatCurrency } from "@workspace/utils/currency"
+import { PaymentMethodToggle, type StaffPaymentMethod } from "@/components/orders/payment-method-toggle"
 import { handOverAction, markCollectionReadyAction } from "@/lib/actions/collection.actions"
 import { STAFF_ORDER_PAYMENT_METHODS } from "@/lib/schemas/order.schemas"
 import type { CollectionDetails } from "@/types"
-
-type Method = (typeof STAFF_ORDER_PAYMENT_METHODS)[number]
 
 // Telling the customer it's ready, and handing it over (taking the payment first when it's due)
 export default function HandOver({ storeId, order }: { storeId: string; order: CollectionDetails }) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
-  const [method, setMethod] = useState<Method>(STAFF_ORDER_PAYMENT_METHODS[2])
+  const [method, setMethod] = useState<StaffPaymentMethod>(STAFF_ORDER_PAYMENT_METHODS[2])
   const unpaid = order.paymentStatus === "PENDING" || order.paymentStatus === "FAILED"
   const confirmed = order.status === "CONFIRMED" || order.status === "PROCESSING"
 
@@ -43,26 +40,8 @@ export default function HandOver({ storeId, order }: { storeId: string; order: C
       {unpaid && (
         <div className="grid gap-2">
           <p className="text-sm">{`To pay on collection: ${formatCurrency(order.totalGhs, "GHS", "en-GH")}`}</p>
-          {/* Stacked: the card sits in the page's narrow column. Pressing the chosen one again keeps it */}
-          <ToggleGroup
-            multiple={false}
-            value={[method]}
-            onValueChange={(value) => {
-              const chosen = STAFF_ORDER_PAYMENT_METHODS.find((option) => option === value[0])
-              if (chosen) setMethod(chosen)
-            }}
-            variant="outline"
-            spacing={0}
-            orientation="vertical"
-            aria-label="Paid by"
-            className="w-full"
-          >
-            {STAFF_ORDER_PAYMENT_METHODS.map((option) => (
-              <ToggleGroupItem key={option} value={option}>
-                {PAYMENT_METHOD_LABELS[option]}
-              </ToggleGroupItem>
-            ))}
-          </ToggleGroup>
+          {/* Stacked: the card sits in the page's narrow column */}
+          <PaymentMethodToggle value={method} onValueChange={setMethod} orientation="vertical" />
         </div>
       )}
       <Button type="button" onClick={() => run(() => handOverAction({ storeId, orderId: order.id, paymentMethod: unpaid ? method : null }), "Handed over")} disabled={isPending}>
