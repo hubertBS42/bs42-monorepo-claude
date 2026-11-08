@@ -4,7 +4,7 @@ import { headers } from "next/headers"
 import { formatError } from "@workspace/auth/format-error"
 import { consoleAuth } from "@workspace/auth/console"
 import type { DataResponse } from "@workspace/contracts"
-import { prisma } from "@workspace/db"
+import { idsMatching, prisma } from "@workspace/db"
 import type { Prisma } from "@workspace/db/client"
 import { getPaginationError } from "@workspace/utils/pagination"
 import { hasStorePermission } from "@/lib/auth-guard"
@@ -30,9 +30,10 @@ export const getSuppliers = async (storeId: string, filters: SuppliersParams = {
     if (paginationError) return { success: false, error: paginationError }
 
     const { name, archived, page = 1, pageSize = 10, sort, order } = filters
+    const nameIds = name ? await idsMatching("supplier", ["name"], name) : null
     const where: Prisma.SupplierWhereInput = {
       organizationId: storeId,
-      ...(name && { name: { contains: name, mode: "insensitive" } }),
+      ...(nameIds && { id: { in: nameIds } }),
       ...(archived !== undefined && { isArchived: archived }),
     }
     const direction = order === "desc" ? "desc" : "asc"

@@ -5,7 +5,7 @@ import type { ListableProduct, ListingFormData, ListingsData, ListingsParams, Li
 import { formatError } from "@workspace/auth/format-error"
 import { consoleAuth } from "@workspace/auth/console"
 import { headers } from "next/headers"
-import { prisma } from "@workspace/db"
+import { idsMatching, productIdsMatching, prisma } from "@workspace/db"
 import { Prisma } from "@workspace/db/client"
 import { Status } from "@workspace/db/enums"
 import type { DataResponse } from "@workspace/contracts"
@@ -98,12 +98,12 @@ export const getStoreListings = async (storeId: string, filters: ListingsParams 
     const visibleToCustomers = customerVisibleListingWhere(visibleCategoryIds)
     const [stockIds, buyPriceIds] = await Promise.all([stock ? getListingIdsInStockState(storeId, stock) : null, buyPrice ? getListingIdsWithBuyPriceState(prisma, storeId, buyPrice) : null])
 
-    const contains = search ? { contains: search, mode: "insensitive" as const } : undefined
+    const productIds = search ? await productIdsMatching(search) : null
     // AND, so filters on the same relation (product) don't overwrite each other
     const where: Prisma.StoreListingWhereInput = {
       organizationId: storeId,
       AND: [
-        ...(contains ? [{ product: { OR: [{ name: contains }, { sku: contains }, { variants: { some: { sku: contains } } }] } }] : []),
+        ...(productIds ? [{ productId: { in: productIds } }] : []),
         ...(status ? [{ status }] : []),
         ...(stockIds ? [{ id: { in: stockIds } }] : []),
         ...(buyPriceIds ? [{ id: { in: buyPriceIds } }] : []),
@@ -212,11 +212,11 @@ export const getListableProducts = async (storeId: string, search?: string, limi
     const denied = await checkStoreAccess(storeId)
     if (denied) return denied
 
-    const contains = search ? { contains: search, mode: "insensitive" as const } : undefined
+    const [productIds, brandIds] = search ? await Promise.all([idsMatching("product", ["name", "sku"], search), idsMatching("brand", ["name"], search)]) : [null, null]
     const where: Prisma.ProductWhereInput = {
       status: Status.PUBLISHED,
       storeListings: { none: { organizationId: storeId } },
-      ...(contains && { OR: [{ name: contains }, { sku: contains }, { brand: { name: contains } }] }),
+      ...(productIds && { OR: [{ id: { in: productIds } }, { brandId: { in: brandIds ?? [] } }] }),
     }
 
     const [products, total, categoryPaths] = await Promise.all([

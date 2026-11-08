@@ -5,7 +5,7 @@ import { consoleAuth } from "@workspace/auth/console"
 import { formatError } from "@workspace/auth/format-error"
 import { hasSystemPermission } from "@workspace/auth/system-permissions"
 import type { DataResponse } from "@workspace/contracts"
-import { prisma } from "@workspace/db"
+import { idsMatching, prisma } from "@workspace/db"
 import type { Prisma } from "@workspace/db/client"
 import { getPaginationError } from "@workspace/utils/pagination"
 import { z } from "zod"
@@ -25,9 +25,11 @@ export const getReviews = async (filters: ReviewsParams = {}): Promise<DataRespo
     if (paginationError) return { success: false, error: paginationError }
 
     const { search, productId, rating, status, page = 1, pageSize = 10, sort, order } = filters
-    const contains = search ? { contains: search, mode: "insensitive" as const } : undefined
+    const [titleIds, productIds, userIds] = search
+      ? await Promise.all([idsMatching("review", ["title"], search), idsMatching("product", ["name"], search), idsMatching("user", ["name", "email"], search)])
+      : [null, null, null]
     const where: Prisma.ReviewWhereInput = {
-      ...(contains && { OR: [{ product: { name: contains } }, { user: { name: contains } }, { user: { email: contains } }, { title: contains }] }),
+      ...(titleIds && { OR: [{ id: { in: titleIds } }, { productId: { in: productIds ?? [] } }, { userId: { in: userIds ?? [] } }] }),
       ...(productId && z.uuid().safeParse(productId).success && { productId }),
       ...(rating && { rating }),
       ...(status && { status }),

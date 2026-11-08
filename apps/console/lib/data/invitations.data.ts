@@ -2,7 +2,7 @@ import "server-only"
 
 import type { InvitationsData, InvitationsParams } from "@/types"
 import { formatError } from "@workspace/auth/format-error"
-import { prisma } from "@workspace/db"
+import { idsMatching, prisma } from "@workspace/db"
 import type { Prisma } from "@workspace/db/client"
 import type { DataResponse } from "@workspace/contracts"
 import { getPaginationError } from "@workspace/utils/pagination"
@@ -36,10 +36,11 @@ export const getStoreInvitations = async (storeId: string, filters: InvitationsP
 
     const { email, role, page = 1, pageSize = 10, sort, order } = filters
 
+    const emailIds = email ? await idsMatching("invitation", ["email"], email) : null
     const where: Prisma.InvitationWhereInput = {
       organizationId: storeId,
       status: "pending",
-      ...(email && { email: { contains: email, mode: "insensitive" as const } }),
+      ...(emailIds && { id: { in: emailIds } }),
       ...(role && { role }),
     }
 

@@ -4,7 +4,7 @@ import type { StoreOrderDetails, StoreOrdersData, StoreOrdersParams } from "@/ty
 import { formatError } from "@workspace/auth/format-error"
 import { consoleAuth } from "@workspace/auth/console"
 import { headers } from "next/headers"
-import { prisma } from "@workspace/db"
+import { idsMatching, prisma } from "@workspace/db"
 import { Prisma } from "@workspace/db/client"
 import type { DataResponse } from "@workspace/contracts"
 import { returnLabel } from "@workspace/commerce/order-status"
@@ -42,18 +42,16 @@ export const getStoreOrders = async (storeId: string, filters: StoreOrdersParams
 
     const { reference, customer, status, paymentStatus, counterSale, paidBy, multiStore, returned, trade, placedStart, placedEnd, page = 1, pageSize = 10, sort, order } = filters
 
-    const contains = (value: string) => ({ contains: value, mode: "insensitive" as const })
-    // Phones are stored in international form, so a local "0244…" is searched as "+233244…" too
-    const phoneSearch = customer ? toPhoneSearch(customer) : null
+    const [referenceIds, customerIds] = await Promise.all([
+      reference ? idsMatching("order", ["reference"], reference) : null,
+      // Phones are stored in international form, so a local "0244…" is searched as "+233244…" too
+      customer ? idsMatching("order", ["customerName", "customerEmail", "customerPhone"], [customer, toPhoneSearch(customer)]) : null,
+    ])
     // On an order shared with other stores, only this store's own lines count as its returns
     const ownReturnedLine = { organizationId: storeId, returns: { some: {} } }
 
     const where: Prisma.OrderWhereInput = {
       orderItems: { some: { organizationId: storeId } },
-      ...(reference && { reference: contains(reference) }),
-      ...(customer && {
-        OR: [{ customerName: contains(customer) }, { customerEmail: contains(customer) }, { customerPhone: contains(customer) }, ...(phoneSearch ? [{ customerPhone: contains(phoneSearch) }] : [])],
-      }),
       ...(status && { status }),
       ...(paymentStatus && { paymentStatus }),
       ...(counterSale === true && counterSaleWhere),
@@ -68,6 +66,8 @@ export const getStoreOrders = async (storeId: string, filters: StoreOrdersParams
       }),
       // In an AND, as these set fields used above: paymentStatus and orderItems
       AND: [
+        ...(referenceIds ? [{ id: { in: referenceIds } }] : []),
+        ...(customerIds ? [{ id: { in: customerIds } }] : []),
         ...(paidBy ? [paidByWhere(paidBy)] : []),
         ...(multiStore ? [{ orderItems: multiStore === "true" ? { some: { organizationId: { not: storeId } } } : { every: { organizationId: storeId } } }] : []),
         ...(returned ? [{ orderItems: returned === "true" ? { some: ownReturnedLine } : { none: ownReturnedLine } }] : []),

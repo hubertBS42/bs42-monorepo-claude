@@ -5,7 +5,7 @@ import { consoleAuth } from "@workspace/auth/console"
 import { formatError } from "@workspace/auth/format-error"
 import { hasSystemPermission } from "@workspace/auth/system-permissions"
 import type { DataResponse } from "@workspace/contracts"
-import { prisma } from "@workspace/db"
+import { idsMatching, prisma } from "@workspace/db"
 import { Prisma } from "@workspace/db/client"
 import { OrderStatus } from "@workspace/db/enums"
 import { getPaginationError } from "@workspace/utils/pagination"
@@ -49,9 +49,9 @@ export const getTradeAccounts = async (filters: TradeAccountsParams = {}): Promi
     if (paginationError) return { success: false, error: paginationError }
 
     const { search, status, businessType, page = 1, pageSize = 10, sort, order } = filters
-    const contains = search ? { contains: search, mode: "insensitive" as const } : undefined
+    const [accountIds, userIds] = search ? await Promise.all([idsMatching("trade_account", ["companyName", "registrationNumber", "tin"], search), idsMatching("user", ["name", "email"], search)]) : [null, null]
     const where: Prisma.TradeAccountWhereInput = {
-      ...(contains && { OR: [{ companyName: contains }, { registrationNumber: contains }, { tin: contains }, { user: { name: contains } }, { user: { email: contains } }] }),
+      ...(accountIds && { OR: [{ id: { in: accountIds } }, { userId: { in: userIds ?? [] } }] }),
       ...(status && { status }),
       ...(businessType && { businessType }),
     }

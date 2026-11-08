@@ -5,7 +5,7 @@ import { consoleAuth } from "@workspace/auth/console"
 import { formatError } from "@workspace/auth/format-error"
 import { describeVariant } from "@workspace/commerce/order-writes"
 import { PLATFORM_ORGANIZATION_SLUG, type DataResponse, type PaginatedResult } from "@workspace/contracts"
-import { prisma } from "@workspace/db"
+import { productIdsMatching, prisma } from "@workspace/db"
 import type { Prisma } from "@workspace/db/client"
 import { Status } from "@workspace/db/enums"
 import { getStoreRole } from "@/lib/auth-guard"
@@ -151,12 +151,12 @@ const ROWS_SHOWN = 30
 // The sender's rows matching a search (product name or SKU) that track stock and have some, a row per variant, with
 // whether the chosen store lists the same product (and variant)
 export async function findTransferableRows(fromStoreId: string, toStoreId: string | null, search: string): Promise<TransferableRow[]> {
-  const contains = search ? { contains: search, mode: "insensitive" as const } : undefined
+  const productIds = search ? await productIdsMatching(search) : null
   const listings = await prisma.storeListing.findMany({
     where: {
       organizationId: fromStoreId,
       status: { not: Status.ARCHIVED },
-      ...(contains && { product: { OR: [{ name: contains }, { sku: contains }, { variants: { some: { sku: contains } } }] } }),
+      ...(productIds && { productId: { in: productIds } }),
       OR: [
         { trackInventory: true, stock: { gt: 0 }, product: { hasVariants: false } },
         { product: { hasVariants: true }, storeListingVariants: { some: { trackInventory: true, stock: { gt: 0 }, variant: { status: { not: Status.ARCHIVED } } } } },

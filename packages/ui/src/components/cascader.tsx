@@ -18,6 +18,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@workspace/ui/components/popover"
+import { matchesSearch } from "@workspace/ui/lib/search"
 import { cn } from "@workspace/ui/lib/utils"
 
 // A picker for a tree (categories): a column per level, or a search across every level. Controlled by value and
@@ -87,7 +88,7 @@ const searchOptions = (
 
     if (
       isSelectable(item, leafOnly) &&
-      item.label.toLowerCase().includes(term.toLowerCase())
+      matchesSearch(item.label, term)
     ) {
       results.push({ item, fullPath: labels.join(" / ") })
     }

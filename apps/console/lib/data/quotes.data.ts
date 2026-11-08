@@ -8,7 +8,7 @@ import { quoteUrl } from "@workspace/commerce/order-links"
 import { catalogueProductHref } from "@/lib/product-links"
 import { loadTradeTerms } from "@workspace/commerce/trade-accounts"
 import type { DataResponse } from "@workspace/contracts"
-import { prisma } from "@workspace/db"
+import { idsMatching, prisma } from "@workspace/db"
 import type { Prisma } from "@workspace/db/client"
 import { QuoteStatus, ShippingMethod } from "@workspace/db/enums"
 import { dayStart } from "@workspace/utils/date"
@@ -44,9 +44,9 @@ export const getQuotes = async (filters: QuotesParams = {}): Promise<DataRespons
 
     const { search, status, trade, madeStart, madeEnd, madeBy, page = 1, pageSize = 10, sort, order } = filters
     const now = new Date()
-    const contains = search ? { contains: search, mode: "insensitive" as const } : undefined
+    const searchIds = search ? await idsMatching("quote", ["reference", "customerName", "customerEmail", "tradeCompanyName"], search) : null
     const where: Prisma.QuoteWhereInput = {
-      ...(contains && { OR: [{ reference: contains }, { customerName: contains }, { customerEmail: contains }, { tradeCompanyName: contains }] }),
+      ...(searchIds && { id: { in: searchIds } }),
       ...(status && statusWhere(status, now)),
       ...(trade && { tradeCompanyName: trade === "true" ? { not: null } : null }),
       ...(madeBy && { createdById: madeBy === "staff" ? { not: null } : null }),

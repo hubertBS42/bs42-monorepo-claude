@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { CirclePlus } from "lucide-react"
+import { matchesSearch } from "@workspace/ui/lib/search"
 import { Badge } from "@workspace/ui/components/badge"
 import { Button } from "@workspace/ui/components/button"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from "@workspace/ui/components/command"
@@ -61,7 +62,7 @@ const FacetedFilter = ({ id, title, options, value, onChange, disabled }: Facete
       />
       <PopoverContent className="w-64 p-0" align="start">
         {/* Matched on the labels, not the ids cmdk would otherwise search too */}
-        <Command filter={(_, search, keywords) => ((keywords ?? []).join(" ").toLowerCase().includes(search.toLowerCase()) ? 1 : 0)}>
+        <Command filter={(_, search, keywords) => (matchesSearch((keywords ?? []).join(" "), search) ? 1 : 0)}>
           {options.length >= SEARCHABLE_FROM && <CommandInput placeholder={title} />}
           <CommandList>
             <CommandEmpty>No results.</CommandEmpty>

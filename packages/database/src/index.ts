@@ -4,6 +4,7 @@ import { prisma } from "./client"
 export { prisma, generateUniqueSku } from "./client"
 export { formatPrismaError } from "./format-prisma-error"
 export { findReferencedFileUrls, sweepOrphanedFiles, type FileSweepResult } from "./file-sweep"
+export { idsMatching, productIdsMatching } from "./text-search"
 
 export const DEFAULT_APP_SETTINGS: AppSettingsData = {
   storeName: "BS42.NET",

@@ -4,7 +4,7 @@ import type { BlogPostForEdit, BlogPostsData, BlogPostsParams } from "@/types"
 import { formatError } from "@workspace/auth/format-error"
 import { consoleAuth } from "@workspace/auth/console"
 import { headers } from "next/headers"
-import { prisma } from "@workspace/db"
+import { idsMatching, prisma } from "@workspace/db"
 import type { Prisma } from "@workspace/db/client"
 import type { DataResponse } from "@workspace/contracts"
 import { getPaginationError } from "@workspace/utils/pagination"
@@ -28,9 +28,9 @@ export const getBlogPosts = async (filters: BlogPostsParams = {}): Promise<DataR
     if (paginationError) return { success: false, error: paginationError }
 
     const { search, status, page = 1, pageSize = 10, sort, order } = filters
-    const contains = search ? { contains: search, mode: "insensitive" as const } : undefined
+    const searchIds = search ? await idsMatching("blog_post", ["title", "excerpt"], search) : null
     const where: Prisma.BlogPostWhereInput = {
-      ...(contains && { OR: [{ title: contains }, { excerpt: contains }] }),
+      ...(searchIds && { id: { in: searchIds } }),
       ...(status && { status }),
     }
 

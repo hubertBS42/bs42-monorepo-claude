@@ -5,7 +5,7 @@ import z from "zod"
 import { formatError } from "@workspace/auth/format-error"
 import { consoleAdminRoles, hasSystemPermission, hasSystemRole } from "@workspace/auth/system-permissions"
 import { ActionResponse, DataResponse } from "@workspace/contracts"
-import { prisma } from "@workspace/db"
+import { productIdsMatching, prisma } from "@workspace/db"
 import { Prisma } from "@workspace/db/client"
 import { OrganizationStatus, ShippingMethod, Status } from "@workspace/db/enums"
 import { invoiceUrl } from "@workspace/commerce/order-links"
@@ -399,16 +399,14 @@ export async function searchOrderableListingsAction(input: z.input<typeof search
 
     if (!(await hasStorePermission(session.user.id, storeId, { order: ["create"] }))) return FORBIDDEN
 
-    const contains = search ? { contains: search, mode: "insensitive" as const } : undefined
+    const productIds = search ? await productIdsMatching(search, { barcodes: true }) : null
     const [listings, rate] = await Promise.all([
       prisma.storeListing.findMany({
         where: {
           organizationId: storeId,
           status: Status.PUBLISHED,
-          product: {
-            status: Status.PUBLISHED,
-            ...(contains && { OR: [{ name: contains }, { sku: contains }, { barcode: contains }, { variants: { some: { OR: [{ sku: contains }, { barcode: contains }] } } }] }),
-          },
+          product: { status: Status.PUBLISHED },
+          ...(productIds && { productId: { in: productIds } }),
         },
         orderBy: [{ product: { name: "asc" } }, { id: "asc" }],
         take: MAX_ORDERABLE_LISTINGS,

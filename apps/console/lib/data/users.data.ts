@@ -2,7 +2,7 @@ import "server-only"
 
 import type { UsersData, UsersParams, UserDetails } from "@/types"
 import { formatError } from "@workspace/auth/format-error"
-import { prisma } from "@workspace/db"
+import { idsMatching, prisma } from "@workspace/db"
 import type { Prisma } from "@workspace/db/client"
 import type { DataResponse } from "@workspace/contracts"
 import { getPaginationError } from "@workspace/utils/pagination"
@@ -41,12 +41,11 @@ export const getUsers = async (filters: UsersParams = {}): Promise<DataResponse<
     const isSuperAdmin = hasSystemRole(session.user.role, ["superAdmin"])
 
     const now = new Date()
-    const contains = (value: string) => ({ contains: value, mode: "insensitive" as const })
     // Phones are stored in international form, so a local "0244…" is searched as "+233244…" too
-    const phoneSearch = search ? toPhoneSearch(search) : null
+    const searchIds = search ? await idsMatching("user", ["name", "email", "phone"], [search, toPhoneSearch(search)]) : null
     const conditions: Prisma.UserWhereInput[] = [
       ...(!isSuperAdmin ? [{ NOT: { role: { contains: "superAdmin" } } }] : []),
-      ...(search ? [{ OR: [{ name: contains(search) }, { email: contains(search) }, { phone: contains(search) }, ...(phoneSearch ? [{ phone: contains(phoneSearch) }] : [])] }] : []),
+      ...(searchIds ? [{ id: { in: searchIds } }] : []),
       // Match the role as a whole token in the comma-separated string, not as a substring
       ...(role ? [{ OR: [{ role }, { role: { startsWith: `${role},` } }, { role: { endsWith: `,${role}` } }, { role: { contains: `,${role},` } }] }] : []),
       // Same rule as isBanActive: a ban only counts until it expires. Active is spelled out rather than written as

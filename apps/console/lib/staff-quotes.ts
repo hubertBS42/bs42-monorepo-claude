@@ -8,7 +8,7 @@ import { priceOrder } from "@workspace/commerce/pricing"
 import { lockOpenQuote, nextQuoteReference, placeQuotedOrder, QuoteError, quoteValidUntil, type QuoteDelivery } from "@workspace/commerce/quotes"
 import { loadTradeTerms } from "@workspace/commerce/trade-accounts"
 import { customerVisibleListingWhere, loadVisibleCategoryIds, variantOnSaleWhere } from "@workspace/commerce/visibility"
-import type { prisma } from "@workspace/db"
+import { productIdsMatching, type prisma } from "@workspace/db"
 import { Prisma } from "@workspace/db/client"
 import { PaymentMethod, QuoteStatus, ShippingMethod } from "@workspace/db/enums"
 import { OPEN_PURCHASE_ORDER_STATUSES } from "./purchase-order-status"
@@ -87,10 +87,10 @@ function pickOffer(candidates: Candidate[]) {
 // sell (customers never see which store it comes from). Prices are before tax, at today's rate.
 export async function searchQuotableItems(client: Client, pricing: PricingContext, search: string): Promise<QuotableProduct[]> {
   const visibleCategoryIds = await loadVisibleCategoryIds(client)
-  const contains = search ? { contains: search, mode: "insensitive" as const } : undefined
+  const productIds = search ? await productIdsMatching(search, { client }) : null
   const listings = await client.storeListing.findMany({
     where: {
-      AND: [customerVisibleListingWhere(visibleCategoryIds), ...(contains ? [{ product: { OR: [{ name: contains }, { sku: contains }, { variants: { some: { sku: contains } } }] } }] : [])],
+      AND: [customerVisibleListingWhere(visibleCategoryIds), ...(productIds ? [{ productId: { in: productIds } }] : [])],
     },
     orderBy: [{ product: { name: "asc" } }, { id: "asc" }],
     // Every store's listing of a product counts towards this, so it's well above the number of products shown

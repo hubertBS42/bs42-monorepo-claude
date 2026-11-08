@@ -4,7 +4,7 @@ import type { ProductFormData, ProductsData, ProductsParams } from "@/types"
 import { formatError } from "@workspace/auth/format-error"
 import { consoleAuth } from "@workspace/auth/console"
 import { headers } from "next/headers"
-import { prisma } from "@workspace/db"
+import { productIdsMatching, prisma } from "@workspace/db"
 import { Status } from "@workspace/db/enums"
 import type { DataResponse } from "@workspace/contracts"
 import { Prisma } from "@workspace/db/client"
@@ -80,12 +80,10 @@ export const getProductsForTable = async (filters: ProductsParams = {}): Promise
     // The whole tree is small: one read gives every row's path and the category filter's subtree
     const categories = await prisma.category.findMany({ select: { id: true, name: true, parentId: true } })
 
-    const contains = search ? { contains: search, mode: "insensitive" as const } : undefined
+    const productIds = search ? await productIdsMatching(search, { barcodes: true }) : null
     const where: Prisma.ProductWhereInput = {
       ...(incomplete !== undefined && (incomplete ? { AND: [{ OR: PRODUCT_DETAILS.map((detail) => detail.missing) }] } : { AND: PRODUCT_DETAILS.map((detail) => detail.present) })),
-      ...(contains && {
-        OR: [{ name: contains }, { sku: contains }, { barcode: contains }, { variants: { some: { OR: [{ sku: contains }, { barcode: contains }] } } }],
-      }),
+      ...(productIds && { id: { in: productIds } }),
       ...(status && { status }),
       ...(brandId && { brandId }),
       ...(categoryId && { categoryId: { in: getSubtreeIds(categories, categoryId) } }),

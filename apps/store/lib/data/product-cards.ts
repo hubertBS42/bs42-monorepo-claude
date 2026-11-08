@@ -2,7 +2,7 @@ import "server-only"
 
 import { unstable_cache } from "next/cache"
 import { customerVisibleListingWhere, getVisibleCategoryIds, variantOnSaleWhere } from "@workspace/commerce/visibility"
-import { prisma } from "@workspace/db"
+import { productIdsMatching, prisma } from "@workspace/db"
 import type { Prisma } from "@workspace/db/client"
 import { PurchaseOrderStatus, SpecType } from "@workspace/db/enums"
 
@@ -146,15 +146,14 @@ function listingOffers(listing: ListingRow): Offer[] {
 
 // Every store's listings of the products in scope. Featured: products some store features, with all their offers, so the
 // homepage shows the same price as the category page.
-function scopeWhere(scope: ProductScope, visible: Prisma.StoreListingWhereInput): Prisma.StoreListingWhereInput {
+async function scopeWhere(scope: ProductScope, visible: Prisma.StoreListingWhereInput): Promise<Prisma.StoreListingWhereInput> {
   if ("categoryIds" in scope) return { product: { categoryId: { in: scope.categoryIds } } }
   if ("brandId" in scope) return { product: { brandId: scope.brandId } }
   if ("slug" in scope) return { product: { slug: scope.slug } }
   if ("productIds" in scope) return { productId: { in: scope.productIds } }
   if ("featured" in scope) return { product: { storeListings: { some: { AND: [visible, { isFeatured: true }] } } } }
   // As the console's products search: the name, SKU or barcode, including the variants'
-  const contains = { contains: scope.search, mode: "insensitive" as const }
-  return { product: { OR: [{ name: contains }, { sku: contains }, { barcode: contains }, { variants: { some: { OR: [{ sku: contains }, { barcode: contains }] } } }] } }
+  return { productId: { in: await productIdsMatching(scope.search, { barcodes: true }) } }
 }
 
 // The products in a scope that customers can buy, each with its offers from every store selling it. Filtering,
@@ -165,7 +164,7 @@ export async function queryProductCards(scope: ProductScope): Promise<ProductCar
   const categories = await prisma.category.findMany({ select: { id: true, parentId: true, status: true } })
   const visibleIds = getVisibleCategoryIds(categories)
   const visible = customerVisibleListingWhere(visibleIds)
-  const listings = await prisma.storeListing.findMany({ where: { AND: [visible, scopeWhere(scope, visible)] }, select: listingSelect })
+  const listings = await prisma.storeListing.findMany({ where: { AND: [visible, await scopeWhere(scope, visible)] }, select: listingSelect })
 
   // How deep each category is, so a product's specs go top category first, as on the product form
   const parents = new Map(categories.map((category) => [category.id, category.parentId]))

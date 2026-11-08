@@ -6,7 +6,7 @@ import { consoleAuth } from "@workspace/auth/console"
 import { PLATFORM_ORGANIZATION_SLUG } from "@workspace/contracts"
 import { consoleAdminRoles, hasSystemRole } from "@workspace/auth/system-permissions"
 import { headers } from "next/headers"
-import { prisma } from "@workspace/db"
+import { idsMatching, prisma } from "@workspace/db"
 import type { Prisma } from "@workspace/db/client"
 import type { DataResponse } from "@workspace/contracts"
 import { getPaginationError } from "@workspace/utils/pagination"
@@ -38,11 +38,12 @@ export const getStores = async (filters: StoresParams = {}): Promise<DataRespons
 
     const isSystemAdmin = hasSystemRole(session.user.role, consoleAdminRoles)
 
+    const nameIds = name ? await idsMatching("organization", ["name"], name) : null
     const where: Prisma.OrganizationWhereInput = {
       // The platform organization isn't a store, so it's never listed, whoever is asking
       slug: { not: PLATFORM_ORGANIZATION_SLUG },
       ...(!isSystemAdmin && { members: { some: { userId: session.user.id } } }),
-      ...(name && { name: { contains: name, mode: "insensitive" as const } }),
+      ...(nameIds && { id: { in: nameIds } }),
       ...(status && { status }),
     }
 

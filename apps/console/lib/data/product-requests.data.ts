@@ -5,7 +5,7 @@ import { consoleAuth } from "@workspace/auth/console"
 import { formatError } from "@workspace/auth/format-error"
 import { consoleAdminRoles, hasSystemRole } from "@workspace/auth/system-permissions"
 import type { DataResponse, PaginatedResult } from "@workspace/contracts"
-import { prisma } from "@workspace/db"
+import { idsMatching, productIdsMatching, prisma } from "@workspace/db"
 import type { Prisma } from "@workspace/db/client"
 import { ProductRequestStatus, Status } from "@workspace/db/enums"
 import { getStoreRole } from "@/lib/auth-guard"
@@ -201,7 +201,10 @@ const MATCHES_SHOWN = 5
 export async function findCatalogueMatches(storeId: string, name: string, barcode: string): Promise<CatalogueMatch[]> {
   const words = nameWords(name)
   const code = barcode.length >= 3 ? { equals: barcode, mode: "insensitive" as const } : null
+  // The whole name too, for spellings the words miss: "4x4" for a product named "4 x 4"
+  const sameName = name.trim().length >= 3 ? await idsMatching("product", ["name"], name) : []
   const or: Prisma.ProductWhereInput[] = [
+    ...(sameName.length ? [{ id: { in: sameName } }] : []),
     ...(code ? [{ barcode: code }, { sku: code }, { variants: { some: { OR: [{ barcode: code }, { sku: code }] } } }] : []),
     ...(name.trim().length >= 3 && words.length ? [{ AND: words.map((word) => ({ name: { contains: word, mode: "insensitive" as const } })) }] : []),
   ]
@@ -220,9 +223,8 @@ const SEARCH_RESULTS = 10
 
 // Any catalogue product by name, SKU or barcode, for an admin linking a request to it
 export async function searchCatalogueProducts(search: string): Promise<CatalogueProductOption[]> {
-  const contains = { contains: search, mode: "insensitive" as const }
   const products = await prisma.product.findMany({
-    where: { OR: [{ name: contains }, { sku: contains }, { barcode: contains }, { variants: { some: { OR: [{ sku: contains }, { barcode: contains }] } } }] },
+    where: { id: { in: await productIdsMatching(search, { barcodes: true }) } },
     orderBy: { name: "asc" },
     take: SEARCH_RESULTS,
     select: { id: true, name: true, status: true, brand: { select: { name: true } } },

@@ -4,7 +4,7 @@ import { headers } from "next/headers"
 import { formatError } from "@workspace/auth/format-error"
 import { consoleAuth } from "@workspace/auth/console"
 import type { DataResponse } from "@workspace/contracts"
-import { prisma } from "@workspace/db"
+import { idsMatching, productIdsMatching, prisma } from "@workspace/db"
 import { Prisma } from "@workspace/db/client"
 import { PurchaseOrderStatus, Status, StockTransferStatus } from "@workspace/db/enums"
 import { getPaginationError } from "@workspace/utils/pagination"
@@ -97,9 +97,10 @@ export const getPurchaseOrders = async (storeId: string | null, filters: Purchas
     const { reference, status, supplierId, overdue, page = 1, pageSize = 10, sort, order } = filters
     // A store's list is always its own; the platform's can filter by store
     const organizationId = storeId ?? filters.storeId
+    const referenceIds = reference ? await idsMatching("purchase_order", ["reference"], reference) : null
     const where: Prisma.PurchaseOrderWhereInput = {
       ...(organizationId && { organizationId }),
-      ...(reference && { reference: { contains: reference, mode: "insensitive" } }),
+      ...(referenceIds && { id: { in: referenceIds } }),
       ...(supplierId && { supplierId }),
       // Overdue sets the statuses it allows; a status filter narrows them further
       AND: [...(status ? [{ status }] : []), ...(overdue ? [overduePurchaseOrderWhere(getRateDate())] : [])],
@@ -282,13 +283,13 @@ export const MAX_PURCHASABLE_LISTINGS = 30
 // The store's listings that can be bought in (not archived), matching a search or given ids, with their stock, what's
 // already on its way and the last buy price as a starting cost. The caller checks the store role.
 export async function findPurchasableListings(storeId: string, { search, listingIds }: { search?: string; listingIds?: string[] }): Promise<PurchasableListing[]> {
-  const contains = search ? { contains: search, mode: "insensitive" as const } : undefined
+  const productIds = search ? await productIdsMatching(search) : null
   const listings = await prisma.storeListing.findMany({
     where: {
       organizationId: storeId,
       status: { not: Status.ARCHIVED },
       ...(listingIds && { id: { in: listingIds } }),
-      ...(contains && { product: { OR: [{ name: contains }, { sku: contains }, { variants: { some: { sku: contains } } }] } }),
+      ...(productIds && { productId: { in: productIds } }),
     },
     orderBy: [{ product: { name: "asc" } }, { id: "asc" }],
     take: MAX_PURCHASABLE_LISTINGS,

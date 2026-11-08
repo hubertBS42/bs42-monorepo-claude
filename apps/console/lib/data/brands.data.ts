@@ -4,7 +4,7 @@ import type { BrandsData, BrandsParams, SelectItem } from "@/types"
 import { formatError } from "@workspace/auth/format-error"
 import { consoleAuth } from "@workspace/auth/console"
 import { headers } from "next/headers"
-import { prisma } from "@workspace/db"
+import { idsMatching, prisma } from "@workspace/db"
 import type { Brand, Prisma } from "@workspace/db/client"
 import { Status } from "@workspace/db/enums"
 import type { DataResponse } from "@workspace/contracts"
@@ -37,8 +37,9 @@ export const getBrands = async (filters: BrandsParams = {}): Promise<DataRespons
 
     const { name, status, page = 1, pageSize = 10, sort, order } = filters
 
+    const nameIds = name ? await idsMatching("brand", ["name"], name) : null
     const where: Prisma.BrandWhereInput = {
-      ...(name && { name: { contains: name, mode: "insensitive" as const } }),
+      ...(nameIds && { id: { in: nameIds } }),
       ...(status && { status }),
     }
 

@@ -22,6 +22,8 @@ import {
   FieldError,
 } from "@workspace/ui/components/field"
 
+import { matchesSearch } from "@workspace/ui/lib/search"
+
 import FieldLabelWithInfo from "./field-label-with-info"
 
 export interface ComboboxOption {
@@ -100,6 +102,7 @@ const ComboboxField = <T extends FieldValues>({
 
             <Combobox
               items={options}
+              filter={(option, query) => matchesSearch(option.label, query)}
               value={selectedOption}
               disabled={disabled}
               itemToStringLabel={(option) => option.label}

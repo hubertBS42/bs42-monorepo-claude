@@ -2,7 +2,7 @@ import "server-only"
 
 import type { StoreMember, StoreMembersData, StoreMembersParams } from "@/types"
 import { formatError } from "@workspace/auth/format-error"
-import { prisma } from "@workspace/db"
+import { idsMatching, prisma } from "@workspace/db"
 import type { Prisma } from "@workspace/db/client"
 import type { DataResponse } from "@workspace/contracts"
 import { getPaginationError } from "@workspace/utils/pagination"
@@ -54,11 +54,12 @@ export const getStoreMembers = async (storeId: string, filters: StoreMembersPara
 
     const { name, email, role, page = 1, pageSize = 10, sort, order } = filters
 
+    const [nameIds, emailIds] = await Promise.all([name ? idsMatching("user", ["name"], name) : null, email ? idsMatching("user", ["email"], email) : null])
     const where: Prisma.MemberWhereInput = {
       organizationId: storeId,
       ...(role && { role }),
       user: {
-        AND: [notPlatformStaff, ...(name ? [{ name: { contains: name, mode: "insensitive" as const } }] : []), ...(email ? [{ email: { contains: email, mode: "insensitive" as const } }] : [])],
+        AND: [notPlatformStaff, ...(nameIds ? [{ id: { in: nameIds } }] : []), ...(emailIds ? [{ id: { in: emailIds } }] : [])],
       },
     }
 

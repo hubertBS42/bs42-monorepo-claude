@@ -6,7 +6,7 @@ import { formatError } from "@workspace/auth/format-error"
 import { consoleAuth } from "@workspace/auth/console"
 import { hasSystemPermission } from "@workspace/auth/system-permissions"
 import { headers } from "next/headers"
-import { prisma } from "@workspace/db"
+import { idsMatching, prisma } from "@workspace/db"
 import { Prisma } from "@workspace/db/client"
 import type { DataResponse } from "@workspace/contracts"
 import { dayStart } from "@workspace/utils/date"
@@ -54,16 +54,14 @@ export const getOrders = async (filters: OrdersParams = {}): Promise<DataRespons
     // The store id is a uuid column, so a malformed one (a hand-edited URL) would make Prisma throw: it matches nothing
     if (storeId && !z.uuid().safeParse(storeId).success) return { success: true, data: { data: [], total: 0, page, pageSize, totalPages: 0 } }
 
-    const contains = (value: string) => ({ contains: value, mode: "insensitive" as const })
-    // Phones are stored in international form, so a local "0244…" is searched as "+233244…" too
-    const phoneSearch = customer ? toPhoneSearch(customer) : null
+    const [referenceIds, customerIds] = await Promise.all([
+      reference ? idsMatching("order", ["reference"], reference) : null,
+      // Phones are stored in international form, so a local "0244…" is searched as "+233244…" too
+      customer ? idsMatching("order", ["customerName", "customerEmail", "customerPhone"], [customer, toPhoneSearch(customer)]) : null,
+    ])
     const multiStoreIds = multiStore ? await getMultiStoreOrderIds() : []
 
     const where: Prisma.OrderWhereInput = {
-      ...(reference && { reference: contains(reference) }),
-      ...(customer && {
-        OR: [{ customerName: contains(customer) }, { customerEmail: contains(customer) }, { customerPhone: contains(customer) }, ...(phoneSearch ? [{ customerPhone: contains(phoneSearch) }] : [])],
-      }),
       ...(storeId && { orderItems: { some: { organizationId: storeId } } }),
       ...(status && { status }),
       ...(paymentStatus && { paymentStatus }),
@@ -72,8 +70,8 @@ export const getOrders = async (filters: OrdersParams = {}): Promise<DataRespons
       ...(trade && { tradeCompanyName: trade === "true" ? { not: null } : null }),
       ...(counterSale === "true" && counterSaleWhere),
       ...(counterSale === "false" && { NOT: counterSaleWhere }),
-      // In its own AND, as the payment filter above sets paymentStatus too
-      ...(paidBy && { AND: [paidByWhere(paidBy)] }),
+      // In an AND, as the search and the payment filter above set id and paymentStatus too
+      AND: [...(referenceIds ? [{ id: { in: referenceIds } }] : []), ...(customerIds ? [{ id: { in: customerIds } }] : []), ...(paidBy ? [paidByWhere(paidBy)] : [])],
       ...((placedStart || placedEnd) && {
         createdAt: {
           ...(placedStart && { gte: dayStart(placedStart) }),
