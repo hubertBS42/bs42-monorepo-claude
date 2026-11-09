@@ -1,5 +1,7 @@
 import "server-only"
 
+import { customerPriceLabel } from "@/lib/customer-price"
+import { getCustomerPricing } from "@/lib/data/customer-pricing.data"
 import { branchGroupName, branchPrices } from "@/lib/branch-prices"
 import type { ListableProduct, ListingFormData, ListingsData, ListingsParams, ListingStockState, ListingVariantRow } from "@/types"
 import { formatError } from "@workspace/auth/format-error"
@@ -121,7 +123,7 @@ export const getStoreListings = async (storeId: string, filters: ListingsParams 
     const orderBy: Prisma.StoreListingOrderByWithRelationInput[] = [sort === "name" ? { product: { name: direction } } : sort ? { [sort]: direction } : { updatedAt: "desc" }, { id: "asc" }]
 
     const categoryPaths = getCategoryPaths(categories)
-    const [listings, total] = await Promise.all([
+    const [listings, total, pricing] = await Promise.all([
       prisma.storeListing.findMany({
         where,
         orderBy,
@@ -143,6 +145,7 @@ export const getStoreListings = async (storeId: string, filters: ListingsParams 
         },
       }),
       prisma.storeListing.count({ where }),
+      getCustomerPricing(),
     ])
     const incoming = await getIncomingByListing(
       prisma,
@@ -185,6 +188,9 @@ export const getStoreListings = async (storeId: string, filters: ListingsParams 
             },
             sellPrice: listing.sellPrice.toString(),
             priceRange,
+            customerPrice: priceRange
+              ? [customerPriceLabel(priceRange.min, pricing), customerPriceLabel(priceRange.max, pricing)].filter(Boolean).join(" – ") || null
+              : customerPriceLabel(listing.sellPrice.toString(), pricing),
             stock,
             trackInventory: listing.trackInventory,
             stockAlert,
@@ -219,7 +225,7 @@ export const getListableProducts = async (storeId: string, search?: string, limi
       ...(productIds && { OR: [{ id: { in: productIds } }, { brandId: { in: brandIds ?? [] } }] }),
     }
 
-    const [products, total, categoryPaths] = await Promise.all([
+    const [products, total, categoryPaths, pricing] = await Promise.all([
       prisma.product.findMany({
         where,
         orderBy: [{ name: "asc" }, { id: "asc" }],
@@ -228,6 +234,7 @@ export const getListableProducts = async (storeId: string, search?: string, limi
       }),
       prisma.product.count({ where }),
       getCategoryPathMap(),
+      getCustomerPricing(),
     ])
 
     return {
@@ -240,6 +247,7 @@ export const getListableProducts = async (storeId: string, search?: string, limi
           brandName: product.brand.name,
           categoryPath: categoryPaths.get(product.categoryId) ?? "",
           baseSellPrice: product.baseSellPrice.toString(),
+          customerPrice: customerPriceLabel(product.baseSellPrice.toString(), pricing),
           hasVariants: product.hasVariants,
         })),
         total,
@@ -312,6 +320,7 @@ export const getNewListingFormData = async (storeId: string, productId: string):
         product: await toFormProduct(product),
         variants,
         branchGroup,
+        pricing: await getCustomerPricing(),
         values: {
           // The catalogue's prices are the starting point, or the branch group's
           sellPrice: group ? Number(group.sellPrice) : product.baseSellPrice.toNumber(),
@@ -389,6 +398,7 @@ export const getListingFormData = async (storeId: string, listingId: string): Pr
           }),
         },
         branchGroup: await branchGroupName(prisma, storeId),
+        pricing: await getCustomerPricing(),
         hasOrders: !!ordered || listing._count.purchaseOrderItems > 0 || listing._count.transfersOut > 0 || listing._count.transfersIn > 0,
       },
     }

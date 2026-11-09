@@ -69,7 +69,10 @@ const ProductPicker = ({ products, total, search, nextLimit }: ProductPickerProp
                 <CardContent className="grid gap-1 px-3 pb-3">
                   <p className="line-clamp-2 leading-tight font-medium">{product.name}</p>
                   <p className="text-xs text-muted-foreground">{product.brandName}</p>
-                  <p className="text-sm">{formatCurrency(product.baseSellPrice)}</p>
+                  <p className="text-sm">
+                    {formatCurrency(product.baseSellPrice)}
+                    {product.customerPrice && <span className="ml-1.5 text-xs text-muted-foreground">{product.customerPrice}</span>}
+                  </p>
                   <p className="truncate text-xs text-muted-foreground">{product.categoryPath}</p>
                 </CardContent>
               </Card>

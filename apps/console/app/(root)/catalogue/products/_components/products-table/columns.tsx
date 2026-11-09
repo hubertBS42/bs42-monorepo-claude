@@ -63,6 +63,7 @@ export const columns: ColumnDef<ProductListItem, unknown>[] = [
     cell: ({ row }) => (
       <div className="grid gap-y-0.5">
         <span>{formatCurrency(row.original.baseSellPrice)}</span>
+        {row.original.customerPrice && <span className="text-[11px] text-muted-foreground">{row.original.customerPrice}</span>}
         <span className="text-[11px] text-muted-foreground">Buy {formatCurrency(row.original.baseBuyPrice)}</span>
       </div>
     ),

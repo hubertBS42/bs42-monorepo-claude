@@ -58,14 +58,13 @@ export const columns: ColumnDef<ListingListItem, unknown>[] = [
     accessorKey: "sellPrice",
     header: () => <ColumnHeader title="Price" sortKey="sellPrice" />,
     cell: ({ row }) => {
-      const { sellPrice, priceRange } = row.original
-      // Variants with their own prices sell at more than one price
-      return priceRange ? (
-        <span>
-          {formatCurrency(priceRange.min)} – {formatCurrency(priceRange.max)}
-        </span>
-      ) : (
-        formatCurrency(sellPrice)
+      const { sellPrice, priceRange, customerPrice } = row.original
+      return (
+        <div className="grid gap-y-0.5">
+          {/* Variants with their own prices sell at more than one price */}
+          <span>{priceRange ? `${formatCurrency(priceRange.min)} – ${formatCurrency(priceRange.max)}` : formatCurrency(sellPrice)}</span>
+          {customerPrice && <span className="text-[11px] text-muted-foreground">{customerPrice}</span>}
+        </div>
       )
     },
   },

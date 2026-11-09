@@ -15,6 +15,7 @@ import { ProductReviewsCard } from "@/components/product-reviews-card"
 import { StorefrontLinkCard } from "@/components/storefront-link-card"
 import type { ProductReviewStats } from "@/lib/data/reviews.data"
 import type { StorefrontLink } from "@/lib/data/storefront-links.data"
+import { customerPriceNote, type CustomerPricing } from "@/lib/customer-price"
 import SharedFormFooter from "@/components/shared-form-footer"
 import { DangerZoneCard } from "@/components/danger-zone-card"
 import { Condition, InstallationOption, Status } from "@workspace/db/enums"
@@ -51,6 +52,8 @@ type VariantInput = NonNullable<FormInput["variants"]>[number]
 type OptionInput = NonNullable<FormInput["variantOptions"]>[number]
 
 interface ProductFormProps {
+  // Today's rate and tax, for the cedi price under the sell price
+  pricing: CustomerPricing | null
   brands: SelectItem[]
   // The category tree from getCategoryOptions
   categoryOptions: CascaderOption[]
@@ -144,7 +147,19 @@ function describeRemoval(variants: VariantInput[], usage: Record<string, Variant
 
 type PendingChange = { kind: "removeVariant"; index: number } | { kind: "regenerate" } | { kind: "noVariants" }
 
-const ProductForm = ({ brands, categoryOptions, disabledCategoryIds, specFields, categoryInstallationFees, product, storefrontLink, reviewStats, request, pairingsCard }: ProductFormProps) => {
+const ProductForm = ({
+  pricing,
+  brands,
+  categoryOptions,
+  disabledCategoryIds,
+  specFields,
+  categoryInstallationFees,
+  product,
+  storefrontLink,
+  reviewStats,
+  request,
+  pairingsCard,
+}: ProductFormProps) => {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [editingVariantIndex, setEditingVariantIndex] = useState<number | null>(null)
@@ -166,6 +181,7 @@ const ProductForm = ({ brands, categoryOptions, disabledCategoryIds, specFields,
   const { fields: variantFields, remove: removeVariant, replace: replaceVariants } = useFieldArray({ control: form.control, name: "variants" })
 
   const hasVariants = useWatch({ control: form.control, name: "hasVariants" })
+  const baseSellPrice = useWatch({ control: form.control, name: "baseSellPrice" })
   const categoryId = useWatch({ control: form.control, name: "categoryId" })
   const installation = useWatch({ control: form.control, name: "installation" })
   const categoryFee = categoryInstallationFees[categoryId]
@@ -434,9 +450,18 @@ const ProductForm = ({ brands, categoryOptions, disabledCategoryIds, specFields,
                       <SelectField control={form.control} label="Condition" name="condition" disabled={isBusy} options={CONDITION_OPTIONS} />
                     </div>
 
-                    <div className="grid gap-5 sm:grid-cols-2">
+                    <div className="grid items-start gap-5 sm:grid-cols-2">
                       <NumberInputField control={form.control} label="Buy price" name="baseBuyPrice" step={0.01} min={0} prependText="$" disabled={isBusy} />
-                      <NumberInputField control={form.control} label="Sell price" name="baseSellPrice" step={0.01} min={0} prependText="$" disabled={isBusy} />
+                      <NumberInputField
+                        control={form.control}
+                        label="Sell price"
+                        name="baseSellPrice"
+                        step={0.01}
+                        min={0}
+                        prependText="$"
+                        description={customerPriceNote(baseSellPrice, pricing)}
+                        disabled={isBusy}
+                      />
                     </div>
 
                     <CascaderField

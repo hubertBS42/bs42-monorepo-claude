@@ -21,6 +21,7 @@ import { StorefrontLinkCard } from "@/components/storefront-link-card"
 import type { StorefrontLink } from "@/lib/data/storefront-links.data"
 import { STATUS_OPTIONS } from "@/constants"
 import { createListingAction, updateListingAction } from "@/lib/actions/listing.actions"
+import { customerPriceLabel, customerPriceNote } from "@/lib/customer-price"
 import { listingFormSchema } from "@/lib/schemas/listing.schemas"
 import { MANUAL_STOCK_REASONS, STOCK_MOVEMENT_REASON_LABELS } from "@/lib/stock-reasons"
 import type { ListingFormData, ListingSnapshot, StockChangedResponse } from "@/types"
@@ -62,6 +63,7 @@ const ListingForm = ({ storeId, data, storefrontLink }: ListingFormProps) => {
   const variantValues = useWatch({ control: form.control, name: "variants" })
   const stockReason = useWatch({ control: form.control, name: "stockReason" })
   const sellPrice = useWatch({ control: form.control, name: "sellPrice" })
+  const compareAtPrice = useWatch({ control: form.control, name: "compareAtPrice" })
 
   // What the form loaded, sent with an edit so the action can tell the user's changes from changes made elsewhere.
   // A stock conflict replaces its stock, so the next save starts from the current stock.
@@ -172,10 +174,29 @@ const ListingForm = ({ storeId, data, storefrontLink }: ListingFormProps) => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid gap-5 sm:grid-cols-3">
+                  <div className="grid items-start gap-5 sm:grid-cols-3">
                     <NumberInputField control={form.control} label="Buy price" name="buyPrice" step={0.01} min={0} prependText="$" placeholder="None" disabled={isPending} />
-                    <NumberInputField control={form.control} label="Compare-at price" name="compareAtPrice" step={0.01} min={0} prependText="$" placeholder="None" disabled={isPending} />
-                    <NumberInputField control={form.control} label="Sell price" name="sellPrice" step={0.01} min={0} prependText="$" disabled={isPending} />
+                    <NumberInputField
+                      control={form.control}
+                      label="Compare-at price"
+                      name="compareAtPrice"
+                      step={0.01}
+                      min={0}
+                      prependText="$"
+                      placeholder="None"
+                      description={customerPriceNote(compareAtPrice, data.pricing)}
+                      disabled={isPending}
+                    />
+                    <NumberInputField
+                      control={form.control}
+                      label="Sell price"
+                      name="sellPrice"
+                      step={0.01}
+                      min={0}
+                      prependText="$"
+                      description={customerPriceNote(sellPrice, data.pricing)}
+                      disabled={isPending}
+                    />
                   </div>
                 </CardContent>
               </Card>
@@ -254,6 +275,7 @@ const ListingForm = ({ storeId, data, storefrontLink }: ListingFormProps) => {
                                     prependText="$"
                                     // The listing's price, which an empty field sells at
                                     placeholder={typeof sellPrice === "number" ? sellPrice.toFixed(2) : undefined}
+                                    description={customerPriceLabel(variantValues?.[index]?.sellPrice ?? sellPrice, data.pricing) ?? undefined}
                                     disabled={isPending}
                                   />
                                 </TableCell>

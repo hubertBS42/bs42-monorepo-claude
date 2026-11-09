@@ -296,6 +296,7 @@ Each notification is an email (the `StaffAlertEmail` template) and a row in the 
 - A form inside a dialog must call `e.stopPropagation()` before `handleSubmit`. React bubbles events through portals, so otherwise submitting the dialog also submits the page form around it.
 - Never include `Session` rows in data passed to client components: each row holds its token.
 - A page's root is a `div`: the shell's `SidebarInset` is the page's `<main>`, and a page has one. Pages outside the shell (`/setup`, `/forbidden`) keep their own.
+- A USD sell price shown to staff has the cedi price customers pay today beside it: `customerPriceLabel` / `customerPriceNote` (`lib/customer-price.ts`, no Prisma import so forms can use it as you type, whole-number maths that matches `shelfPrice`) with `getCustomerPricing` (null without a rate fresh enough to sell at, so no figure shows). Buy prices stay in USD.
 - Phones are stored international (`+233244123456`); show them with `formatPhoneNumber` (`@workspace/utils/phone`, "+233 24 412 3456"), keeping the raw number in `tel:` links.
 
 ### UI components

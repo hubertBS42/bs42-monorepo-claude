@@ -24,6 +24,7 @@ import {
 } from "@workspace/db/enums"
 import type { LucideIcon } from "lucide-react"
 import type { z } from "zod"
+import type { CustomerPricing } from "@/lib/customer-price"
 import type { addProductFormSchema } from "@/lib/schemas/product.schemas"
 import type { listingSnapshotSchema } from "@/lib/schemas/listing.schemas"
 import type { SystemRole } from "@workspace/auth/system-permissions"
@@ -215,6 +216,8 @@ export interface ProductListItem {
   images: string[]
   brand: { id: string; name: string }
   baseSellPrice: string
+  // What customers pay in GHS today, formatted; null when the storefront isn't showing prices
+  customerPrice: string | null
   baseBuyPrice: string
   // From the top-level category down, e.g. "Men / Accessories": names only have to be unique among siblings
   categoryPath: string
@@ -427,6 +430,8 @@ export interface ListingListItem {
   sellPrice: string
   // The lowest and highest price a customer can pay, when variants have their own prices
   priceRange: { min: string; max: string } | null
+  // What customers pay in GHS today, formatted; null when the storefront isn't showing prices
+  customerPrice: string | null
   // A product with variants counts the stock of its variants on sale
   stock: number
   trackInventory: boolean
@@ -451,6 +456,7 @@ export interface ListableProduct {
   brandName: string
   categoryPath: string
   baseSellPrice: string
+  customerPrice: string | null
   hasVariants: boolean
 }
 
@@ -475,6 +481,8 @@ export interface ListingVariantRow {
 
 // The listing form's starting point. Plain values only: Decimal can't be passed to client components
 export interface ListingFormData {
+  // Today's rate and tax, for the cedi price under each price field
+  pricing: CustomerPricing | null
   // The listing being edited; without it the form adds one
   id?: string
   product: {

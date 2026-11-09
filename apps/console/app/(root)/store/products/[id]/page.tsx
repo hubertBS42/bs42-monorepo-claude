@@ -16,6 +16,8 @@ import GlobalWorkspaceLink from "@/components/global-workspace-link"
 import { Detail } from "@/components/orders/order-details"
 import { CONDITION_LABELS } from "@/constants"
 import { requireActiveStoreMember } from "@/lib/auth-guard"
+import { customerPriceNote } from "@/lib/customer-price"
+import { getCustomerPricing } from "@/lib/data/customer-pricing.data"
 import { getStoreProductDetails } from "@/lib/data/store-products.data"
 
 export const metadata: Metadata = {
@@ -37,13 +39,14 @@ export default async function StoreProductPage({ params }: StoreProductPageProps
   // Product.id is a uuid column, so anything else would make Prisma throw instead of returning nothing
   if (!z.uuid().safeParse(id).success) notFound()
 
-  const response = await getStoreProductDetails(storeId, id)
+  const [response, pricing] = await Promise.all([getStoreProductDetails(storeId, id), getCustomerPricing()])
   if (!response.success) {
     if (response.code === "NOT_FOUND") notFound()
     throw new Error(response.error)
   }
 
   const product = response.data
+  const customerPrice = customerPriceNote(product.baseSellPrice, pricing)
   const weight = (value: string | null) => orDash(value && `${value} kg`)
 
   return (
@@ -194,7 +197,10 @@ export default async function StoreProductPage({ params }: StoreProductPageProps
               <CardDescription>Suggested, in USD. Each store sets its own on its listing.</CardDescription>
             </CardHeader>
             <CardContent className="grid grid-cols-2 gap-4">
-              <Detail label="Sell price">{formatCurrency(product.baseSellPrice)}</Detail>
+              <Detail label="Sell price">
+                {formatCurrency(product.baseSellPrice)}
+                {customerPrice && <span className="block text-xs text-muted-foreground">{customerPrice}</span>}
+              </Detail>
               <Detail label="Buy price">{formatCurrency(product.baseBuyPrice)}</Detail>
             </CardContent>
           </Card>

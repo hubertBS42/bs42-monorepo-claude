@@ -12,6 +12,8 @@ import type { CascaderOption } from "@workspace/ui/components/cascader"
 import { getPaginationError } from "@workspace/utils/pagination"
 import { z } from "zod"
 import { toSpecFormValue } from "@/lib/product-specs"
+import { customerPriceLabel } from "@/lib/customer-price"
+import { getCustomerPricing } from "@/lib/data/customer-pricing.data"
 
 export const MAX_PRODUCTS_PAGE_SIZE = 100
 export const PRODUCT_SORT_FIELDS = ["name", "baseSellPrice", "status", "createdAt", "updatedAt"] as const
@@ -95,7 +97,7 @@ export const getProductsForTable = async (filters: ProductsParams = {}): Promise
     const orderBy = [sort ? { [sort]: order ?? "asc" } : { name: "asc" as const }, { id: "asc" as const }]
     const notArchived = { where: { status: { not: Status.ARCHIVED } } }
 
-    const [products, total] = await Promise.all([
+    const [products, total, pricing] = await Promise.all([
       prisma.product.findMany({
         where,
         select: {
@@ -116,6 +118,7 @@ export const getProductsForTable = async (filters: ProductsParams = {}): Promise
         take: pageSize,
       }),
       prisma.product.count({ where }),
+      getCustomerPricing(),
     ])
 
     const categoryPaths = getCategoryPaths(categories)
@@ -127,6 +130,7 @@ export const getProductsForTable = async (filters: ProductsParams = {}): Promise
           ...product,
           missing: missingDetails({ images: product.images, description, baseSellPrice }),
           baseSellPrice: baseSellPrice.toString(),
+          customerPrice: customerPriceLabel(baseSellPrice.toString(), pricing),
           baseBuyPrice: baseBuyPrice.toString(),
           categoryPath: categoryPaths.get(categoryId) ?? "",
           variantCount: _count.variants,

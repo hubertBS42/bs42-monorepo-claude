@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import ProductForm from "../../_components/product-form"
+import { getCustomerPricing } from "@/lib/data/customer-pricing.data"
 import { getBrandsForSelect } from "@/lib/data/brands.data"
 import { getCategoryOptions, getInstallationFeesByCategory } from "@/lib/data/categories.data"
 import { getSpecFieldsByCategory } from "@/lib/data/category-specs.data"
@@ -24,12 +25,13 @@ export default async function EditProductPage({ params }: Props) {
 
   const { id } = await params
   // getProductForEdit returns NOT_FOUND for an id that isn't a UUID
-  const [product, brands, categories, specFields, installationFees] = await Promise.all([
+  const [product, brands, categories, specFields, installationFees, pricing] = await Promise.all([
     getProductForEdit(id),
     getBrandsForSelect(),
     getCategoryOptions(),
     getSpecFieldsByCategory(),
     getInstallationFeesByCategory(),
+    getCustomerPricing(),
   ])
 
   if (!product.success) {
@@ -53,6 +55,7 @@ export default async function EditProductPage({ params }: Props) {
 
   return (
     <ProductForm
+      pricing={pricing}
       product={product.data}
       brands={brandOptions}
       categoryOptions={categories.data.options}
