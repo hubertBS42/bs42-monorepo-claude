@@ -27,6 +27,7 @@ export default function TransferActions({ storeId, transfer }: { storeId: string
         trigger={<Button type="button">Receive</Button>}
         title={`Receive ${transfer.reference}`}
         description="Enter what arrived. Anything missing is recorded as lost."
+        info="What arrives takes the sending store's buy price, so this store's margins stay right."
         submitLabel="Receive"
         failureTitle="Unable to receive the transfer"
         refreshOn={REFRESH_ON}

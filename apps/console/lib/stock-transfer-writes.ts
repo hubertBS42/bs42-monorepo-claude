@@ -167,6 +167,8 @@ async function lockTransfer(tx: Tx, id: string, where: { fromStoreId: string } |
           productName: true,
           variantDescription: true,
           quantity: true,
+          fromListing: { select: { buyPrice: true } },
+          fromListingVariant: { select: { buyPrice: true } },
           toListing: { select: { trackInventory: true } },
           toListingVariant: { select: { trackInventory: true } },
         },
@@ -210,6 +212,14 @@ export async function receiveStockTransfer(tx: Tx, input: TransferReceipt) {
         createdById: input.receivedById,
         stockTransferId: input.id,
       })
+    }
+
+    // What the stock cost the sender is what it costs here, so this store's margins are right. A variant without its own
+    // buy price has the listing's. Not a choice in the dialog: whoever unpacks the delivery may have no say over prices.
+    const buyPrice = item.fromListingVariant?.buyPrice ?? item.fromListing.buyPrice
+    if (quantity > 0 && buyPrice?.gt(0)) {
+      if (item.toListingVariantId) await tx.storeListingVariant.update({ where: { id: item.toListingVariantId }, data: { buyPrice } })
+      else await tx.storeListing.update({ where: { id: item.toListingId }, data: { buyPrice } })
     }
   }
 
