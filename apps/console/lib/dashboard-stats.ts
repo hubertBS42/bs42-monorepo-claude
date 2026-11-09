@@ -139,7 +139,8 @@ function toSales(rows: TrendRows): DashboardSales {
 
 function change(current: string | number | null, previous: string | number | null) {
   if (current === null || previous === null || new Prisma.Decimal(previous).isZero()) return null
-  return new Prisma.Decimal(current).minus(previous).dividedBy(previous).times(100).toDecimalPlaces(1).toNumber()
+  // By its size: net sales can be negative (more refunded than paid), and that mustn't turn a rise into a fall
+  return new Prisma.Decimal(current).minus(previous).dividedBy(new Prisma.Decimal(previous).abs()).times(100).toDecimalPlaces(1).toNumber()
 }
 
 export function toSalesTrend(period: DashboardPeriod, rows: TrendRows, now = new Date()): DashboardSalesTrend {

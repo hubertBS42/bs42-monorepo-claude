@@ -1,4 +1,4 @@
-import { TrendingDown, TrendingUp } from "lucide-react"
+import { Minus, TrendingDown, TrendingUp } from "lucide-react"
 import { Badge } from "@workspace/ui/components/badge"
 import { Card, CardAction, CardDescription, CardFooter, CardHeader, CardTitle } from "@workspace/ui/components/card"
 import { ghs } from "@/components/orders/order-details"
@@ -7,17 +7,20 @@ import { PREVIOUS_PERIODS } from "./periods"
 
 const plural = (count: number, word: string) => `${count} ${word}${count === 1 ? "" : "s"}`
 
-// A rise of 100% or more reads better as a multiple: "+208.8%" is 3.1 times as much, which many would read as double
-const isMultiple = (change: number) => change >= 100
+// A rise of 100% or more reads better as a multiple: "+208.8%" is 3.1 times as much, which many would read as double.
+// Not from a negative figure (more refunded than paid), which nothing is a multiple of.
+const isMultiple = (change: number | null, previousValue: string) => change !== null && change >= 100 && !previousValue.includes("-")
 const multiple = (change: number) => `${(1 + change / 100).toFixed(1).replace(/\.0$/, "")}×`
 
-function TrendBadge({ change }: { change: number | null }) {
+const trendIcon = (change: number) => (change === 0 ? Minus : change < 0 ? TrendingDown : TrendingUp)
+
+function TrendBadge({ change, previousValue }: { change: number | null; previousValue: string }) {
   if (change === null) return null
-  const Icon = change < 0 ? TrendingDown : TrendingUp
+  const Icon = trendIcon(change)
   return (
     <Badge variant="outline">
       <Icon />
-      {isMultiple(change) ? multiple(change) : `${change > 0 ? "+" : ""}${change}%`}
+      {isMultiple(change, previousValue) ? multiple(change) : `${change > 0 ? "+" : ""}${change}%`}
     </Badge>
   )
 }
@@ -38,13 +41,13 @@ function StatCard({ label, value, previousValue, change, period, note, headline 
   const previous = PREVIOUS_PERIODS[period]
   const comparison =
     change === null
-      ? `Nothing to compare with in ${previous}`
+      ? `Nothing in ${previous}`
       : change === 0
         ? `Level with ${previous}`
-        : isMultiple(change)
+        : isMultiple(change, previousValue)
           ? `${multiple(change)} ${previous} (${previousValue})`
           : `${change > 0 ? "Up" : "Down"} ${Math.abs(change)}% on ${previous}`
-  const Icon = change !== null && change < 0 ? TrendingDown : TrendingUp
+  const Icon = change === null ? null : trendIcon(change)
 
   return (
     <Card className="@container/card">
@@ -53,14 +56,14 @@ function StatCard({ label, value, previousValue, change, period, note, headline 
         {/* The badge sits beside the label and the amount gets the whole width below, so a long amount (GH₵1,362,437.51)
             never pushes the badge out of a narrow card; it only takes the larger size once there's room for it */}
         <CardAction className="row-span-1">
-          <TrendBadge change={change} />
+          <TrendBadge change={change} previousValue={previousValue} />
         </CardAction>
         <CardTitle className="col-span-full text-2xl font-semibold tabular-nums @[300px]/card:text-3xl">{value}</CardTitle>
       </CardHeader>
       <CardFooter className="flex-col items-start gap-1.5 text-sm">
-        <div className="line-clamp-1 flex gap-2 font-medium">
+        <div className="flex gap-2 font-medium">
           {headline ?? comparison}
-          {!headline && change !== null && change !== 0 && <Icon className="size-4" />}
+          {!headline && Icon && change !== 0 && <Icon className="size-4" />}
         </div>
         <div className="text-muted-foreground">{note}</div>
       </CardFooter>
@@ -73,7 +76,14 @@ export default function SectionCards({ sales, period }: { sales: DashboardSalesT
   return (
     <div className="grid grid-cols-1 gap-4 *:data-[slot=card]:bg-linear-to-t *:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card *:data-[slot=card]:shadow-xs @xl/main:grid-cols-2 @5xl/main:grid-cols-4 dark:*:data-[slot=card]:bg-card">
       <StatCard label="Net sales" value={ghs(current.netSalesGhs)} previousValue={ghs(previous.netSalesGhs)} change={changes.netSales} period={period} note="Payments recorded, less refunds given" />
-      <StatCard label="Paid orders" value={String(current.paidOrders)} previousValue={String(previous.paidOrders)} change={changes.paidOrders} period={period} note="Orders with their payment recorded" />
+      <StatCard
+        label="Paid orders"
+        value={String(current.paidOrders)}
+        previousValue={String(previous.paidOrders)}
+        change={changes.paidOrders}
+        period={period}
+        note="Orders with their payment recorded"
+      />
       <StatCard
         label="Average order"
         value={current.averageOrderGhs ? ghs(current.averageOrderGhs) : "—"}
