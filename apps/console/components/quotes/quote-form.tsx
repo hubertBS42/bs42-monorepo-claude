@@ -20,7 +20,7 @@ import CustomerStep from "@/components/staff-sales/customer-step"
 import { itemKey, unlinkCustomer } from "@/components/staff-sales/form"
 import ItemsStep from "@/components/staff-sales/items-step"
 import ReviewStep from "@/components/staff-sales/review-step"
-import DeliveryStep from "./steps/delivery-step"
+import DeliveryStep from "./delivery-step"
 import { useRevalidateOnChange } from "@workspace/forms/use-revalidate-on-change"
 
 export type QuoteFormInput = z.input<typeof createQuoteFormSchema>
@@ -34,6 +34,8 @@ const STEPS: { title: string; fields: FieldPath<QuoteFormInput>[] }[] = [
 ]
 
 interface QuoteFormProps {
+  // The store making it from its own listings; null on the platform's pages
+  storeId: string | null
   // The platform's delivery fees and installation areas, which the delivery step fills in from and warns against
   delivery: DeliverySettingsView
   installationAreas: InstallationAreaRow[]
@@ -45,8 +47,9 @@ interface QuoteFormProps {
   copy: QuoteCopy | null
 }
 
-export default function QuoteForm({ delivery, installationAreas, validityDays, copy, pickupLocations }: QuoteFormProps) {
+export default function QuoteForm({ storeId, delivery, installationAreas, validityDays, copy, pickupLocations }: QuoteFormProps) {
   const router = useRouter()
+  const basePath = storeId ? "/store/quotes" : "/quotes"
   const [isPending, startTransition] = useTransition()
   const [step, setStep] = useState(0)
   const [chosen, setChosen] = useState<Record<string, ChosenQuoteItem>>(copy?.chosen ?? {})
@@ -56,8 +59,9 @@ export default function QuoteForm({ delivery, installationAreas, validityDays, c
   const form = useForm<QuoteFormInput, unknown, QuoteFormOutput>({
     resolver: zodResolver(createQuoteFormSchema),
     defaultValues: copy
-      ? { ...copy.values, validityDays }
+      ? { ...copy.values, validityDays, storeId }
       : {
+          storeId,
           customerUserId: null,
           customerName: "",
           customerEmail: "",
@@ -111,7 +115,7 @@ export default function QuoteForm({ delivery, installationAreas, validityDays, c
       }
 
       toast.add({ title: "Quotation sent", description: `${response.data.reference} is on its way to ${values.customerEmail}.`, type: "success" })
-      router.push(`/quotes/${response.data.id}`)
+      router.push(`${basePath}/${response.data.id}`)
     })
   }
 
@@ -148,11 +152,12 @@ export default function QuoteForm({ delivery, installationAreas, validityDays, c
         ))}
       </ol>
 
-      {step === 0 && <CustomerStep kind="quote" form={form} customer={customer} onCustomerChange={setCustomer} />}
-      {step === 1 && <ItemsStep kind="quote" form={form} chosen={chosen} onChosenChange={setChosen} />}
+      {step === 0 && <CustomerStep storeId={storeId} kind="quote" form={form} customer={customer} onCustomerChange={setCustomer} />}
+      {step === 1 && <ItemsStep storeId={storeId} kind="quote" form={form} chosen={chosen} onChosenChange={setChosen} />}
       {step === 2 && <DeliveryStep form={form} customer={customer} delivery={delivery} installationAreas={installationAreas} stores={stores} pickupLocations={pickupLocations} />}
       {step === 3 && (
         <ReviewStep
+          storeId={storeId}
           kind="quote"
           form={form}
           customer={customer}
@@ -163,7 +168,7 @@ export default function QuoteForm({ delivery, installationAreas, validityDays, c
       )}
 
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <Link href="/quotes" className={buttonVariants({ variant: "ghost" })}>
+        <Link href={basePath} className={buttonVariants({ variant: "ghost" })}>
           Cancel
         </Link>
         <div className="flex gap-2">

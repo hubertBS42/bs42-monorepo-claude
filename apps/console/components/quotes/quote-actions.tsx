@@ -5,6 +5,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { consoleAuthClient } from "@workspace/auth/console-client"
 import { hasSystemPermission } from "@workspace/auth/system-permissions"
+import { useMemberRole } from "@/hooks/use-member-role"
 import type { ActionResponse } from "@workspace/contracts"
 import {
   AlertDialog,
@@ -27,21 +28,24 @@ import { cancelQuoteAction, placeOrderFromQuoteAction } from "@/lib/actions/quot
 import { quoteDeliveryFormSchema } from "@/lib/schemas/quote.schemas"
 import type { QuoteDetails } from "@/types"
 
-// The quotation's buttons. Checks the viewer's system permission from the session; every action checks again.
+// The quotation's buttons. Checks the viewer's role in the store, or on the platform's pages their system permission;
+// every action checks again.
 
 // The quote changed under the page (accepted or cancelled meanwhile, or lapsed): show it as it is now
-const REFRESH_CODES = ["NOT_OPEN", "EXPIRED", "NOT_FOUND", "UNAVAILABLE"]
+const REFRESH_CODES = ["NOT_OPEN", "EXPIRED", "NOT_FOUND", "UNAVAILABLE", "STORE_QUOTE"]
 
-export default function QuoteActions({ quote }: { quote: QuoteDetails }) {
+export default function QuoteActions({ quote, storeId }: { quote: QuoteDetails; storeId: string | null }) {
   const { data: session, isPending } = consoleAuthClient.useSession()
+  const { role, isLoading: isRoleLoading } = useMemberRole(storeId)
 
-  if (isPending) return <Skeleton className="h-9 rounded-md" />
+  if (storeId ? isRoleLoading : isPending) return <Skeleton className="h-9 rounded-md" />
   // hasSystemPermission, not checkRolePermission: roles can be comma-separated
-  const can = (action: "create" | "update") => hasSystemPermission(session?.user.role, { order: [action] })
+  const can = (action: "create" | "update") =>
+    storeId ? role !== null && consoleAuthClient.organization.checkRolePermission({ role, permissions: { order: [action] } }) : hasSystemPermission(session?.user.role, { order: [action] })
 
   const isOpen = quote.status === "open"
   const buttons = [
-    isOpen && can("create") && quote.deliveryToConfirm && <PlaceOrderWithDelivery key="place" quote={quote} />,
+    isOpen && can("create") && quote.deliveryToConfirm && <PlaceOrderWithDelivery key="place" quote={quote} storeId={storeId} />,
     isOpen && can("create") && !quote.deliveryToConfirm && (
       <ConfirmAction
         key="place"
@@ -50,7 +54,7 @@ export default function QuoteActions({ quote }: { quote: QuoteDetails }) {
         description="Creates an unpaid order at the quoted prices and reserves its stock. The customer is emailed."
         confirmLabel="Place order"
         failureTitle="Unable to place the order"
-        run={() => placeOrderFromQuoteAction({ quoteId: quote.id })}
+        run={() => placeOrderFromQuoteAction({ quoteId: quote.id, storeId })}
         success={{ title: "Order placed", description: `${quote.reference} is accepted. Record the payment on its order once it arrives.` }}
       />
     ),
@@ -63,12 +67,12 @@ export default function QuoteActions({ quote }: { quote: QuoteDetails }) {
         confirmLabel="Cancel quotation"
         failureTitle="Unable to cancel the quotation"
         destructive
-        run={() => cancelQuoteAction({ quoteId: quote.id })}
+        run={() => cancelQuoteAction({ quoteId: quote.id, storeId })}
         success={{ title: "Quotation cancelled", description: `${quote.reference} can no longer be accepted.` }}
       />
     ),
     can("create") && (
-      <Link key="copy" href={`/quotes/create?from=${quote.id}`} className={buttonVariants({ variant: "outline" })}>
+      <Link key="copy" href={`${storeId ? "/store" : ""}/quotes/create?from=${quote.id}`} className={buttonVariants({ variant: "outline" })}>
         Copy to a new quotation
       </Link>
     ),
@@ -144,7 +148,7 @@ function ConfirmAction({ label, title, description, confirmLabel, failureTitle, 
 }
 
 // "Place order" on a quote made while no delivery fees were set: the fee agreed with the customer goes on the order
-function PlaceOrderWithDelivery({ quote }: { quote: QuoteDetails }) {
+function PlaceOrderWithDelivery({ quote, storeId }: { quote: QuoteDetails; storeId: string | null }) {
   return (
     <FormDialog
       trigger={<Button type="button">Place order</Button>}
@@ -155,7 +159,7 @@ function PlaceOrderWithDelivery({ quote }: { quote: QuoteDetails }) {
       refreshOn={REFRESH_CODES}
       schema={quoteDeliveryFormSchema}
       values={{ deliveryGhs: "" }}
-      save={(values) => placeOrderFromQuoteAction({ quoteId: quote.id, deliveryGhs: values.deliveryGhs })}
+      save={(values) => placeOrderFromQuoteAction({ quoteId: quote.id, storeId, deliveryGhs: values.deliveryGhs })}
       success={() => ({ title: "Order placed", description: `${quote.reference} is accepted. Record the payment on its order once it arrives.` })}
     >
       {(form, isPending) => <NumberInputField control={form.control} label="Delivery fee" name="deliveryGhs" step={0.01} min={0} prependText="GH₵" disabled={isPending} />}

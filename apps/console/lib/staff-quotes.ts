@@ -29,6 +29,8 @@ const MESSAGES = {
   PRICE_CHANGED: "The prices changed since you reviewed the order. Check the new total, then create it again.",
   DISCOUNT_TOO_LARGE: "The discount is more than the items cost.",
   CUSTOMER_NOT_FOUND: "That customer's account no longer exists. Look them up again.",
+  NOT_THIS_STORE: "A store's quotation can only have its own items.",
+  STORE_QUOTE: "This quotation belongs to a store. Open it in that store to change it.",
 }
 
 export class StaffQuoteError extends Error {
@@ -84,13 +86,14 @@ function pickOffer(candidates: Candidate[]) {
 }
 
 // Products customers can buy whose name, SKU or variant SKU matches, each variant with the offer the storefront would
-// sell (customers never see which store it comes from). Prices are before tax, at today's rate.
-export async function searchQuotableItems(client: Client, pricing: PricingContext, search: string): Promise<QuotableProduct[]> {
+// sell (customers never see which store it comes from), or, given a store, that store's own. Prices are before tax, at
+// today's rate.
+export async function searchQuotableItems(client: Client, pricing: PricingContext, search: string, storeId: string | null = null): Promise<QuotableProduct[]> {
   const visibleCategoryIds = await loadVisibleCategoryIds(client)
   const productIds = search ? await productIdsMatching(search, { client }) : null
   const listings = await client.storeListing.findMany({
     where: {
-      AND: [customerVisibleListingWhere(visibleCategoryIds), ...(productIds ? [{ productId: { in: productIds } }] : [])],
+      AND: [customerVisibleListingWhere(visibleCategoryIds), ...(storeId ? [{ organizationId: storeId }] : []), ...(productIds ? [{ productId: { in: productIds } }] : [])],
     },
     orderBy: [{ product: { name: "asc" } }, { id: "asc" }],
     // Every store's listing of a product counts towards this, so it's well above the number of products shown
@@ -182,7 +185,8 @@ export async function searchQuotableItems(client: Client, pricing: PricingContex
     productName: product.name,
     brandName: product.brand.name,
     image: product.images[0] ?? null,
-    installationFeeGhs: fees.get(product.id)?.toFixed(2) ?? null,
+    // The platform's installers do it, so a store's quotation never offers it
+    installationFeeGhs: storeId ? null : (fees.get(product.id)?.toFixed(2) ?? null),
     rows: [...variants.values()]
       .sort((a, b) => a.position - b.position)
       .map(({ candidates }) => {
@@ -205,6 +209,8 @@ export interface StaffQuoteLine {
 }
 
 export interface StaffSalePricingInput {
+  // A store selling only its own listings, without installation; null or left out for the platform
+  storeId?: string | null
   items: StaffQuoteLine[]
   region: string
   town: string
@@ -216,7 +222,9 @@ export interface StaffSalePricingInput {
 // The lines as the storefront would sell them (any store's published listings customers can see) and their prices,
 // for a staff-made quote or order. Throws OrderItemError for a line that can't be sold, or StaffQuoteError.
 export async function priceStaffSale(client: Client, pricing: PricingContext, input: StaffSalePricingInput) {
-  const lines = await resolveOrderLines(client, null, input.items)
+  // No store given even for a store's quote: it's accepted on the storefront, so it holds only what customers can buy
+  const lines = await resolveOrderLines(client, null, input.storeId ? input.items.map((item) => ({ ...item, installation: false })) : input.items)
+  if (input.storeId && lines.some((line) => line.storeId !== input.storeId)) throw new StaffQuoteError("NOT_THIS_STORE")
   if (lines.some((line) => line.installationUnitGhs) && !installsIn(await loadInstallationAreas(client), input.region, input.town)) throw new StaffQuoteError("OUTSIDE_INSTALLATION_AREAS")
 
   const priced = priceOrder({ lines, exchangeRate: new Prisma.Decimal(pricing.rate.rate), shippingGhs: input.shippingGhs, discount: input.discount, tax: pricing.tax })
@@ -260,6 +268,7 @@ export async function createStaffQuote(tx: Tx, pricing: PricingContext, input: N
       reference: await nextQuoteReference(tx),
       userId: input.customerUserId,
       createdById: staffId,
+      organizationId: input.storeId ?? null,
       notes: input.notes || null,
       customerName: input.name,
       customerEmail: input.email.toLowerCase(),
@@ -313,17 +322,28 @@ export async function createStaffQuote(tx: Tx, pricing: PricingContext, input: N
 // ACCEPTING AND CANCELLING
 // ============================================
 
+// Only the side that owns a quote changes it: a store its own, and the platform the rest. A store's quote is read-only
+// on the platform's pages, whose staff can act on it from inside the store. An organization that's gone leaves it the
+// platform's.
+async function checkQuoteBelongs(client: Client, quoteId: string, storeId: string | null) {
+  const quote = await client.quote.findUnique({ where: { id: quoteId }, select: { organizationId: true } })
+  if (!quote || (storeId && quote.organizationId !== storeId)) throw new QuoteError("NOT_FOUND")
+  if (!storeId && quote.organizationId) throw new StaffQuoteError("STORE_QUOTE")
+}
+
 // Places the order a quote describes, at its prices, for a customer paying by bank transfer, and marks the quote
 // accepted, in the caller's transaction. The order is staff-made, so the unpaid-order job leaves it for staff to
 // record the payment. A quote whose delivery was to be confirmed takes the fee staff agreed (deliveryGhs), else
 // DELIVERY_TO_CONFIRM. Throws QuoteError, or OrderItemError when another order took the last of something meanwhile.
-export async function placeOrderFromQuote(tx: Tx, quoteId: string, staffId: string, delivery: QuoteDelivery | null = null) {
+export async function placeOrderFromQuote(tx: Tx, quoteId: string, staffId: string, delivery: QuoteDelivery | null = null, storeId: string | null = null) {
+  await checkQuoteBelongs(tx, quoteId, storeId)
   const quote = await lockOpenQuote(tx, quoteId, null)
   return placeQuotedOrder(tx, quote, { createdById: staffId, userId: quote.userId, paymentMethod: PaymentMethod.BANK_TRANSFER, delivery })
 }
 
 // Cancels an open quote (lapsed or not). Throws QuoteError (NOT_OPEN) when it was accepted or cancelled meanwhile.
-export async function cancelStaffQuote(client: Client, quoteId: string) {
+export async function cancelStaffQuote(client: Client, quoteId: string, storeId: string | null = null) {
+  await checkQuoteBelongs(client, quoteId, storeId)
   const { count } = await client.quote.updateMany({ where: { id: quoteId, status: QuoteStatus.OPEN }, data: { status: QuoteStatus.CANCELLED } })
-  if (count === 0) throw new QuoteError((await client.quote.count({ where: { id: quoteId } })) ? "NOT_OPEN" : "NOT_FOUND")
+  if (count === 0) throw new QuoteError("NOT_OPEN")
 }

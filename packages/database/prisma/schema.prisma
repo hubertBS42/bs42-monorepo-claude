@@ -903,6 +903,9 @@ model Quote {
   // The staff member who made it in the console; null for one the customer made from their basket
   createdById       String?         @db.Uuid
   createdBy         User?           @relation("QuoteCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  // The store whose staff made it, from its own listings; null for the platform's staff or the customer's basket
+  organizationId    String?         @db.Uuid
+  organization      Organization?   @relation(fields: [organizationId], references: [id], onDelete: SetNull)
   // Printed on the quote for the customer, e.g. lead times; staff-made quotes only
   notes             String?
   // Who it's addressed to, and the delivery the order would make. Only staff make a pickup quote, whose address is empty.
@@ -952,6 +955,7 @@ model Quote {
 
   @@index([userId])
   @@index([createdById])
+  @@index([organizationId])
   @@index([status])
   @@index([tradeAccountId])
   @@index([exchangeRateId])
@@ -1566,6 +1570,7 @@ model Organization {
   listings        StoreListing[]
   orderItems      OrderItem[]
   quoteItems      QuoteItem[]
+  quotes          Quote[]
   suppliers       Supplier[]
   purchaseOrders  PurchaseOrder[]
   pickupLocation  PickupLocation?

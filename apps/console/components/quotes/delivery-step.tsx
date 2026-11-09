@@ -12,7 +12,7 @@ import PickupChoice from "@/components/staff-sales/pickup-choice"
 import type { DeliverySettingsView } from "@/lib/data/delivery.data"
 import { MAX_QUOTE_VALIDITY_DAYS } from "@/lib/schemas/quote.schemas"
 import type { QuoteCustomer } from "@/types"
-import type { QuoteFormInput, QuoteFormOutput } from "../quote-form"
+import type { QuoteFormInput, QuoteFormOutput } from "./quote-form"
 
 interface DeliveryStepProps {
   form: UseFormReturn<QuoteFormInput, unknown, QuoteFormOutput>

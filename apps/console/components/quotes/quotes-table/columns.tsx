@@ -7,7 +7,8 @@ import { formatDate } from "@workspace/utils/date"
 import { QUOTE_STATUS } from "@/components/quote-status"
 import type { QuoteRow } from "@/types"
 
-export const columns: ColumnDef<QuoteRow, unknown>[] = [
+// A store's table links to its own orders; the platform's says which store made a quote
+export const quoteColumns = (storeId: string | null): ColumnDef<QuoteRow, unknown>[] => [
   {
     accessorKey: "reference",
     header: () => <ColumnHeader title="Reference" />,
@@ -48,7 +49,7 @@ export const columns: ColumnDef<QuoteRow, unknown>[] = [
     header: () => <ColumnHeader title="Order" />,
     cell: ({ row }) =>
       row.original.order ? (
-        <Link href={`/orders/${row.original.order.id}/details`} className="font-mono text-xs hover:underline hover:underline-offset-4">
+        <Link href={`${storeId ? "/store" : ""}/orders/${row.original.order.id}/details`} className="font-mono text-xs hover:underline hover:underline-offset-4">
           {row.original.order.reference}
         </Link>
       ) : (
@@ -58,7 +59,12 @@ export const columns: ColumnDef<QuoteRow, unknown>[] = [
   {
     id: "createdBy",
     header: () => <ColumnHeader title="Made By" />,
-    cell: ({ row }) => row.original.createdBy ?? <span className="text-muted-foreground">Customer</span>,
+    cell: ({ row }) => (
+      <div className="grid gap-0.5">
+        {row.original.createdBy ?? <span className="text-muted-foreground">Customer</span>}
+        {!storeId && row.original.storeName && <span className="text-xs text-muted-foreground">{row.original.storeName}</span>}
+      </div>
+    ),
   },
   {
     accessorKey: "createdAt",

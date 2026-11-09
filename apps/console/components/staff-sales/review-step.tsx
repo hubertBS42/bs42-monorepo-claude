@@ -11,6 +11,7 @@ import { Separator } from "@workspace/ui/components/separator"
 import { Spinner } from "@workspace/ui/components/spinner"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@workspace/ui/components/table"
 import { formatCurrency } from "@workspace/utils/currency"
+import { useCanUpdateOrders } from "@/hooks/use-can-update-orders"
 import { previewQuoteAction } from "@/lib/actions/quote.actions"
 import type { QuoteCustomer, QuotePreview } from "@/types"
 import { asStaffSaleForm, type StaffSaleFields, type StaffSaleForm, type StaffSaleKind } from "./form"
@@ -49,6 +50,8 @@ const COPY = {
 }
 
 interface ReviewStepProps<T extends StaffSaleFields, O> {
+  // A store's own wizard, where only owners and admins choose a discount; null or left out on the platform's
+  storeId?: string | null
   kind: StaffSaleKind
   form: StaffSaleForm<T, O>
   customer: QuoteCustomer | null
@@ -68,10 +71,22 @@ interface ReviewStepProps<T extends StaffSaleFields, O> {
 const pesewas = (amount: string) => Math.round(Number(amount) * 100)
 
 // The prices, from the server, with the discount
-export default function ReviewStep<T extends StaffSaleFields, O>({ kind, form: wizardForm, customer, terms, freeDeliveryFromGhs, pickupFrom, onPreviewChange, refreshKey = 0 }: ReviewStepProps<T, O>) {
+export default function ReviewStep<T extends StaffSaleFields, O>({
+  storeId = null,
+  kind,
+  form: wizardForm,
+  customer,
+  terms,
+  freeDeliveryFromGhs,
+  pickupFrom,
+  onPreviewChange,
+  refreshKey = 0,
+}: ReviewStepProps<T, O>) {
   const form = asStaffSaleForm(wizardForm)
   const copy = COPY[kind]
   const values = useWatch({ control: form.control })
+  const { canUpdate, isLoading: isRoleLoading } = useCanUpdateOrders(storeId)
+  const showDiscount = !storeId || (!isRoleLoading && canUpdate)
   const [preview, setPreview] = useState<QuotePreview | null>(null)
   const [previewError, setPreviewError] = useState<string | null>(null)
 
@@ -88,6 +103,8 @@ export default function ReviewStep<T extends StaffSaleFields, O>({ kind, form: w
     let isCurrent = true
     const timer = setTimeout(() => {
       previewQuoteAction({
+        storeId,
+        customerUserId: values.customerUserId ?? null,
         items: items.map((item) => ({ listingId: item.listingId!, listingVariantId: item.listingVariantId ?? null, quantity: Number(item.quantity), installation: !!item.installation })),
         shippingRegion,
         shippingTown,
@@ -202,32 +219,34 @@ export default function ReviewStep<T extends StaffSaleFields, O>({ kind, form: w
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Discount</CardTitle>
-          <CardDescription>
-            {customer?.trade ? "Starts at their trade discount. Shared across the items and taken off before tax." : "Shared across the items and taken off before tax."}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <FieldGroup>
-            <SelectField control={form.control} name="discountType" aria-label="Discount" options={discountOptions} />
-            {discountType !== "NONE" && (
-              <>
-                <NumberInputField
-                  control={form.control}
-                  label={discountType === DiscountType.PERCENTAGE ? "Percentage" : "Amount"}
-                  name="discountValue"
-                  step={0.01}
-                  min={0}
-                  prependText={discountType === DiscountType.PERCENTAGE ? "%" : "GH₵"}
-                />
-                <TextInputField control={form.control} label="Reason" name="discountReason" placeholder={copy.reasonPlaceholder} />
-              </>
-            )}
-          </FieldGroup>
-        </CardContent>
-      </Card>
+      {showDiscount && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Discount</CardTitle>
+            <CardDescription>
+              {customer?.trade ? "Starts at their trade discount. Shared across the items and taken off before tax." : "Shared across the items and taken off before tax."}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <FieldGroup>
+              <SelectField control={form.control} name="discountType" aria-label="Discount" options={discountOptions} />
+              {discountType !== "NONE" && (
+                <>
+                  <NumberInputField
+                    control={form.control}
+                    label={discountType === DiscountType.PERCENTAGE ? "Percentage" : "Amount"}
+                    name="discountValue"
+                    step={0.01}
+                    min={0}
+                    prependText={discountType === DiscountType.PERCENTAGE ? "%" : "GH₵"}
+                  />
+                  <TextInputField control={form.control} label="Reason" name="discountReason" placeholder={copy.reasonPlaceholder} />
+                </>
+              )}
+            </FieldGroup>
+          </CardContent>
+        </Card>
+      )}
     </div>
   )
 }

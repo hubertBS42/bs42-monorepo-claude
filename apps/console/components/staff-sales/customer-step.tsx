@@ -31,6 +31,8 @@ const COPY = {
 }
 
 interface CustomerStepProps<T extends StaffSaleFields, O> {
+  // A store's own wizard; null or left out on the platform's
+  storeId?: string | null
   kind: StaffSaleKind
   form: StaffSaleForm<T, O>
   customer: QuoteCustomer | null
@@ -38,7 +40,7 @@ interface CustomerStepProps<T extends StaffSaleFields, O> {
 }
 
 // The customer: looked up by exact email or phone (their saved addresses and any trade discount), or typed in
-export default function CustomerStep<T extends StaffSaleFields, O>({ kind, form: wizardForm, customer, onCustomerChange }: CustomerStepProps<T, O>) {
+export default function CustomerStep<T extends StaffSaleFields, O>({ storeId = null, kind, form: wizardForm, customer, onCustomerChange }: CustomerStepProps<T, O>) {
   const form = asStaffSaleForm(wizardForm)
   // A quotation is emailed, and its email decides who can accept it; an order can be for a customer with neither
   const isOptional = kind === "order"
@@ -81,7 +83,7 @@ export default function CustomerStep<T extends StaffSaleFields, O>({ kind, form:
       return
     }
     startSearch(async () => {
-      const response = await findQuoteCustomerAction({ email, phone })
+      const response = await findQuoteCustomerAction({ storeId, email, phone })
       if (!response.success) {
         setLookupMessage(response.error)
         return

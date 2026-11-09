@@ -5,7 +5,8 @@ import { consoleAuth } from "@workspace/auth/console"
 import { formatError } from "@workspace/auth/format-error"
 import { hasSystemPermission } from "@workspace/auth/system-permissions"
 import { quoteUrl } from "@workspace/commerce/order-links"
-import { catalogueProductHref } from "@/lib/product-links"
+import { hasStorePermission } from "@/lib/auth-guard"
+import { catalogueProductHref, listingHref } from "@/lib/product-links"
 import { loadTradeTerms } from "@workspace/commerce/trade-accounts"
 import type { DataResponse } from "@workspace/contracts"
 import { idsMatching, prisma } from "@workspace/db"
@@ -33,11 +34,18 @@ function statusWhere(status: QuoteStatusFilter, now: Date): Prisma.QuoteWhereInp
   }
 }
 
-// Every quotation, newest first: those customers made from their basket and those staff made for them
-export const getQuotes = async (filters: QuotesParams = {}): Promise<DataResponse<QuotesData>> => {
+// The platform's staff see every quotation (no store); a store's, only those it made
+async function hasQuoteAccess(storeId: string | null, action: "read" | "create") {
+  const session = await consoleAuth.api.getSession({ headers: await headers() })
+  if (!session) return false
+  return storeId ? hasStorePermission(session.user.id, storeId, { order: [action] }) : hasSystemPermission(session.user.role, { order: [action] })
+}
+
+// Quotations, newest first: on the platform's page those customers made from their basket and those any staff made; on
+// a store's, those its own staff made
+export const getQuotes = async (filters: QuotesParams = {}, storeId: string | null = null): Promise<DataResponse<QuotesData>> => {
   try {
-    const session = await consoleAuth.api.getSession({ headers: await headers() })
-    if (!session || !hasSystemPermission(session.user.role, { order: ["read"] })) return { success: false, error: "Unauthorized" }
+    if (!(await hasQuoteAccess(storeId, "read"))) return { success: false, error: "Unauthorized" }
 
     const paginationError = getPaginationError(filters, { maxPageSize: MAX_QUOTES_PAGE_SIZE, allowedSortFields: QUOTE_SORT_FIELDS })
     if (paginationError) return { success: false, error: paginationError }
@@ -46,6 +54,7 @@ export const getQuotes = async (filters: QuotesParams = {}): Promise<DataRespons
     const now = new Date()
     const searchIds = search ? await idsMatching("quote", ["reference", "customerName", "customerEmail", "tradeCompanyName"], search) : null
     const where: Prisma.QuoteWhereInput = {
+      ...(storeId && { organizationId: storeId }),
       ...(searchIds && { id: { in: searchIds } }),
       ...(status && statusWhere(status, now)),
       ...(trade && { tradeCompanyName: trade === "true" ? { not: null } : null }),
@@ -80,6 +89,7 @@ export const getQuotes = async (filters: QuotesParams = {}): Promise<DataRespons
           createdAt: true,
           order: { select: { id: true, reference: true } },
           createdBy: { select: { name: true, email: true } },
+          organization: { select: { name: true } },
           _count: { select: { items: true } },
         },
       }),
@@ -101,6 +111,7 @@ export const getQuotes = async (filters: QuotesParams = {}): Promise<DataRespons
           validUntil: new Date(quote.validUntil.getTime() - 1),
           order: quote.order,
           createdBy: quote.createdBy && (quote.createdBy.name || quote.createdBy.email),
+          storeName: quote.organization?.name ?? null,
           createdAt: quote.createdAt,
         })),
         total,
@@ -118,17 +129,17 @@ const statusOf = (quote: { status: QuoteStatus; validUntil: Date }, now: Date) =
   quote.status === QuoteStatus.OPEN ? (quote.validUntil > now ? "open" : "expired") : quote.status === QuoteStatus.ACCEPTED ? "accepted" : "cancelled"
 
 // One quotation for its console page: the lines and amounts as they were quoted
-export const getQuoteDetails = async (quoteId: string): Promise<DataResponse<QuoteDetails>> => {
+export const getQuoteDetails = async (quoteId: string, storeId: string | null = null): Promise<DataResponse<QuoteDetails>> => {
   try {
-    const session = await consoleAuth.api.getSession({ headers: await headers() })
-    if (!session || !hasSystemPermission(session.user.role, { order: ["read"] })) return { success: false, error: "Unauthorized" }
+    if (!(await hasQuoteAccess(storeId, "read"))) return { success: false, error: "Unauthorized" }
 
-    const quote = await prisma.quote.findUnique({
-      where: { id: quoteId },
+    const quote = await prisma.quote.findFirst({
+      where: { id: quoteId, ...(storeId && { organizationId: storeId }) },
       include: {
         items: { orderBy: { id: "asc" } },
         order: { select: { id: true, reference: true } },
         createdBy: { select: { name: true, email: true } },
+        organization: { select: { name: true } },
       },
     })
     if (!quote) return { success: false, error: "Quotation not found.", code: "NOT_FOUND" }
@@ -147,6 +158,8 @@ export const getQuoteDetails = async (quoteId: string): Promise<DataResponse<Quo
         createdAt: quote.createdAt,
         validUntil: new Date(quote.validUntil.getTime() - 1),
         createdBy: quote.createdBy && (quote.createdBy.name || quote.createdBy.email),
+        storeId: quote.organizationId,
+        storeName: quote.organization?.name ?? null,
         customer: { name: quote.customerName, email: quote.customerEmail, phone: quote.customerPhone, hasAccount: owner },
         trade: quote.tradeCompanyName ? { companyName: quote.tradeCompanyName, tin: quote.tradeTin } : null,
         isPickup: quote.shippingMethod === ShippingMethod.PICKUP,
@@ -156,7 +169,7 @@ export const getQuoteDetails = async (quoteId: string): Promise<DataResponse<Quo
         lines: quote.items.map((item) => ({
           id: item.id,
           label: item.variantDescription ? `${item.productName} (${item.variantDescription})` : item.productName,
-          href: item.productId && catalogueProductHref(item.productId),
+          href: storeId ? item.storeListingId && listingHref(item.storeListingId) : item.productId && catalogueProductHref(item.productId),
           sku: item.sku,
           storeName: item.storeName,
           quantity: item.quantity,
@@ -185,12 +198,11 @@ export const getQuoteDetails = async (quoteId: string): Promise<DataResponse<Quo
 
 // A quotation as the create form's starting values, for "Copy to a new quotation": its customer, items, address,
 // discount and note, priced again at today's prices. Lines whose listing has gone since are left out.
-export const getQuoteCopy = async (quoteId: string): Promise<QuoteCopy | null> => {
-  const session = await consoleAuth.api.getSession({ headers: await headers() })
-  if (!session || !hasSystemPermission(session.user.role, { order: ["create"] })) return null
+export const getQuoteCopy = async (quoteId: string, storeId: string | null = null): Promise<QuoteCopy | null> => {
+  if (!(await hasQuoteAccess(storeId, "create"))) return null
 
-  const quote = await prisma.quote.findUnique({
-    where: { id: quoteId },
+  const quote = await prisma.quote.findFirst({
+    where: { id: quoteId, ...(storeId && { organizationId: storeId }) },
     include: {
       items: { orderBy: { id: "asc" } },
       user: { select: { id: true, name: true, email: true, phone: true, addresses: { orderBy: [{ isDefault: "desc" }, { createdAt: "desc" }], select: addressSelect } } },

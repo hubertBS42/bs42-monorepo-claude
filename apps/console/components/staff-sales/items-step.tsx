@@ -21,6 +21,8 @@ import { asStaffSaleForm, itemKey, type StaffSaleFields, type StaffSaleForm, typ
 import { EmptyState } from "@workspace/ui/components/empty-state"
 
 interface ItemsStepProps<T extends StaffSaleFields, O> {
+  // A store's own wizard, listing only its items; null or left out on the platform's
+  storeId?: string | null
   kind: StaffSaleKind
   form: StaffSaleForm<T, O>
   chosen: Record<string, ChosenQuoteItem>
@@ -37,7 +39,7 @@ function stockLine(row: QuotableProduct["rows"][number]) {
 }
 
 // What customers can buy, from any store, each at the offer the storefront would sell, with installation where it's offered
-export default function ItemsStep<T extends StaffSaleFields, O>({ kind, form: wizardForm, chosen, onChosenChange }: ItemsStepProps<T, O>) {
+export default function ItemsStep<T extends StaffSaleFields, O>({ storeId = null, kind, form: wizardForm, chosen, onChosenChange }: ItemsStepProps<T, O>) {
   const form = asStaffSaleForm(wizardForm)
   const { fields, append, remove } = useFieldArray({ control: form.control, name: "items" })
   const items = useWatch({ control: form.control, name: "items" })
@@ -51,7 +53,7 @@ export default function ItemsStep<T extends StaffSaleFields, O>({ kind, form: wi
   useEffect(() => {
     let isCurrent = true
     const timer = setTimeout(() => {
-      searchQuotableItemsAction({ search })
+      searchQuotableItemsAction({ search, storeId })
         .then((response) => {
           if (!isCurrent) return
           if (response.success) {
@@ -115,7 +117,7 @@ export default function ItemsStep<T extends StaffSaleFields, O>({ kind, form: wi
         <CardHeader>
           <CardTitle className="flex items-center gap-1.5">
             Products on sale
-            <InfoTip about="Products on sale">Each item comes from the store the storefront would sell it from: in stock first, then on order, then the cheapest.</InfoTip>
+            {!storeId && <InfoTip about="Products on sale">Each item comes from the store the storefront would sell it from: in stock first, then on order, then the cheapest.</InfoTip>}
           </CardTitle>
           <CardDescription>Priced as on the storefront today, before tax.</CardDescription>
         </CardHeader>
@@ -165,7 +167,7 @@ export default function ItemsStep<T extends StaffSaleFields, O>({ kind, form: wi
                         <div key={row.listingVariantId ?? row.listingId} className="flex items-center justify-between gap-2 text-sm">
                           <div className="grid">
                             {row.variantDescription && <span>{row.variantDescription}</span>}
-                            <span className="text-xs text-muted-foreground">{[ghs(row.priceGhs), stockLine(row), row.storeName, row.sku].filter(Boolean).join(" · ")}</span>
+                            <span className="text-xs text-muted-foreground">{[ghs(row.priceGhs), stockLine(row), !storeId && row.storeName, row.sku].filter(Boolean).join(" · ")}</span>
                           </div>
                           <Button type="button" size="sm" variant="outline" onClick={() => addRow(product, row)} disabled={isAdded}>
                             {isAdded ? "Added" : "Add"}
@@ -184,7 +186,7 @@ export default function ItemsStep<T extends StaffSaleFields, O>({ kind, form: wi
       <Card>
         <CardHeader>
           <CardTitle>{kind === "quote" ? "In this quotation" : "In this order"}</CardTitle>
-          <CardDescription>Set how many of each, and whether we install them.</CardDescription>
+          <CardDescription>{storeId ? "Set how many of each." : "Set how many of each, and whether we install them."}</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-1 flex-col gap-2">
           {fields.length === 0 && (

@@ -53,6 +53,7 @@ export const navConfig: NavItem[] = [
   // workspace's items (routeAccess ties each to its workspace), so their orders can overlap.
   { url: "/store/counter-sale", title: "Counter Sale", icon: Receipt, group: "main", order: 1.5 },
   { url: "/store/orders", title: "Orders", icon: ShoppingCart, group: "main", order: 2 },
+  { url: "/store/quotes", title: "Quotes", icon: FileText, group: "main", order: 2.1 },
   { url: "/store/collections", title: "Collections", icon: PackageCheck, group: "main", order: 2.5 },
   { url: "/store/listings", title: "Listings", icon: Tag, group: "main", order: 3 },
   { url: "/store/product-requests", title: "Product Requests", icon: PackagePlus, group: "main", order: 4 },

@@ -301,6 +301,29 @@ export const BREADCRUMB_DATA: BreadcrumbConfig[] = [
     ],
   },
   {
+    pathname: "/store/quotes",
+    segments: [
+      { text: "Dashboard", href: "/" },
+      { text: "Quotes", href: "#" },
+    ],
+  },
+  {
+    pathname: "/store/quotes/create",
+    segments: [
+      { text: "Dashboard", href: "/" },
+      { text: "Quotes", href: "/store/quotes" },
+      { text: "New Quotation", href: "#" },
+    ],
+  },
+  {
+    pathname: "/store/quotes/[id]",
+    segments: [
+      { text: "Dashboard", href: "/" },
+      { text: "Quotes", href: "/store/quotes" },
+      { text: "Quotation", href: "#" },
+    ],
+  },
+  {
     pathname: "/store/counter-sale",
     segments: [
       { text: "Dashboard", href: "/" },

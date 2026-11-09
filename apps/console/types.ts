@@ -1242,6 +1242,8 @@ export interface QuoteRow {
   order: { id: string; reference: string } | null
   // The staff member who made it; null when the customer did
   createdBy: string | null
+  // The store that made it; null for the platform's staff or a customer
+  storeName: string | null
   createdAt: Date
 }
 
@@ -1331,6 +1333,9 @@ export interface QuoteDetails {
   validUntil: Date
   // The staff member who made it; null when the customer did
   createdBy: string | null
+  // The store that made it, which alone can change it; null for the platform's staff or a customer
+  storeId: string | null
+  storeName: string | null
   customer: { name: string; email: string; phone: string; hasAccount: boolean }
   trade: { companyName: string; tin: string | null } | null
   address: string

@@ -13,13 +13,13 @@ import { loadTradeTerms } from "@workspace/commerce/trade-accounts"
 import type { ActionResponse, DataResponse } from "@workspace/contracts"
 import { prisma, readAppSettings } from "@workspace/db"
 import { Prisma } from "@workspace/db/client"
-import { requireSystemPermission } from "@/lib/auth-guard"
+import { hasStorePermission, requireConsoleAccess, requireSystemPermission } from "@/lib/auth-guard"
 import { createQuoteFormSchema, findQuoteCustomerSchema, placeOrderFromQuoteSchema, previewQuoteSchema, quoteTargetSchema, searchQuotableItemsSchema } from "@/lib/schemas/quote.schemas"
 import { cancelStaffQuote, createStaffQuote, placeOrderFromQuote, priceStaffSale, searchQuotableItems, StaffQuoteError, type QuotableProduct } from "@/lib/staff-quotes"
 import type { QuoteCustomer, QuotePreview } from "@/types"
 
-// Quotations staff make for customers, in the global workspace (system permission order). Every export here is a
-// public endpoint, so every input is validated, and each one calls its guard before its try block (its redirect
+// Quotations staff make for customers: the platform's (system permission order, storeId null) and a store's from its
+// own listings (its order permissions there). Every export here is a public endpoint, so every input is validated, and each one calls its guard before its try block (its redirect
 // throws, which the catch would swallow).
 
 type Failure = { success: false; error: string; code?: string }
@@ -30,6 +30,24 @@ const NO_RATE: Failure = {
   success: false,
   error: "There's no current exchange rate, so the quotation can't be priced. Ask a superAdmin to set today's rate in Settings.",
   code: "NO_RATE",
+}
+
+const FORBIDDEN: Failure = { success: false, error: "Your role in this store can't do that.", code: "FORBIDDEN" }
+
+// Before an action's try block, since its redirect throws. A store's permission is checked once the input is parsed.
+function requireQuoteAccess(storeId: string | null | undefined, action: "create" | "update") {
+  return storeId ? requireConsoleAccess() : requireSystemPermission({ order: [action] })
+}
+
+const hasQuoteAccess = async (userId: string, storeId: string | null, action: "create" | "update") => !storeId || (await hasStorePermission(userId, storeId, { order: [action] }))
+
+// In a store only owners and admins choose a discount; anyone may give an account its approved trade discount, which
+// the form starts from
+async function canGiveDiscount(userId: string, storeId: string | null, input: DiscountInput & { customerUserId: string | null }) {
+  if (!storeId || input.discountType === "NONE") return true
+  if (await hasStorePermission(userId, storeId, { order: ["update"] })) return true
+  const trade = input.discountType === "PERCENTAGE" ? await loadTradeTerms(prisma, input.customerUserId) : null
+  return !!trade?.percent.equals(input.discountValue)
 }
 
 function invalidInput(error: z.ZodError): Failure {
@@ -49,15 +67,16 @@ function toDiscount({ discountType, discountValue }: DiscountInput, reason: stri
 
 // Products customers can buy, each variant with the offer the storefront would sell, for the items step
 export async function searchQuotableItemsAction(input: z.input<typeof searchQuotableItemsSchema>): Promise<DataResponse<QuotableProduct[]>> {
-  await requireSystemPermission({ order: ["create"] })
+  const session = await requireQuoteAccess(input.storeId, "create")
 
   try {
     const parsed = searchQuotableItemsSchema.safeParse(input)
     if (!parsed.success) return invalidInput(parsed.error)
+    if (!(await hasQuoteAccess(session.user.id, parsed.data.storeId, "create"))) return FORBIDDEN
 
     const pricing = await getPricingContext()
     if (!pricing) return NO_RATE
-    return { success: true, data: await searchQuotableItems(prisma, pricing, parsed.data.search) }
+    return { success: true, data: await searchQuotableItems(prisma, pricing, parsed.data.search, parsed.data.storeId) }
   } catch (error) {
     return failure(error)
   }
@@ -65,12 +84,13 @@ export async function searchQuotableItemsAction(input: z.input<typeof searchQuot
 
 // An exact email or phone match only, so staff can't browse the platform's customers
 export async function findQuoteCustomerAction(input: z.input<typeof findQuoteCustomerSchema>): Promise<DataResponse<QuoteCustomer | null>> {
-  await requireSystemPermission({ order: ["create"] })
+  const session = await requireQuoteAccess(input.storeId, "create")
 
   try {
     const parsed = findQuoteCustomerSchema.safeParse(input)
     if (!parsed.success) return invalidInput(parsed.error)
-    const { email, phone } = parsed.data
+    const { email, phone, storeId } = parsed.data
+    if (!(await hasQuoteAccess(session.user.id, storeId, "create"))) return FORBIDDEN
     if (!email && !phone) return { success: false, error: "Enter an email or a phone number.", code: "INVALID" }
 
     const customer = await prisma.user.findFirst({
@@ -97,17 +117,19 @@ export async function findQuoteCustomerAction(input: z.input<typeof findQuoteCus
 
 // The review step's prices, from the same code createQuoteAction prices with
 export async function previewQuoteAction(input: z.input<typeof previewQuoteSchema>): Promise<DataResponse<QuotePreview>> {
-  await requireSystemPermission({ order: ["create"] })
+  const session = await requireQuoteAccess(input.storeId, "create")
 
   try {
     const parsed = previewQuoteSchema.safeParse(input)
     if (!parsed.success) return invalidInput(parsed.error)
     const data = parsed.data
+    if (!(await hasQuoteAccess(session.user.id, data.storeId, "create")) || !(await canGiveDiscount(session.user.id, data.storeId, data))) return FORBIDDEN
 
     const pricing = await getPricingContext()
     if (!pricing) return NO_RATE
 
     const { lines, priced } = await priceStaffSale(prisma, pricing, {
+      storeId: data.storeId,
       items: data.items,
       region: data.shippingRegion,
       town: data.shippingTown,
@@ -146,12 +168,13 @@ export async function previewQuoteAction(input: z.input<typeof previewQuoteSchem
 
 // Saves the quotation and emails it to the customer
 export async function createQuoteAction(input: z.input<typeof createQuoteFormSchema>): Promise<DataResponse<{ id: string; reference: string }>> {
-  const session = await requireSystemPermission({ order: ["create"] })
+  const session = await requireQuoteAccess(input.storeId, "create")
 
   try {
     const parsed = createQuoteFormSchema.safeParse(input)
     if (!parsed.success) return invalidInput(parsed.error)
     const data = parsed.data
+    if (!(await hasQuoteAccess(session.user.id, data.storeId, "create")) || !(await canGiveDiscount(session.user.id, data.storeId, data))) return FORBIDDEN
 
     const pricing = await getPricingContext()
     if (!pricing) return NO_RATE
@@ -162,6 +185,7 @@ export async function createQuoteAction(input: z.input<typeof createQuoteFormSch
           tx,
           pricing,
           {
+            storeId: data.storeId,
             customerUserId: data.customerUserId,
             name: data.customerName,
             email: data.customerEmail,
@@ -192,12 +216,13 @@ export async function createQuoteAction(input: z.input<typeof createQuoteFormSch
 // For a customer who pays by bank transfer: the order at the quote's prices, unpaid, for staff to record the payment.
 // A quote whose delivery was to be confirmed needs deliveryGhs, the fee agreed with the customer.
 export async function placeOrderFromQuoteAction(input: z.input<typeof placeOrderFromQuoteSchema>): Promise<ActionResponse> {
-  const session = await requireSystemPermission({ order: ["create"] })
+  const session = await requireQuoteAccess(input.storeId, "create")
 
   try {
     const parsed = placeOrderFromQuoteSchema.safeParse(input)
     if (!parsed.success) return invalidInput(parsed.error)
-    const { quoteId, deliveryGhs } = parsed.data
+    const { quoteId, deliveryGhs, storeId } = parsed.data
+    if (!(await hasQuoteAccess(session.user.id, storeId, "create"))) return FORBIDDEN
 
     let delivery: QuoteDelivery | null = null
     if (deliveryGhs !== undefined) {
@@ -205,10 +230,10 @@ export async function placeOrderFromQuoteAction(input: z.input<typeof placeOrder
       const settings = await readAppSettings()
       delivery = { feeGhs: new Prisma.Decimal(deliveryGhs), taxed: settings.taxEnabled && settings.taxShipping }
     }
-    const { stockAlerts, ...order } = await prisma.$transaction((tx) => placeOrderFromQuote(tx, quoteId, session.user.id, delivery), TRANSACTION_OPTIONS)
+    const { stockAlerts, ...order } = await prisma.$transaction((tx) => placeOrderFromQuote(tx, quoteId, session.user.id, delivery, storeId), TRANSACTION_OPTIONS)
     after(async () => {
       await sendOrderEmail(order.id, "CREATED")
-      await notifyNewOrder(order.id, "platform")
+      await notifyNewOrder(order.id, storeId ? "store" : "platform")
       await notifyStockAlerts(stockAlerts)
     })
     return { success: true }
@@ -218,13 +243,15 @@ export async function placeOrderFromQuoteAction(input: z.input<typeof placeOrder
 }
 
 export async function cancelQuoteAction(input: z.input<typeof quoteTargetSchema>): Promise<ActionResponse> {
-  await requireSystemPermission({ order: ["update"] })
+  const session = await requireQuoteAccess(input.storeId, "update")
 
   try {
     const parsed = quoteTargetSchema.safeParse(input)
     if (!parsed.success) return invalidInput(parsed.error)
 
-    await cancelStaffQuote(prisma, parsed.data.quoteId)
+    if (!(await hasQuoteAccess(session.user.id, parsed.data.storeId, "update"))) return FORBIDDEN
+
+    await cancelStaffQuote(prisma, parsed.data.quoteId, parsed.data.storeId)
     return { success: true }
   } catch (error) {
     return failure(error)

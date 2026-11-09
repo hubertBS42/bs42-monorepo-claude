@@ -28,6 +28,7 @@ const discountFields = {
 // The create wizard's form: one schema for every step, which each check their own fields before moving on
 export const createQuoteFormSchema = z
   .object({
+    storeId: z.uuid().nullable().default(null),
     // The customer's account, when they were found by email or phone. Either way the quote belongs to whichever
     // account has its email.
     customerUserId: z.uuid().nullable(),
@@ -85,6 +86,10 @@ export const createQuoteFormSchema = z
 
 // What the review step prices: no customer, since it doesn't change the price
 export const previewQuoteSchema = z.object({
+  // The store making it from its own listings; null on the platform's pages
+  storeId: z.uuid().nullable().default(null),
+  // A member of a store can only give the account's own trade discount, so it's checked against this
+  customerUserId: z.uuid().nullable().default(null),
   items: z.array(quoteItemInputSchema).min(1).max(50),
   shippingRegion: z.string(),
   shippingTown: z.string(),
@@ -93,6 +98,8 @@ export const previewQuoteSchema = z.object({
 })
 
 export const findQuoteCustomerSchema = z.object({
+  // The store making it from its own listings; null on the platform's pages
+  storeId: z.uuid().nullable().default(null),
   // An exact email or phone number: staff can't browse the platform's customers
   email: z
     .string()
@@ -105,10 +112,14 @@ export const findQuoteCustomerSchema = z.object({
 })
 
 export const searchQuotableItemsSchema = z.object({
+  // The store making it from its own listings; null on the platform's pages
+  storeId: z.uuid().nullable().default(null),
   search: z.string().trim().max(100),
 })
 
 export const quoteTargetSchema = z.object({
+  // The store making it from its own listings; null on the platform's pages
+  storeId: z.uuid().nullable().default(null),
   quoteId: z.uuid("Invalid quotation ID"),
 })
 
