@@ -121,6 +121,8 @@ export default function QuoteView({ quote, storeId }: { quote: QuoteDetails; sto
                 <a href={`/store/quotes/${quote.id}?workspace=${quote.storeId}`} className={buttonVariants({ variant: "outline" })}>
                   {`Open in ${quote.storeName}`}
                 </a>
+              ) : storeId && quote.hasPlatformInstallation ? (
+                <p className="text-sm text-muted-foreground">Includes installation, so the platform handles it.</p>
               ) : (
                 <QuoteActions quote={quote} storeId={storeId} />
               )}

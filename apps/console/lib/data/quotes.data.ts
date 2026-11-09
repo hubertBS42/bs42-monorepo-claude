@@ -7,6 +7,7 @@ import { hasSystemPermission } from "@workspace/auth/system-permissions"
 import { quoteUrl } from "@workspace/commerce/order-links"
 import { hasStorePermission } from "@/lib/auth-guard"
 import { catalogueProductHref, listingHref } from "@/lib/product-links"
+import { storeQuoteWhere } from "@/lib/staff-quotes"
 import { loadTradeTerms } from "@workspace/commerce/trade-accounts"
 import type { DataResponse } from "@workspace/contracts"
 import { idsMatching, prisma } from "@workspace/db"
@@ -34,7 +35,7 @@ function statusWhere(status: QuoteStatusFilter, now: Date): Prisma.QuoteWhereInp
   }
 }
 
-// The platform's staff see every quotation (no store); a store's, only those it made
+// The platform's staff see every quotation (no store); a store's, those made entirely of its items
 async function hasQuoteAccess(storeId: string | null, action: "read" | "create") {
   const session = await consoleAuth.api.getSession({ headers: await headers() })
   if (!session) return false
@@ -42,7 +43,7 @@ async function hasQuoteAccess(storeId: string | null, action: "read" | "create")
 }
 
 // Quotations, newest first: on the platform's page those customers made from their basket and those any staff made; on
-// a store's, those its own staff made
+// a store's, those made entirely of its items (storeQuoteWhere)
 export const getQuotes = async (filters: QuotesParams = {}, storeId: string | null = null): Promise<DataResponse<QuotesData>> => {
   try {
     if (!(await hasQuoteAccess(storeId, "read"))) return { success: false, error: "Unauthorized" }
@@ -54,7 +55,7 @@ export const getQuotes = async (filters: QuotesParams = {}, storeId: string | nu
     const now = new Date()
     const searchIds = search ? await idsMatching("quote", ["reference", "customerName", "customerEmail", "tradeCompanyName"], search) : null
     const where: Prisma.QuoteWhereInput = {
-      ...(storeId && { organizationId: storeId }),
+      ...(storeId && storeQuoteWhere(storeId)),
       ...(searchIds && { id: { in: searchIds } }),
       ...(status && statusWhere(status, now)),
       ...(trade && { tradeCompanyName: trade === "true" ? { not: null } : null }),
@@ -134,7 +135,7 @@ export const getQuoteDetails = async (quoteId: string, storeId: string | null = 
     if (!(await hasQuoteAccess(storeId, "read"))) return { success: false, error: "Unauthorized" }
 
     const quote = await prisma.quote.findFirst({
-      where: { id: quoteId, ...(storeId && { organizationId: storeId }) },
+      where: { id: quoteId, ...(storeId && storeQuoteWhere(storeId)) },
       include: {
         items: { orderBy: { id: "asc" } },
         order: { select: { id: true, reference: true } },
@@ -159,6 +160,7 @@ export const getQuoteDetails = async (quoteId: string, storeId: string | null = 
         validUntil: new Date(quote.validUntil.getTime() - 1),
         createdBy: quote.createdBy && (quote.createdBy.name || quote.createdBy.email),
         storeId: quote.organizationId,
+        hasPlatformInstallation: !quote.organizationId && quote.installationGhs.gt(0),
         storeName: quote.organization?.name ?? null,
         customer: { name: quote.customerName, email: quote.customerEmail, phone: quote.customerPhone, hasAccount: owner },
         trade: quote.tradeCompanyName ? { companyName: quote.tradeCompanyName, tin: quote.tradeTin } : null,
@@ -202,7 +204,7 @@ export const getQuoteCopy = async (quoteId: string, storeId: string | null = nul
   if (!(await hasQuoteAccess(storeId, "create"))) return null
 
   const quote = await prisma.quote.findFirst({
-    where: { id: quoteId, ...(storeId && { organizationId: storeId }) },
+    where: { id: quoteId, ...(storeId && storeQuoteWhere(storeId)) },
     include: {
       items: { orderBy: { id: "asc" } },
       user: { select: { id: true, name: true, email: true, phone: true, addresses: { orderBy: [{ isDefault: "desc" }, { createdAt: "desc" }], select: addressSelect } } },

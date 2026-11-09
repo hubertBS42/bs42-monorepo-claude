@@ -31,6 +31,7 @@ const MESSAGES = {
   CUSTOMER_NOT_FOUND: "That customer's account no longer exists. Look them up again.",
   NOT_THIS_STORE: "A store's quotation can only have its own items.",
   STORE_QUOTE: "This quotation belongs to a store. Open it in that store to change it.",
+  INCLUDES_INSTALLATION: "This quotation includes installation, so the platform handles it.",
 }
 
 export class StaffQuoteError extends Error {
@@ -322,13 +323,19 @@ export async function createStaffQuote(tx: Tx, pricing: PricingContext, input: N
 // ACCEPTING AND CANCELLING
 // ============================================
 
-// Only the side that owns a quote changes it: a store its own, and the platform the rest. A store's quote is read-only
-// on the platform's pages, whose staff can act on it from inside the store. An organization that's gone leaves it the
-// platform's.
+// The quotes a store sees, as with orders: those it made, and any other made entirely of its items (a customer's from
+// their basket, the platform staff's, those imported from the old system). A quote spanning stores is the platform's.
+export const storeQuoteWhere = (storeId: string): Prisma.QuoteWhereInput => ({
+  OR: [{ organizationId: storeId }, { organizationId: null, items: { some: { organizationId: storeId }, none: { OR: [{ organizationId: { not: storeId } }, { organizationId: null }] } } }],
+})
+
+// Who may change a quote. A store: those it sees, but not one with installation, which the platform's installers do. The
+// platform: all but a store's own, read-only on its pages since its staff can act from inside the store.
 async function checkQuoteBelongs(client: Client, quoteId: string, storeId: string | null) {
-  const quote = await client.quote.findUnique({ where: { id: quoteId }, select: { organizationId: true } })
-  if (!quote || (storeId && quote.organizationId !== storeId)) throw new QuoteError("NOT_FOUND")
+  const quote = await client.quote.findFirst({ where: { id: quoteId, ...(storeId && storeQuoteWhere(storeId)) }, select: { organizationId: true, installationGhs: true } })
+  if (!quote) throw new QuoteError("NOT_FOUND")
   if (!storeId && quote.organizationId) throw new StaffQuoteError("STORE_QUOTE")
+  if (storeId && !quote.organizationId && quote.installationGhs.gt(0)) throw new StaffQuoteError("INCLUDES_INSTALLATION")
 }
 
 // Places the order a quote describes, at its prices, for a customer paying by bank transfer, and marks the quote

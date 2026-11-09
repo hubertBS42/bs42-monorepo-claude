@@ -1335,6 +1335,8 @@ export interface QuoteDetails {
   createdBy: string | null
   // The store that made it, which alone can change it; null for the platform's staff or a customer
   storeId: string | null
+  // Not made by a store and includes installation: a store selling its items can see it but not change it
+  hasPlatformInstallation: boolean
   storeName: string | null
   customer: { name: string; email: string; phone: string; hasAccount: boolean }
   trade: { companyName: string; tin: string | null } | null

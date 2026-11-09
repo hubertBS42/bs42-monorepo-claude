@@ -32,7 +32,7 @@ import type { QuoteDetails } from "@/types"
 // every action checks again.
 
 // The quote changed under the page (accepted or cancelled meanwhile, or lapsed): show it as it is now
-const REFRESH_CODES = ["NOT_OPEN", "EXPIRED", "NOT_FOUND", "UNAVAILABLE", "STORE_QUOTE"]
+const REFRESH_CODES = ["NOT_OPEN", "EXPIRED", "NOT_FOUND", "UNAVAILABLE", "STORE_QUOTE", "INCLUDES_INSTALLATION"]
 
 export default function QuoteActions({ quote, storeId }: { quote: QuoteDetails; storeId: string | null }) {
   const { data: session, isPending } = consoleAuthClient.useSession()

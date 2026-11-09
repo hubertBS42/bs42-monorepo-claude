@@ -17,7 +17,7 @@ type StoreQuotesPageProps = {
   }>
 }
 
-// The quotations this store's staff made, from its own listings
+// The quotations for this store's items: those its staff made, and any other made entirely of its items
 export default async function StoreQuotesPage({ searchParams }: StoreQuotesPageProps) {
   const { storeId, role } = await requireActiveStoreMember()
   if (!organizationRoles[role].authorize({ order: ["read"] }).success) redirect("/forbidden")
@@ -30,6 +30,7 @@ export default async function StoreQuotesPage({ searchParams }: StoreQuotesPageP
       trade: getEnumParam(params.trade, ["true", "false"]),
       madeStart: getDayParam(params.madeStart),
       madeEnd: getDayParam(params.madeEnd),
+      madeBy: getEnumParam(params.madeBy, ["customer", "staff"]),
       page: getPositiveIntegerParam(params.page, 1),
       pageSize: getPositiveIntegerParam(params.pageSize, 10, MAX_QUOTES_PAGE_SIZE),
       sort: getSortParam(params.sort, QUOTE_SORT_FIELDS),
