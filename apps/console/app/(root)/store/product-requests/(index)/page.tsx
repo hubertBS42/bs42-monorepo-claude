@@ -31,7 +31,7 @@ export default async function ProductRequestsPage({ searchParams }: ProductReque
       <div className="flex items-end justify-between">
         <div className="grid">
           <h1 className="text-xl font-bold md:text-2xl">Product Requests</h1>
-          <p className="text-sm text-muted-foreground">Products this store has asked the catalogue to add.</p>
+          <p className="text-sm text-muted-foreground">Products this store has asked the platform to add.</p>
         </div>
 
         <StoreAddButton
