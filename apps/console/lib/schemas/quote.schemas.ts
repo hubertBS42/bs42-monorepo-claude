@@ -3,6 +3,7 @@ import { GEODATA } from "@workspace/contracts"
 import { DiscountType, ShippingMethod } from "@workspace/db/enums"
 import { isPossiblePhoneNumber } from "@workspace/utils/phone"
 import { decimalSchema } from "@/lib/schemas/product.schemas"
+import { STAFF_ORDER_PAYMENT_METHODS } from "@/lib/staff-payment-methods"
 
 // Quotations staff make in the console (lib/actions/quote.actions.ts)
 
@@ -123,11 +124,16 @@ export const quoteTargetSchema = z.object({
   quoteId: z.uuid("Invalid quotation ID"),
 })
 
-// "Place order" on a quote whose delivery was to be confirmed: the fee agreed with the customer, in GHS
-export const quoteDeliveryFormSchema = z.object({
+// "Place order": how the customer will pay, which the order's emails and invoice go by until a payment is recorded
+export const placeOrderFormSchema = z.object({
+  paymentMethod: z.enum(STAFF_ORDER_PAYMENT_METHODS, "Choose how the customer will pay"),
+})
+
+// "Place order" on a quote whose delivery was to be confirmed: also the fee agreed with the customer, in GHS
+export const quoteDeliveryFormSchema = placeOrderFormSchema.extend({
   deliveryGhs: z
     .union([decimalSchema, z.literal("")])
     .refine((value) => value !== "", "Enter the delivery fee, or 0 for free delivery")
     .transform((value) => value as number),
 })
-export const placeOrderFromQuoteSchema = quoteTargetSchema.extend({ deliveryGhs: decimalSchema.optional() })
+export const placeOrderFromQuoteSchema = quoteTargetSchema.extend({ deliveryGhs: decimalSchema.optional(), paymentMethod: z.enum(STAFF_ORDER_PAYMENT_METHODS) })

@@ -4,6 +4,7 @@ import { DiscountType, InstallationStatus, OrderStatus, PaymentMethod, ShippingM
 import { isPossiblePhoneNumber } from "@workspace/utils/phone"
 import { decimalSchema } from "@/lib/schemas/product.schemas"
 import { quoteItemInputSchema } from "@/lib/schemas/quote.schemas"
+import { STAFF_ORDER_PAYMENT_METHODS } from "@/lib/staff-payment-methods"
 
 export const orderStatusFormSchema = z
   .object({
@@ -190,8 +191,8 @@ export const updateOrderCustomerSchema = orderCustomerFormSchema.extend(orderEdi
 export const updateOrderDeliverySchema = z.object(deliveryFields).extend(orderEditTarget).superRefine(checkDelivery)
 export const updateOrderNotesSchema = orderNotesFormSchema.extend(orderEditTarget)
 
-// Ways a customer pays the platform for an order staff made: card payments go through the storefront's checkout
-export const STAFF_ORDER_PAYMENT_METHODS = [PaymentMethod.BANK_TRANSFER, PaymentMethod.MOBILE_MONEY, PaymentMethod.CASH] as const
+// Kept where the forms already import it from
+export { STAFF_ORDER_PAYMENT_METHODS }
 
 // A sale at the store's counter: the create wizard's fields, paid there and then, at the total the page showed
 export const completeCounterSaleSchema = createStoreOrderFormSchema.extend({

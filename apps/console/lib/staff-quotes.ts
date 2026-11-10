@@ -338,14 +338,20 @@ async function checkQuoteBelongs(client: Client, quoteId: string, storeId: strin
   if (storeId && !quote.organizationId && quote.installationGhs.gt(0)) throw new StaffQuoteError("INCLUDES_INSTALLATION")
 }
 
-// Places the order a quote describes, at its prices, for a customer paying by bank transfer, and marks the quote
+// Places the order a quote describes, at its prices, for a customer paying staff (by the method they chose), and marks
+// the quote
 // accepted, in the caller's transaction. The order is staff-made, so the unpaid-order job leaves it for staff to
 // record the payment. A quote whose delivery was to be confirmed takes the fee staff agreed (deliveryGhs), else
 // DELIVERY_TO_CONFIRM. Throws QuoteError, or OrderItemError when another order took the last of something meanwhile.
-export async function placeOrderFromQuote(tx: Tx, quoteId: string, staffId: string, delivery: QuoteDelivery | null = null, storeId: string | null = null) {
+export async function placeOrderFromQuote(
+  tx: Tx,
+  quoteId: string,
+  staffId: string,
+  { paymentMethod, delivery = null, storeId = null }: { paymentMethod: PaymentMethod; delivery?: QuoteDelivery | null; storeId?: string | null }
+) {
   await checkQuoteBelongs(tx, quoteId, storeId)
   const quote = await lockOpenQuote(tx, quoteId, null)
-  return placeQuotedOrder(tx, quote, { createdById: staffId, userId: quote.userId, paymentMethod: PaymentMethod.BANK_TRANSFER, delivery })
+  return placeQuotedOrder(tx, quote, { createdById: staffId, userId: quote.userId, paymentMethod, delivery })
 }
 
 // Cancels an open quote (lapsed or not). Throws QuoteError (NOT_OPEN) when it was accepted or cancelled meanwhile.

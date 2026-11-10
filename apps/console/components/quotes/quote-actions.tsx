@@ -22,10 +22,13 @@ import { Button, buttonVariants } from "@workspace/ui/components/button"
 import { Skeleton } from "@workspace/ui/components/skeleton"
 import { Spinner } from "@workspace/ui/components/spinner"
 import { toast } from "@workspace/ui/components/toast"
-import { NumberInputField } from "@workspace/forms"
+import { NumberInputField, SelectField } from "@workspace/forms"
+import { PAYMENT_METHOD_LABELS } from "@workspace/commerce/order-status"
+import { PaymentMethod } from "@workspace/db/enums"
 import FormDialog from "@/components/form-dialog"
 import { cancelQuoteAction, placeOrderFromQuoteAction } from "@/lib/actions/quote.actions"
-import { quoteDeliveryFormSchema } from "@/lib/schemas/quote.schemas"
+import { placeOrderFormSchema, quoteDeliveryFormSchema } from "@/lib/schemas/quote.schemas"
+import { STAFF_ORDER_PAYMENT_METHODS } from "@/lib/staff-payment-methods"
 import type { QuoteDetails } from "@/types"
 
 // The quotation's buttons. Checks the viewer's role in the store, or on the platform's pages their system permission;
@@ -45,19 +48,7 @@ export default function QuoteActions({ quote, storeId }: { quote: QuoteDetails; 
 
   const isOpen = quote.status === "open"
   const buttons = [
-    isOpen && can("create") && quote.deliveryToConfirm && <PlaceOrderWithDelivery key="place" quote={quote} storeId={storeId} />,
-    isOpen && can("create") && !quote.deliveryToConfirm && (
-      <ConfirmAction
-        key="place"
-        label="Place order"
-        title={`Place an order from ${quote.reference}`}
-        description="Creates an unpaid order at the quoted prices and reserves its stock. The customer is emailed."
-        confirmLabel="Place order"
-        failureTitle="Unable to place the order"
-        run={() => placeOrderFromQuoteAction({ quoteId: quote.id, storeId })}
-        success={{ title: "Order placed", description: `${quote.reference} is accepted. Record the payment on its order once it arrives.` }}
-      />
-    ),
+    isOpen && can("create") && <PlaceOrder key="place" quote={quote} storeId={storeId} />,
     (isOpen || quote.status === "expired") && can("update") && (
       <ConfirmAction
         key="cancel"
@@ -147,22 +138,48 @@ function ConfirmAction({ label, title, description, confirmLabel, failureTitle, 
   )
 }
 
-// "Place order" on a quote made while no delivery fees were set: the fee agreed with the customer goes on the order
-function PlaceOrderWithDelivery({ quote, storeId }: { quote: QuoteDetails; storeId: string | null }) {
+const paymentOptions = STAFF_ORDER_PAYMENT_METHODS.map((method) => ({ label: PAYMENT_METHOD_LABELS[method], value: method }))
+
+// "Place order": how the customer will pay, starting at cash as every staff order does, and on a quote made while no
+// delivery fees were set, the fee agreed with the customer
+function PlaceOrder({ quote, storeId }: { quote: QuoteDetails; storeId: string | null }) {
+  const paymentMethod = PaymentMethod.CASH
+  const common = {
+    trigger: <Button type="button">Place order</Button>,
+    title: `Place an order from ${quote.reference}`,
+    submitLabel: "Place order",
+    failureTitle: "Unable to place the order",
+    refreshOn: REFRESH_CODES,
+    success: () => ({ title: "Order placed", description: `${quote.reference} is accepted. Record the payment on its order once it arrives.` }),
+  }
+
+  if (!quote.deliveryToConfirm) {
+    return (
+      <FormDialog
+        {...common}
+        description="Creates an unpaid order at the quoted prices and reserves its stock. The customer is emailed."
+        schema={placeOrderFormSchema}
+        values={{ paymentMethod }}
+        save={(values) => placeOrderFromQuoteAction({ quoteId: quote.id, storeId, paymentMethod: values.paymentMethod })}
+      >
+        {(form, isPending) => <SelectField control={form.control} label="The customer will pay by" name="paymentMethod" options={paymentOptions} disabled={isPending} />}
+      </FormDialog>
+    )
+  }
   return (
     <FormDialog
-      trigger={<Button type="button">Place order</Button>}
-      title={`Place an order from ${quote.reference}`}
+      {...common}
       description="Creates an unpaid order at the quoted prices plus this delivery fee, and reserves its stock. The customer is emailed."
-      submitLabel="Place order"
-      failureTitle="Unable to place the order"
-      refreshOn={REFRESH_CODES}
       schema={quoteDeliveryFormSchema}
-      values={{ deliveryGhs: "" }}
-      save={(values) => placeOrderFromQuoteAction({ quoteId: quote.id, storeId, deliveryGhs: values.deliveryGhs })}
-      success={() => ({ title: "Order placed", description: `${quote.reference} is accepted. Record the payment on its order once it arrives.` })}
+      values={{ paymentMethod, deliveryGhs: "" }}
+      save={(values) => placeOrderFromQuoteAction({ quoteId: quote.id, storeId, paymentMethod: values.paymentMethod, deliveryGhs: values.deliveryGhs })}
     >
-      {(form, isPending) => <NumberInputField control={form.control} label="Delivery fee" name="deliveryGhs" step={0.01} min={0} prependText="GH₵" disabled={isPending} />}
+      {(form, isPending) => (
+        <>
+          <SelectField control={form.control} label="The customer will pay by" name="paymentMethod" options={paymentOptions} disabled={isPending} />
+          <NumberInputField control={form.control} label="Delivery fee" name="deliveryGhs" step={0.01} min={0} prependText="GH₵" disabled={isPending} />
+        </>
+      )}
     </FormDialog>
   )
 }

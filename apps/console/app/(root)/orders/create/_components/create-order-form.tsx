@@ -74,7 +74,8 @@ export default function CreateOrderForm({ delivery, installationAreas, pickupLoc
       shippingRegion: "",
       shippingTown: "",
       shippingGhs: 0,
-      paymentMethod: PaymentMethod.BANK_TRANSFER,
+      // Where every staff order starts, as Counter Sale and placing a quotation's order do
+      paymentMethod: PaymentMethod.CASH,
       notes: "",
       discountType: "NONE",
       discountValue: 0,

@@ -213,7 +213,7 @@ export async function createQuoteAction(input: z.input<typeof createQuoteFormSch
   }
 }
 
-// For a customer who pays by bank transfer: the order at the quote's prices, unpaid, for staff to record the payment.
+// The order at the quote's prices, unpaid, for staff to record the payment once the customer pays as they said they would.
 // A quote whose delivery was to be confirmed needs deliveryGhs, the fee agreed with the customer.
 export async function placeOrderFromQuoteAction(input: z.input<typeof placeOrderFromQuoteSchema>): Promise<ActionResponse> {
   const session = await requireQuoteAccess(input.storeId, "create")
@@ -221,7 +221,7 @@ export async function placeOrderFromQuoteAction(input: z.input<typeof placeOrder
   try {
     const parsed = placeOrderFromQuoteSchema.safeParse(input)
     if (!parsed.success) return invalidInput(parsed.error)
-    const { quoteId, deliveryGhs, storeId } = parsed.data
+    const { quoteId, deliveryGhs, storeId, paymentMethod } = parsed.data
     if (!(await hasQuoteAccess(session.user.id, storeId, "create"))) return FORBIDDEN
 
     let delivery: QuoteDelivery | null = null
@@ -230,7 +230,7 @@ export async function placeOrderFromQuoteAction(input: z.input<typeof placeOrder
       const settings = await readAppSettings()
       delivery = { feeGhs: new Prisma.Decimal(deliveryGhs), taxed: settings.taxEnabled && settings.taxShipping }
     }
-    const { stockAlerts, ...order } = await prisma.$transaction((tx) => placeOrderFromQuote(tx, quoteId, session.user.id, delivery, storeId), TRANSACTION_OPTIONS)
+    const { stockAlerts, ...order } = await prisma.$transaction((tx) => placeOrderFromQuote(tx, quoteId, session.user.id, { paymentMethod, delivery, storeId }), TRANSACTION_OPTIONS)
     after(async () => {
       await sendOrderEmail(order.id, "CREATED")
       await notifyNewOrder(order.id, storeId ? "store" : "platform")
