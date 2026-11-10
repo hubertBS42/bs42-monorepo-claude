@@ -103,8 +103,7 @@ export type UserDetails = Prisma.UserGetPayload<{
 }>
 
 export interface StoreMembersParams extends PaginationParams {
-  name?: string
-  email?: string
+  search?: string
   role?: OrgRole
 }
 
@@ -345,7 +344,6 @@ export interface ProductsParams extends PaginationParams {
   // Includes the categories under it
   categoryId?: string
   condition?: Condition
-  hasVariants?: boolean
   // true: missing a picture, a description or a sell price; false: has all three
   incomplete?: boolean
 }
@@ -413,13 +411,13 @@ export interface ListingsParams extends PaginationParams {
   // Includes its subcategories
   categoryId?: string
   // The catalogue product's, not whether the store sells every variant
-  hasVariants?: boolean
   // The catalogue product's
   condition?: Condition
   // "true": customers can buy it; "false": they can't (a draft, or published but its product or every variant isn't)
   visible?: "true" | "false"
   // Featured on the storefront's homepage
   featured?: "true" | "false"
+  sale?: "true" | "false"
 }
 
 // A store listings table row. Prices are strings because Decimal can't be passed to client components

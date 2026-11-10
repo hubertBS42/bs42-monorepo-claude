@@ -52,14 +52,14 @@ export const getStoreMembers = async (storeId: string, filters: StoreMembersPara
       return { success: false, error: paginationError }
     }
 
-    const { name, email, role, page = 1, pageSize = 10, sort, order } = filters
+    const { search, role, page = 1, pageSize = 10, sort, order } = filters
 
-    const [nameIds, emailIds] = await Promise.all([name ? idsMatching("user", ["name"], name) : null, email ? idsMatching("user", ["email"], email) : null])
+    const searchIds = search ? await idsMatching("user", ["name", "email"], search) : null
     const where: Prisma.MemberWhereInput = {
       organizationId: storeId,
       ...(role && { role }),
       user: {
-        AND: [notPlatformStaff, ...(nameIds ? [{ id: { in: nameIds } }] : []), ...(emailIds ? [{ id: { in: emailIds } }] : [])],
+        AND: [notPlatformStaff, ...(searchIds ? [{ id: { in: searchIds } }] : [])],
       },
     }
 

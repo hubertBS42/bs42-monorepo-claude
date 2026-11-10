@@ -13,16 +13,6 @@ export function getListingFilters({ brands, categories }: ProductFilterOptions):
     { key: "brandId", label: "Brand", type: "select", placeholder: "All brands", options: [{ label: "All brands", value: "all" }, ...brands] },
     // Choosing a category also shows the listings in the categories under it
     { key: "categoryId", label: "Category", type: "tree", placeholder: "All categories", tree: categories },
-    {
-      key: "hasVariants",
-      label: "Variants",
-      type: "boolean",
-      placeholder: "All listings",
-      options: [
-        { label: "With variants", value: "true" },
-        { label: "Without variants", value: "false" },
-      ],
-    },
     { key: "condition", label: "Condition", type: "select", placeholder: "All conditions", options: [{ label: "All conditions", value: "all" }, ...CONDITION_OPTIONS] },
     {
       key: "visible",
@@ -42,6 +32,17 @@ export function getListingFilters({ brands, categories }: ProductFilterOptions):
       options: [
         { label: "Featured", value: "true" },
         { label: "Not featured", value: "false" },
+      ],
+    },
+    {
+      // "Sale", not "On sale": the table's "Not on sale" note means customers can't see the listing
+      key: "sale",
+      label: "Sale",
+      type: "boolean",
+      placeholder: "All listings",
+      options: [
+        { label: "Has a sale price", value: "true" },
+        { label: "No sale price", value: "false" },
       ],
     },
   ]

@@ -3,8 +3,7 @@ import { ORG_ROLE_NAMES } from "@workspace/auth/organization-permissions"
 import { STORE_ROLE_LABELS } from "@/components/user-badges"
 
 export const memberFilters: FilterConfig[] = [
-  { key: "name", label: "Name", type: "text", placeholder: "Search name" },
-  { key: "email", label: "Email", type: "text", placeholder: "Search email" },
+  { key: "search", label: "Search", type: "text", placeholder: "Name or email" },
   {
     key: "role",
     label: "Role",

@@ -77,7 +77,7 @@ export const getProductsForTable = async (filters: ProductsParams = {}): Promise
     if (paginationError) {
       return { success: false, error: paginationError }
     }
-    const { search, status, brandId, categoryId, condition, hasVariants, incomplete, page = 1, pageSize = 10, sort, order } = filters
+    const { search, status, brandId, categoryId, condition, incomplete, page = 1, pageSize = 10, sort, order } = filters
 
     // The whole tree is small: one read gives every row's path and the category filter's subtree
     const categories = await prisma.category.findMany({ select: { id: true, name: true, parentId: true } })
@@ -90,7 +90,6 @@ export const getProductsForTable = async (filters: ProductsParams = {}): Promise
       ...(brandId && { brandId }),
       ...(categoryId && { categoryId: { in: getSubtreeIds(categories, categoryId) } }),
       ...(condition && { condition }),
-      ...(hasVariants !== undefined && { hasVariants }),
     }
 
     // id breaks ties so rows with equal sort values keep their order across pages

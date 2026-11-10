@@ -22,8 +22,7 @@ export default async function StoreMembersPage({ searchParams }: StoreMembersPag
   const params = await searchParams
 
   const membersParams: StoreMembersParams = {
-    name: getStringParam(params.name),
-    email: getStringParam(params.email),
+    search: getStringParam(params.search),
     role: getEnumParam(params.role, ORG_ROLE_NAMES),
     page: getPositiveIntegerParam(params.page, 1),
     pageSize: getPositiveIntegerParam(params.pageSize, 10, MAX_STORE_MEMBERS_PAGE_SIZE),

@@ -33,7 +33,6 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
     brandId: getUuidParam(params.brandId),
     categoryId: getUuidParam(params.categoryId),
     condition: getEnumParam(params.condition, Object.values(Condition)),
-    hasVariants: { true: true, false: false, none: undefined }[getEnumParam(params.hasVariants, ["true", "false"]) ?? "none"],
     incomplete: { true: true, false: false, none: undefined }[getEnumParam(params.incomplete, ["true", "false"]) ?? "none"],
     page: getPositiveIntegerParam(params.page, 1),
     pageSize: getPositiveIntegerParam(params.pageSize, 10, MAX_PRODUCTS_PAGE_SIZE),

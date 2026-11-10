@@ -74,6 +74,25 @@ function toVariantRow(variant: SellableVariant, inListing: boolean): ListingVari
   }
 }
 
+// Listings showing a sale price, by the storefront's rule (lib/data/product-cards.ts in the store): a compare-at price
+// above the price, and on a listing with variants any variant on sale, each falling back to the listing's. Raw SQL since
+// it compares columns across two tables.
+async function getListingIdsOnSale(storeId: string) {
+  const rows = await prisma.$queryRaw<{ id: string }[]>`
+    SELECT l."id" FROM "store_listing" l
+    JOIN "product" p ON p."id" = l."productId"
+    WHERE l."organizationId" = ${storeId}::uuid AND (
+      (NOT p."hasVariants" AND l."compareAtPrice" > l."sellPrice")
+      OR (p."hasVariants" AND EXISTS (
+        SELECT 1 FROM "store_listing_variant" v
+        JOIN "product_variant" pv ON pv."id" = v."variantId"
+        WHERE v."storeListingId" = l."id" AND v."status" = 'PUBLISHED' AND pv."status" <> 'ARCHIVED'
+          AND COALESCE(v."compareAtPrice", l."compareAtPrice") > COALESCE(v."sellPrice", l."sellPrice")
+      ))
+    )`
+  return rows.map((row) => row.id)
+}
+
 export const getStoreListings = async (storeId: string, filters: ListingsParams = {}): Promise<DataResponse<ListingsData>> => {
   try {
     const denied = await checkStoreAccess(storeId)
@@ -87,7 +106,7 @@ export const getStoreListings = async (storeId: string, filters: ListingsParams 
       return { success: false, error: paginationError }
     }
 
-    const { search, status, stock, buyPrice, brandId, categoryId, hasVariants, condition, visible, featured, page = 1, pageSize = 10, sort, order } = filters
+    const { search, status, stock, buyPrice, brandId, categoryId, condition, visible, featured, sale, page = 1, pageSize = 10, sort, order } = filters
 
     // Brand and category ids are uuid columns, so a malformed one (a hand-edited URL) would make Prisma throw: it matches nothing
     const isUuid = (value: string | undefined) => !value || z.uuid().safeParse(value).success
@@ -98,7 +117,11 @@ export const getStoreListings = async (storeId: string, filters: ListingsParams 
     // What customers can see, the storefront's rule, for the visible filter and the "Not on sale" note
     const visibleCategoryIds = getVisibleCategoryIds(categories)
     const visibleToCustomers = customerVisibleListingWhere(visibleCategoryIds)
-    const [stockIds, buyPriceIds] = await Promise.all([stock ? getListingIdsInStockState(storeId, stock) : null, buyPrice ? getListingIdsWithBuyPriceState(prisma, storeId, buyPrice) : null])
+    const [saleIds, stockIds, buyPriceIds] = await Promise.all([
+      sale ? getListingIdsOnSale(storeId) : null,
+      stock ? getListingIdsInStockState(storeId, stock) : null,
+      buyPrice ? getListingIdsWithBuyPriceState(prisma, storeId, buyPrice) : null,
+    ])
 
     const productIds = search ? await productIdsMatching(search) : null
     // AND, so filters on the same relation (product) don't overwrite each other
@@ -111,10 +134,10 @@ export const getStoreListings = async (storeId: string, filters: ListingsParams 
         ...(buyPriceIds ? [{ id: { in: buyPriceIds } }] : []),
         ...(brandId ? [{ product: { brandId } }] : []),
         ...(categoryId ? [{ product: { categoryId: { in: getSubtreeIds(categories, categoryId) } } }] : []),
-        ...(hasVariants !== undefined ? [{ product: { hasVariants } }] : []),
         ...(condition ? [{ product: { condition } }] : []),
         ...(visible ? [visible === "true" ? visibleToCustomers : { NOT: visibleToCustomers }] : []),
         ...(featured ? [{ isFeatured: featured === "true" }] : []),
+        ...(saleIds ? [sale === "true" ? { id: { in: saleIds } } : { id: { notIn: saleIds } }] : []),
       ],
     }
 
