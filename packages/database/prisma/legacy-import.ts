@@ -351,14 +351,13 @@ async function main() {
       const totalUsd = unitUsd.times(line.quantity)
       return { line, t, ...(t ? listingFor(t) : placeholderLine()), unitUsd, totalUsd, unitGhs: money(unitUsd.times(rate)), totalGhs: money(totalUsd.times(rate)), discountGhs: ZERO }
     })
-    // The discount split by line totals, rounded down, with the remainder on the last line (as pricing does)
+    // The discount split by line totals, rounded down, with the remainder on the largest line (as pricing does)
     const subtotalGhs = priced.reduce((sum, line) => sum.plus(line.totalGhs), ZERO)
     if (discountGhs.gt(0) && subtotalGhs.gt(0)) {
-      let given = ZERO
-      priced.forEach((line, index) => {
-        line.discountGhs = index === priced.length - 1 ? discountGhs.minus(given) : discountGhs.times(line.totalGhs).dividedBy(subtotalGhs).toDecimalPlaces(2, Prisma.Decimal.ROUND_DOWN)
-        given = given.plus(line.discountGhs)
-      })
+      for (const line of priced) line.discountGhs = discountGhs.times(line.totalGhs).dividedBy(subtotalGhs).toDecimalPlaces(2, Prisma.Decimal.ROUND_DOWN)
+      const given = priced.reduce((sum, line) => sum.plus(line.discountGhs), ZERO)
+      const largest = priced.reduce((best, line) => (line.totalGhs.gt(best.totalGhs) ? line : best), priced[0]!)
+      largest.discountGhs = largest.discountGhs.plus(discountGhs.minus(given))
     }
     return { priced, subtotalGhs, subtotalUsd: priced.reduce((sum, line) => sum.plus(line.totalUsd), ZERO) }
   }

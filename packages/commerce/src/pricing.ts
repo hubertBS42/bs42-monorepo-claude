@@ -59,11 +59,14 @@ export interface PricedOrder {
 const sum = (values: Decimal[]) => values.reduce((total, value) => total.plus(value), ZERO)
 
 // Each line's share of the discount, in proportion to its total. Shares are rounded down to the cent and the
-// remainder goes on the last line, so they add up to the discount exactly and none is negative.
+// remainder (under a cent a line) goes on the line with the largest total, so they add up to the discount exactly
+// and no line is discounted by more than it costs, as a cheap last line could be.
 function splitDiscount(amount: Decimal, totals: Decimal[], subtotal: Decimal) {
   if (amount.isZero() || subtotal.isZero()) return totals.map(() => ZERO)
-  const shares = totals.slice(0, -1).map((total) => amount.times(total).dividedBy(subtotal).toDecimalPlaces(2, Decimal.ROUND_DOWN))
-  return [...shares, amount.minus(sum(shares))]
+  const shares = totals.map((total) => amount.times(total).dividedBy(subtotal).toDecimalPlaces(2, Decimal.ROUND_DOWN))
+  const largest = totals.reduce((best, total, index) => (total.gt(totals[best]!) ? index : best), 0)
+  shares[largest] = shares[largest]!.plus(amount.minus(sum(shares)))
+  return shares
 }
 
 export function priceOrder({ lines, exchangeRate, shippingGhs, discount, tax }: PricingInput): PricedOrder {

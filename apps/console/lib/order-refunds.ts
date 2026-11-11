@@ -5,7 +5,7 @@ import { Prisma } from "@workspace/db/client"
 import { OrderStatus, PaymentStatus, StockMovementReason, type PaymentMethod } from "@workspace/db/enums"
 import { canBeReturned, hasBeenPaid, isPaid, nextOrderStatuses } from "@workspace/commerce/order-status"
 import { addStock } from "@workspace/commerce/stock-movements"
-import { changeOrderStatus, StatusChangedError } from "@workspace/commerce/order-writes"
+import { changeOrderStatus, heldStockSelect, lineStockRow, StatusChangedError } from "@workspace/commerce/order-writes"
 
 // Refunds, by the platform on any order or by a store's owners and admins on its own: giving money back on a paid order, cancelling a paid order with a refund of whatever is
 // left, and recording items a customer brought back. In their own module (like listing-sync.ts) so they can be
@@ -60,6 +60,7 @@ async function lockOrderForRefund(tx: Tx, orderId: string, refundedGhs: Prisma.D
           storeListingId: true,
           storeListingVariantId: true,
           tracksStock: true,
+          ...heldStockSelect,
         },
       },
     },
@@ -107,8 +108,10 @@ export async function cancelAndRefundOrder(tx: Tx, input: RefundInput & { curren
   }
   if (!isPaid(order.paymentStatus)) throw new RefundError("NOT_PAID", "This order hasn't been paid, so cancel it without a refund.")
 
-  // A partly refunded order has some left; the rest goes back now
+  // A partly refunded order has some left; the rest goes back now. A paid order of GHS 0 (goods given away with a
+  // full discount) has nothing to give back, but is marked refunded all the same, so the cancellation below takes it.
   if (remaining.gt(0)) await writeRefund(tx, input, remaining, order.totalGhs, refunded.plus(remaining))
+  else await tx.order.update({ where: { id: input.orderId }, data: { paymentStatus: PaymentStatus.REFUNDED } })
 
   await changeOrderStatus(tx, {
     orderId: input.orderId,
@@ -160,8 +163,10 @@ export async function recordOrderReturn(tx: Tx, input: ReturnInput) {
     if (entry.quantity > left) {
       throw new RefundError("TOO_MANY", `Only ${left} of ${line.productName}${line.variantDescription ? ` (${line.variantDescription})` : ""} can still be returned.`)
     }
-    // Stock goes back only for a line whose sale took it, as a cancellation does
-    return { line, quantity: entry.quantity, restocked: entry.restock && line.tracksStock }
+    // Stock goes back only to a row that counts it: the collecting branch's listing where the line is held, else the
+    // line's own when the sale took it, as a cancellation does
+    const { row, tracks } = lineStockRow(line)
+    return { line, row, quantity: entry.quantity, restocked: entry.restock && tracks }
   })
 
   const amount = input.refund?.amountGhs ?? new Prisma.Decimal(0)
@@ -184,11 +189,8 @@ export async function recordOrderReturn(tx: Tx, input: ReturnInput) {
     select: { id: true },
   })
 
-  for (const { line, quantity, restocked } of returning) {
+  for (const { row, quantity, restocked } of returning) {
     if (!restocked) continue
-    // Back where the units are: the collecting branch's listing, for a line brought there that it lists
-    const held = await tx.orderItem.findUnique({ where: { id: line.id }, select: { heldListingId: true, heldListingVariantId: true } })
-    const row = held?.heldListingId ? { listingId: held.heldListingId, listingVariantId: held.heldListingVariantId } : { listingId: line.storeListingId, listingVariantId: line.storeListingVariantId }
     await addStock(tx, row, quantity, {
       reason: StockMovementReason.RETURN,
       createdById: input.recordedById,

@@ -4,7 +4,7 @@ import type { PricingContext } from "@workspace/commerce/exchange-rates"
 import { loadInstallationFees } from "@workspace/commerce/installation"
 import { describeVariant } from "@workspace/commerce/order-writes"
 import { priceOrder, shelfPrice, tradePrice, withTax } from "@workspace/commerce/pricing"
-import type { TradeTerms } from "@workspace/commerce/trade-accounts"
+import { loadTradeTerms, type TradeTerms } from "@workspace/commerce/trade-accounts"
 import { customerVisibleListingWhere, loadVisibleCategoryIds, variantOnSaleWhere } from "@workspace/commerce/visibility"
 import type { prisma } from "@workspace/db"
 import { Prisma } from "@workspace/db/client"
@@ -155,12 +155,14 @@ export async function claimCart(client: Client, userId: string | null, cookieCar
     return guest.sessionCartId
   }
 
+  // Up to the most a line of the account's can hold: more for a trade account
+  const maxLine = (await loadTradeTerms(client, userId)) ? TRADE_LINE_QUANTITY : MAX_LINE_QUANTITY
   for (const line of guest.items) {
     const match = owned.items.find((ownedLine) => itemKey(lineItem(ownedLine)) === itemKey(lineItem(line)))
     if (match) {
       await client.cartItem.update({
         where: { id: match.id },
-        data: { quantity: Math.min(match.quantity + line.quantity, MAX_LINE_QUANTITY), withInstallation: match.withInstallation || line.withInstallation },
+        data: { quantity: Math.min(match.quantity + line.quantity, maxLine), withInstallation: match.withInstallation || line.withInstallation },
       })
     } else {
       await client.cartItem.update({ where: { id: line.id }, data: { cartId: owned.id } })

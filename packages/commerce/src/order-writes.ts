@@ -8,7 +8,7 @@ import { loadInstallationFees } from "./installation"
 import type { StockAlert } from "./notifications"
 import { loadPickupLocation, pickupLocationForStores } from "./pickup-locations"
 import type { PricedOrder } from "./pricing"
-import { addStock, recordStockMovements } from "./stock-movements"
+import { addStock, recordStockMovements, type StockRow } from "./stock-movements"
 import { hiddenReason, loadVisibleCategoryIds } from "./visibility"
 
 // Order writes: creating one (lines priced from the stores' listings, stock reserved) and moving its status on. Staff
@@ -342,6 +342,37 @@ export async function createOrder(tx: Tx, order: NewOrder) {
 
 export class StatusChangedError extends Error {}
 
+// Where a line's units are held once brought to the collecting branch of a pickup order (the console's
+// collection-transfers.ts): its listing of the same product and variant, when it has one
+export const heldStockSelect = {
+  heldListingId: true,
+  heldListingVariantId: true,
+  heldListing: { select: { trackInventory: true } },
+  heldListingVariant: { select: { trackInventory: true } },
+} as const
+
+export interface LineStockRow {
+  storeListingId: string
+  storeListingVariantId: string | null
+  // Whether the sale took stock from the line's own row
+  tracksStock: boolean
+  heldListingId?: string | null
+  heldListingVariantId?: string | null
+  heldListing?: { trackInventory: boolean } | null
+  heldListingVariant?: { trackInventory: boolean } | null
+}
+
+// The row a line's units go back to (a cancellation, a restocked return), and whether it counts them: the collecting
+// branch's listing where the line is held, by that row's own tracking; else the line's own, when the sale took stock
+// from it
+export function lineStockRow(line: LineStockRow): { row: StockRow; tracks: boolean } {
+  if (line.heldListingId) {
+    const tracks = line.heldListingVariantId ? (line.heldListingVariant?.trackInventory ?? false) : (line.heldListing?.trackInventory ?? false)
+    return { row: { listingId: line.heldListingId, listingVariantId: line.heldListingVariantId ?? null }, tracks }
+  }
+  return { row: { listingId: line.storeListingId, listingVariantId: line.storeListingVariantId }, tracks: line.tracksStock }
+}
+
 export interface StatusChange {
   orderId: string
   // The status the page showed: nothing changes if the order has moved on since
@@ -351,7 +382,7 @@ export interface StatusChange {
   // Null for a change nobody made by hand, e.g. cancelling an order left unpaid
   changedById: string | null
   // The order's lines, for putting reserved stock back on a cancellation (only lines whose sale took stock)
-  items: { quantity: number; storeListingId: string; storeListingVariantId: string | null; tracksStock: boolean }[]
+  items: ({ quantity: number } & LineStockRow)[]
 }
 
 // Throws StatusChangedError when the order moved on (or, for a cancellation, was paid) since the page loaded.
@@ -375,14 +406,14 @@ export async function changeOrderStatus(tx: Tx, { orderId, from, to, note, chang
   }
 
   // Stock was reserved when the order was made, for the rows that tracked it then, so a cancellation puts it back:
-  // where the units are now, for lines brought to a collecting branch that lists them (heldListingId)
+  // where the units are now, for lines brought to a collecting branch that lists them (lineStockRow)
   if (to === OrderStatus.CANCELLED) {
-    const heldSelect = { quantity: true, storeListingId: true, storeListingVariantId: true, tracksStock: true, heldListingId: true, heldListingVariantId: true } as const
+    const heldSelect = { quantity: true, storeListingId: true, storeListingVariantId: true, tracksStock: true, ...heldStockSelect } as const
     const anyHeld = await tx.orderItem.count({ where: { orderId, heldListingId: { not: null } } })
-    const lines = anyHeld ? await tx.orderItem.findMany({ where: { orderId }, select: heldSelect }) : items.map((item) => ({ ...item, heldListingId: null, heldListingVariantId: null }))
+    const lines = anyHeld ? await tx.orderItem.findMany({ where: { orderId }, select: heldSelect }) : items
     for (const item of lines) {
-      if (!item.tracksStock) continue
-      const row = item.heldListingId ? { listingId: item.heldListingId, listingVariantId: item.heldListingVariantId } : { listingId: item.storeListingId, listingVariantId: item.storeListingVariantId }
+      const { row, tracks } = lineStockRow(item)
+      if (!tracks) continue
       await addStock(tx, row, item.quantity, {
         reason: StockMovementReason.CANCELLATION,
         createdById: changedById,
