@@ -13,7 +13,7 @@ import { toast } from "@workspace/ui/components/toast"
 import { cn } from "@workspace/ui/lib/utils"
 import { createStoreOrderAction } from "@/lib/actions/store-order.actions"
 import { createStoreOrderFormSchema } from "@/lib/schemas/order.schemas"
-import type { OrderCustomer } from "@/types"
+import type { OrderCustomer, OrderPreview } from "@/types"
 import type { DeliverySettingsView } from "@/lib/data/delivery.data"
 import CustomerStep from "./steps/customer-step"
 import DeliveryStep from "./steps/delivery-step"
@@ -73,6 +73,9 @@ export default function CreateOrderForm({ storeId, delivery }: { storeId: string
   const [chosen, setChosen] = useState<Record<string, ChosenItem>>({})
   // The looked-up customer, whose saved addresses the delivery step offers
   const [customer, setCustomer] = useState<OrderCustomer | null>(null)
+  // The review step's prices, whose total the order is created at; refreshKey has it price again
+  const [preview, setPreview] = useState<OrderPreview | null>(null)
+  const [refreshKey, setRefreshKey] = useState(0)
 
   const form = useForm<OrderFormInput, unknown, OrderFormOutput>({
     resolver: zodResolver(createStoreOrderFormSchema),
@@ -88,13 +91,15 @@ export default function CreateOrderForm({ storeId, delivery }: { storeId: string
   }
 
   const onSubmit: SubmitHandler<OrderFormOutput> = (values) => {
+    if (!preview) return
     startTransition(async () => {
-      const response = await createStoreOrderAction({ ...values, storeId })
+      const response = await createStoreOrderAction({ ...values, storeId, expectedTotalGhs: preview.totalGhs })
 
       if (!response.success) {
         toast.add({ title: "Unable to create the order", description: response.error, type: "error" })
-        // A line that sold out or went off sale is fixed on the items step
+        // A line that sold out or went off sale is fixed on the items step. New prices show on the review step.
         if (response.code === "ITEM_UNAVAILABLE" || response.code === "INSUFFICIENT_STOCK") setStep(1)
+        if (response.code === "PRICE_CHANGED") setRefreshKey((key) => key + 1)
         return
       }
 
@@ -139,7 +144,7 @@ export default function CreateOrderForm({ storeId, delivery }: { storeId: string
       {step === 0 && <CustomerStep storeId={storeId} form={form} customer={customer} onCustomerChange={setCustomer} />}
       {step === 1 && <ItemsStep storeId={storeId} form={form} chosen={chosen} onChosenChange={setChosen} />}
       {step === 2 && <DeliveryStep form={form} customer={customer} delivery={delivery} />}
-      {step === 3 && <ReviewStep storeId={storeId} form={form} />}
+      {step === 3 && <ReviewStep storeId={storeId} form={form} onPreviewChange={setPreview} refreshKey={refreshKey} />}
 
       <div className="flex flex-wrap items-center justify-between gap-2">
         <Link href="/store/orders" className={buttonVariants({ variant: "ghost" })}>
@@ -154,7 +159,7 @@ export default function CreateOrderForm({ storeId, delivery }: { storeId: string
           {/* Separate keys: reusing one element would turn the clicked Next into a submit button before
               the click's default action runs, so leaving the Delivery step would create the order */}
           {isLast ? (
-            <Button key="submit" type="submit" disabled={isPending}>
+            <Button key="submit" type="submit" disabled={isPending || !preview}>
               {isPending ? <Spinner /> : "Create order"}
             </Button>
           ) : (

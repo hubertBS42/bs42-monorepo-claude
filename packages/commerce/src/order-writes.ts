@@ -2,7 +2,7 @@ import "server-only"
 
 import type { prisma } from "@workspace/db"
 import { Prisma } from "@workspace/db/client"
-import { InstallationStatus, OrderStatus, PaymentMethod, PaymentStatus, ShippingMethod, Status, StockMovementReason } from "@workspace/db/enums"
+import { InstallationStatus, OrderStatus, PaymentAttemptStatus, PaymentMethod, PaymentStatus, ShippingMethod, Status, StockMovementReason } from "@workspace/db/enums"
 import { formatDate } from "@workspace/utils/date"
 import { loadInstallationFees } from "./installation"
 import type { StockAlert } from "./notifications"
@@ -212,8 +212,10 @@ export async function createOrder(tx: Tx, order: NewOrder) {
   const sold: { line: ResolvedLine; stockAfter: number }[] = []
 
   // Reserved now, so two orders can't sell the same last item. Only rows that track stock, as a cancellation restores.
-  for (const line of order.lines) {
-    if (!line.trackInventory) continue
+  // In one order across every order (by row id), so two orders holding the same rows lock them in the same sequence and
+  // wait for each other instead of deadlocking.
+  const reserving = order.lines.filter((line) => line.trackInventory).sort((a, b) => (a.listingVariantId ?? a.listingId).localeCompare(b.listingVariantId ?? b.listingId))
+  for (const line of reserving) {
     const reserve = { where: { stock: { gte: line.quantity } }, data: { stock: { decrement: line.quantity } } }
     const { count } = line.listingVariantId
       ? await tx.storeListingVariant.updateMany({ ...reserve, where: { ...reserve.where, id: line.listingVariantId } })
@@ -403,6 +405,9 @@ export async function changeOrderStatus(tx: Tx, { orderId, from, to, note, chang
     const installation = { id: orderId, installationStatus: { in: [InstallationStatus.TO_ARRANGE, InstallationStatus.BOOKED] } }
     const { count: cancelled } = await tx.order.updateMany({ where: installation, data: { installationStatus: InstallationStatus.CANCELLED } })
     if (cancelled) await tx.orderInstallationHistory.create({ data: { orderId, status: InstallationStatus.CANCELLED, note: "The order was cancelled", changedById } })
+    // Online payments never finished are over now (whoever cancelled it): one that still comes in is recorded as a
+    // problem for staff (online-payments.ts)
+    await tx.paymentAttempt.updateMany({ where: { orderId, status: PaymentAttemptStatus.PENDING }, data: { status: PaymentAttemptStatus.ABANDONED } })
   }
 
   // Stock was reserved when the order was made, for the rows that tracked it then, so a cancellation puts it back:

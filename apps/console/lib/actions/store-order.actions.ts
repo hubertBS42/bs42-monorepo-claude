@@ -259,6 +259,9 @@ export async function createStoreOrderAction(input: z.input<typeof createStoreOr
 
     const result = await priceStoreOrder(data.storeId, data)
     if (!result.ok) return result.problem
+    // A new day's rate, a price edit or a change to tax since the review step: the review prices it again
+    if (!result.priced.totalGhs.equals(data.expectedTotalGhs))
+      return { success: false, error: "The prices changed since you reviewed the order. Check the new total, then create it again.", code: "PRICE_CHANGED" }
 
     const isDelivery = data.shippingMethod === ShippingMethod.DELIVERY
     const { stockAlerts, ...order } = await prisma.$transaction(

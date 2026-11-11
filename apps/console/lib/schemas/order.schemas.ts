@@ -133,9 +133,11 @@ export const createStoreOrderFormSchema = z
     checkDiscount(data, ctx)
   })
 
-// The store comes from the page, so an order can't land in a store the user switched to in another tab
+// The store comes from the page, so an order can't land in a store the user switched to in another tab. The total is
+// the one the review step showed: a price or rate change since is refused (PRICE_CHANGED), as on the platform's wizard.
 export const createStoreOrderSchema = createStoreOrderFormSchema.extend({
   storeId: z.uuid("Invalid store ID"),
+  expectedTotalGhs: z.string().regex(/^\d+(\.\d{1,2})?$/, "Invalid total"),
 })
 
 // What the review step prices: no customer, since it doesn't change the price

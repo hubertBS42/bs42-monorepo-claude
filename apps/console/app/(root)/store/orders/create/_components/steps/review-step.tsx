@@ -32,11 +32,27 @@ const TotalRow = ({ label, amount, strong }: { label: string; amount: string; st
   </div>
 )
 
-export default function ReviewStep({ storeId, form }: { storeId: string; form: UseFormReturn<OrderFormInput, unknown, OrderFormOutput> }) {
+// onPreviewChange hands the parent the prices (null while they're being worked out), whose total the order is created
+// at; a change to refreshKey prices again, after PRICE_CHANGED
+export default function ReviewStep({
+  storeId,
+  form,
+  onPreviewChange,
+  refreshKey = 0,
+}: {
+  storeId: string
+  form: UseFormReturn<OrderFormInput, unknown, OrderFormOutput>
+  onPreviewChange?: (preview: OrderPreview | null) => void
+  refreshKey?: number
+}) {
   const values = useWatch({ control: form.control })
   const { role, isLoading } = useMemberRole(storeId)
-  const [preview, setPreview] = useState<OrderPreview | null>(null)
+  const [preview, setPreviewState] = useState<OrderPreview | null>(null)
   const [previewError, setPreviewError] = useState<string | null>(null)
+  const setPreview = (next: OrderPreview | null) => {
+    setPreviewState(next)
+    onPreviewChange?.(next)
+  }
 
   const { items = [], shippingGhs, discountType = "NONE", discountValue } = values
   const discountReady = discountType === "NONE" || (typeof discountValue === "number" && discountValue > 0)
@@ -47,6 +63,8 @@ export default function ReviewStep({ storeId, form }: { storeId: string; form: U
   useEffect(() => {
     if (!discountReady || typeof shippingGhs !== "number") return
     let isCurrent = true
+    // Until the new prices arrive, there's no total to create the order at
+    setPreview(null)
     const timer = setTimeout(() => {
       previewStoreOrderAction({
         storeId,
@@ -73,7 +91,7 @@ export default function ReviewStep({ storeId, form }: { storeId: string; form: U
     }
     // pricingKey covers items, shippingGhs and the discount
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [storeId, pricingKey, discountReady])
+  }, [storeId, pricingKey, discountReady, refreshKey])
 
   // Discounts are for owners and admins; createStoreOrderAction checks again
   const canDiscount = role !== null && consoleAuthClient.organization.checkRolePermission({ role, permissions: { order: ["update"] } })

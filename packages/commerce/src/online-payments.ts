@@ -80,8 +80,10 @@ export type PaymentOutcome =
   | { kind: "PAID"; orderId: string }
   // This attempt's success was recorded before (the webhook and the customer's return both report it)
   | { kind: "ALREADY_RECORDED"; orderId: string }
-  // Failed, abandoned, or still going
+  // Failed or abandoned
   | { kind: "NOT_PAID"; orderId: string; status: string }
+  // Still going (ongoing, pending, processing, queued): the customer may be approving it on their phone
+  | { kind: "IN_PROGRESS"; orderId: string; status: string }
   | { kind: "UNKNOWN_REFERENCE" }
   // Money came in that the order can't simply take: staff are emailed to sort it out
   | { kind: "PROBLEM"; orderId: string; problem: PaymentProblem; reference: string; amountGhs: string }
@@ -103,9 +105,8 @@ export async function recordPaystackTransaction(tx: Tx, transaction: PaystackTra
 
   if (transaction.status !== "success") {
     const finished = FINISHED_UNPAID[transaction.status]
-    if (finished) {
-      await tx.paymentAttempt.updateMany({ where: { id: attempt.id, status: PaymentAttemptStatus.PENDING }, data: { status: finished, gatewayResponse: transaction.gateway_response } })
-    }
+    if (!finished) return { kind: "IN_PROGRESS", orderId, status: transaction.status }
+    await tx.paymentAttempt.updateMany({ where: { id: attempt.id, status: PaymentAttemptStatus.PENDING }, data: { status: finished, gatewayResponse: transaction.gateway_response } })
     return { kind: "NOT_PAID", orderId, status: transaction.status }
   }
 
@@ -204,8 +205,6 @@ export async function cancelUnpaidOrder(tx: Tx, orderId: string) {
     if (error instanceof StatusChangedError) return false
     throw error
   }
-  // Attempts never finished are over now: a payment that still comes in is recorded as a problem for staff
-  await tx.paymentAttempt.updateMany({ where: { orderId, status: PaymentAttemptStatus.PENDING }, data: { status: PaymentAttemptStatus.ABANDONED } })
   return true
 }
 
@@ -217,7 +216,8 @@ export interface UnpaidOrdersResult {
 }
 
 // The cancelling job (the console's /api/cron/unpaid-orders). Each order's open attempts are checked with Paystack
-// first, so an order paid at the last moment is recorded as paid, not cancelled.
+// first, so an order paid at the last moment is recorded as paid, not cancelled, and one still being paid (a mobile
+// money prompt the customer hasn't answered) is left for the next run, like one Paystack couldn't answer for.
 export async function cancelUnpaidOrders(): Promise<UnpaidOrdersResult> {
   const result: UnpaidOrdersResult = { cancelled: [], paid: [], skipped: [] }
 
@@ -229,6 +229,7 @@ export async function cancelUnpaidOrders(): Promise<UnpaidOrdersResult> {
         const outcome = await settlePaystackReference(attempt.reference)
         await sendPaymentEmails(outcome)
         if (outcome.kind === "PAID" || outcome.kind === "PROBLEM") paid = true
+        else if (outcome.kind === "IN_PROGRESS") unknown = true
       } catch (error) {
         console.error(`Couldn't check payment ${attempt.reference} with Paystack:`, error)
         unknown = true
