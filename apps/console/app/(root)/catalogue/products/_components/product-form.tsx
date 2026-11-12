@@ -451,7 +451,16 @@ const ProductForm = ({
                     </div>
 
                     <div className="grid items-start gap-5 sm:grid-cols-2">
-                      <NumberInputField control={form.control} label="Buy price" name="baseBuyPrice" step={0.01} min={0} prependText="$" disabled={isBusy} />
+                      <NumberInputField
+                        control={form.control}
+                        label="Default buy price"
+                        info="A starting value only: a new listing's buy price and a purchase order's suggested cost. Each store's own buy price, on its listing, is what reports count."
+                        name="baseBuyPrice"
+                        step={0.01}
+                        min={0}
+                        prependText="$"
+                        disabled={isBusy}
+                      />
                       <NumberInputField
                         control={form.control}
                         label="Sell price"

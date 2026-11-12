@@ -217,7 +217,6 @@ export interface ProductListItem {
   baseSellPrice: string
   // What customers pay in GHS today, formatted; null when the storefront isn't showing prices
   customerPrice: string | null
-  baseBuyPrice: string
   // From the top-level category down, e.g. "Men / Accessories": names only have to be unique among siblings
   categoryPath: string
   status: Status

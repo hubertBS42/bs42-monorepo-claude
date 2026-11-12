@@ -201,7 +201,7 @@ export default async function StoreProductPage({ params }: StoreProductPageProps
                 {formatCurrency(product.baseSellPrice)}
                 {customerPrice && <span className="block text-xs text-muted-foreground">{customerPrice}</span>}
               </Detail>
-              <Detail label="Buy price">{formatCurrency(product.baseBuyPrice)}</Detail>
+              <Detail label="Default buy price">{formatCurrency(product.baseBuyPrice)}</Detail>
             </CardContent>
           </Card>
 

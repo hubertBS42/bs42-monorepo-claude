@@ -106,7 +106,6 @@ export const getProductsForTable = async (filters: ProductsParams = {}): Promise
           description: true,
           brand: { select: { id: true, name: true } },
           baseSellPrice: true,
-          baseBuyPrice: true,
           categoryId: true,
           status: true,
           updatedAt: true,
@@ -125,12 +124,11 @@ export const getProductsForTable = async (filters: ProductsParams = {}): Promise
     return {
       success: true,
       data: {
-        data: products.map(({ _count, categoryId, baseSellPrice, baseBuyPrice, description, ...product }) => ({
+        data: products.map(({ _count, categoryId, baseSellPrice, description, ...product }) => ({
           ...product,
           missing: missingDetails({ images: product.images, description, baseSellPrice }),
           baseSellPrice: baseSellPrice.toString(),
           customerPrice: customerPriceLabel(baseSellPrice.toString(), pricing),
-          baseBuyPrice: baseBuyPrice.toString(),
           categoryPath: categoryPaths.get(categoryId) ?? "",
           variantCount: _count.variants,
           storeCount: _count.storeListings,
