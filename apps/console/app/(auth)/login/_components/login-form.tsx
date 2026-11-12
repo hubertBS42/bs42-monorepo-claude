@@ -3,7 +3,8 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Button } from "@workspace/ui/components/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@workspace/ui/components/card"
-import { FieldError, FieldGroup } from "@workspace/ui/components/field"
+import { FieldGroup } from "@workspace/ui/components/field"
+import { FormAlert } from "@workspace/forms/components/form-alert"
 import { PasswordField, TextInputField } from "@workspace/forms"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
@@ -23,7 +24,7 @@ function getSafeCallbackURL(callbackURL: string) {
 
 // Set by proxy.ts when it signs a session out (lib/console-session.ts)
 const SIGNED_OUT_MESSAGES = {
-  idle: "You were signed out after 12 hours without activity. Sign in to continue.",
+  idle: "After 12 hours without activity. Sign in to continue.",
   expired: "Sessions last 7 days. Sign in again to continue.",
 }
 
@@ -119,13 +120,17 @@ export function LoginForm({ callbackURL, setupComplete = false, signedOut }: { c
     <Card>
       <CardHeader>
         <CardTitle>Sign in to the console</CardTitle>
-        <CardDescription>
-          {setupComplete ? "Your administrator account is ready. Sign in to continue." : signedOut ? SIGNED_OUT_MESSAGES[signedOut] : "Use the email address your invitation was sent to."}
-        </CardDescription>
+        <CardDescription>{setupComplete ? "Your administrator account is ready. Sign in to continue." : "Use the email address your invitation was sent to."}</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={form.handleSubmit(onSubmit)} id="sign-in-form">
           <FieldGroup>
+            {/* Why the console signed them out (proxy.ts) */}
+            {signedOut && (
+              <FormAlert title="You were signed out" tone="notice">
+                {SIGNED_OUT_MESSAGES[signedOut]}
+              </FormAlert>
+            )}
             <TextInputField control={form.control} name="email" label="Email" type="email" placeholder="you@example.com" autoComplete="email" autoFocus />
 
             <PasswordField
@@ -141,7 +146,7 @@ export function LoginForm({ callbackURL, setupComplete = false, signedOut }: { c
               }
             />
 
-            {form.formState.errors.root && <FieldError errors={[form.formState.errors.root]} />}
+            {form.formState.errors.root && <FormAlert title="Couldn't sign you in">{form.formState.errors.root.message}</FormAlert>}
 
             <Button type="submit" form="sign-in-form" disabled={form.formState.isSubmitting}>
               {form.formState.isSubmitting ? "Signing in…" : "Sign in"}

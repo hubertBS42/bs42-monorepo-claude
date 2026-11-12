@@ -8,7 +8,8 @@ import PasswordField from "@workspace/forms/components/password-field"
 import TextInputField from "@workspace/forms/components/text-input-field"
 import { Button } from "@workspace/ui/components/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@workspace/ui/components/card"
-import { Field, FieldDescription, FieldError, FieldGroup, FieldSeparator } from "@workspace/ui/components/field"
+import { FormAlert, formAlertTone } from "@workspace/forms/components/form-alert"
+import { Field, FieldDescription, FieldGroup, FieldSeparator } from "@workspace/ui/components/field"
 import { Spinner } from "@workspace/ui/components/spinner"
 
 import { GoogleButton } from "@/components/account/google-button"
@@ -26,14 +27,17 @@ export function SignInForm({ redirectTo, googleEnabled, notice }: { redirectTo: 
       // new link it emails signs the customer in there
       const result = await storeAuthClient.signIn.email({ email: values.email, password: values.password, callbackURL: redirectTo })
       if (result.error) {
+        // Not a failure: the customer has a step to take
+        if (result.error.code === "EMAIL_NOT_VERIFIED") {
+          form.setError("root", { type: "notice", message: "Confirm your email address first. We've sent you a new link: open it and you'll be signed in." })
+          return
+        }
         const message =
-          result.error.code === "EMAIL_NOT_VERIFIED"
-            ? "Confirm your email address first. We've sent you a new link: open it and you'll be signed in."
-            : result.error.code === "BANNED_USER"
-              ? "This account has been suspended. Please contact us."
-              : result.error.status === 429
-                ? "Too many attempts. Please wait a minute and try again."
-                : "Wrong email or password. Please try again."
+          result.error.code === "BANNED_USER"
+            ? "This account has been suspended. Please contact us."
+            : result.error.status === 429
+              ? "Too many attempts. Please wait a minute and try again."
+              : "Wrong email or password. Please try again."
         form.setError("root", { message })
       }
     } catch (error) {
@@ -41,6 +45,9 @@ export function SignInForm({ redirectTo, googleEnabled, notice }: { redirectTo: 
       form.setError("root", { message: "We couldn't sign you in right now. Please try again." })
     }
   }
+
+  const rootError = form.formState.errors.root
+  const rootTone = rootError && formAlertTone(rootError)
 
   return (
     <Card>
@@ -51,11 +58,8 @@ export function SignInForm({ redirectTo, googleEnabled, notice }: { redirectTo: 
       <CardContent>
         <form onSubmit={form.handleSubmit(onSubmit)} noValidate>
           <FieldGroup>
-            {notice && (
-              <p role="status" className="rounded-md border bg-muted/50 p-3 text-sm">
-                {notice}
-              </p>
-            )}
+            {/* Google sign-in that came back with an error */}
+            {notice && <FormAlert title="Couldn't sign you in">{notice}</FormAlert>}
             {googleEnabled && (
               <>
                 <Field>
@@ -76,7 +80,11 @@ export function SignInForm({ redirectTo, googleEnabled, notice }: { redirectTo: 
                 </Link>
               }
             />
-            {form.formState.errors.root && <FieldError errors={[form.formState.errors.root]} />}
+            {rootError && (
+              <FormAlert title={rootTone === "notice" ? "Check your email" : "Couldn't sign you in"} tone={rootTone}>
+                {rootError.message}
+              </FormAlert>
+            )}
             <Field>
               <Button type="submit" disabled={form.formState.isSubmitting}>
                 {form.formState.isSubmitting && <Spinner />}

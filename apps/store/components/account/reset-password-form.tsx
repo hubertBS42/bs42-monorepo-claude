@@ -8,7 +8,8 @@ import { storeAuthClient } from "@workspace/auth/store-client"
 import PasswordField from "@workspace/forms/components/password-field"
 import { Button, buttonVariants } from "@workspace/ui/components/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@workspace/ui/components/card"
-import { Field, FieldError, FieldGroup } from "@workspace/ui/components/field"
+import { Field, FieldGroup } from "@workspace/ui/components/field"
+import { FormAlert } from "@workspace/forms/components/form-alert"
 import { Spinner } from "@workspace/ui/components/spinner"
 
 import { resetPasswordSchema, type ResetPasswordValues } from "@/lib/schemas/account.schemas"
@@ -65,7 +66,7 @@ export function ResetPasswordForm({ token }: { token: string | null }) {
           <FieldGroup>
             <PasswordField control={form.control} name="password" label="New password" autoComplete="new-password" autoFocus />
             <PasswordField control={form.control} name="confirmPassword" label="Confirm password" autoComplete="new-password" />
-            {form.formState.errors.root && <FieldError errors={[form.formState.errors.root]} />}
+            {form.formState.errors.root && <FormAlert title="Couldn't change your password">{form.formState.errors.root.message}</FormAlert>}
             <Field>
               <Button type="submit" disabled={form.formState.isSubmitting}>
                 {form.formState.isSubmitting && <Spinner />}

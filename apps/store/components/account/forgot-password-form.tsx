@@ -8,7 +8,8 @@ import { storeAuthClient } from "@workspace/auth/store-client"
 import TextInputField from "@workspace/forms/components/text-input-field"
 import { Button, buttonVariants } from "@workspace/ui/components/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@workspace/ui/components/card"
-import { Field, FieldDescription, FieldError, FieldGroup } from "@workspace/ui/components/field"
+import { Field, FieldDescription, FieldGroup } from "@workspace/ui/components/field"
+import { FormAlert } from "@workspace/forms/components/form-alert"
 import { Spinner } from "@workspace/ui/components/spinner"
 
 import { forgotPasswordSchema, type ForgotPasswordValues } from "@/lib/schemas/account.schemas"
@@ -50,7 +51,7 @@ export function ForgotPasswordForm() {
           <form onSubmit={form.handleSubmit(onSubmit)} noValidate>
             <FieldGroup>
               <TextInputField control={form.control} name="email" label="Email" type="email" placeholder="m@example.com" autoComplete="email" autoFocus />
-              {form.formState.errors.root && <FieldError errors={[form.formState.errors.root]} />}
+              {form.formState.errors.root && <FormAlert title="Couldn't send the link">{form.formState.errors.root.message}</FormAlert>}
               <Field>
                 <Button type="submit" disabled={form.formState.isSubmitting}>
                   {form.formState.isSubmitting && <Spinner />}

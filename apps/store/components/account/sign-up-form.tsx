@@ -10,7 +10,8 @@ import PasswordField from "@workspace/forms/components/password-field"
 import TextInputField from "@workspace/forms/components/text-input-field"
 import { Button } from "@workspace/ui/components/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@workspace/ui/components/card"
-import { Field, FieldDescription, FieldError, FieldGroup, FieldSeparator } from "@workspace/ui/components/field"
+import { Field, FieldDescription, FieldGroup, FieldSeparator } from "@workspace/ui/components/field"
+import { FormAlert } from "@workspace/forms/components/form-alert"
 import { Spinner } from "@workspace/ui/components/spinner"
 
 import { GoogleButton } from "@/components/account/google-button"
@@ -110,7 +111,7 @@ export function SignUpForm({ redirectTo, googleEnabled, legal }: { redirectTo: s
                 </div>
                 <FieldDescription>Must be at least 8 characters long.</FieldDescription>
               </Field>
-              {form.formState.errors.root && <FieldError errors={[form.formState.errors.root]} />}
+              {form.formState.errors.root && <FormAlert title="Couldn't create your account">{form.formState.errors.root.message}</FormAlert>}
               <Field>
                 <Button type="submit" disabled={form.formState.isSubmitting}>
                   {form.formState.isSubmitting && <Spinner />}

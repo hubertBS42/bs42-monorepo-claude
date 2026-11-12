@@ -17,7 +17,7 @@ function googleNotice(error: string | string[] | undefined) {
   if (codes.length === 0) return null
   // As the email form says it (components/account/sign-in-form.tsx)
   if (codes.includes("BANNED_USER")) return "This account has been suspended. Please contact us."
-  return "We couldn't sign you in with Google. Please try again, or use your email."
+  return "Google sign-in didn't go through. Please try again, or use your email."
 }
 
 export default async function SignInPage({ searchParams }: { searchParams: Promise<SearchParams> }) {

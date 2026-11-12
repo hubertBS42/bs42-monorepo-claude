@@ -7,7 +7,8 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { consoleAuthClient } from "@workspace/auth/console-client"
 import { Button, buttonVariants } from "@workspace/ui/components/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@workspace/ui/components/card"
-import { FieldError, FieldGroup } from "@workspace/ui/components/field"
+import { FieldGroup } from "@workspace/ui/components/field"
+import { FormAlert } from "@workspace/forms/components/form-alert"
 import { TextInputField } from "@workspace/forms"
 import { resetPasswordSchema } from "@/lib/schemas/auth.schemas"
 
@@ -61,7 +62,7 @@ export function ResetPasswordForm() {
             <FieldGroup>
               <TextInputField control={form.control} name="email" label="Email" type="email" autoComplete="email" placeholder="m@example.com" disabled={form.formState.isSubmitting} autoFocus />
 
-              {form.formState.errors.root && <FieldError errors={[form.formState.errors.root]} />}
+              {form.formState.errors.root && <FormAlert title="Couldn't send the link">{form.formState.errors.root.message}</FormAlert>}
 
               <Button type="submit" disabled={form.formState.isSubmitting}>
                 {form.formState.isSubmitting ? "Sending..." : "Send reset link"}

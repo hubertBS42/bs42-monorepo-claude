@@ -8,7 +8,8 @@ import { useForm } from "react-hook-form"
 import TextInputField from "@workspace/forms/components/text-input-field"
 import { Button } from "@workspace/ui/components/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@workspace/ui/components/card"
-import { Field, FieldDescription, FieldError, FieldGroup } from "@workspace/ui/components/field"
+import { Field, FieldDescription, FieldGroup } from "@workspace/ui/components/field"
+import { FormAlert } from "@workspace/forms/components/form-alert"
 import { Spinner } from "@workspace/ui/components/spinner"
 
 import { findOrderAction } from "@/lib/actions/order-lookup.actions"
@@ -64,7 +65,7 @@ export function FindOrderForm() {
           <FieldGroup>
             <TextInputField control={form.control} name="reference" label="Order reference" placeholder="BS42-20261020-00001" autoComplete="off" autoFocus />
             <TextInputField control={form.control} name="email" label="Email" type="email" placeholder="m@example.com" autoComplete="email" />
-            {form.formState.errors.root && <FieldError errors={[form.formState.errors.root]} />}
+            {form.formState.errors.root && <FormAlert title="Couldn't look that up">{form.formState.errors.root.message}</FormAlert>}
             <Field>
               <Button type="submit" disabled={form.formState.isSubmitting}>
                 {form.formState.isSubmitting && <Spinner />}

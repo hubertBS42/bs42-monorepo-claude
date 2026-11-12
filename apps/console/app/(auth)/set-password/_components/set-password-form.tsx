@@ -6,7 +6,8 @@ import { consoleAuthClient } from "@workspace/auth/console-client"
 import { PasswordField } from "@workspace/forms"
 import { Button, buttonVariants } from "@workspace/ui/components/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@workspace/ui/components/card"
-import { FieldError, FieldGroup } from "@workspace/ui/components/field"
+import { FieldGroup } from "@workspace/ui/components/field"
+import { FormAlert } from "@workspace/forms/components/form-alert"
 import Link from "next/link"
 import { useState } from "react"
 import { SubmitHandler, useForm } from "react-hook-form"
@@ -101,7 +102,7 @@ export function SetPasswordForm({ token, invalidToken = false }: { token?: strin
                     disabled={form.formState.isSubmitting}
                   />
 
-                  {form.formState.errors.root && <FieldError errors={[form.formState.errors.root]} />}
+                  {form.formState.errors.root && <FormAlert title="Couldn't set your password">{form.formState.errors.root.message}</FormAlert>}
 
                   <Button type="submit" disabled={form.formState.isSubmitting}>
                     {form.formState.isSubmitting ? "Updating..." : "Update password"}

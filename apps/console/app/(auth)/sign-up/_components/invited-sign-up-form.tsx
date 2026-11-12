@@ -4,7 +4,8 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { PasswordField, TextInputField } from "@workspace/forms"
 import { Button } from "@workspace/ui/components/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@workspace/ui/components/card"
-import { FieldError, FieldGroup } from "@workspace/ui/components/field"
+import { FieldGroup } from "@workspace/ui/components/field"
+import { FormAlert } from "@workspace/forms/components/form-alert"
 import { consoleAuthClient } from "@workspace/auth/console-client"
 import { useRouter } from "next/navigation"
 import { SubmitHandler, useForm } from "react-hook-form"
@@ -85,7 +86,7 @@ export function InvitedSignUpForm({ invitationId, email, storeName }: { invitati
               disabled={form.formState.isSubmitting}
             />
 
-            {form.formState.errors.root && <FieldError errors={[form.formState.errors.root]} />}
+            {form.formState.errors.root && <FormAlert title="Couldn't create your account">{form.formState.errors.root.message}</FormAlert>}
 
             <Button type="submit" disabled={form.formState.isSubmitting}>
               {form.formState.isSubmitting ? "Creating account..." : "Sign up"}
