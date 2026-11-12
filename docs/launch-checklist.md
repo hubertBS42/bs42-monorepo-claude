@@ -144,7 +144,7 @@ Each is a POST to the console with the cron secret. A failure answers with an er
 
 | Job | When | What it does |
 |---|---|---|
-| `/api/cron/unpaid-orders` | Every 5 minutes | Cancels storefront orders unpaid after 45 minutes and puts their stock back; clears old baskets and notifications |
+| `/api/cron/unpaid-orders` | Every 15 minutes (not more often: Neon scales to zero only after 5 idle minutes, so a shorter interval keeps the database awake and billed all month) | Cancels storefront orders unpaid after 45 minutes and puts their stock back; clears old baskets and notifications |
 | `/api/cron/exchange-rate` | Daily, just after 00:00 UTC (Accra time) | Saves today's USD→GHS rate. Without it, prices disappear from the store after 2 days. |
 | `/api/cron/file-cleanup` | Daily | Deletes uploaded files nothing uses any more |
 

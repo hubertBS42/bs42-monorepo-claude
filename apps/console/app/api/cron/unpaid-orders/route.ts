@@ -7,7 +7,7 @@ import { prisma } from "@workspace/db"
 // Each order's open payments are checked with Paystack first, so one paid at the last moment is recorded, not
 // cancelled; an order Paystack can't answer for is left for the next run. Also clears out storefront baskets nobody
 // has added to in CART_LIFETIME_DAYS (their cookies have lapsed), and the bell's notifications older than
-// NOTIFICATION_LIFETIME_DAYS. Meant for a scheduler every 5 minutes: POST with
+// NOTIFICATION_LIFETIME_DAYS. Meant for a scheduler every 15 minutes (more often keeps Neon's compute from ever scaling to zero): POST with
 // "Authorization: Bearer $CRON_SECRET".
 
 export async function POST(request: Request) {
