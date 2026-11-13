@@ -1,3 +1,4 @@
+import type { Metadata } from "next"
 import Link from "next/link"
 import { ArrowRight } from "lucide-react"
 
@@ -21,6 +22,9 @@ const FEATURED_COUNT = 8
 const BEST_SELLERS_COUNT = 4
 // The newest posts, one row of cards on wide screens
 const BLOG_POSTS = 3
+
+// The title and description are the layout's
+export const metadata: Metadata = { alternates: { canonical: "/" } }
 
 export default async function HomePage() {
   const [settings, storeName, tree, featured, pricing, posts, bestSellerIds] = await Promise.all([

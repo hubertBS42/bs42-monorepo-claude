@@ -29,6 +29,8 @@ const nextConfig: NextConfig = {
   // The old bs42.net listed its posts at /blogs; each post kept its /blog/<slug> address
   async redirects() {
     return [
+      // One address for the site: www.bs42.net serves the same app, so search engines would crawl every page twice
+      { source: "/:path*", has: [{ type: "host", value: "www.bs42.net" }], destination: "https://bs42.net/:path*", permanent: true },
       { source: "/blogs", destination: "/blog", permanent: true },
       ...Object.entries(oldProductAddresses).map(([from, to]) => ({ source: `/product/${from}`, destination: `/p/${to}`, permanent: true })),
       { source: "/product/:slug", destination: "/p/:slug", permanent: true },
