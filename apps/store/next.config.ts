@@ -1,5 +1,11 @@
+import { readFileSync } from "node:fs"
 import { fileURLToPath } from "node:url"
 import type { NextConfig } from "next"
+
+// The old bs42.net's products were at /product/<slug>. Most kept their slug at /p/<slug>; this file lists the ones the
+// migration renamed or merged (old slug → the production product's slug, from seed-products.json's `from`), so links
+// and search results reach the product. A slug that leads nowhere still ends at the product page's 404.
+const oldProductAddresses: Record<string, string> = JSON.parse(readFileSync(new URL("./old-product-addresses.json", import.meta.url), "utf8"))
 
 // Sent with every response: other sites can't show these pages in a frame (so they can't trick someone into clicking
 // a button they can't see), browsers don't guess file types, and other sites only learn the origin a visitor came from.
@@ -22,7 +28,11 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   // The old bs42.net listed its posts at /blogs; each post kept its /blog/<slug> address
   async redirects() {
-    return [{ source: "/blogs", destination: "/blog", permanent: true }]
+    return [
+      { source: "/blogs", destination: "/blog", permanent: true },
+      ...Object.entries(oldProductAddresses).map(([from, to]) => ({ source: `/product/${from}`, destination: `/p/${to}`, permanent: true })),
+      { source: "/product/:slug", destination: "/p/:slug", permanent: true },
+    ]
   },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }]

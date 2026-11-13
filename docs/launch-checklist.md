@@ -208,7 +208,7 @@ Production already runs at its App Service addresses; this is the switch from th
 7. [ ] Paystack (section 6): the live key in both apps, and the webhook URL `https://bs42.net/api/paystack/webhook` in live mode. Then turn on Settings → Pricing → Online Payments (off until then: the storefront offers quotes and the contact page instead, and staff create orders in the console). Going live without it is fine too: the storefront just doesn't take payments yet.
 8. [ ] Point `bs42.net` (and `www`) at the store's web app and add their managed certificates (section 5). Set `STORE_AUTH_URL=https://bs42.net` in both apps' settings and in the GitHub environment's variables, and run the deploy workflow again: the build bakes the URL in. With Google sign-in, add `https://bs42.net/api/auth/callback/google` as a redirect URI.
 9. [ ] The smoke test (section 9), with a real small order paid through Paystack, then refunded.
-10. [ ] Google Search Console: add `bs42.net` and submit `https://bs42.net/sitemap.xml`. The old site's addresses aren't redirected (decided: it had little search traffic), so this gets the new pages found sooner.
+10. [ ] Google Search Console: add `bs42.net` and submit `https://bs42.net/sitemap.xml`, so the new pages are found sooner. The old site's product addresses (`/product/<slug>`) redirect to the new ones (`apps/store/next.config.ts`).
 
 **Afterwards:**
 
@@ -220,3 +220,4 @@ Production already runs at its App Service addresses; this is the switch from th
   The script only re-estimates the old site's order lines. A sale made after launch keeps the buy price it was made at, so a product sold before its buy price is fixed shows a 0% margin (or "Without a cost") on that sale in Profit & Margins for good: fix the products most likely to sell first.
 - [ ] Once the import has been checked, back up the old system's database, then stop its App Service (bs42-admin): its API answers without a sign-in and holds customers' details. Then stop the old storefront (bs42-client).
 - [ ] The next day, Settings → Pricing shows the rate the daily job fetched.
+- [ ] **November 2027 or later**: the old product address redirects (`/product/<slug>`, `old-product-addresses.json`) can go if Search Console (Indexing → Pages, and Links) no longer shows any `/product/…` address. Google asks for a year; links on other sites and in old messages never update, so keeping them costs nothing. If a few still get visits, keep those.
