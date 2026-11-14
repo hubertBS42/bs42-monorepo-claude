@@ -1,10 +1,11 @@
 "use client"
 
-import { useState } from "react"
+import { useId, useRef, useState } from "react"
 import Link from "next/link"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { MailCheck } from "lucide-react"
 import { useForm } from "react-hook-form"
+import { SIGN_UP_CHECK_HEADER, SIGN_UP_CHECK_PASSED } from "@workspace/auth/constants"
 import { storeAuthClient } from "@workspace/auth/store-client"
 import PasswordField from "@workspace/forms/components/password-field"
 import TextInputField from "@workspace/forms/components/text-input-field"
@@ -25,13 +26,19 @@ export function SignUpForm({ redirectTo, googleEnabled, legal }: { redirectTo: s
   const [sentTo, setSentTo] = useState<string | null>(null)
   const [resend, setResend] = useState<"idle" | "sending" | "sent" | "failed">("idle")
   const form = useForm<SignUpValues>({ resolver: zodResolver(signUpSchema), defaultValues: { name: "", email: "", password: "", confirmPassword: "" } })
+  // A field people never see; bots fill it in (see SIGN_UP_CHECK_HEADER)
+  const trap = useRef<HTMLInputElement>(null)
+  const trapId = useId()
   const callbackURL = verifyEmailHref(redirectTo)
 
   async function onSubmit(values: SignUpValues) {
     form.clearErrors("root")
     try {
       // Marketing emails are off until the customer turns them on
-      const result = await storeAuthClient.signUp.email({ name: values.name.trim(), email: values.email.trim(), password: values.password, getMarketingEmails: false, callbackURL })
+      const result = await storeAuthClient.signUp.email(
+        { name: values.name.trim(), email: values.email.trim(), password: values.password, getMarketingEmails: false, callbackURL },
+        { headers: { [SIGN_UP_CHECK_HEADER]: trap.current?.value ? "filled" : SIGN_UP_CHECK_PASSED } }
+      )
       if (result.error) {
         form.setError("root", {
           message: result.error.status === 429 ? "Too many attempts. Please wait a minute and try again." : (result.error.message ?? "We couldn't create your account. Please try again."),
@@ -104,6 +111,11 @@ export function SignUpForm({ redirectTo, googleEnabled, legal }: { redirectTo: s
               )}
               <TextInputField control={form.control} name="name" label="Full name" placeholder="Ama Mensah" autoComplete="name" autoFocus />
               <TextInputField control={form.control} name="email" label="Email" type="email" placeholder="m@example.com" autoComplete="email" />
+              {/* Off the screen rather than display: none, which some bots skip; hidden from screen readers and the Tab key */}
+              <div aria-hidden className="absolute -left-[9999px] size-px overflow-hidden">
+                <label htmlFor={trapId}>Website</label>
+                <input ref={trap} id={trapId} name="website" type="text" tabIndex={-1} autoComplete="off" defaultValue="" />
+              </div>
               <Field>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <PasswordField control={form.control} name="password" label="Password" autoComplete="new-password" />

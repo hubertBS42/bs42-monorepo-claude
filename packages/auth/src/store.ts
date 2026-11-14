@@ -1,11 +1,12 @@
 import "server-only"
 
 import { betterAuth } from "better-auth"
-import { APIError } from "better-auth/api"
+import { APIError, createAuthMiddleware } from "better-auth/api"
 import { nextCookies } from "better-auth/next-js"
 import { EMAIL_VERIFICATION_TOKEN_EXPIRATION_SECONDS, RESET_PASSWORD_TOKEN_EXPIRATION_SECONDS } from "@workspace/contracts"
 import { ExistingAccountEmail, PasswordUpdatedEmail, ResetPasswordEmail, sendEmail, VerifyEmailEmail } from "@workspace/email"
 import { prisma, readAppSettings, resolveDarkLogoUrl, resolveStoreName } from "@workspace/db"
+import { SIGN_UP_CHECK_HEADER, SIGN_UP_CHECK_PASSED } from "./constants"
 import { authURLs, sharedAuthOptions } from "./shared"
 
 const googleClientId = process.env.GOOGLE_CLIENT_ID
@@ -115,6 +116,17 @@ export const storeAuth = betterAuth({
         },
       },
     },
+  },
+  hooks: {
+    // Bots were creating accounts (random names, made-up Gmail addresses), each emailing a stranger a confirmation link.
+    // Only the sign-up form's own request passes: it sends the header, and fills it in "ok" only while its hidden field
+    // is empty.
+    before: createAuthMiddleware(async (ctx) => {
+      if (ctx.path !== "/sign-up/email") return
+      if (ctx.headers?.get(SIGN_UP_CHECK_HEADER) !== SIGN_UP_CHECK_PASSED) {
+        throw new APIError("BAD_REQUEST", { message: "We couldn't create your account. Please try again.", code: "SIGN_UP_REFUSED" })
+      }
+    }),
   },
   // Lets server actions sign in and out, setting the cookies
   plugins: [nextCookies()],
