@@ -4,12 +4,14 @@ import { useState } from "react"
 import Link from "next/link"
 import { Building2, FileText, MessageCircle, Package, ShieldCheck, Truck, Wrench } from "lucide-react"
 import { Badge } from "@workspace/ui/components/badge"
+import { Button } from "@workspace/ui/components/button"
 import { SaleBadge } from "@/components/sale-badge"
 import { Checkbox } from "@workspace/ui/components/checkbox"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@workspace/ui/components/tabs"
 import { cn } from "@workspace/ui/lib/utils"
 
 import { AddToBasketButton } from "@/components/basket/add-to-basket"
+import { WhatsAppIcon } from "@/components/brand-icons"
 import { QuantityStepper } from "@/components/basket/quantity-stepper"
 import { MAX_LINE_QUANTITY, TRADE_LINE_QUANTITY } from "@/lib/basket-limits"
 import { useTradePercent } from "@/components/trade/trade-state"
@@ -75,6 +77,7 @@ export function ProductView({
   installation,
   summary,
   contact,
+  pageUrl,
 }: {
   card: PricedCard
   details: ProductDetails
@@ -87,6 +90,8 @@ export function ProductView({
   // The description's opening lines (summaryLines), `more` when it goes on
   summary: { lines: string[]; more: boolean } | null
   contact: ProductContact
+  // The product's address on the storefront (canonical, no variant), for sharing
+  pageUrl: string
 }) {
   const { offer, options } = useOfferPicker(card, initialVariantId)
   const [quantity, setQuantity] = useState(1)
@@ -189,6 +194,16 @@ export function ProductView({
               className="min-w-48 flex-1 sm:flex-none"
             />
             <WishListHeart item={{ productId: card.id, variantId: offer.variantId }} label={label} appearance="button" />
+            <Button
+              // wa.me with no number lets the customer pick the chat; the link opens on the variant shown
+              render={<a href={`https://wa.me/?text=${encodeURIComponent(`${label}\n${offer.variantId ? `${pageUrl}?variant=${offer.variantId}` : pageUrl}`)}`} target="_blank" rel="noopener noreferrer" />}
+              variant="outline"
+              size="lg"
+              aria-label="Share on WhatsApp"
+            >
+              <WhatsAppIcon data-icon="inline-start" aria-hidden />
+              Share
+            </Button>
             <CompareToggle pick={{ id: card.id, name: card.name, slug: card.slug, image: card.image, categoryId: card.categoryId }} className="text-sm" />
           </div>
 

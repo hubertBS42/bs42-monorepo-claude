@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { Fragment } from "react"
+import { authURLs } from "@workspace/auth/constants"
 import { describeInstallationAreas } from "@workspace/commerce/installation-areas"
 import { withTax } from "@workspace/commerce/pricing"
 import { Prisma } from "@workspace/db/client"
@@ -152,6 +153,7 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
         installation={installation}
         summary={summaryLines(details.description)}
         contact={{ phone: settings.contactPhone, phoneLabel: settings.contactPhone && formatPhoneNumber(settings.contactPhone), whatsapp: settings.contactWhatsapp }}
+        pageUrl={new URL(`/p/${card.slug}`, authURLs.store).toString()}
       />
 
       <ProductShelf id="pairs-well-with" title="Pairs well with" cards={priceCards(shelves.pairs, pricing)} />
