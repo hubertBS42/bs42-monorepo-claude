@@ -5,13 +5,14 @@ import { ArrowRight } from "lucide-react"
 import { BlogPostCard } from "@/components/blog/blog-card"
 import { CategoryCarousel } from "@/components/home/category-carousel"
 import { CategoryGrid } from "@/components/home/category-grid"
+import { CategoryIcons } from "@/components/home/category-icons"
 import { HowToOrder } from "@/components/home/how-to-order"
 import { TradeBand } from "@/components/home/trade-band"
 import { ProductCard } from "@/components/product-card"
 import { SearchForm } from "@/components/search-form"
 import { getBestSellerIds } from "@/lib/data/best-sellers"
 import { getBlogPosts } from "@/lib/data/blog"
-import { categoryHref, featuredCategories, getCategoryTree } from "@/lib/data/categories"
+import { categoryHref, featuredCategories, getCategoryPhotos, getCategoryTree } from "@/lib/data/categories"
 import { loadProductCards } from "@/lib/data/product-cards"
 import { isInStock } from "@/lib/product-cards"
 import { priceCards } from "@/lib/pricing"
@@ -27,7 +28,7 @@ const BLOG_POSTS = 3
 export const metadata: Metadata = { alternates: { canonical: "/" } }
 
 export default async function HomePage() {
-  const [settings, storeName, tree, featured, pricing, posts, bestSellerIds] = await Promise.all([
+  const [settings, storeName, tree, featured, pricing, posts, bestSellerIds, categoryPhotos] = await Promise.all([
     getAppSettings(),
     getStoreName(),
     getCategoryTree(),
@@ -35,6 +36,7 @@ export default async function HomePage() {
     getShelfPricing(),
     getBlogPosts(),
     getBestSellerIds(),
+    getCategoryPhotos(),
   ])
   const slides = featuredCategories(tree).map((node) => ({ id: node.id, name: node.name, description: node.description, image: node.image, href: categoryHref(tree, node.id) }))
   const tiles = tree.roots.map((root) => ({
@@ -45,6 +47,10 @@ export default async function HomePage() {
     productCount: root.productCount,
     children: root.children.map((child) => ({ id: child.id, name: child.name, href: categoryHref(tree, child.id) })),
   }))
+  // The phone's round icons: the categories under each top-level one (or the top-level one, with none under it)
+  const icons = tree.roots
+    .flatMap((root) => (root.children.length ? root.children : [root]))
+    .map((node) => ({ id: node.id, name: node.name, href: categoryHref(tree, node.id), photo: categoryPhotos[node.id] ?? null }))
   // In stock first, then by name, so the homepage doesn't open on things nobody can buy
   const cards = priceCards([...featured].sort((a, b) => Number(isInStock(b.offers[0]!)) - Number(isInStock(a.offers[0]!)) || a.name.localeCompare(b.name)).slice(0, FEATURED_COUNT), pricing)
 
@@ -77,6 +83,10 @@ export default async function HomePage() {
           </div>
         </section>
       )}
+
+      <div className="mx-auto max-w-7xl px-4 pt-6 md:hidden">
+        <CategoryIcons icons={icons} />
+      </div>
 
       <section className="mx-auto max-w-7xl px-4 pt-12 lg:px-6">
         <SectionTitle>Shop by category</SectionTitle>

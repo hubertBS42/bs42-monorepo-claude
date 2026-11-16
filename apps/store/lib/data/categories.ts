@@ -114,6 +114,32 @@ export const getCategorySpecs = unstable_cache(
   { revalidate: 60 }
 )
 
+// A product photo for each category (from its own products and those under it), for the phone homepage's round icons:
+// category images are wide banners, and most categories have none. A featured product first, then one in stock, then
+// by name, so the photo doesn't change from one minute to the next.
+export const getCategoryPhotos = unstable_cache(
+  async (): Promise<Record<string, string>> => {
+    const categories = await prisma.category.findMany({ select: { id: true, parentId: true, status: true } })
+    const visible = customerVisibleListingWhere(getVisibleCategoryIds(categories))
+    const products = await prisma.product.findMany({
+      where: { images: { isEmpty: false }, storeListings: { some: visible } },
+      orderBy: { name: "asc" },
+      select: { categoryId: true, images: true, storeListings: { where: visible, select: { isFeatured: true, stock: true, trackInventory: true } } },
+    })
+    const rank = (product: (typeof products)[number]) =>
+      product.storeListings.some((listing) => listing.isFeatured) ? 0 : product.storeListings.some((listing) => !listing.trackInventory || listing.stock > 0) ? 1 : 2
+    const parents = new Map(categories.map((category) => [category.id, category.parentId]))
+    const photos: Record<string, string> = {}
+    // Sorted by rank (stable, so by name within one), each product's photo goes to its category and every one above it
+    for (const product of [...products].sort((a, b) => rank(a) - rank(b))) {
+      for (let id: string | null | undefined = product.categoryId; id; id = parents.get(id)) photos[id] ??= product.images[0]!
+    }
+    return photos
+  },
+  ["store-category-photos"],
+  { revalidate: 60 }
+)
+
 // The homepage carousel's slides: featured categories with something on sale, in menu order (each top-level category,
 // then the ones under it), at most this many
 const MAX_FEATURED_CATEGORIES = 6
