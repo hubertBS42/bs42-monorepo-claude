@@ -88,7 +88,8 @@ export default async function HomePage() {
         <CategoryIcons icons={icons} />
       </div>
 
-      <section className="mx-auto max-w-7xl px-4 pt-12 lg:px-6">
+      {/* Not on phones, where the icons above and the header's menu cover it and its cards would stack three screens tall */}
+      <section className="mx-auto hidden max-w-7xl px-4 pt-12 md:block lg:px-6">
         <SectionTitle>Shop by category</SectionTitle>
         <CategoryGrid tiles={tiles} />
       </section>
