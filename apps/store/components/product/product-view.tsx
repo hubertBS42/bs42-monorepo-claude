@@ -1,10 +1,11 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { Building2, FileText, MessageCircle, Package, ShieldCheck, Truck, Wrench } from "lucide-react"
 import { Badge } from "@workspace/ui/components/badge"
 import { Button } from "@workspace/ui/components/button"
+import { Carousel, type CarouselApi, CarouselContent, CarouselItem } from "@workspace/ui/components/carousel"
 import { SaleBadge } from "@/components/sale-badge"
 import { Checkbox } from "@workspace/ui/components/checkbox"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@workspace/ui/components/tabs"
@@ -31,39 +32,70 @@ const KEY_SPECS = 6
 // Settings' phone and WhatsApp, for questions about the product; `phoneLabel` is the phone formatted for reading
 export type ProductContact = { phone: string | null; phoneLabel: string | null; whatsapp: string | null }
 
+// The main photo swipes between the photos (phones have no other easy way; a mouse can drag it too), and the thumbnails
+// follow it. One photo, or none, is a plain tile.
 function Gallery({ images, name }: { images: string[]; name: string }) {
+  const [api, setApi] = useState<CarouselApi>()
   const [current, setCurrent] = useState(0)
-  const image = images[current]
 
-  return (
-    <div className="flex flex-col gap-3">
-      {/* White behind a photo, as on the cards (product-card.tsx) */}
-      <div className={cn("flex aspect-square items-center justify-center overflow-hidden rounded-xl", image ? "bg-white" : "bg-muted")}>
-        {image ? (
+  useEffect(() => {
+    if (!api) return
+    const onSelect = () => setCurrent(api.selectedScrollSnap())
+    api.on("select", onSelect).on("reInit", onSelect)
+    return () => {
+      api.off("select", onSelect).off("reInit", onSelect)
+    }
+  }, [api])
+
+  if (images.length < 2) {
+    return (
+      // White behind a photo, as on the cards (product-card.tsx)
+      <div className={cn("flex aspect-square items-center justify-center overflow-hidden rounded-xl", images[0] ? "bg-white" : "bg-muted")}>
+        {images[0] ? (
           // eslint-disable-next-line @next/next/no-img-element -- our own blob storage, not set up for next/image
-          <img src={image} alt={name} className="size-full object-contain" />
+          <img src={images[0]} alt={name} className="size-full object-contain" />
         ) : (
           <Package className="size-24 text-muted-foreground/40" aria-hidden />
         )}
       </div>
-      {images.length > 1 && (
-        <ul className="flex gap-2 overflow-x-auto pb-1">
+    )
+  }
+
+  // min-w-0: a grid item, which would otherwise widen to the slides' track (the page then scrolls sideways on a phone)
+  return (
+    <div className="flex min-w-0 flex-col gap-3">
+      <Carousel setApi={setApi} aria-label={`Photos of ${name}`} className="overflow-hidden rounded-xl bg-white">
+        <CarouselContent className="ml-0">
           {images.map((url, index) => (
-            <li key={url} className="shrink-0">
-              <button
-                type="button"
-                onClick={() => setCurrent(index)}
-                aria-label={`Image ${index + 1}`}
-                aria-current={index === current || undefined}
-                className={cn("flex size-16 items-center justify-center overflow-hidden rounded-lg border bg-white", index === current && "ring-2 ring-ring")}
-              >
+            <CarouselItem key={url} className="pl-0" aria-label={`${index + 1} of ${images.length}`}>
+              <div className="flex aspect-square items-center justify-center">
                 {/* eslint-disable-next-line @next/next/no-img-element -- our own blob storage, not set up for next/image */}
-                <img src={url} alt="" className="size-full object-contain p-1" />
-              </button>
-            </li>
+                <img src={url} alt={index === 0 ? name : ""} loading={index === 0 ? undefined : "lazy"} draggable={false} className="size-full object-contain" />
+              </div>
+            </CarouselItem>
           ))}
-        </ul>
-      )}
+        </CarouselContent>
+        {/* Phones: which photo this is, so it's clear there are more to swipe to */}
+        <span className="absolute right-3 bottom-3 rounded-full bg-black/60 px-2 py-0.5 text-xs text-white tabular-nums md:hidden" aria-hidden>
+          {current + 1} / {images.length}
+        </span>
+      </Carousel>
+      <ul className="flex gap-2 overflow-x-auto pb-1">
+        {images.map((url, index) => (
+          <li key={url} className="shrink-0">
+            <button
+              type="button"
+              onClick={() => api?.scrollTo(index)}
+              aria-label={`Image ${index + 1}`}
+              aria-current={index === current || undefined}
+              className={cn("flex size-16 items-center justify-center overflow-hidden rounded-lg border bg-white", index === current && "ring-2 ring-ring")}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element -- our own blob storage, not set up for next/image */}
+              <img src={url} alt="" className="size-full object-contain p-1" />
+            </button>
+          </li>
+        ))}
+      </ul>
     </div>
   )
 }
