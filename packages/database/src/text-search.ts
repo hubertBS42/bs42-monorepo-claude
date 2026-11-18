@@ -11,7 +11,7 @@ type SearchableColumns = {
   order: "reference" | "customerName" | "customerEmail" | "customerPhone"
   organization: "name"
   product: "name" | "sku"
-  purchase_order: "reference"
+  purchase_order: "reference" | "notes"
   quote: "reference" | "customerName" | "customerEmail" | "tradeCompanyName"
   review: "title"
   supplier: "name"

@@ -27,7 +27,7 @@ export default async function PurchaseOrdersPage({ searchParams }: PurchaseOrder
 
   const supplierId = getStringParam(params.supplierId)
   const ordersParams: PurchaseOrdersParams = {
-    reference: getStringParam(params.reference),
+    search: getStringParam(params.search),
     status: getEnumParam(params.status, Object.values(PurchaseOrderStatus)),
     // Supplier.id is a uuid column, so anything else would make Prisma throw
     supplierId: supplierId && z.uuid().safeParse(supplierId).success ? supplierId : undefined,

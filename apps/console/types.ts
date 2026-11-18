@@ -953,7 +953,8 @@ export interface SupplierDetails {
 }
 
 export interface PurchaseOrdersParams extends PaginationParams {
-  reference?: string
+  // Our reference or the notes (where the supplier's order number goes)
+  search?: string
   status?: PurchaseOrderStatus
   supplierId?: string
   // "true": open, and expected before today

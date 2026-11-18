@@ -94,13 +94,16 @@ export const getPurchaseOrders = async (storeId: string | null, filters: Purchas
     const paginationError = getPaginationError(filters, { maxPageSize: MAX_PURCHASE_ORDERS_PAGE_SIZE, allowedSortFields: PURCHASE_ORDER_SORT_FIELDS })
     if (paginationError) return { success: false, error: paginationError }
 
-    const { reference, status, supplierId, overdue, page = 1, pageSize = 10, sort, order } = filters
+    const { search, status, supplierId, overdue, page = 1, pageSize = 10, sort, order } = filters
     // A store's list is always its own; the platform's can filter by store
     const organizationId = storeId ?? filters.storeId
-    const referenceIds = reference ? await idsMatching("purchase_order", ["reference"], reference) : null
+    // The notes hold the supplier's own order number, so a receipt's number finds its purchase order, with or without
+    // the "#" receipts print before it
+    const searchText = search?.replaceAll("#", "").trim()
+    const searchIds = searchText ? await idsMatching("purchase_order", ["reference", "notes"], searchText) : null
     const where: Prisma.PurchaseOrderWhereInput = {
       ...(organizationId && { organizationId }),
-      ...(referenceIds && { id: { in: referenceIds } }),
+      ...(searchIds && { id: { in: searchIds } }),
       ...(supplierId && { supplierId }),
       // Overdue sets the statuses it allows; a status filter narrows them further
       AND: [...(status ? [{ status }] : []), ...(overdue ? [overduePurchaseOrderWhere(getRateDate())] : [])],

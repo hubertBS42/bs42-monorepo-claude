@@ -5,7 +5,7 @@ import type { SelectItem } from "@/types"
 // A store's list filters by its suppliers; the platform's by store (suppliers are each store's own)
 export function purchaseOrderFilters({ suppliers, stores }: { suppliers?: SelectItem[]; stores?: SelectItem[] }): FilterConfig[] {
   return [
-    { key: "reference", label: "Reference", type: "text", placeholder: "Search reference" },
+    { key: "search", label: "Search", type: "text", placeholder: "Search reference or notes" },
     ...(stores
       ? [
           {

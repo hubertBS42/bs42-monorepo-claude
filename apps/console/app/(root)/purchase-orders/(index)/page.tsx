@@ -25,7 +25,7 @@ export default async function PlatformPurchaseOrdersPage({ searchParams }: Purch
 
   const storeId = getStringParam(params.storeId)
   const ordersParams: PurchaseOrdersParams = {
-    reference: getStringParam(params.reference),
+    search: getStringParam(params.search),
     status: getEnumParam(params.status, Object.values(PurchaseOrderStatus)),
     overdue: getEnumParam(params.overdue, ["true"]),
     // Organization.id is a uuid column, so anything else would make Prisma throw
