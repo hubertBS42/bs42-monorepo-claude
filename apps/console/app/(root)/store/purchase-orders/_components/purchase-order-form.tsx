@@ -1,7 +1,7 @@
 "use client"
 /* eslint-disable @next/next/no-img-element -- next/image would need the storage host in images.remotePatterns */
 
-import { useEffect, useState, useTransition } from "react"
+import { useEffect, useRef, useState, useTransition } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -136,6 +136,21 @@ export default function PurchaseOrderForm({ storeId, suppliers, rate, order, sug
       clearTimeout(timer)
     }
   }, [storeId, search])
+
+  // Changing the currency converts the costs already entered at today's rate, so they stay the same amounts (without a
+  // rate they're left as they are: an order in GHS can't be saved then anyway)
+  const previousCurrency = useRef(currency)
+  useEffect(() => {
+    if (currency === previousCurrency.current) return
+    previousCurrency.current = currency
+    if (!rate) return
+    const convert = (value: unknown) => {
+      const amount = Number(value) || 0
+      return Math.round((currency === Currency.GHS ? amount * Number(rate) : amount / Number(rate)) * 100) / 100
+    }
+    form.getValues("lines").forEach((line, index) => form.setValue(`lines.${index}.unitCost`, convert(line.unitCost), { shouldDirty: true }))
+    form.setValue("shippingCost", convert(form.getValues("shippingCost")), { shouldDirty: true })
+  }, [currency, rate, form])
 
   const added = new Set((lines ?? []).map((line) => lineKey(line.listingId, line.listingVariantId)))
 
